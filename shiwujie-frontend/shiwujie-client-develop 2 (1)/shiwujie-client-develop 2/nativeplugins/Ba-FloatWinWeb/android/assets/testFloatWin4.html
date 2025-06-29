@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>紧急求助</title>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js">
+		</script>
+		<script>
+			$(document).ready(function() {
+				onLoad()
+			});
+
+			function onLoad() {
+				let title = GetUrlParam("title")
+				let content = GetUrlParam("content")
+				let time = GetUrlParam("time")
+				$(".title").text(title)
+				$(".content").text(content)
+				$(".time").text(time)
+			}
+
+			function onClickFW() { //点击事件
+				let json = {
+					//tag: 'notify',
+					msg: 'CALL_HELP'
+				}
+				Android.onClickFW('CALL_HELP');
+			}
+
+			//获取url参数
+			function GetUrlParam(paramName) {
+				let url = decodeURI(window.location.href);
+				console.log(url)
+				var arrObj = url.split("?");
+				if (arrObj.length > 1) {
+					var arrPara = arrObj[1].split("&");
+					var arr;
+					for (var i = 0; i < arrPara.length; i++) {
+						arr = arrPara[i].split("=");
+						if (arr != null && arr[0] == paramName) {
+							return arr[1];
+						}
+					}
+					return "";
+				} else {
+					return "";
+				}
+			}
+		</script>
+		<style>
+			body,
+			html {
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+			}
+
+			.container {
+				display: flex;
+				flex-direction: column;
+				border: red;
+			}
+
+			.msg-box {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				margin: 0 10px;
+				background-color: #D2DEE8;
+				border-radius: 10px;
+			}
+
+			.logo {
+				margin: 10px 15px;
+				height: 40px;
+				width: 40px;
+			}
+
+			.text-box {
+				margin-right: 15px;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				flex: 1;
+			}
+
+			.title-row {
+				display: flex;
+				flex-direction: row;
+				flex: 1;
+			}
+
+			.title {
+				font-size: 14px;
+				color: #222;
+				font-weight: bold;
+				flex: 1;
+			}
+
+			.time {
+				font-size: 11px;
+				color: #888;
+			}
+
+			.content {
+				margin-top: 1px;
+				font-size: 14px;
+				color: #222;
+			}
+		</style>
+	</head>
+	<body style="overflow:hidden" scroll="no">
+		<div class="container">
+			<div class="msg-box" onclick="onClickFW()">
+				<img class="logo" src="./static/ba_float_win_logo.png"></img>
+				<div class="text-box">
+					<div class="title-row">
+						<div class="title">微信</div>
+						<div class="time">10分钟之前</div>
+					</div>
+					<div class="content">您收到1条消息</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

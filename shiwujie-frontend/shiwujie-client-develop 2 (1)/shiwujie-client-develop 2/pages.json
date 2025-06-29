@@ -1,0 +1,223 @@
+{
+	"pages": [
+		//pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/leader/leaderPage",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/register-login/login",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/register-login/chooseRole",
+			"style": {
+				"navigationBarTitleText": "身份选择",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/register-login/loginAndRegisterQickliy",
+			"style": {
+				"navigationBarTitleText": "手机号一键登录"
+				// "navigationStyle" : "custom"
+			}
+		},
+		
+		{
+			"path": "pages/videoTest/videoTest",
+			"style": {
+				"navigationBarTitleText": "视频通话",
+				"navigationStyle": "custom"
+			}
+		},
+		   {
+		      "path": "pages/blindPages/blindHome",
+		      "style": {
+		        "navigationBarTitleText": "主页",
+		        "navigationStyle": "custom",
+		        "app-plus": {
+		          "titleNView": {
+		            "type": "none",
+		            "accessibilityDescription": "主页"
+		          },
+		          "bounce": "none"
+		        },
+		        "enablePullDownRefresh": false,
+		        "disableScroll": true,
+		        "navigationBarTextStyle": "black"
+		      }
+		    },
+		{
+			"path": "pages/blindPages/benefit",
+			"style": {
+				"navigationBarTitleText": "福利",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		},
+		{
+			"path": "pages/blindPages/navigation",
+			"style": {
+				"navigationBarTitleText": "搜索目的地",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/blindPages/community",
+			"style": {
+				"navigationBarTitleText": "社区",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		},
+		
+		{
+			"path": "pages/AI-assistant/AI-help",
+			"style": {
+				"navigationBarTitleText": "智能AI",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/userLayout/userLayout",
+			"style": {
+				"navigationBarTitleText": "我的"
+
+			}
+		},
+		{
+			"path": "pages/family/family",
+			"style": {
+				"navigationBarTitleText": "家庭"
+			}
+		},
+		{
+			"path": "pages/userLayout/infor",
+			"style": {
+				"navigationBarTitleText": "修改信息"
+			}
+		},
+		{
+			"path": "pages/volunteerPages/volunteerHome",
+			"style": {
+				"navigationBarTitleText": "志愿者主页"
+			}
+		},
+		{
+			"path": "pages/volunteerPages/community",
+			"style": {
+				"navigationBarTitleText": "志愿者主页"
+			}
+		},
+		{
+			"path" : "pages/videoTest/BlindHelp",
+			"style" : 
+			{
+				"navigationBarTitleText" : "求助通话-求助人",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path" : "pages/videoTest/HelpUser",
+			"style" : 
+			{
+				"navigationBarTitleText" : "求助通话-协助人"
+			}
+		},
+		{
+			"path" : "pages/family/volunteerFamily",
+			"style" : 
+			{
+				"navigationBarTitleText" : "志愿者家庭",
+				"navigationStyle": "custom"
+			}
+		}
+	
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#999999", // 未选中的颜色
+		"selectedColor": "#1fc7bc", // 选中后的颜色（绿色）
+		"backgroundColor": "#ffffff", // 背景色（白色）
+		"borderStyle": "white", // 上边框颜色
+		"height": "120rpx",
+		"custom": true,
+		"list": [{
+				"pagePath": "pages/blindPages/blindHome",
+				"iconPath": "static/iconOrig/tabbarHome.png",
+				"selectedIconPath": "static/touchBar/touchHome.png",
+				"text": "主页"
+			},
+			{
+				"pagePath": "pages/blindPages/community",
+				"iconPath": "static/sheQu.png",
+				"selectedIconPath": "static/touchSheQu.png",
+				"text": "社区"
+			},
+			{
+				"pagePath": "pages/blindPages/benefit",
+				
+				"text": "福利"
+			},
+			{
+				"pagePath": "pages/AI-assistant/AI-help",
+				
+				"text": "智能AI"
+			},
+			{
+				"pagePath": "pages/volunteerPages/community",
+				"iconPath": "static/iconOrig/community.png",
+				"selectedIconPath": "static/iconOrig/community.png",
+				"text": "志愿者社区"
+			},
+			{
+				"pagePath": "pages/volunteerPages/volunteerHome",
+				
+				"text": "志愿者主页"
+			},
+			{
+				"pagePath": "pages/family/family",
+				
+				"text": "家庭"
+			},
+			
+			{
+				"pagePath": "pages/videoTest/videoTest",
+				
+				"text": "视频通话"
+				
+			},
+			
+			{
+				"pagePath": "pages/userLayout/userLayout",
+				"iconPath": "static/iconOrig/usercenter.png",
+				"selectedIconPath": "static/touchusercenter.png",
+				"text": "我的"
+			}
+		]
+	},
+	"uniIdRouter": {},
+	"condition": { //模式配置，仅开发期间生效
+		"current": 0, //当前激活的模式(list 的索引项)
+		"list": [{
+			"name": "", //模式名称
+			"path": "pages/leader/leaderPage", //启动页面，必选
+			"query": "" //启动参数，在页面的onLoad函数里面得到
+		}]
+	}
+}

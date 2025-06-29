@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+	<head>
+		<meta charset="utf-8">
+		<title>视无界AI</title>
+		<script>
+			function onClickFW() { //点击事件
+				Android.onClickFW("AI");
+			}
+		</script>
+
+		<style>
+			body,
+			html {
+				height: 40px;
+				width: 40px;
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+			}
+
+			.container {
+				display: flex;
+				flex-direction: column;
+				width: 40px;
+				height: 40px;
+			}
+
+			.icon {
+				height: 40px;
+				width: 40px;
+				background-color: brown;
+				border-radius: 100%;
+			}
+		</style>
+	</head>
+
+	<body style="overflow:hidden" scroll="no">
+		<div class="container">
+			<img onclick="onClickFW()" class="icon" src="./static/AI.png">
+		</div>
+	</body>
+</html>

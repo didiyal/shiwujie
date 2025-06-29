@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.alibaba:dashscope-sdk-java:2.15.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../../Workbench/SoftWare/idea2022/apache-maven-3.9.9-bin/apache-maven-3.9.9/mvn-repo/com/alibaba/dashscope-sdk-java/2.15.1/dashscope-sdk-java-2.15.1.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/../../../../Workbench/SoftWare/idea2022/apache-maven-3.9.9-bin/apache-maven-3.9.9/mvn-repo/com/alibaba/dashscope-sdk-java/2.15.1/dashscope-sdk-java-2.15.1-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../../../Workbench/SoftWare/idea2022/apache-maven-3.9.9-bin/apache-maven-3.9.9/mvn-repo/com/alibaba/dashscope-sdk-java/2.15.1/dashscope-sdk-java-2.15.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

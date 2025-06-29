@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh">
+	<head>
+		<meta charset="utf-8">
+		<title>视频操作</title>
+		<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+		<script>
+			function onClickFW(json) { //点击事件
+				Android.onClickFW(json);
+			}
+			//获取url参数
+			function GetUrlParam(paramName) {
+				let url = decodeURI(window.location.href);
+				console.log(url)
+				var arrObj = url.split("?");
+				if (arrObj.length > 1) {
+					var arrPara = arrObj[1].split("&");
+					var arr;
+					for (var i = 0; i < arrPara.length; i++) {
+						arr = arrPara[i].split("=");
+						if (arr != null && arr[0] == paramName) {
+							return arr[1];
+						}
+					}
+					return "";
+				} else {
+					return "";
+				}
+			}
+		</script>
+
+		<style>
+			body,
+			html {
+				height: 64px;
+				width: 64px;
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+			}
+
+			.container {
+				display: flex;
+				flex-direction: column;
+				border-radius: 12px;
+				width: 64px;
+				height: 64px;
+				background: rgba(102, 101, 132, 1);
+				//box-shadow: 0px 0px 32px 0px rgba(0, 0, 0, 0.2);
+				border-radius: 12px 12px 12px 12px;
+				opacity: 1;
+			}
+
+			.row {
+				display: flex;
+				flex-direction: row;
+				margin: 6px 6px 0px 6px;
+			}
+
+			.item {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				width: 55px;
+				height: 55px;
+				background: rgba(255, 255, 255, 0.1);
+				border-radius: 8px 8px 8px 8px;
+				opacity: 1;
+			}
+
+			.name {
+				text-align: center;
+				width: 40px;
+				height: 34px;
+				font-size: 13px;
+				font-weight: 500;
+				color: rgba(255, 255, 255, 0.6);
+			}
+
+			.num {
+				text-align: center;
+				margin-top: 6px;
+				width: 21px;
+				height: 18px;
+				font-size: 14px;
+				font-weight: bold;
+				color: #FFFFFF;
+			}
+		</style>
+	</head>
+
+	<body style=" overflow:hidden" scroll="no">
+		<div class="container">
+			<div class="row">
+				<div class="item" onclick="onClickFW('toIndex')" >
+					<div class="name">
+						其它页面操作
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

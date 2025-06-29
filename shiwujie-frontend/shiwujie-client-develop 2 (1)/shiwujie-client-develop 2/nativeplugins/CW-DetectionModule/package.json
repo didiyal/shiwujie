@@ -1,0 +1,47 @@
+{
+    "name": "CW-DetectionModule",
+    "id": "CW-DetectionModule",
+    "version": "1.0.5",
+    "description": "基于pytorch，yolov5，ncnn目标检测，可以配置自定义ncnn模型和参数，实现个性化需求，示例项目实现的主要是，传入一个本机图片地址，快速帮助你识别出图片中存在的东西及所在位置，一般手机计算时长约 3张/秒",
+    "_dp_type": "nativeplugin", 
+    "_dp_nativeplugin": {
+        "android": {
+            "plugins": [{
+                    "type": "module",
+                    "name": "CW-DetectionModule",
+                    "class": "com.tencent.yolov5ncnn.DetectionModule"
+                }
+            ],
+            "integrateType": "aar",
+            "dependencies": [
+                "com.github.bumptech.glide:glide:4.9.0",
+                "com.alibaba:fastjson:1.1.46.android",
+                "com.android.support.constraint:constraint-layout:2.0.1",
+                "com.android.support:design:26.1.0"
+            ],
+            "compileOptions": {
+                "sourceCompatibility": "1.8",
+                "targetCompatibility": "1.8"
+            },
+            "abis": [
+                "armeabi-v7a",
+                "arm64-v8a"
+            ],
+            "minSdkVersion": "24",
+            "useAndroidX": false,
+            "permissions": [
+                "android.permission.INTERNET",
+                "android.permission.RECORD_AUDIO",
+                "android.permission.MODIFY_AUDIO_SETTINGS",
+                "android.permission.ACCESS_NETWORK_STATE",
+                "android.permission.READ_PHONE_STATE",
+                "android.permission.CAMERA",
+                "android.permission.WRITE_EXTERNAL_STORAGE",
+                "android.permission.BLUETOOTH",
+                "android.permission.WAKE_LOCK",
+                "android.permission.READ_EXTERNAL_STORAGE"
+            ]
+        }
+    }
+}
+

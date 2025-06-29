@@ -1,0 +1,8 @@
+{
+  "name": "getPhoneNumber",
+  "dependencies": {},
+  "extensions": {
+    "uni-cloud-jql": {},
+    "uni-cloud-verify": {}
+  }
+}

@@ -1,0 +1,390 @@
+<template>
+	<view class="content">
+		<view class="big-video">
+			<AR-CanvasView :ref="userRole == 0 ? 'location' : 'remotenable'" style="flex: 1;"></AR-CanvasView>
+		</view>
+		<view class="small-video">
+			<AR-CanvasView :ref="userRole == 0 ? 'remotenable' : 'location'" style="flex: 1;"></AR-CanvasView>
+		</view>
+		<view class="options">
+			<!-- 前后摄像头转换 -->
+			<view class="icon" @click="cameraFn">
+				<image class="icon_img" src="../../static/video/camera.png" mode=""></image>
+				<text class="icon_text">摄像{{camera?'前':'后'}}</text>
+			</view>
+			<!-- 挂断 -->
+			<view class="icon" @click="phoneFn">
+				<image class="icon_img" src="../../static/video/over.png"></image>
+				<text class="icon_text">挂断</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	// rtc 音视频引入
+	const rtcModule = uni.requireNativePlugin('AR-RtcModule');
+	const floatWin = uni.requireNativePlugin('Ba-FloatWinWeb');
+	import {
+		getVolunteerChannelAndUid,
+		getBlindChannelAndUid,
+		leaveVolunteerChannel,
+		leaveBlindChannel
+	} from '../../api/video';
+	import Storage from '../../utils/storage';
+	export default {
+		data() {
+			return {
+				appid: "e9b9587a89185a23607879afc8a2d6cd",
+				channel: "123456",
+				localuid: "", // 本地用户
+				remotenableuid: "", // 远端用户
+				camera: true, //默认前置摄像头
+				userRole: uni.getStorageSync("userRole"),
+				isDestroying: false,
+				url1: "file:///android_asset/testFloatWin.html",
+			}
+		},
+		onReady() {
+			console.log("用户身份:" + this.userRole);
+			this.handlerGetChinnelAndUid();
+		},
+		methods: {
+			hideFW() {
+				//关闭悬浮窗
+				console.log("关闭悬浮窗");
+				if (this.userRole == 0) {
+					floatWin.hide({
+							tag: 'menu'
+						},
+						(res) => {
+							console.log(res);
+							
+						});
+				}
+			},
+			/**
+			 * 处理获取频道信息与uid
+			 */
+				async handlerGetChinnelAndUid() {
+						try {
+							const res = (this.userRole == 0 ? await getBlindChannelAndUid() :
+								await getVolunteerChannelAndUid());
+							if (res.code == 1) {
+								console.log("获取channel与uid");
+								this.channel = res.data.channel;
+								this.localuid = res.data.uid;
+								//初始化
+								this.init();
+							} else {
+								
+								//关闭悬浮窗
+								if (this.userRole == 0) {
+									floatWin.hide({
+											tag: 'menu'
+										},
+										(res) => {
+											console.log(res);
+											
+										});
+								}
+								
+								uni.showModal({
+								  title: '提示',
+								  content: '当前没有等待志愿者，是否回到主页',
+								  showCancel: false,
+								  success: () => {
+								  
+								    console.log("开始跳转页面,userRole" + this.userRole);
+								    if (this.userRole == 0) {
+								    	uni.reLaunch({
+								    		url: '/pages/blindPages/blindHome'
+								    	})
+								    } else {
+								    	uni.reLaunch({
+								    		url: '/pages/volunteerPages/volunteerHome'
+								    	})
+								    }
+								    resolve(false);
+								  },
+								  
+								});
+								
+							}
+						} catch (error) {
+							//TODO handle the exception
+							console.log("获取channel与uid异常" + error);
+						}
+					},
+			/**
+			 * 视频通话数据上传
+			 */
+			async handlerLeaveChannel() {
+				try {
+					const res = (this.userRole == 0 ? await leaveBlindChannel() : await leaveVolunteerChannel());
+					if (res.code == 1) {
+						console.log("视频通话数据后台传输成功");
+						// //关闭悬浮窗
+						// if (this.userRole == 0) {
+						// 	floatWin.hide({
+						// 			tag: 'menu'
+						// 		},
+						// 		(res) => {
+						// 			console.log(res);
+									
+						// 		});
+						// }
+					}
+				} catch (error) {
+					//TODO handle the exception
+					console.log("视频通话数据后台传输异常" + error);
+				}
+			},
+			/**
+			 * 初始化视频通道
+			 */
+			init() {
+				//设置响应请求
+				rtcModule.setCallBack(res => {
+					switch (res.engineEvent) {
+						case "onWarning": // 发生警告回调
+							console.log("发生警告", res);
+							break;
+						case "onError": // 发生错误回调
+							console.log("发生错误", res);
+							break;
+						case "onJoinChannelSuccess": // 用户加入频道成功回调
+							console.log("用户加入频道成功,开始渲染本地视频", res);
+							// 本地用户视频渲染
+							this.localVideo();
+							break;
+						case "onLeaveChannel": //离开频道回调
+							console.log("用户离开频道,跳转到主页");
+							break;
+						case "onUserJoined": // 远端用户加入当前频道
+							
+							console.log("对面加入频道,渲染远端视频")
+							// 新增：调用渲染远端视频的方法
+							this.remotenableVideo(res.uid);
+							break;
+						case "onUserOffline": // 远端用户离开当前频道,通话结束,跳转页面
+							console.log(res);
+							if (res.reason == 2) {
+								//对面退出通话
+								console.log("对面退出视频通话");
+								//关闭悬浮窗
+								// if (this.userRole == 0) {
+								// 	floatWin.hide({
+								// 			tag: 'menu'
+								// 		},
+								// 		(res) => {
+								// 			console.log(res);
+											
+								// 		});
+								// }
+								this.phoneFn();
+							}
+							break;
+						case "onFirstRemoteVideoDecoded": // 已显示远端视频首帧解码回调,页面收到远端视频
+							console.log("已收到远端视频视频");
+							// 远端视频渲染
+							// this.remotenableVideo(res.uid);
+							break;
+
+					}
+				});
+				//创建rtc实例,退出页面必须销毁
+				rtcModule.create({
+					"appId": this.appid
+				}, res => {
+					console.log('初始化实例 rtc', res);
+				});
+				//开启视频模块
+				rtcModule.enableVideo((res) => {
+					console.log('RTC 启用视频 enableVideo 方法调用', (res.code === 0 ? '成功' : '失败：') +
+						res);
+				});
+				//生成随机uid
+				this.localuid = this.randomFn(6);
+				//加入频道
+				rtcModule.joinChannel({
+					"token": "",
+					"channelId": this.channel,
+					"uid": this.localuid,
+				}, (res) => {
+					console.log('RTC joinChannel 方法调用', (res.code === 0 ? '成功' : '失败：') + res);
+                    rtcModule.isSpeakerphoneEnabled((res) => {
+                        //something
+                        console.log("扬声器已开启");
+                        rtcModule.setEnableSpeakerphone({
+                            "enabled":true
+                            },(res) => {
+                                //something
+                        })
+					})
+				});
+			},
+			/**
+			 * 挂断视频,离开频道
+			 */
+			phoneFn() {
+				// 防止重复调用（如多次点击挂断）
+				if (this.isDestroying) return;
+				this.isDestroying = true;
+				this.handlerLeaveChannel();
+				//离开频道
+				rtcModule.leaveChannel((res) => {
+					rtcModule.destroyRtc((res) => {
+						//something
+						console.log('AnyRTC 实例已销毁');
+						console.log("开始跳转页面,userRole" + this.userRole);
+						if (this.userRole == 0) {
+							uni.reLaunch({
+								url: '/pages/blindPages/blindHome'
+							})
+						} else {
+							uni.reLaunch({
+								url: '/pages/volunteerPages/volunteerHome'
+							})
+						}
+					})
+				})
+			},
+			/**
+			 * 切换摄像头
+			 */
+			cameraFn() {
+				this.camera = !this.camera;
+				rtcModule.switchCamera((res) => {
+					//something
+					console.log("切换前后置摄像头")
+				})
+			},
+			/**
+			 * 渲染本地视频
+			 */
+			async localVideo() {
+				// 渲染视频
+				await this.$refs.location.setupLocalVideo({
+					"renderMode": 1,
+					"channelId": this.channel,
+					"uid": this.localuid,
+					"mirrorMode": 0
+				}, (res) => {
+					console.log('渲染本地视频', res);
+					if (this.userRole == 0) {
+						//盲人切换到前置摄像头
+						this.cameraFn();
+					}
+				});
+				// 本地预览
+				this.$refs.location.startPreview((res) => {
+					console.log('本地视频预览', res);
+				})
+			},
+			/**
+			 * @param {Object} uid
+			 * 渲染远端视频
+			 */
+			async remotenableVideo(uid) {
+
+				this.remotenableuid = uid;
+
+				// 确保组件已挂载
+				await this.$nextTick();
+
+				this.$refs.remotenable.setupRemoteVideo({
+					"renderMode": 1,
+					"channelId": this.channel,
+					"uid": uid,
+					"mirrorMode": 0
+				}, (res) => {
+					console.log('渲染远端视频', res);
+				});
+
+			},
+			/**
+			 * @param {Object} len
+			 * @param {Object} charSet
+			 * 随机生成uid
+			 */
+			randomFn(len, charSet) {
+				charSet = charSet || 'abcdefghijklmnopqrstuvwxyz0123456789';
+				let randomString = '';
+				for (let i = 0; i < len; i++) {
+					let randomPoz = Math.floor(Math.random() * charSet.length);
+					randomString += charSet.substring(randomPoz, randomPoz + 1);
+				}
+				return randomString;
+			},
+		},
+		onBackPress() { //跳转页面前调用,无需自主跳转页面
+			// 防止重复调用（如多次点击挂断）
+			if (this.isDestroying) return;
+			this.isDestroying = true;
+			this.handlerLeaveChannel();
+			//离开频道
+			rtcModule.leaveChannel((res) => {
+				rtcModule.destroyRtc((res) => {
+					//something
+					console.log('AnyRTC 实例已销毁');
+				})
+			})
+		}
+	}
+</script>
+
+<style>
+	.content {
+		flex: 1;
+		position: relative;
+		background-color: #000000;
+	}
+
+	.big-video {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+	}
+
+	.small-video {
+		position: absolute;
+		top: 44rpx;
+		right: 24rpx;
+		width: 200rpx;
+		height: 300rpx;
+		border-radius: 16rpx;
+		overflow: hidden;
+		border: 4rpx solid #ffffff;
+	}
+
+	.options {
+		position: fixed;
+		bottom: 100rpx;
+		left: 0;
+		right: 0;
+		flex-direction: row;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.icon {
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		margin: 0 60rpx;
+	}
+
+	.icon_img {
+		width: 100rpx;
+		height: 100rpx;
+	}
+
+	.icon_text {
+		color: #FFFFFF;
+		font-size: 24rpx;
+		margin-top: 20rpx;
+	}
+</style>

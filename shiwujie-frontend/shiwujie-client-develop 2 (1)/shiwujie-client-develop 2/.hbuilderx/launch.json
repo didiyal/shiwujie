@@ -1,0 +1,22 @@
+{
+    "version" : "1.0",
+    "configurations" : [
+        {
+            "app-plus" : {
+                "launchtype" : "remote"
+            },
+            "default" : {
+                "launchtype" : "local"
+            },
+            "h5" : {
+                "launchtype" : "local"
+            },
+            "provider" : "aliyun",
+            "type" : "uniCloud"
+        },
+        {
+            "playground" : "custom",
+            "type" : "uni-app:app-android"
+        }
+    ]
+}
