@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.swj.shiwujie.mapper.VideoMapper">
+
+    <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.Video">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="channel" column="channel" jdbcType="VARCHAR"/>
+            <result property="blindUid" column="blindUid" jdbcType="VARCHAR"/>
+            <result property="volunteerUid" column="volunteerUid" jdbcType="VARCHAR"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="beginTime" column="beginTime" jdbcType="TIMESTAMP"/>
+            <result property="endTime" column="endTime" jdbcType="TIMESTAMP"/>
+            <result property="callTime" column="callTime" jdbcType="TIME"/>
+            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,channel,blindUid,
+        volunteerUid,createTime,beginTime,
+        endTime,callTime,status,
+        isDelete
+    </sql>
+</mapper>

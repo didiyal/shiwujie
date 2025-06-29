@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/Phase2.iml" filepath="$PROJECT_DIR$/.idea/Phase2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/shiwujie-backend/shiwujie-gateway/shiwujieGatewaty.iml" filepath="$PROJECT_DIR$/shiwujie-backend/shiwujie-gateway/shiwujieGatewaty.iml" />
+    </modules>
+  </component>
+</project>
