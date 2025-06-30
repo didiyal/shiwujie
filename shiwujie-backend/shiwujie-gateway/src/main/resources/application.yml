@@ -5,7 +5,7 @@ spring:
     active: dev
 server:
   servlet:
-    context-path: /api  # 确保这里没有设置特殊的context-path
+    context-path: /api  #  确保这里没有设置特殊的context-path
   port: 8100
 
 
