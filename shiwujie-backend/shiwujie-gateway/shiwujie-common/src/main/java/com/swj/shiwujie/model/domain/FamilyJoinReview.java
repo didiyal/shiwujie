@@ -7,32 +7,47 @@ import java.util.Date;
 import lombok.Data;
 
 /**
- * 家庭信息表
- * @TableName Family
+ * 家庭加入审核表
+ * @TableName FamilyJoinReview
  */
-@TableName(value ="Family")
+@TableName(value ="FamilyJoinReview")
 @Data
-public class Family implements Serializable {
+public class FamilyJoinReview implements Serializable {
     /**
-     * 家庭ID
+     * 家庭审核ID
      */
     @TableId(type = IdType.ASSIGN_ID)
-    private Long familyId;
+    private Long reviewId;
 
     /**
-     * 家庭名字
+     * 视障人士ID
      */
-    private String familyName;
+    private Long blindId;
 
     /**
-     * 家庭详细介绍
+     * 志愿者ID
      */
-    private String familyDescription;
+    private Long volunteerId;
 
     /**
-     * 家庭创建人ID（关联志愿者表）
+     * 请求加入时间
      */
-    private Long creatorVolunteerId;
+    private Date applyTime;
+
+    /**
+     * 审核时间
+     */
+    private Date reviewTime;
+
+    /**
+     * 审核状态 0-待审核 1-已通过 2-已拒绝
+     */
+    private Integer reviewStatus;
+
+    /**
+     * 审核志愿者ID
+     */
+    private Long reviewerId;
 
     /**
      * 创建时间

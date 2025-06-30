@@ -4,7 +4,7 @@ spring:
       routes:
     # 用户端转发
         - id: route_user
-          uri: http://localhost:8123
+          uri: http://localhost:8200
           predicates:
             - Path=/api/user/**,/api/family/**
     # 视频转发配置

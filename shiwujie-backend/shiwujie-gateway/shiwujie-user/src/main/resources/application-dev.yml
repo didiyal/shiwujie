@@ -3,14 +3,14 @@ spring:
   redis:
     port: 6379
     host: 43.139.38.62
-    database: 1
+    database: 2
     password: 123456
   #数据库连接
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: shiwujie
-    password: aYkSrBT7KMWWKJRb
-    url: jdbc:mysql://43.139.38.62:3306/shiwujie
+    username: user
+    password: 3Abf6DpPP6WTbT3x
+    url: jdbc:mysql://43.139.38.62:3306/shiwujiePhase2
 # 打开mybatis的日志
 mybatis-plus:
   configuration:
@@ -30,4 +30,4 @@ dubbo:
     port: 50052
     serialization: hessian2
   registry:
-    address: nacos://${nacos.address:127.0.0.1}:8848?username=nacos&password=nacos
+    address: http://43.139.38.62:8848/nacos?username=nacos&password=nacos

@@ -14,7 +14,7 @@ spring:
 server:
   servlet:
     context-path: /api   # 确保这里没有设置特殊的context-path
-  port: 8123
+  port: 8200
 mybatis-plus:
   configuration:
     # 关闭自动映射下划线到驼峰的规则
@@ -27,16 +27,15 @@ mybatis-plus:
 knife4j:
   enable: true
   openapi:
-    title: Knife4j官方文档
-    description: "`我是测试`,**你知道吗**
-    # aaa"
+    title: 用户模块文档
+    description: "登录注册,家庭,用户操作"
     email: 2198005977@qq.com
     concat: ldl
     url: https://www.shi-wu-jie.com
     version: v4.0
     license: Apache 2.0
-    license-url: https://stackoverflow.com/
-    terms-of-service-url: https://stackoverflow.com/
+    license-url: https://www.shi-wu-jie.com
+    terms-of-service-url: https://www.shi-wu-jie.com
     group:
       user:
         group-name: 用户功能
