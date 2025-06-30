@@ -4,7 +4,7 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.utils.RedisUtil;
 import com.swj.shiwujie.utils.JWTUtils;
-import io.swagger.models.HttpMethod;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

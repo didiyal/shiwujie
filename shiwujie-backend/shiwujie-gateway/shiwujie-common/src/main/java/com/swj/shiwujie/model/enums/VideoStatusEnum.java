@@ -2,7 +2,6 @@ package com.swj.shiwujie.model.enums;
 
 
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Map;

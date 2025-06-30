@@ -1,15 +1,7 @@
 package com.swj.shiwujie.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.swj.shiwujie.common.ErrorCode;
-import com.swj.shiwujie.exception.BusinessException;
-import com.swj.shiwujie.model.VO.UserLoginVO;
-import com.swj.shiwujie.model.VO.UserVO;
-import com.swj.shiwujie.model.domain.User;
-import com.swj.shiwujie.model.request.UserRegisterRequest;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
+import com.swj.shiwujie.model.domain.User;
 
 /**
  * @author ldl
