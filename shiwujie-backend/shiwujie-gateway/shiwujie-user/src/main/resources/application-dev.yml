@@ -10,7 +10,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: user
     password: 3Abf6DpPP6WTbT3x
-    url: jdbc:mysql://43.139.38.62:3306/shiwujiePhase2
+    url: jdbc:mysql://43.139.38.62:3306/shiwujiephase2
 # 打开mybatis的日志
 mybatis-plus:
   configuration:

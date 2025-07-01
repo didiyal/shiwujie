@@ -51,6 +51,11 @@ public class Volunteer implements Serializable {
     private String password;
 
     /**
+     * 性别 0-男 1-女
+     */
+    private Integer gender;
+
+    /**
      * 微信账号
      */
     private String wechatId;

@@ -1,23 +1,20 @@
-package com.swj.shiwujie.model.domain;
+package com.swj.shiwujie.model.VO.user;
 
-import com.baomidou.mybatisplus.annotation.*;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.Date;
+
 import lombok.Data;
 
-/**
- * 视障人士信息表
- * @TableName Blind
- */
-@TableName(value ="Blind")
+import java.math.BigDecimal;
+import java.util.Date;
+
+
 @Data
-public class Blind implements Serializable {
+public class BlindLoginSuccessVO {
+
+
     /**
      * 视障人士ID
      */
-    @TableId(type = IdType.ASSIGN_ID)
     private Long blindId;
 
     /**
@@ -46,7 +43,7 @@ public class Blind implements Serializable {
     private String phone;
 
     /**
-     * 密码
+     * 密码,脱敏
      */
     private String password;
 
@@ -68,12 +65,12 @@ public class Blind implements Serializable {
     /**
      * 身份证号
      */
-    private String idCard;
+    private Boolean isIdCard;
 
     /**
      * 残疾人证件号
      */
-    private String disabilityCard;
+    private Boolean isDisabilityCard;
 
     /**
      * 其它信息
@@ -105,22 +102,9 @@ public class Blind implements Serializable {
      */
     private Date locationUpdateTime;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
 
     /**
-     * 信息更新时间
+     * 登录token
      */
-    private Date updateTime;
-
-    /**
-     * 逻辑删除 0-存在 1-删除
-     */
-    @TableLogic
-    private Integer isDelete;
-
-    @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
+    private String token;
 }

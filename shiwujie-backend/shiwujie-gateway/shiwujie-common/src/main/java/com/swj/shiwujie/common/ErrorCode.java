@@ -8,7 +8,7 @@ package com.swj.shiwujie.common;
  */
 
 public enum ErrorCode {
-    PARAMS_ERROR(40000, "请求参数错误(错误或者为空)", ""),
+    PARAMS_ERROR(40000, "请求参数错误", ""),
     NOT_LOGIN(40010, "未登录", ""),
     CHECK_FAILURE(40020,"参数校验失败(包括密码、用户名、账号校验失败)",""),
     NO_AUTH(40030, "无权限", ""),

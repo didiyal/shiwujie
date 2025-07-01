@@ -12,6 +12,7 @@
             <result property="name" column="name" jdbcType="VARCHAR"/>
             <result property="phone" column="phone" jdbcType="CHAR"/>
             <result property="password" column="password" jdbcType="VARCHAR"/>
+            <result property="gender" column="gender" jdbcType="TINYINT"/>
             <result property="wechatId" column="wechat_id" jdbcType="VARCHAR"/>
             <result property="qqId" column="qq_id" jdbcType="VARCHAR"/>
             <result property="idCard" column="id_card" jdbcType="CHAR"/>
@@ -31,10 +32,11 @@
     <sql id="Base_Column_List">
         volunteer_id,community_id,is_actively_joined,
         family_id,name,phone,
-        password,wechat_id,qq_id,
-        id_card,other_info,online_status,
-        help_count,rating,latitude,
-        longitude,location_address,location_update_time,
-        create_time,update_time,is_delete
+        password,gender,wechat_id,
+        qq_id,id_card,other_info,
+        online_status,help_count,rating,
+        latitude,longitude,location_address,
+        location_update_time,create_time,update_time,
+        is_delete
     </sql>
 </mapper>

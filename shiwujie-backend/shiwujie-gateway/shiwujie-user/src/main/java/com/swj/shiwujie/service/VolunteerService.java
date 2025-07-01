@@ -1,5 +1,6 @@
 package com.swj.shiwujie.service;
 
+import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -10,4 +11,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface VolunteerService extends IService<Volunteer> {
 
+
+
+    /**
+     * 通过手机号查询用户信息
+     * @param phone
+     * @return
+     */
+    Volunteer getByPhone(String phone);
 }

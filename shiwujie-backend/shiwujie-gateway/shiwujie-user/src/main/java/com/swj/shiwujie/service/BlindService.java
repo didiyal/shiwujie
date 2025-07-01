@@ -1,7 +1,9 @@
 package com.swj.shiwujie.service;
 
+import com.swj.shiwujie.model.VO.user.BlindLoginSuccessVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.swj.shiwujie.model.request.user.BlindLARRequest;
 
 /**
 * @author Administrator
@@ -10,4 +12,48 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface BlindService extends IService<Blind> {
 
+
+    /**
+     * 手机号一键登录注册
+     * 账号存在,登录
+     * 账号不存在,注册
+     * @param phone
+     * @return
+     */
+    BlindLoginSuccessVO loginAndRegisterQuickly(String phone);
+
+
+
+    /**
+     * 手机号,密码一键登录注册
+     * 账号存在,登录
+     * 账号不存在,注册
+     * @param blindLARRequest
+     * @return
+     */
+    BlindLoginSuccessVO loginAndRegister(BlindLARRequest blindLARRequest);
+
+
+    // ----------------------------------------------------------
+
+    /**
+     * 通过手机号查询用户信息
+     * @param phone
+     * @return
+     */
+    Blind getByPhone(String phone);
+
+
+    /**
+     * 用户注册登录返回信息脱敏
+     * @param newBlind
+     * @return
+     */
+    BlindLoginSuccessVO getLoginSuccessVO(Blind newBlind, String token);
+
+    /**
+     * 登录成功实现令牌生成与redis储存
+     * @param blind
+     */
+    String loginSuccess(Blind blind);
 }
