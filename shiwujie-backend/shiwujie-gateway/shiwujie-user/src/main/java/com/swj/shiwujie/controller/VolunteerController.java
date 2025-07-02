@@ -6,8 +6,8 @@ import cn.hutool.core.util.StrUtil;
 import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
-import com.swj.shiwujie.model.VO.user.VolunteerLoginSuccessVO;
-import com.swj.shiwujie.model.request.user.VolunteerLARRequest;
+import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
+import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.utils.ResultUtils;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
  * 志愿者接口
  */
 @RestController
-@RequestMapping("/user/volunteer")
+@RequestMapping("/volunteer")
 public class VolunteerController {
 
     @Resource
@@ -32,7 +32,7 @@ public class VolunteerController {
      * 测试是否登录
      * @return 登录用户id
      */
-    @GetMapping("/check")
+    @GetMapping("/login/check")
     public BaseResponse<Long> checkLogin(@RequestHeader("Authorization") String token,HttpServletRequest request){
         Long loginUserId = (Long) request.getAttribute("loginUserId");
         if(loginUserId == null){
@@ -50,7 +50,7 @@ public class VolunteerController {
      * @param phone 手机号
      * @return 脱敏后的用户信息
      */
-    @PostMapping("/loginAndRegisterQuickly")
+    @PostMapping("/login/loginAndRegisterQuickly")
     public BaseResponse<VolunteerLoginSuccessVO> loginAndRegisterQuickly(String phone){
         if(StrUtil.isBlankIfStr(phone)){
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"输入数据格式错误");
@@ -70,7 +70,7 @@ public class VolunteerController {
      * @param volunteerLARRequest 用户的手机号与密码
      * @return 脱敏后的用户信息
      */
-    @PostMapping("/loginAndRegister")
+    @PostMapping("/login/loginAndRegister")
     public BaseResponse<VolunteerLoginSuccessVO> loginAndRegister(VolunteerLARRequest volunteerLARRequest){
         if(ObjUtil.hasEmpty(volunteerLARRequest)){
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"输入数据格式错误");

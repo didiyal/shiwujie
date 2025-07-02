@@ -11,11 +11,11 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.mapper.BlindMapper;
 import com.swj.shiwujie.mapper.VolunteerMapper;
-import com.swj.shiwujie.model.VO.user.VolunteerLoginSuccessVO;
+import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.domain.Volunteer;
-import com.swj.shiwujie.model.request.user.VolunteerLARRequest;
+import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.utils.JwtUtils;
@@ -113,7 +113,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         // 密码格式校验
         boolean isMatch = ReUtil.isMatch(PASSWORD_REGEX, password);
         if(!isMatch){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"输入数据格式错误");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"密码必须包含字符和数字");
         }
         String md5Password = SecureUtil.md5(password);// 加密
 

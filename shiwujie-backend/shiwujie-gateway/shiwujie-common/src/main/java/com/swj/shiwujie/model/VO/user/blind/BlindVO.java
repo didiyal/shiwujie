@@ -1,4 +1,4 @@
-package com.swj.shiwujie.model.VO.user;
+package com.swj.shiwujie.model.VO.user.blind;
 
 
 
@@ -9,7 +9,7 @@ import java.util.Date;
 
 
 @Data
-public class BlindLoginSuccessVO {
+public class BlindVO {
 
 
     /**
@@ -103,8 +103,4 @@ public class BlindLoginSuccessVO {
     private Date locationUpdateTime;
 
 
-    /**
-     * 登录token
-     */
-    private String token;
 }

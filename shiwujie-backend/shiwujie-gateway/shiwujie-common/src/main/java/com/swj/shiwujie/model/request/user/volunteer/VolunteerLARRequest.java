@@ -1,4 +1,4 @@
-package com.swj.shiwujie.model.request.user;
+package com.swj.shiwujie.model.request.user.volunteer;
 
 
 import lombok.Data;
@@ -8,7 +8,7 @@ import lombok.Data;
  * @author ldl
  */
 @Data
-public class BlindLARRequest {
+public class VolunteerLARRequest {
 
     /**
      * 手机号

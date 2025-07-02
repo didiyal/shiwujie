@@ -46,12 +46,11 @@ public class BusinessException extends RuntimeException{
     /**
      * 构造方法,使用已存在的错误码,自定义错误描述
      * @param errorCode 错误码
-     * @param description 错误描述
+     * @param message 错误描述
      */
-    public BusinessException(ErrorCode errorCode, String description) {
-        super(errorCode.getMessage());
+    public BusinessException(ErrorCode errorCode, String message) {
+        super(message);
         this.code = errorCode.getCode();
-        this.description = description;
     }
 
     public int getCode(){

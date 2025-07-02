@@ -1,11 +1,11 @@
 package com.swj.shiwujie.service;
 
-import com.swj.shiwujie.model.VO.user.VolunteerLoginSuccessVO;
+import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.swj.shiwujie.model.request.user.VolunteerLARRequest;
+import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 
 /**
 * @author Administrator

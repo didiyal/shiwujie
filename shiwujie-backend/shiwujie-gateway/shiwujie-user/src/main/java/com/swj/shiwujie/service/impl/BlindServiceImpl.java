@@ -1,24 +1,25 @@
 package com.swj.shiwujie.service.impl;
 
-import cn.hutool.core.util.ObjUtil;
-import cn.hutool.core.util.PhoneUtil;
-import cn.hutool.core.util.ReUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.*;
 import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
+import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.BlindMapper;
 import com.swj.shiwujie.mapper.VolunteerMapper;
-import com.swj.shiwujie.model.VO.user.BlindLoginSuccessVO;
+import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
+import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Volunteer;
-import com.swj.shiwujie.model.request.user.BlindLARRequest;
+import com.swj.shiwujie.model.enums.user.GenderEnum;
+import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -114,7 +115,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 密码格式校验
         boolean isMatch = ReUtil.isMatch(PASSWORD_REGEX, password);
         if (!isMatch) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "输入数据格式错误");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
         }
         String md5Password = SecureUtil.md5(password);// 加密
 
@@ -154,6 +155,48 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
             BlindLoginSuccessVO loginSuccessVO = this.getLoginSuccessVO(newBlind, token);
             return loginSuccessVO;
         }
+    }
+
+    /**
+     * 更新用户
+     * 修改用户名,性别,身份证号,残疾人证
+     * 后期可以修改经纬度与位置信息
+     *
+     * @param newBlind 用户更新信息
+     * @return 脱敏后的用户信息
+     */
+    @Override
+    public BlindVO updateBlind(Blind newBlind) {
+        Blind blind = this.getById(newBlind.getBlindId());
+
+        String name = newBlind.getName();
+        if(StrUtil.isNotBlank(name)){
+            blind.setName(name);
+        }
+        Integer gender = newBlind.getGender();
+        if(gender == GenderEnum.MAN.getContent() || gender == GenderEnum.WOMEN.getContent()){
+            blind.setGender(gender);
+        }
+        String idCard = newBlind.getIdCard();
+        if(StrUtil.isNotBlank(idCard)){
+            if(IdcardUtil.isValidCard(idCard))
+                blind.setIdCard(idCard);
+            else
+                throw new BusinessException(ErrorCode.PARAMS_ERROR,"身份证格式错误");
+        }
+        String disabilityCard = newBlind.getDisabilityCard();
+        if(StrUtil.isNotBlank(disabilityCard)){
+            if(ReUtil.isMatch(BLIND_REGEX,disabilityCard))
+                blind.setDisabilityCard(disabilityCard);
+            else
+                throw new BusinessException(ErrorCode.PARAMS_ERROR,"残疾人证格式错误");
+        }
+        // todo 修改经纬度地址信息
+
+        boolean b = this.updateById(blind);
+        ThrowUtils.throwIf(!b,ErrorCode.SYSTEM_ERROR);
+
+        return this.getBlindVO(blind);
     }
 
 
@@ -210,6 +253,21 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
     @Override
     public BlindLoginSuccessVO getLoginSuccessVO(Blind newBlind, String token) {
         BlindLoginSuccessVO res = new BlindLoginSuccessVO();
+        BeanUtils.copyProperties(this.getBlindVO(newBlind),res);
+        res.setToken(token);
+        return res;
+    }
+
+
+    /**
+     * 用户信息脱敏(不含token)
+     *
+     * @param newBlind 盲人信息
+     * @return 脱敏后的信息
+     */
+    @Override
+    public BlindVO getBlindVO(Blind newBlind) {
+        BlindVO res = new BlindVO();
         res.setBlindId(newBlind.getBlindId());
         res.setCommunityId(newBlind.getCommunityId());
         res.setIsActivelyJoined(newBlind.getIsActivelyJoined());
@@ -244,10 +302,8 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         res.setLongitude(newBlind.getLongitude());
         res.setLocationAddress(newBlind.getLocationAddress());
         res.setLocationUpdateTime(newBlind.getLocationUpdateTime());
-        res.setToken(token);
         return res;
     }
-
 
     /**
      * 登录成功实现令牌生成与redis储存
@@ -266,6 +322,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         redisUtils.setToRedis(REDIS_SECRETKEY + "-" + blind.getBlindId(), blind.getBlindId().toString(), 1L);
         return token;
     }
+
 
     // endregion
 }
