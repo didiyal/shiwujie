@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+/**
+ * 视障人士接口
+ */
 @RestController
 @RequestMapping("/user/blind")
 public class BlindController {
@@ -23,9 +26,11 @@ public class BlindController {
     private BlindService blindService;
 
 
+    // region 登录注册相关
+
     /**
      * 测试是否登录
-     * @return
+     * @return 登录用户id
      */
     @GetMapping("/check")
     public BaseResponse<Long> checkLogin(@RequestHeader("Authorization") String token,HttpServletRequest request){
@@ -42,8 +47,8 @@ public class BlindController {
      * 手机号一键登录注册
      * 账号存在,登录
      * 账号不存在,注册
-     * @param phone
-     * @return
+     * @param phone 手机号
+     * @return 脱敏后的用户信息
      */
     @PostMapping("/loginAndRegisterQuickly")
     public BaseResponse<BlindLoginSuccessVO> loginAndRegisterQuickly(String phone){
@@ -62,8 +67,8 @@ public class BlindController {
      * 手机号,密码一键登录注册
      * 账号存在,登录
      * 账号不存在,注册
-     * @param blindLARRequest
-     * @return
+     * @param blindLARRequest 用户的手机号与密码
+     * @return 脱敏后的用户信息
      */
     @PostMapping("/loginAndRegister")
     public BaseResponse<BlindLoginSuccessVO> loginAndRegister(BlindLARRequest blindLARRequest){
@@ -76,4 +81,6 @@ public class BlindController {
         return ResultUtils.success(res);
     }
 
+
+    // endregion
 }

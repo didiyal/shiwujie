@@ -38,7 +38,7 @@ knife4j:
     terms-of-service-url: https://www.shi-wu-jie.com
     group:
       user:
-        group-name: 用户功能
+        group-name: user
         api-rule: package
         api-rule-resources:
           - com.swj.shiwujie.controller
