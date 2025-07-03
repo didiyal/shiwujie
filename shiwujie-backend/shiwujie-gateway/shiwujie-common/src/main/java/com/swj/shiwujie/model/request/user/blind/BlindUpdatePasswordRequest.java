@@ -1,10 +1,13 @@
-package com.swj.shiwujie.model.VO.user.blind;
+package com.swj.shiwujie.model.request.user.blind;
 
 
 import lombok.Data;
 
+/**
+ * 修改密码请求类
+ */
 @Data
-public class BlindUpdatePassword {
+public class BlindUpdatePasswordRequest {
 
 
     /**

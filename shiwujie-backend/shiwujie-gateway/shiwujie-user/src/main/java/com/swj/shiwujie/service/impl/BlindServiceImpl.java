@@ -10,12 +10,12 @@ import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.BlindMapper;
 import com.swj.shiwujie.mapper.VolunteerMapper;
 import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
-import com.swj.shiwujie.model.VO.user.blind.BlindUpdatePassword;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.enums.user.GenderEnum;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
+import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
@@ -152,7 +152,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
      * @return 是否成功
      */
     @Override
-    public boolean updateBlindPassword(BlindUpdatePassword blindUpdatePassword, Long blindId,String loginUserPhone) {
+    public boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword, Long blindId, String loginUserPhone) {
 
         // 校验密码格式
         String newPassword = blindUpdatePassword.getNewPassword();

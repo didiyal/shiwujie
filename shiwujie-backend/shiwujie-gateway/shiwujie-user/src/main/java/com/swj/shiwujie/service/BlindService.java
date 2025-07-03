@@ -1,12 +1,12 @@
 package com.swj.shiwujie.service;
 
 import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
-import com.swj.shiwujie.model.VO.user.blind.BlindUpdatePassword;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
+import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 
 /**
 * @author Administrator
@@ -45,10 +45,17 @@ public interface BlindService extends IService<Blind> {
      * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
-    boolean updateBlindPassword(BlindUpdatePassword blindUpdatePassword,Long blindId,String loginUserPhone);
+    boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword, Long blindId, String loginUserPhone);
 
 
-
+    /**
+     * 更新用户
+     * 修改用户名,性别,身份证号,残疾人证
+     * 后期可以修改经纬度与位置信息
+     * @param blind 用户更新信息
+     * @return 脱敏后的用户信息
+     */
+    BlindVO updateBlind(Blind blind);
 
     // region 工具方法
 
@@ -82,14 +89,6 @@ public interface BlindService extends IService<Blind> {
      */
     String loginSuccess(Blind blind);
 
-    /**
-     * 更新用户
-     * 修改用户名,性别,身份证号,残疾人证
-     * 后期可以修改经纬度与位置信息
-     * @param blind 用户更新信息
-     * @return 脱敏后的用户信息
-     */
-    BlindVO updateBlind(Blind blind);
 
     /**
      * 用户信息脱敏(不含token)

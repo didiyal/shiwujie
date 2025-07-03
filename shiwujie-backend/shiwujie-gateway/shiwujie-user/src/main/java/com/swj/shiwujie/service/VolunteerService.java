@@ -1,19 +1,20 @@
 package com.swj.shiwujie.service;
 
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
+import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Volunteer;
-import com.swj.shiwujie.model.domain.Volunteer;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
+import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
 
 /**
-* @author Administrator
-* @description 针对表【Volunteer(志愿者信息表)】的数据库操作Service
-* @createDate 2025-07-01 00:21:42
-*/
+ * @author Administrator
+ * @description 针对表【Volunteer(视障人士信息表)】的数据库操作Service
+ * @createDate 2025-07-01 00:21:42
+ */
 public interface VolunteerService extends IService<Volunteer> {
-
 
 
     /**
@@ -37,6 +38,26 @@ public interface VolunteerService extends IService<Volunteer> {
     VolunteerLoginSuccessVO loginAndRegister(VolunteerLARRequest volunteerLARRequest);
 
 
+    /**
+     * 修改密码
+     *
+     * @param volunteerUpdatePassword 原密码与要修改的密码
+     * @param volunteerId 登录用户id
+     * @param loginUserPhone 登录用户手机号
+     * @return 是否成功
+     */
+    boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword, Long volunteerId, String loginUserPhone);
+
+
+    /**
+     * 更新用户
+     * 修改用户名,性别,身份证号,残疾人证
+     * 后期可以修改经纬度与位置信息
+     * @param volunteer 用户更新信息
+     * @return 脱敏后的用户信息
+     */
+    VolunteerVO updateVolunteer(Volunteer volunteer);
+
     // region 工具方法
 
     /**
@@ -48,16 +69,15 @@ public interface VolunteerService extends IService<Volunteer> {
 
 
     /**
-     * 通过手机号查询用户(志愿者)信息
-     * @param phone 志愿者手机号
-     * @return 志愿者信息
+     * 通过手机号查询用户(视障人士)信息
+     * @param phone 视障人士手机号
+     * @return 视障人士信息
      */
     Volunteer getByPhone(String phone);
 
-
     /**
      * 用户注册登录返回信息脱敏
-     * @param newVolunteer 返回的志愿者信息
+     * @param newVolunteer 返回的盲人信息
      * @param token 登录token
      * @return 脱敏后的对象
      */
@@ -65,10 +85,20 @@ public interface VolunteerService extends IService<Volunteer> {
 
     /**
      * 登录成功实现令牌生成与redis储存
-     * @param volunteer 志愿者信息
+     * @param volunteer 盲人信息
      * @return token
      */
     String loginSuccess(Volunteer volunteer);
+
+
+    /**
+     * 用户信息脱敏(不含token)
+     * @param volunteer 盲人信息
+     * @return 脱敏后的信息
+     */
+    VolunteerVO getVolunteerVO(Volunteer volunteer);
+
+    boolean validatePassword(String password);
 
 
     // endregion

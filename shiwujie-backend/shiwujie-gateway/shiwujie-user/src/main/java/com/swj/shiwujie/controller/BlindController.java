@@ -12,11 +12,11 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
-import com.swj.shiwujie.model.VO.user.blind.BlindUpdatePassword;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
+import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdateRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.utils.LoginUtils;
@@ -57,7 +57,7 @@ public class BlindController {
      * @return 登录用户id
      */
     @GetMapping("/login/check")
-    public BaseResponse<BlindVO> checkLogin(@RequestHeader("Authorization") String token, HttpServletRequest request) {
+    public BaseResponse<BlindVO> checkLogin(HttpServletRequest request) {
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
         ThrowUtils.throwIf(ObjUtil.isNull(loginBlindId), ErrorCode.NOT_LOGIN, "未登录");
         Blind blind = blindService.getById(loginBlindId);
@@ -105,8 +105,6 @@ public class BlindController {
 
     // endregion
 
-    // todo 实现volunteer的内容,修改volunteer的细节
-    // todo 实现家庭与家庭申请的内容
 
     // region 增删改查
 
@@ -194,7 +192,7 @@ public class BlindController {
      * @return 是否成功
      */
     @PostMapping("/update/password")
-    public BaseResponse<Boolean> updateBlindPassword(BlindUpdatePassword blindUpdatePassword,
+    public BaseResponse<Boolean> updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword,
                                                      HttpServletRequest request) {
         Long blindId = LoginUtils.getLoginBlindId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);

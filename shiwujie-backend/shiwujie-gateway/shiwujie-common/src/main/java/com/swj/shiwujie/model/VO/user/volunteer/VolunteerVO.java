@@ -1,23 +1,25 @@
-package com.swj.shiwujie.model.VO.user.blind;
+package com.swj.shiwujie.model.VO.user.volunteer;
 
 
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
-/**
- * 请求返回类
- */
+
 @Data
-public class BlindVO {
+public class VolunteerVO {
 
 
     /**
-     * 视障人士ID
+     * 志愿者ID
      */
-    private Long blindId;
+    private Long volunteerId;
 
     /**
      * 社区ID
@@ -70,19 +72,24 @@ public class BlindVO {
     private Boolean isIdCard;
 
     /**
-     * 残疾人证件号
-     */
-    private Boolean isDisabilityCard;
-
-    /**
      * 其它信息
      */
     private String otherInfo;
 
     /**
-     * 求助次数
+     * 在线状态（用于区分是否匹配） 0-离线 1-在线 2-忙碌
      */
-    private Long helpRequestCount;
+    private Integer onlineStatus;
+
+    /**
+     * 帮助次数
+     */
+    private Long helpCount;
+
+    /**
+     * 志愿者评分
+     */
+    private BigDecimal rating;
 
     /**
      * 纬度坐标
@@ -103,6 +110,7 @@ public class BlindVO {
      * 位置更新时间
      */
     private Date locationUpdateTime;
+
 
 
 }
