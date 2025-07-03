@@ -2,6 +2,7 @@ package com.swj.shiwujie.interceptor;
 
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
+import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.springframework.http.HttpMethod;
@@ -53,7 +54,6 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         // 提取 token
         String token = header.replace("Bearer ", "");
 
-
         // 如果token为空，返回未登录信息
         if (!StringUtils.hasLength(token)) {
             log.info("请求头Authorization为空,返回未登录的信息");
@@ -62,33 +62,46 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
 
 
 
-        Long userId = null;
+        Long blindId = null;
+        Long volunteerID = null;
+        String phone = null;
         // 解析JWT令牌
         try {
             Map<String, Object> map = JwtUtils.validateToken(token, TOKEN_SECRETKEY, true);
             if((boolean)map.get("isBlind")){
-                userId = Long.parseLong(map.get("blindId").toString());
+                blindId = Long.parseLong(map.get("blindId").toString());
             }else{
-                userId = Long.parseLong(map.get("volunteerId").toString());
+                volunteerID = Long.parseLong(map.get("volunteerId").toString());
             }
+            phone = map.get("phone").toString();
         } catch (Exception e) {
             log.info("解析令牌失败, 返回未登录错误信息");
             throw new BusinessException(ErrorCode.NOT_LOGIN, "未登录");
         }
 
         // 检查 Redis 中的令牌信息
-        Long loginUserId = Long.parseLong((String)redisUtils.getFromRedis(REDIS_SECRETKEY+"-"+userId));
-        if (loginUserId == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN, "未登录");
-        }
+        Object fromRedisObj = redisUtils.getFromRedis(REDIS_SECRETKEY + "-" + (blindId != null ? blindId : volunteerID));
+        ThrowUtils.throwIf(fromRedisObj == null,ErrorCode.NOT_LOGIN, "未登录");
+
+        // 比对token是否相同
+        String tokenFromRedis = (String) fromRedisObj;
+        ThrowUtils.throwIf(!token.equals(tokenFromRedis),ErrorCode.NOT_LOGIN, "未登录");
+
 
         // 续期 Redis 中的用户信息
-        redisUtils.renewKey(userId+"-"+REDIS_SECRETKEY, 1L); // 续期 24 小时
+        redisUtils.renewKey(REDIS_SECRETKEY+"-"+ (blindId != null ? blindId:volunteerID), 1L); // 续期 24 小时
 
 
 
         // 将用户信息添加到请求中
-        req.setAttribute("loginUserId", loginUserId);
+        if(blindId!=null)
+
+            req.setAttribute("loginBlindId", blindId);
+        else
+            req.setAttribute("loginVolunteerId",volunteerID);
+
+        req.setAttribute("phone",phone);
+
         // 放行请求
         return true;
     }

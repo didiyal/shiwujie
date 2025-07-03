@@ -1,6 +1,8 @@
 package com.swj.shiwujie.constants;
 
 
+import java.util.regex.Pattern;
+
 /**
  * JWT常量
  */
@@ -21,10 +23,11 @@ public interface UserConstants {
 
     /**
      * 用户密码匹配正则表达式
+     * 预编译正则表达式，提高性能
      */
-    String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{1,}$";
-
-
+    Pattern PASSWORD_REGEX = Pattern.compile(
+            "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z0-9]+$"
+    );
 
     /**
      * 残疾人证匹配正则表达式

@@ -6,9 +6,12 @@ import cn.hutool.core.util.StrUtil;
 import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
+import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
+import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.service.VolunteerService;
+import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,10 +37,10 @@ public class VolunteerController {
      */
     @GetMapping("/login/check")
     public BaseResponse<Long> checkLogin(@RequestHeader("Authorization") String token,HttpServletRequest request){
-        Long loginUserId = (Long) request.getAttribute("loginUserId");
-        if(loginUserId == null){
-            throw new BusinessException(ErrorCode.NOT_LOGIN,"未登录");
-        }
+        Long loginUserId = LoginUtils.getLoginVolunteerId(request);
+        ThrowUtils.throwIf(loginUserId == null,ErrorCode.NOT_LOGIN,"未登录");
+        Volunteer volunteer = volunteerService.getById(loginUserId);
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer),ErrorCode.PARAMS_ERROR,"用户不存在");
         return ResultUtils.success(loginUserId);
     }
 

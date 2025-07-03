@@ -1,6 +1,7 @@
 package com.swj.shiwujie.service;
 
 import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
+import com.swj.shiwujie.model.VO.user.blind.BlindUpdatePassword;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -34,6 +35,19 @@ public interface BlindService extends IService<Blind> {
      * @return 脱敏后的用户信息
      */
     BlindLoginSuccessVO loginAndRegister(BlindLARRequest blindLARRequest);
+
+
+    /**
+     * 修改密码
+     *
+     * @param blindUpdatePassword 原密码与要修改的密码
+     * @param blindId 登录用户id
+     * @param loginUserPhone 登录用户手机号
+     * @return 是否成功
+     */
+    boolean updateBlindPassword(BlindUpdatePassword blindUpdatePassword,Long blindId,String loginUserPhone);
+
+
 
 
     // region 工具方法
@@ -83,6 +97,8 @@ public interface BlindService extends IService<Blind> {
      * @return 脱敏后的信息
      */
     BlindVO getBlindVO(Blind blind);
+
+    boolean validatePassword(String password);
 
 
     // endregion

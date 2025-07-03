@@ -24,23 +24,3 @@ mybatis-plus:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
       logic-delete-value: 1 # 逻辑已删除值(默认为 1)
       logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
-knife4j:
-  enable: true
-  openapi:
-    title: 用户模块文档
-    description: "登录注册,家庭,用户操作"
-    email: 2198005977@qq.com
-    concat: ldl
-    url: https://www.shi-wu-jie.com
-    version: v4.0
-    license: Apache 2.0
-    license-url: https://www.shi-wu-jie.com
-    terms-of-service-url: https://www.shi-wu-jie.com
-    group:
-      user:
-        group-name: user
-        api-rule: package
-        api-rule-resources:
-          - com.swj.shiwujie.controller
-  setting:
-    enable-reload-cache-parameter: true

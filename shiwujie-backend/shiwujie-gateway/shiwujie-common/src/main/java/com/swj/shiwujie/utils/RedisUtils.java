@@ -34,6 +34,16 @@ public class RedisUtils {
         return ops.get(key);
     }
 
+
+    /**
+     * 删除存储在 Redis 中的数据
+     * @param key
+     * @return
+     */
+    public Object removeToRedis(String key) {
+        return redisTemplate.delete(key);
+    }
+
     /**
      * 存储数据到 Redis，设置过期时间,天
      * @param key
