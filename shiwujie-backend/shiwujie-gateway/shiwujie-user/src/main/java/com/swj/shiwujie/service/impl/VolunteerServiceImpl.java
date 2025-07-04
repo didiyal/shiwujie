@@ -10,6 +10,7 @@ import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.BlindMapper;
 import com.swj.shiwujie.mapper.VolunteerMapper;
 import com.swj.shiwujie.mapper.VolunteerMapper;
+import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.Blind;
@@ -27,7 +28,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
@@ -149,12 +152,11 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
      * 修改密码
      *
      * @param volunteerUpdatePassword 原密码与要修改的密码
-     * @param volunteerId 登录用户id
      * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
     @Override
-    public boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword, Long volunteerId, String loginUserPhone) {
+    public boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword, String loginUserPhone) {
 
         // 校验密码格式
         String newPassword = volunteerUpdatePassword.getNewPassword();
@@ -166,7 +168,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
 
 
         synchronized (loginUserPhone.intern()) {
-            Volunteer volunteer = this.getById(volunteerId);
+            Volunteer volunteer = this.getById(volunteerUpdatePassword.getVolunteerId());
             ThrowUtils.throwIf(StrUtil.isBlank(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
             //检查原密码
             String md5OriginPassword = SecureUtil.md5(originPassword);
@@ -358,6 +360,33 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
 
         Matcher matcher = PASSWORD_REGEX.matcher(password);
         return matcher.matches();
+    }
+
+
+
+    /**
+     * 通过家庭id获取成员信息
+     *
+     * @param familyId 家庭id
+     * @return 志愿者信息
+     */
+    @Override
+    public List<VolunteerVO> getVolunteerVOListByFamilyId(Long familyId) {
+        if(ObjUtil.isNull(familyId)){
+            return null;
+        }
+
+        QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
+        volunteerQueryWrapper.eq("family_id",familyId);
+        List<Volunteer> volunteerList = this.list(volunteerQueryWrapper);
+
+        List<VolunteerVO> volunteerVOList = new ArrayList<>();
+        for (Volunteer volunteer : volunteerList) {
+            VolunteerVO volunteerVO = this.getVolunteerVO(volunteer);
+            volunteerVOList.add(volunteerVO);
+        }
+
+        return volunteerVOList;
     }
     // endregion
 }

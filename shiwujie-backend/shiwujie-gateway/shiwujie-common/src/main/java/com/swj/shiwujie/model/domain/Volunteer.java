@@ -23,6 +23,7 @@ public class Volunteer implements Serializable {
     /**
      * 社区ID
      */
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private Long communityId;
 
     /**
@@ -33,6 +34,7 @@ public class Volunteer implements Serializable {
     /**
      * 家庭ID
      */
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private Long familyId;
 
     /**

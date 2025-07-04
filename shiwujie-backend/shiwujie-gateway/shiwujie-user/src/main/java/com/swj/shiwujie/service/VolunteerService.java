@@ -1,5 +1,6 @@
 package com.swj.shiwujie.service;
 
+import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.Blind;
@@ -8,6 +9,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
+
+import java.util.List;
 
 /**
  * @author Administrator
@@ -42,11 +45,10 @@ public interface VolunteerService extends IService<Volunteer> {
      * 修改密码
      *
      * @param volunteerUpdatePassword 原密码与要修改的密码
-     * @param volunteerId 登录用户id
      * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
-    boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword, Long volunteerId, String loginUserPhone);
+    boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword, String loginUserPhone);
 
 
     /**
@@ -98,7 +100,20 @@ public interface VolunteerService extends IService<Volunteer> {
      */
     VolunteerVO getVolunteerVO(Volunteer volunteer);
 
+    /**
+     * 校验密码格式是否正确
+     * @param password 密码
+     * @return 是否正确
+     */
     boolean validatePassword(String password);
+
+
+    /**
+     * 通过家庭id获取成员信息
+     * @param familyId 家庭id
+     * @return 志愿者信息
+     */
+    List<VolunteerVO> getVolunteerVOListByFamilyId(Long familyId);
 
 
     // endregion

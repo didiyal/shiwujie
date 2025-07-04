@@ -187,13 +187,12 @@ public class VolunteerController {
     @PostMapping("/update/password")
     public BaseResponse<Boolean> updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword,
                                                          HttpServletRequest request) {
-        Long volunteerId = LoginUtils.getLoginVolunteerId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
         //鉴空
         ThrowUtils.throwIf(ObjUtil.hasEmpty(volunteerUpdatePassword), ErrorCode.PARAMS_ERROR);
 
 
-        boolean result = volunteerService.updateVolunteerPassword(volunteerUpdatePassword,volunteerId,loginUserPhone);
+        boolean result = volunteerService.updateVolunteerPassword(volunteerUpdatePassword,loginUserPhone);
 
 
         return ResultUtils.success(result);
@@ -217,7 +216,7 @@ public class VolunteerController {
         // 脱敏
         VolunteerVO res = volunteerService.getVolunteerVO(volunteer);
 
-        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.OPERATION_ERROR);
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.PARAMS_ERROR,"用户不存在");
         return ResultUtils.success(res);
     }
 

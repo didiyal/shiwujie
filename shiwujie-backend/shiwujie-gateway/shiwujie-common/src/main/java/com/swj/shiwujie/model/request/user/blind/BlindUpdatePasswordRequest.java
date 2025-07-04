@@ -9,6 +9,10 @@ import lombok.Data;
 @Data
 public class BlindUpdatePasswordRequest {
 
+    /**
+     * 盲人id
+     */
+    private Long blindId;
 
     /**
      * 密码

@@ -25,7 +25,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
@@ -147,12 +149,11 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
      * 修改密码
      *
      * @param blindUpdatePassword 原密码与要修改的密码
-     * @param blindId 登录用户id
      * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
     @Override
-    public boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword, Long blindId, String loginUserPhone) {
+    public boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword,  String loginUserPhone) {
 
         // 校验密码格式
         String newPassword = blindUpdatePassword.getNewPassword();
@@ -164,7 +165,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
 
 
         synchronized (loginUserPhone.intern()) {
-            Blind blind = this.getById(blindId);
+            Blind blind = this.getById(blindUpdatePassword.getBlindId());
             ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
             //检查原密码
             String md5OriginPassword = SecureUtil.md5(originPassword);
@@ -367,6 +368,31 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
 
         Matcher matcher = PASSWORD_REGEX.matcher(password);
         return matcher.matches();
+    }
+
+    /**
+     * 通过家庭id获取成员信息
+     *
+     * @param familyId 家庭id
+     * @return 盲人信息
+     */
+    @Override
+    public List<BlindVO> getBlindListByFamilyId(Long familyId) {
+        if(ObjUtil.isNull(familyId)){
+            return null;
+        }
+
+        QueryWrapper<Blind> blindQueryWrapper = new QueryWrapper<>();
+        blindQueryWrapper.eq("family_id",familyId);
+        List<Blind> blindList = this.list(blindQueryWrapper);
+
+        List<BlindVO> blindVOList = new ArrayList<>();
+        for (Blind blind : blindList) {
+            BlindVO blindVO = this.getBlindVO(blind);
+            blindVOList.add(blindVO);
+        }
+
+        return blindVOList;
     }
     // endregion
 }

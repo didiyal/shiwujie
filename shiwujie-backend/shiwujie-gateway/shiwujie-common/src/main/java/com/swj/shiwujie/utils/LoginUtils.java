@@ -21,9 +21,6 @@ public class LoginUtils {
      */
     public static Long getLoginBlindId(HttpServletRequest request) {
         Long loginUserId = (Long)request.getAttribute("loginBlindId");
-        if(loginUserId==null){
-            throw new BusinessException(ErrorCode.NOT_LOGIN,"未登录");
-        }
         return loginUserId;
     }
 
@@ -36,9 +33,6 @@ public class LoginUtils {
      */
     public static Long getLoginVolunteerId(HttpServletRequest request) {
         Long loginUserId = (Long)request.getAttribute("loginVolunteerId");
-        if(loginUserId==null){
-            throw new BusinessException(ErrorCode.NOT_LOGIN,"未登录");
-        }
         return loginUserId;
     }
 
@@ -51,9 +45,6 @@ public class LoginUtils {
      */
     public static String getLoginUserPhone(HttpServletRequest request) {
         String phone = (String)request.getAttribute("phone");
-        if(phone==null){
-            throw new BusinessException(ErrorCode.NOT_LOGIN,"未登录");
-        }
         return phone;
     }
 

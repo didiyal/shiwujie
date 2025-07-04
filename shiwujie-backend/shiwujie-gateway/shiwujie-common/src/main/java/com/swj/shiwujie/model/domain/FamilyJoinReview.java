@@ -22,11 +22,13 @@ public class FamilyJoinReview implements Serializable {
     /**
      * 视障人士ID
      */
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private Long blindId;
 
     /**
      * 志愿者ID
      */
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     private Long volunteerId;
 
     /**

@@ -8,6 +8,8 @@ import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 
+import java.util.List;
+
 /**
 * @author Administrator
 * @description 针对表【Blind(视障人士信息表)】的数据库操作Service
@@ -41,11 +43,10 @@ public interface BlindService extends IService<Blind> {
      * 修改密码
      *
      * @param blindUpdatePassword 原密码与要修改的密码
-     * @param blindId 登录用户id
      * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
-    boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword, Long blindId, String loginUserPhone);
+    boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword,  String loginUserPhone);
 
 
     /**
@@ -97,7 +98,21 @@ public interface BlindService extends IService<Blind> {
      */
     BlindVO getBlindVO(Blind blind);
 
+
+    /**
+     * 校验密码格式是否正确
+     * @param password 密码
+     * @return 是否正确
+     */
     boolean validatePassword(String password);
+
+
+    /**
+     * 通过家庭id获取成员信息
+     * @param familyId 家庭id
+     * @return 盲人信息
+     */
+    List<BlindVO> getBlindListByFamilyId(Long familyId);
 
 
     // endregion

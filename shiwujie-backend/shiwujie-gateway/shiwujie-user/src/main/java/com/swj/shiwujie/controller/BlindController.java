@@ -194,13 +194,12 @@ public class BlindController {
     @PostMapping("/update/password")
     public BaseResponse<Boolean> updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword,
                                                      HttpServletRequest request) {
-        Long blindId = LoginUtils.getLoginBlindId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
         //鉴空
         ThrowUtils.throwIf(ObjUtil.hasEmpty(blindUpdatePassword), ErrorCode.PARAMS_ERROR);
 
 
-        boolean result = blindService.updateBlindPassword(blindUpdatePassword,blindId,loginUserPhone);
+        boolean result = blindService.updateBlindPassword(blindUpdatePassword,loginUserPhone);
 
 
         return ResultUtils.success(result);
@@ -224,7 +223,7 @@ public class BlindController {
         // 脱敏
         BlindVO res = blindService.getBlindVO(blind);
 
-        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.OPERATION_ERROR);
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR,"用户不存在");
         return ResultUtils.success(res);
     }
 
