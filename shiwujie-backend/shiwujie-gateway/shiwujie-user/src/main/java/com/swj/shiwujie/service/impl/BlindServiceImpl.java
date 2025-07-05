@@ -64,30 +64,29 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 手机号合法校验
         ThrowUtils.throwIf(!PhoneUtil.isPhone(phone), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
 
-        // 加锁
-        synchronized (phone.intern()) {
-            // 有账号直接登录
-            Blind blind = this.getByPhone(phone);
-            if (ObjUtil.isNotNull(blind)) {
-                //生成token并存入redis
-                String token = this.loginSuccess(blind);
-                return this.getLoginSuccessVO(blind, token);
-            }
 
-            // 无账号,查询手机是否注册了另一张表
-            Volunteer volunteer = this.getVolunteerByPhone(phone);
-            ThrowUtils.throwIf(ObjUtil.isNotNull(volunteer), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
-
-            // 无账号自动注册
-            Blind newBlind = new Blind();
-            newBlind.setPhone(phone);
-            boolean save = this.save(newBlind);
-            ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
-
+        // 有账号直接登录
+        Blind blind = this.getByPhone(phone);
+        if (ObjUtil.isNotNull(blind)) {
             //生成token并存入redis
-            String token = this.loginSuccess(newBlind);
-            return this.getLoginSuccessVO(newBlind, token);
+            String token = this.loginSuccess(blind);
+            return this.getLoginSuccessVO(blind, token);
         }
+
+        // 无账号,查询手机是否注册了另一张表
+        Volunteer volunteer = this.getVolunteerByPhone(phone);
+        ThrowUtils.throwIf(ObjUtil.isNotNull(volunteer), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
+
+        // 无账号自动注册
+        Blind newBlind = new Blind();
+        newBlind.setPhone(phone);
+        boolean save = this.save(newBlind);
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
+
+        //生成token并存入redis
+        String token = this.loginSuccess(newBlind);
+        return this.getLoginSuccessVO(newBlind, token);
+
 
     }
 
@@ -112,48 +111,46 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         ThrowUtils.throwIf(!isMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
         String md5Password = SecureUtil.md5(password);// 加密
 
-        synchronized (phone.intern()) {
 
-            // 有账号直接登录
-            Blind blind = this.getByPhone(phone);
-            if (ObjUtil.isNotNull(blind)) {
+        // 有账号直接登录
+        Blind blind = this.getByPhone(phone);
+        if (ObjUtil.isNotNull(blind)) {
 
-                //校验密码是否正确
-                String blindPassword = blind.getPassword();
-                ThrowUtils.throwIf(!md5Password.equals(blindPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
-
-                //生成token并存入redis
-                String token = this.loginSuccess(blind);
-                return this.getLoginSuccessVO(blind, token);
-            }
-
-            // 无账号,查询手机是否注册了另一张表
-            Volunteer volunteer = this.getVolunteerByPhone(phone);
-            ThrowUtils.throwIf(ObjUtil.isNotNull(volunteer), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
-
-            // 无账号自动注册
-            Blind newBlind = new Blind();
-            newBlind.setPhone(phone);
-            newBlind.setPassword(md5Password);
-            boolean save = this.save(newBlind);
-            ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
-
+            //校验密码是否正确
+            String blindPassword = blind.getPassword();
+            ThrowUtils.throwIf(!md5Password.equals(blindPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
 
             //生成token并存入redis
-            String token = this.loginSuccess(newBlind);
-            return this.getLoginSuccessVO(newBlind, token);
+            String token = this.loginSuccess(blind);
+            return this.getLoginSuccessVO(blind, token);
         }
+
+        // 无账号,查询手机是否注册了另一张表
+        Volunteer volunteer = this.getVolunteerByPhone(phone);
+        ThrowUtils.throwIf(ObjUtil.isNotNull(volunteer), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
+
+        // 无账号自动注册
+        Blind newBlind = new Blind();
+        newBlind.setPhone(phone);
+        newBlind.setPassword(md5Password);
+        boolean save = this.save(newBlind);
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
+
+
+        //生成token并存入redis
+        String token = this.loginSuccess(newBlind);
+        return this.getLoginSuccessVO(newBlind, token);
+
     }
 
     /**
      * 修改密码
      *
      * @param blindUpdatePassword 原密码与要修改的密码
-     * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
     @Override
-    public boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword,  String loginUserPhone) {
+    public boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword) {
 
         // 校验密码格式
         String newPassword = blindUpdatePassword.getNewPassword();
@@ -164,21 +161,19 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         ThrowUtils.throwIf(!(isOriginMatch && isNewMatch), ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
 
 
-        synchronized (loginUserPhone.intern()) {
-            Blind blind = this.getById(blindUpdatePassword.getBlindId());
-            ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
-            //检查原密码
-            String md5OriginPassword = SecureUtil.md5(originPassword);
-            ThrowUtils.throwIf(!md5OriginPassword.equals(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+        Blind blind = this.getById(blindUpdatePassword.getBlindId());
+        ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
+        //检查原密码
+        String md5OriginPassword = SecureUtil.md5(originPassword);
+        ThrowUtils.throwIf(!md5OriginPassword.equals(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
 
 
-            // 密码加密更新
-            blind.setPassword(SecureUtil.md5(newPassword));
+        // 密码加密更新
+        blind.setPassword(SecureUtil.md5(newPassword));
 
 
-            boolean result = this.updateById(blind);
-            ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
-        }
+        boolean result = this.updateById(blind);
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
 
         return true;
@@ -193,43 +188,41 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
      * @return 脱敏后的用户信息
      */
     @Override
-    public BlindVO updateBlind(Blind newBlind) {
+    public boolean updateBlind(Blind newBlind) {
 
 
-        synchronized (newBlind.getPhone().intern()){
-            Blind blind = this.getById(newBlind.getBlindId());
-            ThrowUtils.throwIf(ObjUtil.isNull(blind),ErrorCode.PARAMS_ERROR,"修改用户不存在");
+        Blind blind = this.getById(newBlind.getBlindId());
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "修改用户不存在");
 
-            String name = newBlind.getName();
-            if (StrUtil.isNotBlank(name)) {
-                blind.setName(name);
-            }
-            Integer gender = newBlind.getGender();
-            if (gender == GenderEnum.MAN.getContent() || gender == GenderEnum.WOMEN.getContent()) {
-                blind.setGender(gender);
-            }
-            String idCard = newBlind.getIdCard();
-            if (StrUtil.isNotBlank(idCard)) {
-                if (IdcardUtil.isValidCard(idCard))
-                    blind.setIdCard(SecureUtil.md5(idCard));
-                else
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "身份证格式错误");
-            }
-            String disabilityCard = newBlind.getDisabilityCard();
-            if (StrUtil.isNotBlank(disabilityCard)) {
-                if (ReUtil.isMatch(BLIND_REGEX, disabilityCard))
-                    blind.setDisabilityCard(SecureUtil.md5(disabilityCard));
-                else
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "残疾人证格式错误");
-            }
-
-            // todo 修改经纬度地址信息
-
-            boolean b = this.updateById(blind);
-            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
-
-            return this.getBlindVO(blind);
+        String name = newBlind.getName();
+        if (StrUtil.isNotBlank(name)) {
+            blind.setName(name);
         }
+        Integer gender = newBlind.getGender();
+        if (gender == GenderEnum.MAN.getContent() || gender == GenderEnum.WOMEN.getContent()) {
+            blind.setGender(gender);
+        }
+        String idCard = newBlind.getIdCard();
+        if (StrUtil.isNotBlank(idCard)) {
+            if (IdcardUtil.isValidCard(idCard))
+                blind.setIdCard(SecureUtil.md5(idCard));
+            else
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "身份证格式错误");
+        }
+        String disabilityCard = newBlind.getDisabilityCard();
+        if (StrUtil.isNotBlank(disabilityCard)) {
+            if (ReUtil.isMatch(BLIND_REGEX, disabilityCard))
+                blind.setDisabilityCard(SecureUtil.md5(disabilityCard));
+            else
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "残疾人证格式错误");
+        }
+
+        // todo 修改经纬度地址信息
+
+        boolean b = this.updateById(blind);
+        ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+
+        return true;
 
 
     }
@@ -344,7 +337,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         Map<String, Object> jwtMap = new HashMap<>();
         jwtMap.put("blindId", blind.getBlindId());
         jwtMap.put("isBlind", true);
-        jwtMap.put("phone",blind.getPhone());
+        jwtMap.put("phone", blind.getPhone());
         String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
 
         redisUtils.setToRedis(REDIS_SECRETKEY + "-" + blind.getBlindId(), token, 1L);
@@ -378,12 +371,12 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
      */
     @Override
     public List<BlindVO> getBlindListByFamilyId(Long familyId) {
-        if(ObjUtil.isNull(familyId)){
+        if (ObjUtil.isNull(familyId)) {
             return null;
         }
 
         QueryWrapper<Blind> blindQueryWrapper = new QueryWrapper<>();
-        blindQueryWrapper.eq("family_id",familyId);
+        blindQueryWrapper.eq("family_id", familyId);
         List<Blind> blindList = this.list(blindQueryWrapper);
 
         List<BlindVO> blindVOList = new ArrayList<>();

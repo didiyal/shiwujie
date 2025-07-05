@@ -31,6 +31,17 @@ public interface FamilyService extends IService<Family> {
      */
     boolean deleteFamily(Long loginVolunteerId, String loginUserPhone);
 
+
+    /**
+     * 申请加入家庭
+     * @param familyId 家庭id
+     * @param loginBlindId 加入盲人信息
+     * @param loginVolunteerId 加入志愿者信息
+     * @param loginUserPhone 登录手机号
+     * @return 是否申请成功
+     */
+    boolean joinFamily(Long familyId, Long loginBlindId, Long loginVolunteerId, String loginUserPhone);
+
     // region 工具方法
 
     /**
@@ -44,10 +55,9 @@ public interface FamilyService extends IService<Family> {
      * 更新家庭信息
      * @param familyUpdateRequest 家庭id,更新信息
      * @param loginVolunteerId 家主id
-     * @param loginUserPhone 家主手机号
      * @return 更新后的脱敏家庭信息
      */
-    FamilyVO updateFamily(FamilyUpdateRequest familyUpdateRequest, Long loginVolunteerId, String loginUserPhone);
+    boolean updateFamily(FamilyUpdateRequest familyUpdateRequest, Long loginVolunteerId);
 
 
     /**
@@ -67,6 +77,8 @@ public interface FamilyService extends IService<Family> {
      * @return
      */
     boolean userLeaveFromFamily(Long loginBlindId, Long loginVolunteerId, String loginUserPhone);
+
+
 
 
     // endregion

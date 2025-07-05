@@ -20,6 +20,12 @@ public class FamilyJoinReview implements Serializable {
     private Long reviewId;
 
     /**
+     * 家庭id
+     */
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
+    private Long familyId;
+
+    /**
      * 视障人士ID
      */
     @TableField(updateStrategy = FieldStrategy.IGNORED)

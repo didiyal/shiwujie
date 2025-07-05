@@ -45,10 +45,9 @@ public interface VolunteerService extends IService<Volunteer> {
      * 修改密码
      *
      * @param volunteerUpdatePassword 原密码与要修改的密码
-     * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
-    boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword, String loginUserPhone);
+    boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword);
 
 
     /**
@@ -58,7 +57,16 @@ public interface VolunteerService extends IService<Volunteer> {
      * @param volunteer 用户更新信息
      * @return 脱敏后的用户信息
      */
-    VolunteerVO updateVolunteer(Volunteer volunteer);
+    boolean updateVolunteer(Volunteer volunteer);
+
+
+
+
+
+
+
+
+
 
     // region 工具方法
 

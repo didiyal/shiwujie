@@ -1,5 +1,6 @@
 package com.swj.shiwujie.service.impl;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -11,10 +12,12 @@ import com.swj.shiwujie.model.VO.user.family.FamilyVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Family;
+import com.swj.shiwujie.model.domain.FamilyJoinReview;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.family.FamilyRemoveUserRequest;
 import com.swj.shiwujie.model.request.user.family.FamilyUpdateRequest;
 import com.swj.shiwujie.service.BlindService;
+import com.swj.shiwujie.service.FamilyJoinReviewService;
 import com.swj.shiwujie.service.FamilyService;
 import com.swj.shiwujie.mapper.FamilyMapper;
 import com.swj.shiwujie.service.VolunteerService;
@@ -39,6 +42,9 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
 
     @Resource
     private BlindService blindService;
+
+    @Resource
+    private FamilyJoinReviewService familyJoinReviewService;
 
 
     /**
@@ -119,19 +125,63 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
         }
     }
 
+    /**
+     * 申请加入家庭
+     *
+     * @param familyId         家庭id
+     * @param loginBlindId     加入盲人信息
+     * @param loginVolunteerId 加入志愿者信息
+     * @param loginUserPhone   登录手机号
+     * @return 是否申请成功
+     */
+    @Override
+    public boolean joinFamily(Long familyId, Long loginBlindId, Long loginVolunteerId, String loginUserPhone) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(familyId),ErrorCode.PARAMS_ERROR,"家庭信息不能为空");
+
+
+
+        // 校验用户
+        if(ObjUtil.isNotNull(loginBlindId)){
+
+            FamilyJoinReview familyJoinReview = new FamilyJoinReview();
+            familyJoinReview.setFamilyId(familyId);
+            familyJoinReview.setBlindId(loginBlindId);
+            familyJoinReview.setApplyTime(DateUtil.date());
+
+            boolean save = familyJoinReviewService.save(familyJoinReview);
+            ThrowUtils.throwIf(!save,ErrorCode.SYSTEM_ERROR);
+        } else if (ObjUtil.isNotNull(loginVolunteerId)) {
+            // 家主不能申请加入自己的家庭
+            Family family = this.getById(familyId);
+            ThrowUtils.throwIf(loginVolunteerId.equals(family.getCreatorVolunteerId()),
+                    ErrorCode.PARAMS_ERROR,"家主不能加入自己的家庭");
+
+            // 创建申请信息
+            FamilyJoinReview familyJoinReview = new FamilyJoinReview();
+            familyJoinReview.setFamilyId(familyId);
+            familyJoinReview.setVolunteerId(loginVolunteerId);
+            familyJoinReview.setApplyTime(DateUtil.date());
+
+            boolean save = familyJoinReviewService.save(familyJoinReview);
+            ThrowUtils.throwIf(!save,ErrorCode.SYSTEM_ERROR);
+        }
+
+        return true;
+
+
+    }
+
 
     /**
      * 更新家庭信息
      *
      * @param familyUpdateRequest 家庭id,更新信息
      * @param loginVolunteerId    家主id
-     * @param loginUserPhone      家主手机号
      * @return 更新后的脱敏家庭信息
      */
     @Override
-    public FamilyVO updateFamily(FamilyUpdateRequest familyUpdateRequest, Long loginVolunteerId, String loginUserPhone) {
+    public boolean updateFamily(FamilyUpdateRequest familyUpdateRequest, Long loginVolunteerId) {
 
-        synchronized (loginUserPhone.intern()) {
             Long familyId = familyUpdateRequest.getFamilyId();
             Family family = this.getById(familyId);
 
@@ -151,8 +201,8 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
             boolean b = this.updateById(family);
             ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
-            return this.getFamilyVO(family);
-        }
+            return true;
+
 
     }
 
@@ -181,12 +231,12 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
             if (ObjUtil.isNotNull(blindId)) {
                 Blind blind = blindService.getById(blindId);
                 blind.setFamilyId(null);
-                boolean save = blindService.save(blind);
+                boolean save = blindService.updateById(blind);
                 ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR);
             } else if (ObjUtil.isNotNull(volunteerId)) {
                 Volunteer volunteer = volunteerService.getById(volunteerId);
                 volunteer.setFamilyId(null);
-                boolean save = volunteerService.save(volunteer);
+                boolean save = volunteerService.updateById(volunteer);
                 ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR);
             }
 

@@ -12,6 +12,7 @@ import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
+import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePhoneRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdateRequest;
 import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.utils.LoginUtils;
@@ -100,7 +101,7 @@ public class VolunteerController {
     // region 增删改查
 
     /**
-     * 删除用户
+     * 删除用户(管理与用户皆可)
      *
      * @param volunteerId 用户id
      * @return 是否成功
@@ -127,19 +128,17 @@ public class VolunteerController {
      * @return 脱敏后的用户信息
      */
     @PostMapping("/update")
-    public BaseResponse<VolunteerVO> updateVolunteer(@RequestBody VolunteerUpdateRequest volunteerUpdateRequest,HttpServletRequest request) {
+    public BaseResponse<Boolean> updateVolunteer(@RequestBody VolunteerUpdateRequest volunteerUpdateRequest, HttpServletRequest request) {
         //校验参数是否为空
         ThrowUtils.throwIf(ObjUtil.isNull(volunteerUpdateRequest) || volunteerUpdateRequest.getVolunteerId() == null,
                 ErrorCode.PARAMS_ERROR);
         // 只能自己修改自己的数据
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
-        ThrowUtils.throwIf(!Objects.equals(loginVolunteerId, volunteerUpdateRequest.getVolunteerId()),ErrorCode.PARAMS_ERROR,"操作用户错误");
+        ThrowUtils.throwIf(!Objects.equals(loginVolunteerId, volunteerUpdateRequest.getVolunteerId()), ErrorCode.PARAMS_ERROR, "操作用户错误");
 
         Volunteer volunteer = new Volunteer();
         BeanUtils.copyProperties(volunteerUpdateRequest, volunteer);
-        volunteer.setPhone(loginUserPhone);
-        VolunteerVO result = volunteerService.updateVolunteer(volunteer);
+        Boolean result = volunteerService.updateVolunteer(volunteer);
 
         return ResultUtils.success(result);
     }
@@ -147,33 +146,31 @@ public class VolunteerController {
     /**
      * 修改手机号
      *
-     * @param phone   要修改的手机号
-     * @param request 请求
+     * @param volunteerUpdatePhoneRequest 要修改的手机号
+     * @param request                     请求
      * @return 脱敏后的用户信息
      */
     @PostMapping("/update/phone")
-    public BaseResponse<VolunteerVO> updateVolunteerPhone(String phone,
-                                                  HttpServletRequest request) {
+    public BaseResponse<Boolean> updateVolunteerPhone(VolunteerUpdatePhoneRequest volunteerUpdatePhoneRequest,
+                                                      HttpServletRequest request) {
         // 校验参数
-        Long volunteerId = LoginUtils.getLoginVolunteerId(request);
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
+        Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
+        Long volunteerId = volunteerUpdatePhoneRequest.getVolunteerId();
+        ThrowUtils.throwIf(!Objects.equals(loginVolunteerId, volunteerId), ErrorCode.PARAMS_ERROR, "只能修改自己的手机号");
+
+        String phone = volunteerUpdatePhoneRequest.getPhone();
         ThrowUtils.throwIf(!PhoneUtil.isPhone(phone), ErrorCode.PARAMS_ERROR, "手机号格式错误");
 
 
-        synchronized (loginUserPhone.intern()) {
-            Volunteer volunteer = volunteerService.getById(volunteerId);
+        Volunteer volunteer = volunteerService.getById(volunteerId);
 
-            // 更新
-            volunteer.setPhone(phone);
-            boolean b = volunteerService.updateById(volunteer);
-            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+        // 更新
+        volunteer.setPhone(phone);
+        boolean b = volunteerService.updateById(volunteer);
+        ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
-            VolunteerVO result = volunteerService.getVolunteerVO(volunteer);
+        return ResultUtils.success(true);
 
-
-
-            return ResultUtils.success(result);
-        }
 
     }
 
@@ -181,18 +178,15 @@ public class VolunteerController {
      * 修改密码
      *
      * @param volunteerUpdatePassword 原密码与要修改的密码
-     * @param request             请求
      * @return 是否成功
      */
     @PostMapping("/update/password")
-    public BaseResponse<Boolean> updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword,
-                                                         HttpServletRequest request) {
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
+    public BaseResponse<Boolean> updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword) {
         //鉴空
         ThrowUtils.throwIf(ObjUtil.hasEmpty(volunteerUpdatePassword), ErrorCode.PARAMS_ERROR);
 
 
-        boolean result = volunteerService.updateVolunteerPassword(volunteerUpdatePassword,loginUserPhone);
+        boolean result = volunteerService.updateVolunteerPassword(volunteerUpdatePassword);
 
 
         return ResultUtils.success(result);
@@ -207,16 +201,16 @@ public class VolunteerController {
      * @param volunteerId 用户id
      * @return 脱敏后的用户信息
      */
-    @GetMapping("/get/id")
-    public BaseResponse<VolunteerVO> getVolunteerById(Long volunteerId,
-                                              HttpServletRequest request) {
+    @GetMapping("/get/id/vo")
+    public BaseResponse<VolunteerVO> getVolunteerVOById(Long volunteerId,
+                                                        HttpServletRequest request) {
         ThrowUtils.throwIf(volunteerId == null || volunteerId <= 0, ErrorCode.PARAMS_ERROR);
 
         Volunteer volunteer = volunteerService.getById(volunteerId);
         // 脱敏
         VolunteerVO res = volunteerService.getVolunteerVO(volunteer);
 
-        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.PARAMS_ERROR,"用户不存在");
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.PARAMS_ERROR, "用户不存在");
         return ResultUtils.success(res);
     }
 

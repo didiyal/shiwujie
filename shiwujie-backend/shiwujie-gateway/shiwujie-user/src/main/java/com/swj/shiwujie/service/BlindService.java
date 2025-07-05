@@ -43,10 +43,9 @@ public interface BlindService extends IService<Blind> {
      * 修改密码
      *
      * @param blindUpdatePassword 原密码与要修改的密码
-     * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
-    boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword,  String loginUserPhone);
+    boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword);
 
 
     /**
@@ -56,7 +55,7 @@ public interface BlindService extends IService<Blind> {
      * @param blind 用户更新信息
      * @return 脱敏后的用户信息
      */
-    BlindVO updateBlind(Blind blind);
+    boolean updateBlind(Blind blind);
 
     // region 工具方法
 

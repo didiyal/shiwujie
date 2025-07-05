@@ -65,6 +65,7 @@ public class FamilyController {
      * @return 是否成功
      */
     @DeleteMapping("/delete/family")
+    @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> deleteFamily(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
@@ -85,12 +86,9 @@ public class FamilyController {
      * @return 更新后脱敏后的家庭信息
      */
     @PutMapping("/update")
-    public BaseResponse<FamilyVO> updateFamily(FamilyUpdateRequest familyUpdateRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> updateFamily(FamilyUpdateRequest familyUpdateRequest, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
-        ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
-
 
         //2. 校验传入数据是否合法
         Long familyId = familyUpdateRequest.getFamilyId();
@@ -98,7 +96,7 @@ public class FamilyController {
         ThrowUtils.throwIf(ObjUtil.isNull(familyId),ErrorCode.PARAMS_ERROR);
 
         //3. 检验
-        FamilyVO result = familyService.updateFamily(familyUpdateRequest,loginVolunteerId,loginUserPhone);
+        Boolean result = familyService.updateFamily(familyUpdateRequest,loginVolunteerId);
 
 
         return ResultUtils.success(result);
@@ -140,8 +138,8 @@ public class FamilyController {
      * @return 脱敏后的家庭信息
      */
 
-    @GetMapping("/get/id")
-    public BaseResponse<FamilyVO> getFamilyById(Long familyId, HttpServletRequest request) {
+    @GetMapping("/get/id/vo")
+    public BaseResponse<FamilyVO> getFamilyVOById(Long familyId, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
 
@@ -163,7 +161,8 @@ public class FamilyController {
      * @return 脱敏后的家庭信息
      */
     @PostMapping("/join")
-    public BaseResponse<String> joinFamily(String familyId, HttpServletRequest request){
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResponse<Boolean> joinFamily(Long familyId, HttpServletRequest request){
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
@@ -171,9 +170,9 @@ public class FamilyController {
 
 
         //3.处理
-//        familyService.joinFamily(familyId,loginBlindId,loginVolunteerId,loginUserPhone);
+        Boolean b = familyService.joinFamily(familyId, loginBlindId, loginVolunteerId, loginUserPhone);
 
-        return ResultUtils.success("等待审核中");
+        return ResultUtils.success(b);
 
     }
 

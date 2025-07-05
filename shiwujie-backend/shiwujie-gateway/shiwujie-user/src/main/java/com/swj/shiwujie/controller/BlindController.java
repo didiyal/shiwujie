@@ -17,6 +17,7 @@ import com.swj.shiwujie.model.domain.Blind;
 import com.swj.shiwujie.model.domain.Volunteer;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
+import com.swj.shiwujie.model.request.user.blind.BlindUpdatePhoneRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdateRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.utils.LoginUtils;
@@ -108,8 +109,10 @@ public class BlindController {
 
     // region 增删改查
 
+
+
     /**
-     * 删除用户
+     * 删除用户(管理员用户皆可使用)
      *
      * @param blindId 用户id
      * @return 是否成功
@@ -127,6 +130,7 @@ public class BlindController {
         return ResultUtils.success(true);
     }
 
+
     /**
      * 更新用户
      * 修改用户名,性别,身份证号,残疾人证
@@ -135,20 +139,18 @@ public class BlindController {
      * @param blindUpdateRequest 用户更新信息
      * @return 脱敏后的用户信息
      */
-    @PostMapping("/update")
-    public BaseResponse<BlindVO> updateBlind(@RequestBody BlindUpdateRequest blindUpdateRequest,HttpServletRequest request) {
+    @PutMapping("/update")
+    public BaseResponse<Boolean> updateBlind(@RequestBody BlindUpdateRequest blindUpdateRequest, HttpServletRequest request) {
         //校验参数是否为空
         ThrowUtils.throwIf(ObjUtil.isNull(blindUpdateRequest) || blindUpdateRequest.getBlindId() == null,
                 ErrorCode.PARAMS_ERROR);
         // 只能自己修改自己的数据
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
-        ThrowUtils.throwIf(!Objects.equals(loginBlindId, blindUpdateRequest.getBlindId()),ErrorCode.PARAMS_ERROR,"操作用户错误");
+        ThrowUtils.throwIf(!Objects.equals(loginBlindId, blindUpdateRequest.getBlindId()), ErrorCode.PARAMS_ERROR, "操作用户错误");
 
         Blind blind = new Blind();
         BeanUtils.copyProperties(blindUpdateRequest, blind);
-        blind.setPhone(loginUserPhone);
-        BlindVO result = blindService.updateBlind(blind);
+        Boolean result = blindService.updateBlind(blind);
 
         return ResultUtils.success(result);
     }
@@ -156,31 +158,32 @@ public class BlindController {
     /**
      * 修改手机号
      *
-     * @param phone   要修改的手机号
+     * @param blindUpdatePhoneRequest   要修改的手机号
      * @param request 请求
      * @return 脱敏后的用户信息
      */
     @PostMapping("/update/phone")
-    public BaseResponse<BlindVO> updateBlindPhone(String phone,
+    public BaseResponse<Boolean> updateBlindPhone(BlindUpdatePhoneRequest blindUpdatePhoneRequest,
                                                   HttpServletRequest request) {
         // 校验参数
-        Long blindId = LoginUtils.getLoginBlindId(request);
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
+        Long loginBlindId = LoginUtils.getLoginBlindId(request);
+        Long blindId = blindUpdatePhoneRequest.getBlindId();
+        ThrowUtils.throwIf(!Objects.equals(loginBlindId, blindId), ErrorCode.PARAMS_ERROR, "只能修改自己的手机号");
+
+        String phone = blindUpdatePhoneRequest.getPhone();
         ThrowUtils.throwIf(!PhoneUtil.isPhone(phone), ErrorCode.PARAMS_ERROR, "手机号格式错误");
 
 
-        synchronized (loginUserPhone.intern()) {
-            Blind blind = blindService.getById(blindId);
+        Blind blind = blindService.getById(blindId);
 
-            // 更新
-            blind.setPhone(phone);
-            boolean b = blindService.updateById(blind);
-            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+        // 更新
+        blind.setPhone(phone);
+        boolean b = blindService.updateById(blind);
+        ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
-            BlindVO result = blindService.getBlindVO(blind);
 
-            return ResultUtils.success(result);
-        }
+        return ResultUtils.success(true);
+
 
     }
 
@@ -188,18 +191,15 @@ public class BlindController {
      * 修改密码
      *
      * @param blindUpdatePassword 原密码与要修改的密码
-     * @param request             请求
      * @return 是否成功
      */
     @PostMapping("/update/password")
-    public BaseResponse<Boolean> updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword,
-                                                     HttpServletRequest request) {
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
+    public BaseResponse<Boolean> updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword) {
         //鉴空
         ThrowUtils.throwIf(ObjUtil.hasEmpty(blindUpdatePassword), ErrorCode.PARAMS_ERROR);
 
 
-        boolean result = blindService.updateBlindPassword(blindUpdatePassword,loginUserPhone);
+        boolean result = blindService.updateBlindPassword(blindUpdatePassword);
 
 
         return ResultUtils.success(result);
@@ -209,26 +209,26 @@ public class BlindController {
 
 
     /**
-     * 根据ID查询用户
+     * 根据ID查询用户封装类
      *
      * @param blindId 用户id
      * @return 脱敏后的用户信息
      */
-    @GetMapping("/get/id")
-    public BaseResponse<BlindVO> getBlindById(Long blindId,
-                                              HttpServletRequest request) {
+    @GetMapping("/get/id/vo")
+    public BaseResponse<BlindVO> getBlindVOById(Long blindId) {
         ThrowUtils.throwIf(blindId == null || blindId <= 0, ErrorCode.PARAMS_ERROR);
 
         Blind blind = blindService.getById(blindId);
         // 脱敏
         BlindVO res = blindService.getBlindVO(blind);
 
-        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR,"用户不存在");
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "用户不存在");
         return ResultUtils.success(res);
     }
 
 
     // endregion
+
 
     /**
      * 加入社区
@@ -238,8 +238,7 @@ public class BlindController {
      * @return 是否成功
      */
     @GetMapping("/community/join")
-    public BaseResponse<Boolean> joinCommunity(Long communityId,
-                                               HttpServletRequest request) {
+    public BaseResponse<Boolean> joinCommunity(Long communityId, HttpServletRequest request) {
 
         Long blindId = LoginUtils.getLoginBlindId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
@@ -254,6 +253,11 @@ public class BlindController {
             return ResultUtils.success(true);
         }
     }
+
+
+
+
+
 
 
 }

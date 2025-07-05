@@ -67,30 +67,29 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         // 手机号合法校验
         ThrowUtils.throwIf(!PhoneUtil.isPhone(phone), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
 
-        // 加锁
-        synchronized (phone.intern()) {
-            // 有账号直接登录
-            Volunteer volunteer = this.getByPhone(phone);
-            if (ObjUtil.isNotNull(volunteer)) {
-                //生成token并存入redis
-                String token = this.loginSuccess(volunteer);
-                return this.getLoginSuccessVO(volunteer, token);
-            }
 
-            // 无账号,查询手机是否注册了另一张表
-            Blind blind = this.getBlindByPhone(phone);
-            ThrowUtils.throwIf(ObjUtil.isNotNull(blind), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
-
-            // 无账号自动注册
-            Volunteer newVolunteer = new Volunteer();
-            newVolunteer.setPhone(phone);
-            boolean save = this.save(newVolunteer);
-            ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
-
+        // 有账号直接登录
+        Volunteer volunteer = this.getByPhone(phone);
+        if (ObjUtil.isNotNull(volunteer)) {
             //生成token并存入redis
-            String token = this.loginSuccess(newVolunteer);
-            return this.getLoginSuccessVO(newVolunteer, token);
+            String token = this.loginSuccess(volunteer);
+            return this.getLoginSuccessVO(volunteer, token);
         }
+
+        // 无账号,查询手机是否注册了另一张表
+        Blind blind = this.getBlindByPhone(phone);
+        ThrowUtils.throwIf(ObjUtil.isNotNull(blind), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
+
+        // 无账号自动注册
+        Volunteer newVolunteer = new Volunteer();
+        newVolunteer.setPhone(phone);
+        boolean save = this.save(newVolunteer);
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
+
+        //生成token并存入redis
+        String token = this.loginSuccess(newVolunteer);
+        return this.getLoginSuccessVO(newVolunteer, token);
+
 
     }
 
@@ -115,48 +114,46 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         ThrowUtils.throwIf(!isMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
         String md5Password = SecureUtil.md5(password);// 加密
 
-        synchronized (phone.intern()) {
 
-            // 有账号直接登录
-            Volunteer volunteer = this.getByPhone(phone);
-            if (ObjUtil.isNotNull(volunteer)) {
+        // 有账号直接登录
+        Volunteer volunteer = this.getByPhone(phone);
+        if (ObjUtil.isNotNull(volunteer)) {
 
-                //校验密码是否正确
-                String volunteerPassword = volunteer.getPassword();
-                ThrowUtils.throwIf(!md5Password.equals(volunteerPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
-
-                //生成token并存入redis
-                String token = this.loginSuccess(volunteer);
-                return this.getLoginSuccessVO(volunteer, token);
-            }
-
-            // 无账号,查询手机是否注册了另一张表
-            Blind blind = this.getBlindByPhone(phone);
-            ThrowUtils.throwIf(ObjUtil.isNotNull(blind), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
-
-            // 无账号自动注册
-            Volunteer newVolunteer = new Volunteer();
-            newVolunteer.setPhone(phone);
-            newVolunteer.setPassword(md5Password);
-            boolean save = this.save(newVolunteer);
-            ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
-
+            //校验密码是否正确
+            String volunteerPassword = volunteer.getPassword();
+            ThrowUtils.throwIf(!md5Password.equals(volunteerPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
 
             //生成token并存入redis
-            String token = this.loginSuccess(newVolunteer);
-            return this.getLoginSuccessVO(newVolunteer, token);
+            String token = this.loginSuccess(volunteer);
+            return this.getLoginSuccessVO(volunteer, token);
         }
+
+        // 无账号,查询手机是否注册了另一张表
+        Blind blind = this.getBlindByPhone(phone);
+        ThrowUtils.throwIf(ObjUtil.isNotNull(blind), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
+
+        // 无账号自动注册
+        Volunteer newVolunteer = new Volunteer();
+        newVolunteer.setPhone(phone);
+        newVolunteer.setPassword(md5Password);
+        boolean save = this.save(newVolunteer);
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
+
+
+        //生成token并存入redis
+        String token = this.loginSuccess(newVolunteer);
+        return this.getLoginSuccessVO(newVolunteer, token);
+
     }
 
     /**
      * 修改密码
      *
      * @param volunteerUpdatePassword 原密码与要修改的密码
-     * @param loginUserPhone 登录用户手机号
      * @return 是否成功
      */
     @Override
-    public boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword, String loginUserPhone) {
+    public boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword) {
 
         // 校验密码格式
         String newPassword = volunteerUpdatePassword.getNewPassword();
@@ -167,21 +164,19 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         ThrowUtils.throwIf(!(isOriginMatch && isNewMatch), ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
 
 
-        synchronized (loginUserPhone.intern()) {
-            Volunteer volunteer = this.getById(volunteerUpdatePassword.getVolunteerId());
-            ThrowUtils.throwIf(StrUtil.isBlank(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
-            //检查原密码
-            String md5OriginPassword = SecureUtil.md5(originPassword);
-            ThrowUtils.throwIf(!md5OriginPassword.equals(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+        Volunteer volunteer = this.getById(volunteerUpdatePassword.getVolunteerId());
+        ThrowUtils.throwIf(StrUtil.isBlank(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
+        //检查原密码
+        String md5OriginPassword = SecureUtil.md5(originPassword);
+        ThrowUtils.throwIf(!md5OriginPassword.equals(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
 
 
-            // 密码加密更新
-            volunteer.setPassword(SecureUtil.md5(newPassword));
+        // 密码加密更新
+        volunteer.setPassword(SecureUtil.md5(newPassword));
 
 
-            boolean result = this.updateById(volunteer);
-            ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
-        }
+        boolean result = this.updateById(volunteer);
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
 
         return true;
@@ -196,35 +191,34 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
      * @return 脱敏后的用户信息
      */
     @Override
-    public VolunteerVO updateVolunteer(Volunteer newVolunteer) {
+    public boolean updateVolunteer(Volunteer newVolunteer) {
 
-        synchronized (newVolunteer.getPhone().intern()){
-            Volunteer volunteer = this.getById(newVolunteer.getVolunteerId());
-            ThrowUtils.throwIf(ObjUtil.isNull(volunteer),ErrorCode.PARAMS_ERROR,"修改用户不存在");
 
-            String name = newVolunteer.getName();
-            if (StrUtil.isNotBlank(name)) {
-                volunteer.setName(name);
-            }
-            Integer gender = newVolunteer.getGender();
-            if (gender == GenderEnum.MAN.getContent() || gender == GenderEnum.WOMEN.getContent()) {
-                volunteer.setGender(gender);
-            }
-            String idCard = newVolunteer.getIdCard();
-            if (StrUtil.isNotBlank(idCard)) {
-                if (IdcardUtil.isValidCard(idCard))
-                    volunteer.setIdCard(SecureUtil.md5(idCard));
-                else
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "身份证格式错误");
-            }
+        Volunteer volunteer = this.getById(newVolunteer.getVolunteerId());
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.PARAMS_ERROR, "修改用户不存在");
 
-            // todo 修改经纬度地址信息
-
-            boolean b = this.updateById(volunteer);
-            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
-
-            return this.getVolunteerVO(volunteer);
+        String name = newVolunteer.getName();
+        if (StrUtil.isNotBlank(name)) {
+            volunteer.setName(name);
         }
+        Integer gender = newVolunteer.getGender();
+        if (gender == GenderEnum.MAN.getContent() || gender == GenderEnum.WOMEN.getContent()) {
+            volunteer.setGender(gender);
+        }
+        String idCard = newVolunteer.getIdCard();
+        if (StrUtil.isNotBlank(idCard)) {
+            if (IdcardUtil.isValidCard(idCard))
+                volunteer.setIdCard(SecureUtil.md5(idCard));
+            else
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "身份证格式错误");
+        }
+
+        // todo 修改经纬度地址信息
+
+        boolean b = this.updateById(volunteer);
+        ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+
+        return true;
 
 
     }
@@ -269,7 +263,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
      * 用户注册登录返回信息脱敏
      *
      * @param newVolunteer 返回的盲人信息
-     * @param token    登录token
+     * @param token        登录token
      * @return 脱敏后的对象
      */
     @Override
@@ -334,7 +328,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         Map<String, Object> jwtMap = new HashMap<>();
         jwtMap.put("volunteerId", volunteer.getVolunteerId());
         jwtMap.put("isBlind", false);
-        jwtMap.put("phone",volunteer.getPhone());
+        jwtMap.put("phone", volunteer.getPhone());
         String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
 
         redisUtils.setToRedis(REDIS_SECRETKEY + "-" + volunteer.getVolunteerId(), token, 1L);
@@ -363,7 +357,6 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
     }
 
 
-
     /**
      * 通过家庭id获取成员信息
      *
@@ -372,12 +365,12 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
      */
     @Override
     public List<VolunteerVO> getVolunteerVOListByFamilyId(Long familyId) {
-        if(ObjUtil.isNull(familyId)){
+        if (ObjUtil.isNull(familyId)) {
             return null;
         }
 
         QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
-        volunteerQueryWrapper.eq("family_id",familyId);
+        volunteerQueryWrapper.eq("family_id", familyId);
         List<Volunteer> volunteerList = this.list(volunteerQueryWrapper);
 
         List<VolunteerVO> volunteerVOList = new ArrayList<>();
