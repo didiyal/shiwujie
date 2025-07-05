@@ -95,6 +95,21 @@ public class VolunteerController {
     }
 
 
+
+    /**
+     * 注销登录
+     *
+     * @return 是否成功
+     */
+    @GetMapping("/login/logout")
+    public BaseResponse<Boolean> logout(HttpServletRequest request) {
+        Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
+
+        redisUtils.removeToRedis(REDIS_SECRETKEY+"-volunteer-" + loginVolunteerId);
+
+        return ResultUtils.success(true);
+    }
+
     // endregion
 
 

@@ -331,7 +331,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         jwtMap.put("phone", volunteer.getPhone());
         String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
 
-        redisUtils.setToRedis(REDIS_SECRETKEY + "-" + volunteer.getVolunteerId(), token, 1L);
+        redisUtils.setToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId(), token, 1L);
 
 
         return token;

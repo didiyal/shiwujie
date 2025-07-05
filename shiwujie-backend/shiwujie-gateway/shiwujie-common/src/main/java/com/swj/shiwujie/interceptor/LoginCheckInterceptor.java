@@ -80,7 +80,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         }
 
         // 检查 Redis 中的令牌信息
-        Object fromRedisObj = redisUtils.getFromRedis(REDIS_SECRETKEY + "-" + (blindId != null ? blindId : volunteerID));
+        Object fromRedisObj = redisUtils.getFromRedis(REDIS_SECRETKEY +  (blindId != null ? "-blind-"+blindId : "-volunteer-"+volunteerID));
         ThrowUtils.throwIf(fromRedisObj == null,ErrorCode.NOT_LOGIN, "未登录");
 
         // 比对token是否相同

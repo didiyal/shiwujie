@@ -60,7 +60,7 @@ public class BlindController {
     @GetMapping("/login/check")
     public BaseResponse<BlindVO> checkLogin(HttpServletRequest request) {
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
-        ThrowUtils.throwIf(ObjUtil.isNull(loginBlindId), ErrorCode.NOT_LOGIN, "未登录");
+
         Blind blind = blindService.getById(loginBlindId);
         ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "用户不存在");
         return ResultUtils.success(blindService.getBlindVO(blind));
@@ -101,6 +101,22 @@ public class BlindController {
         BlindLoginSuccessVO res = blindService.loginAndRegister(blindLARRequest);
 
         return ResultUtils.success(res);
+    }
+
+
+
+    /**
+     * 注销登录
+     *
+     * @return 是否成功
+     */
+    @GetMapping("/login/logout")
+    public BaseResponse<Boolean> logout(HttpServletRequest request) {
+        Long loginBlindId = LoginUtils.getLoginBlindId(request);
+
+        redisUtils.removeToRedis(REDIS_SECRETKEY+"-blind-" + loginBlindId);
+
+        return ResultUtils.success(true);
     }
 
 
