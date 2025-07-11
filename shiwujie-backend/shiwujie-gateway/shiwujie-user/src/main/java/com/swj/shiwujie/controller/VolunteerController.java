@@ -117,20 +117,20 @@ public class VolunteerController {
 
     /**
      * 删除用户(管理与用户皆可)
-     *
+     * 同时删除家庭信息
      * @param volunteerId 用户id
      * @return 是否成功
      */
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteVolunteer(Long volunteerId) {
+    public BaseResponse<Boolean> deleteVolunteer(Long volunteerId,HttpServletRequest request) {
         //校验id是否合法
         ThrowUtils.throwIf(ObjUtil.isNull(volunteerId) || volunteerId <= 0, ErrorCode.PARAMS_ERROR);
+        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
+        // 检测是否有家庭账号,有把家庭解除
 
-        boolean b = volunteerService.removeById(volunteerId);
-        ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+        volunteerService.deleteVolunteer(volunteerId,loginUserPhone);
 
 
-        redisUtils.removeToRedis(REDIS_SECRETKEY + "-" + volunteerId);
         return ResultUtils.success(true);
     }
 

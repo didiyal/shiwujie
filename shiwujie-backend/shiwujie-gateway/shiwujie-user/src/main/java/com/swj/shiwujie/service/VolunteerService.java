@@ -60,10 +60,13 @@ public interface VolunteerService extends IService<Volunteer> {
     boolean updateVolunteer(Volunteer volunteer);
 
 
-
-
-
-
+    /**
+     * 删除志愿者(同时删除创建的家庭)
+     * @param volunteerId 志愿者id
+     * @param loginUserPhone 登录手机号
+     * @return 是否成功
+     */
+    boolean deleteVolunteer(Long volunteerId, String loginUserPhone);
 
 
 
@@ -122,6 +125,8 @@ public interface VolunteerService extends IService<Volunteer> {
      * @return 志愿者信息
      */
     List<VolunteerVO> getVolunteerVOListByFamilyId(Long familyId);
+
+
 
 
     // endregion

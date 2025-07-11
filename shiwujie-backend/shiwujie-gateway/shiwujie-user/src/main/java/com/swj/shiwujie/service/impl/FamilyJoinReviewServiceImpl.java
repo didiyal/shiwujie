@@ -69,26 +69,25 @@ public class FamilyJoinReviewServiceImpl extends ServiceImpl<FamilyJoinReviewMap
                 // 成功
                 review.setReviewStatus(FamilyReviewStatusEnum.PASSED.getReviewStatus());
                 review.setReviewTime(DateUtil.date());
+                // 用户设置家庭id字段
+                Long blindId = review.getBlindId();
+                Long volunteerId = review.getVolunteerId();
+                Long familyId = review.getFamilyId();
+                if (ObjUtil.isNotNull(blindId)) {
+                    Blind blind = blindMapper.selectById(blindId);
+                    blind.setFamilyId(familyId);
+                    blindMapper.updateById(blind);
+                } else if (ObjUtil.isNotNull(volunteerId)) {
+                    Volunteer volunteer = volunteerMapper.selectById(volunteerId);
+                    volunteer.setFamilyId(familyId);
+                    volunteerMapper.updateById(volunteer);
+                }
             } else {
                 // 失败
                 review.setReviewStatus(FamilyReviewStatusEnum.REJECTED.getReviewStatus());
                 review.setReviewTime(DateUtil.date());
             }
 
-
-            // 用户设置家庭id字段
-            Long blindId = review.getBlindId();
-            Long volunteerId = review.getVolunteerId();
-            Long familyId = review.getFamilyId();
-            if (ObjUtil.isNotNull(blindId)) {
-                Blind blind = blindMapper.selectById(blindId);
-                blind.setFamilyId(familyId);
-                blindMapper.updateById(blind);
-            } else if (ObjUtil.isNotNull(volunteerId)) {
-                Volunteer volunteer = volunteerMapper.selectById(volunteerId);
-                volunteer.setFamilyId(familyId);
-                volunteerMapper.updateById(volunteer);
-            }
 
             boolean b = this.updateById(review);
             ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);

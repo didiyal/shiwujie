@@ -24,7 +24,7 @@ import java.util.List;
 
 
 /**
- * 家庭接口
+ * 审核表接口
  *
  * @author ldl
  */
@@ -45,7 +45,7 @@ public class FamilyJoinReviewController {
      * 更新审核信息
      *
      * @param familyJoinReviewUpdateRequest 审核更新内容
-     * @param request                       请求
+     * @param request   请求
      * @return 是否成功
      */
     @PutMapping("/update")

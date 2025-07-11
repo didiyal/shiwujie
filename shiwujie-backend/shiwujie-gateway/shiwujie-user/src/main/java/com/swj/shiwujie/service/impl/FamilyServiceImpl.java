@@ -120,7 +120,6 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
 
 
 
-            log.debug("---------------------"+b);
             return this.removeById(familyId);
         }
     }

@@ -78,7 +78,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
 
         // 无账号,查询手机是否注册了另一张表
         Blind blind = this.getBlindByPhone(phone);
-        ThrowUtils.throwIf(ObjUtil.isNotNull(blind), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
+        ThrowUtils.throwIf(ObjUtil.isNotNull(blind), ErrorCode.PARAMS_ERROR, "该手机号已被注册盲人");
 
         // 无账号自动注册
         Volunteer newVolunteer = new Volunteer();
@@ -130,7 +130,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
 
         // 无账号,查询手机是否注册了另一张表
         Blind blind = this.getBlindByPhone(phone);
-        ThrowUtils.throwIf(ObjUtil.isNotNull(blind), ErrorCode.PARAMS_ERROR, "该手机号已被注册志愿者");
+        ThrowUtils.throwIf(ObjUtil.isNotNull(blind), ErrorCode.PARAMS_ERROR, "该手机号已被注册盲人");
 
         // 无账号自动注册
         Volunteer newVolunteer = new Volunteer();
@@ -221,6 +221,53 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         return true;
 
 
+    }
+
+    /**
+     * 删除志愿者(同时删除创建的家庭)
+     *
+     * @param volunteerId    志愿者id
+     * @param loginUserPhone 登录手机号
+     * @return 是否成功
+     */
+    @Override
+    public boolean deleteVolunteer(Long volunteerId, String loginUserPhone) {
+
+        // 检测是否有家庭
+        Volunteer volunteer = this.getById(volunteerId);
+        Long familyId = volunteer.getFamilyId();
+        synchronized (loginUserPhone.intern()){
+            if(ObjUtil.isNotNull(familyId)){
+                // 删除家庭,删除家庭中成员的familyId信息
+                QueryWrapper<Blind> blindQueryWrapper = new QueryWrapper<>();
+                blindQueryWrapper.eq("family_id", familyId);
+                List<Blind> blindList = blindMapper.selectList(blindQueryWrapper);
+                for (Blind blind : blindList) {
+                    blind.setFamilyId(null);
+                    blindMapper.updateById(blind);
+                }
+
+
+                QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
+                volunteerQueryWrapper.eq("family_id", familyId);
+                List<Volunteer> volunteerList = this.list(volunteerQueryWrapper);
+                for (Volunteer volunteer1 : volunteerList) {
+                    // 家主不修改familyID字段
+                    if(!volunteer1.getVolunteerId().equals(volunteerId)){
+                        volunteer1.setFamilyId(null);
+                    }
+                }
+                boolean b = this.updateBatchById(volunteerList);
+            }
+
+            boolean b = this.removeById(volunteerId);
+            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+
+            redisUtils.removeToRedis(REDIS_SECRETKEY + "-" + volunteerId);
+        }
+
+
+        return true;
     }
 
 
