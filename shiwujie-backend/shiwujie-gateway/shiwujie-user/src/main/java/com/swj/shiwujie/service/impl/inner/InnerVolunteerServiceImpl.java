@@ -20,7 +20,7 @@ import javax.annotation.Resource;
  * @description 针对表【Volunteer(视障人士信息表)】的数据库操作Service实现
  * @createDate 2025-07-01 00:21:42
  */
-//@DubboService
+@DubboService
 public class InnerVolunteerServiceImpl implements InnerVolunteerService {
 
     @Resource

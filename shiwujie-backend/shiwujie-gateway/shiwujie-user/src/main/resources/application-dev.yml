@@ -20,14 +20,4 @@ logging:
   level:
     com.swj.shiwujie: DEBUG
     org.springframework.web.socket: DEBUG
-#dubbo配置
-dubbo:
-  application:
-    name: shiwujie-user-provider
-    logger: slf4j
-  protocol:
-    name: tri
-    port: 50052
-    serialization: hessian2
-  registry:
-    address: http://43.139.38.62:8848/nacos?username=nacos&password=nacos
+

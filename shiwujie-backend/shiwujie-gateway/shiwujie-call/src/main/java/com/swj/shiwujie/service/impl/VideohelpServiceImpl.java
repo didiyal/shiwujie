@@ -16,6 +16,7 @@ import com.swj.shiwujie.mapper.VideohelpMapper;
 import com.swj.shiwujie.socket.CoordinationSocketHandler;
 import com.swj.shiwujie.utils.ConverterUtils;
 import com.swj.shiwujie.utils.RedisUtils;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +34,7 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
     implements VideohelpService{
 
 
-//    @DubboReference
+    @DubboReference
     private InnerVolunteerService innerVolunteerService;
 
     @Resource
@@ -164,8 +165,7 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
             SocketData socketData = new SocketData();
             socketData.setRequestType(2);
             socketData.setBlindPhone(loginUserPhone);
-//            socketData.setVolunteerPhone(innerVolunteerService.getById(volunteerId).getPhone());
-            socketData.setVolunteerPhone("19872250169");
+            socketData.setVolunteerPhone(innerVolunteerService.getById(volunteerId).getPhone());
             socketData.setChannelId(volunteerId);
             coordinationSocketHandler.matchSuccess(socketData);
 

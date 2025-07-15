@@ -20,12 +20,3 @@ logging:
   level:
     com.swj.shiwujie: DEBUG
     org.springframework.web.socket: DEBUG
-#dubbo配置
-dubbo:
-  application:
-    name: shiwujie-call-consumer
-    logger: slf4j
-    qos-port: 33330
-    serialize-check-status: DISABLE
-  registry:
-    address: http://43.139.38.62:8848/nacos?username=nacos&password=nacos
