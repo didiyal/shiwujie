@@ -1,4 +1,4 @@
-package com.swj.shiwujie.model.domain;
+package com.swj.shiwujie.model.domain.user;
 
 import com.baomidou.mybatisplus.annotation.*;
 

@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.swj.shiwujie.mapper.VolunteerMapper">
 
-    <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.Volunteer">
+    <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.user.Volunteer">
             <id property="volunteerId" column="volunteer_id" jdbcType="BIGINT"/>
             <result property="communityId" column="community_id" jdbcType="BIGINT"/>
             <result property="isActivelyJoined" column="is_actively_joined" jdbcType="TINYINT"/>

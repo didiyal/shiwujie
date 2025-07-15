@@ -26,7 +26,7 @@ dubbo:
     name: shiwujie-user-provider
     logger: slf4j
   protocol:
-    name: dubbo
+    name: tri
     port: 50052
     serialization: hessian2
   registry:

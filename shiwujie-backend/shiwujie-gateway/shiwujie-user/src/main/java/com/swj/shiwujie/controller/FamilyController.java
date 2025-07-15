@@ -6,7 +6,7 @@ import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.family.FamilyVO;
-import com.swj.shiwujie.model.domain.Family;
+import com.swj.shiwujie.model.domain.user.Family;
 import com.swj.shiwujie.model.request.user.family.FamilyRemoveUserRequest;
 import com.swj.shiwujie.model.request.user.family.FamilyUpdateRequest;
 import com.swj.shiwujie.service.FamilyService;

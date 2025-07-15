@@ -1,7 +1,7 @@
 package com.swj.shiwujie.service;
 
 import com.swj.shiwujie.model.VO.user.familyJoinReview.FamilyJoinReviewVO;
-import com.swj.shiwujie.model.domain.FamilyJoinReview;
+import com.swj.shiwujie.model.domain.user.FamilyJoinReview;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.request.user.familyJoinReview.FamilyJoinReviewUpdateRequest;
 

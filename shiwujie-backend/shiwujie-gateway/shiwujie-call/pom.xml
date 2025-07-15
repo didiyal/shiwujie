@@ -81,30 +81,17 @@
         </dependency>
 
 
-
-
         <!--        websocket-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
-        <!--netty 配置-->
+
+        <!-- netty -->
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.42.Final</version>
-        </dependency>
-        <!--        macOS的netty环境-->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-resolver-dns-native-macos</artifactId>
-            <scope>runtime</scope>
-            <classifier>osx-aarch_64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.java-websocket</groupId>
-            <artifactId>Java-WebSocket</artifactId>
-            <version>1.5.3</version>
+            <version>4.1.50.Final</version>
         </dependency>
     </dependencies>
 

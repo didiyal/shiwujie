@@ -7,21 +7,21 @@ spring:
           uri: http://localhost:8200
           predicates:
             - Path=/api/user/**
-#    # 视频转发配置
-#        - id: route_call
-#          uri: http://localhost:8124
-#          predicates:
-#            - Path=/api/channel/**,/api/callHelp/**
-#        # SockJS route
-#        - id: websocket_sockjs_route
-#          uri: http://localhost:8082
-#          predicates:
-#            - Path=/api/websocket/**
-#        # Normal Websocket route
-#        - id: websocket_route
-#          uri: ws://localhost:8082
-#          predicates:
-#            - Path=/api/websocket/**
+    # 视频转发配置
+        - id: route_call
+          uri: http://localhost:8300
+          predicates:
+            - Path=/api/call/**
+        # SockJS route
+        - id: websocket_sockjs_route
+          uri: http://localhost:8350
+          predicates:
+            - Path=/api/ws/call
+        # Normal Websocket route
+        - id: websocket_route
+          uri: ws://localhost:8350
+          predicates:
+            - Path=/api/ws/call
 logging:
   level:
     org:

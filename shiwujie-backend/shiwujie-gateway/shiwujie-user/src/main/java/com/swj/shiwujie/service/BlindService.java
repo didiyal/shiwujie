@@ -2,9 +2,9 @@ package com.swj.shiwujie.service;
 
 import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
-import com.swj.shiwujie.model.domain.Blind;
+import com.swj.shiwujie.model.domain.user.Blind;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.swj.shiwujie.model.domain.Volunteer;
+import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 

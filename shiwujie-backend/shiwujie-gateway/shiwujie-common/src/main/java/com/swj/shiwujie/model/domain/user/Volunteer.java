@@ -1,4 +1,4 @@
-package com.swj.shiwujie.model.domain;
+package com.swj.shiwujie.model.domain.user;
 
 import com.baomidou.mybatisplus.annotation.*;
 
@@ -8,17 +8,17 @@ import java.util.Date;
 import lombok.Data;
 
 /**
- * 视障人士信息表
- * @TableName Blind
+ * 志愿者信息表
+ * @TableName Volunteer
  */
-@TableName(value ="Blind")
+@TableName(value ="Volunteer")
 @Data
-public class Blind implements Serializable {
+public class Volunteer implements Serializable {
     /**
-     * 视障人士ID
+     * 志愿者ID
      */
     @TableId(type = IdType.ASSIGN_ID)
-    private Long blindId;
+    private Long volunteerId;
 
     /**
      * 社区ID
@@ -73,19 +73,24 @@ public class Blind implements Serializable {
     private String idCard;
 
     /**
-     * 残疾人证件号
-     */
-    private String disabilityCard;
-
-    /**
      * 其它信息
      */
     private String otherInfo;
 
     /**
-     * 求助次数
+     * 在线状态（用于区分是否匹配） 0-离线 1-在线 2-忙碌
      */
-    private Long helpRequestCount;
+    private Integer onlineStatus;
+
+    /**
+     * 帮助次数
+     */
+    private Long helpCount;
+
+    /**
+     * 志愿者评分
+     */
+    private BigDecimal rating;
 
     /**
      * 纬度坐标

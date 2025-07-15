@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.swj.shiwujie.mapper.FamilyMapper">
 
-    <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.Family">
+    <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.user.Family">
             <id property="familyId" column="family_id" jdbcType="BIGINT"/>
             <result property="familyName" column="family_name" jdbcType="VARCHAR"/>
             <result property="familyDescription" column="family_description" jdbcType="VARCHAR"/>

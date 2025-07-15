@@ -1,7 +1,7 @@
 package com.swj.shiwujie.service;
 
 import com.swj.shiwujie.model.VO.user.family.FamilyVO;
-import com.swj.shiwujie.model.domain.Family;
+import com.swj.shiwujie.model.domain.user.Family;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.request.user.family.FamilyRemoveUserRequest;
 import com.swj.shiwujie.model.request.user.family.FamilyUpdateRequest;

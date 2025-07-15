@@ -9,7 +9,7 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
-import com.swj.shiwujie.model.domain.Volunteer;
+import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePhoneRequest;

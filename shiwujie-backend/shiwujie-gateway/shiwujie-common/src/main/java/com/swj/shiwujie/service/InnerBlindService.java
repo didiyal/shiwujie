@@ -1,0 +1,31 @@
+package com.swj.shiwujie.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.swj.shiwujie.model.domain.user.Blind;
+import com.swj.shiwujie.model.domain.user.Volunteer;
+
+/**
+ * @author Administrator
+ * @description 针对表【Volunteer(视障人士信息表)】的数据库操作Service
+ * @createDate 2025-07-01 00:21:42
+ */
+public interface InnerBlindService  {
+
+    /**
+     * 通过id查询信息
+     * @param id
+     * @return
+     */
+    Blind getById(Long id);
+    
+
+
+    /**
+     * 通过手机号查询用户(视障人士)信息
+     * @param phone 视障人士手机号
+     * @return 视障人士信息
+     */
+    Blind getByPhone(String phone);
+    
+
+}

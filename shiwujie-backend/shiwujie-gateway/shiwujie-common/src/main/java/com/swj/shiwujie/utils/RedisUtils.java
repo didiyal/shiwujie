@@ -6,6 +6,8 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 
@@ -13,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * Redis工具类
  */
 @Component
-public class RedisUtils {
+public class RedisUtils{
 
 
     @Resource
@@ -36,6 +38,15 @@ public class RedisUtils {
 
 
     /**
+     * 检查redis是否存在
+     * @param key
+     * @return
+     */
+    public Object hasKey(String key) {
+        return redisTemplate.hasKey(key);
+    }
+
+    /**
      * 删除存储在 Redis 中的数据
      * @param key
      * @return
@@ -50,10 +61,11 @@ public class RedisUtils {
      * @param value
      * @param expirationTime
      */
-    public void setToRedis(String key, String value, long expirationTime) {
+    public void setToRedis(String key, Object value, long expirationTime) {
         ValueOperations<String, Object> ops = redisTemplate.opsForValue();
         ops.set(key, value, expirationTime, TimeUnit.DAYS);
     }
+
 
     /**
      * 检查 Redis 中的数据是否过期,返回 null 表示数据已经过期

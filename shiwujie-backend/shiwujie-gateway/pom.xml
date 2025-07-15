@@ -29,6 +29,13 @@
 <!--            <artifactId>dubbo-nacos-spring-boot-starter</artifactId>-->
 <!--            <version>3.3.1</version>-->
 <!--        </dependency>-->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-gateway-spring-boot-starter</artifactId>
+            <version>4.4.0</version>
+        </dependency>
+
+
 
         <dependency>
             <groupId>org.projectlombok</groupId>

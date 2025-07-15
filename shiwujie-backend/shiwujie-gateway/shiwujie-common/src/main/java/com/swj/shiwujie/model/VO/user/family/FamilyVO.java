@@ -1,14 +1,10 @@
 package com.swj.shiwujie.model.VO.user.family;
 
-import com.baomidou.mybatisplus.annotation.*;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
-import com.swj.shiwujie.model.domain.Blind;
-import com.swj.shiwujie.model.domain.Volunteer;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
 import java.util.List;
 
 /**

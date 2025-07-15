@@ -1,6 +1,6 @@
 package com.swj.shiwujie.mapper;
 
-import com.swj.shiwujie.model.domain.Blind;
+import com.swj.shiwujie.model.domain.user.Blind;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 * @author Administrator
 * @description 针对表【Blind(视障人士信息表)】的数据库操作Mapper
 * @createDate 2025-07-01 21:54:40
-* @Entity com.swj.shiwujie.model.domain.Blind
+* @Entity com.swj.shiwujie.model.domain.user.Blind
 */
 
 @Mapper
