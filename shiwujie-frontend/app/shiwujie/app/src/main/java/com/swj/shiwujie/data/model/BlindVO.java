@@ -1,5 +1,7 @@
 package com.swj.shiwujie.data.model;
 
+import com.google.gson.annotations.SerializedName;
+
 public class BlindVO {
     private Long blindId;
     private Long communityId;
@@ -19,8 +21,40 @@ public class BlindVO {
     private String phone;
     private String qqId;
     private String wechatId;
+    private String email;
+    private String token;
+    
+    @SerializedName("idCard")
+    private String idCard = "";
+    
+    @SerializedName("disabilityCard")
+    private String disabilityCard = "";
 
     // Getters and Setters
+    public String getIdCard() {
+        return idCard;
+    }
+
+    public void setIdCard(String idCard) {
+        this.idCard = idCard;
+    }
+
+    public String getDisabilityCard() {
+        return disabilityCard;
+    }
+
+    public void setDisabilityCard(String disabilityCard) {
+        this.disabilityCard = disabilityCard;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
     public Long getBlindId() {
         return blindId;
     }
@@ -163,5 +197,13 @@ public class BlindVO {
 
     public void setWechatId(String wechatId) {
         this.wechatId = wechatId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 } 

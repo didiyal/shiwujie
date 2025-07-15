@@ -17,7 +17,7 @@ import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ApiCallback;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
-import com.swj.shiwujie.data.model.BlindLoginSuccessVO;
+import com.swj.shiwujie.data.model.BlindVO;
 
 public class LoginActivity extends AppCompatActivity {
     private EditText etPhone;
@@ -59,6 +59,9 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         btnLogin.setOnClickListener(v -> handleLogin());
+
+        // 修改返回按钮点击事件
+        btnBack.setOnClickListener(v -> NavigationHelper.backToChooseIdentity(this));
     }
 
     private void handleLogin() {
@@ -75,9 +78,9 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         // 调用登录接口
-        apiService.loginAndRegister(phone, password).enqueue(new ApiCallback<BlindLoginSuccessVO>() {
+        apiService.loginAndRegister(phone, password).enqueue(new ApiCallback<BlindVO>(this) {
             @Override
-            public void onSuccess(BlindLoginSuccessVO data) {
+            public void onSuccess(BlindVO data) {
                 // 保存登录信息
                 SharedPrefsUtil.setToken(data.getToken());
                 SharedPrefsUtil.setUserType(true); // true表示盲人用户
@@ -90,11 +93,6 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onError(String message) {
                 Toast.makeText(LoginActivity.this, message, Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public android.content.Context getContext() {
-                return LoginActivity.this;
             }
         });
     }

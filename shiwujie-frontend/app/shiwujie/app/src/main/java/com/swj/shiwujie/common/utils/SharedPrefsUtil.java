@@ -54,4 +54,14 @@ public class SharedPrefsUtil {
         Long userId = getUserId();
         return token != null && !token.isEmpty() && userId != null && userId > 0;
     }
+
+    public static void setLong(Context context, String key, long value) {
+        init(context);
+        prefs.edit().putLong(key, value).apply();
+    }
+
+    public static long getLong(Context context, String key, long defaultValue) {
+        init(context);
+        return prefs.getLong(key, defaultValue);
+    }
 } 

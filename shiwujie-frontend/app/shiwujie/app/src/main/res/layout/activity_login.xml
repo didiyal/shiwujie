@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 登录页面布局 -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:padding="16dp">
 
+    <!-- 标题 -->
     <TextView
-        android:id="@+id/tvHello"
+        android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="视无界"
@@ -19,83 +20,75 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/tvWelcome"
+        android:id="@+id/tvSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-
-
-        android:layout_marginTop="8dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvHello" />
-
-    <TextView
-        android:id="@+id/tvLoginTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="手机号密码登录"
+        android:text="盲人手机号密码登录"
         android:textSize="20sp"
         android:textColor="@color/primary_blue"
         android:layout_marginTop="32dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvWelcome" />
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilPhone"
-        android:layout_width="match_parent"
+    <!-- 手机号输入框 -->
+    <EditText
+        android:id="@+id/etPhone"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
+        android:background="@drawable/edit_text_background"
         android:hint="请输入手机号"
-        app:layout_constraintTop_toBottomOf="@id/tvLoginTitle">
+        android:inputType="phone"
+        android:padding="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSubtitle"
+        app:layout_constraintWidth_percent="0.8" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etPhone"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="phone"
-            android:background="@drawable/edit_text_background"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilPassword"
-        android:layout_width="match_parent"
+    <!-- 密码输入框 -->
+    <EditText
+        android:id="@+id/etPassword"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:background="@drawable/edit_text_background"
         android:hint="请输入密码"
-        app:passwordToggleEnabled="true"
-        app:layout_constraintTop_toBottomOf="@id/tilPhone">
+        android:inputType="textPassword"
+        android:padding="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/etPhone"
+        app:layout_constraintWidth_percent="0.8" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textPassword"
-            android:background="@drawable/edit_text_background"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.button.MaterialButton
+    <!-- 登录按钮 -->
+    <Button
         android:id="@+id/btnLogin"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
+        android:background="@drawable/bg_button_primary"
         android:text="登录"
-        android:padding="12dp"
-        android:textColor="@color/white"
-        app:cornerRadius="24dp"
-        android:backgroundTint="@color/primary_blue"
-        app:layout_constraintTop_toBottomOf="@id/tilPassword" />
+        android:textColor="@android:color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/etPassword"
+        app:layout_constraintWidth_percent="0.8" />
 
-    <com.google.android.material.button.MaterialButton
+    <!-- 一键登录按钮 -->
+    <Button
         android:id="@+id/btnQuickLogin"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="手机号一键登录"
-        android:padding="12dp"
-        android:textColor="@color/white"
-        app:cornerRadius="24dp"
-        android:backgroundTint="@color/primary_blue"
-        app:layout_constraintTop_toBottomOf="@id/btnLogin" />
+        android:background="@drawable/bg_white_button"
+        android:text="一键登录"
+        android:textColor="@android:color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnLogin"
+        app:layout_constraintWidth_percent="0.8" />
 
+    <!-- 自动注册提示 -->
     <TextView
         android:id="@+id/tvAutoRegister"
         android:layout_width="wrap_content"
@@ -108,6 +101,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnQuickLogin" />
 
+    <!-- 用户协议 -->
     <TextView
         android:id="@+id/tvAgreement"
         android:layout_width="wrap_content"
@@ -117,6 +111,7 @@
         android:textColor="@android:color/darker_gray"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout> 

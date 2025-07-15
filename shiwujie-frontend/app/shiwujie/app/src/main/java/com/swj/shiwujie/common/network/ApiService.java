@@ -1,37 +1,321 @@
 package com.swj.shiwujie.common.network;
 
 import com.swj.shiwujie.data.model.BaseResponse;
-import com.swj.shiwujie.data.model.BlindLoginSuccessVO;
 import com.swj.shiwujie.data.model.BlindVO;
+import com.swj.shiwujie.data.model.FamilyJoinReviewVO;
+import com.swj.shiwujie.data.model.FamilyVO;
+import com.swj.shiwujie.data.model.VolunteerVO;
+
+import java.util.List;
 
 import retrofit2.Call;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Query;
+import retrofit2.http.Body;
 
+/**
+ * API接口定义
+ * 包含用户认证、信息获取等接口
+ */
 public interface ApiService {
+    /**
+     * 盲人用户一键登录接口
+     * @param phone 手机号码
+     * @return 登录成功后的用户信息，包含token等数据
+     */
     @POST("/api/user/blind/login/loginAndRegisterQuickly")
-    Call<BaseResponse<BlindLoginSuccessVO>> blindQuickLogin(@Query("phone") String phone);
+    Call<BaseResponse<BlindVO>> blindQuickLogin(@Query("phone") String phone);
 
+    /**
+     * 盲人用户密码登录接口
+     * @param phone    手机号码
+     * @param password 密码
+     * @return 登录成功后的用户信息，包含token等数据
+     */
     @POST("/api/user/blind/login/loginAndRegister")
-    Call<BaseResponse<BlindLoginSuccessVO>> loginAndRegister(
+    Call<BaseResponse<BlindVO>> loginAndRegister(
             @Query("phone") String phone,
             @Query("password") String password
     );
 
+    /**
+     * 更新志愿者信息
+     * @param token JWT令牌
+     * @param volunteer 志愿者信息
+     * @return 更新结果
+     */
+    @POST("/api/user/volunteer/update")
+    Call<BaseResponse<Boolean>> updateVolunteerInfo(
+            @Header("Authorization") String token,
+            @Body VolunteerVO volunteer
+    );
+
+    /**
+     * 检查登录状态接口
+     * 响应码说明：
+     * - 1: token有效
+     * - 40010: token失效，需要重新登录
+     * - 40000: 需要重新选择身份
+     */
     @GET("/api/user/blind/login/check")
     Call<BaseResponse<Void>> checkLogin(@Header("Authorization") String token);
 
+    /**
+     * 退出登录接口
+     * - 1: 退出成功
+     * - 40010: token已失效
+     */
+    @GET("/api/user/blind/login/logout")
+    Call<BaseResponse<Boolean>> logout(@Header("Authorization") String token);
+
+    /**
+     * 注销账户接口
+     * 永久删除用户账号及相关数据
+     *
+     * @param "Bearer ${token}"
+     * @param blindId 要删除的盲人用户ID
+     * @return 注销结果
+     * 响应码说明：
+     * - 1: 注销成功
+     * - 40010: token失效
+     * - 40000: 用户不存在
+     */
     @POST("/api/user/blind/delete")
     Call<BaseResponse<Boolean>> deleteBlindAccount(
             @Header("Authorization") String token,
             @Query("blindId") Long blindId
     );
 
+    /**
+     * 获取盲人用户详细信息
+     * @param blindId 盲人用户ID
+     * @return 用户详细信息
+     * 响应码说明：
+     * - 1: 获取成功
+     * - 40010: token失效
+     * - 40000: 用户不存在
+     */
     @GET("/api/user/blind/get/id/vo")
     Call<BaseResponse<BlindVO>> getBlindById(
             @Header("Authorization") String token,
             @Query("blindId") Long blindId
     );
-} 
+
+    /**
+     * 获取家庭详细信息
+     * @param token JWT令牌
+     * @param familyId 家庭ID
+     * @return 家庭详细信息
+     * 响应码说明：
+     * - 1: 获取成功
+     * - 40010: token失效
+     * - 40000: 家庭不存在
+     */
+    @GET("/api/user/family/get/id/vo")
+    Call<BaseResponse<FamilyVO>> getFamilyVOById(
+            @Header("Authorization") String token,
+            @Query("familyId") Long familyId
+    );
+
+    @POST("/api/user/family/join")
+    Call<BaseResponse<Boolean>> joinFamily(@Header("Authorization") String token, @Query("familyId") Long familyId);
+
+    /**
+     * 创建家庭
+     * @param token JWT令牌
+     * @return 创建结果，包含创建的家庭信息
+     * 响应码说明：
+     * - 1: 创建成功
+     * - 40010: token失效
+     * - 40000: 创建失败
+     */
+    @GET("/api/user/family/add")
+    Call<BaseResponse<FamilyVO>> createFamily(@Header("Authorization") String token);
+
+    /**
+     * 更新家庭信息
+     * @param token JWT令牌
+     * @param familyId 家庭ID
+     * @param familyName 家庭名称
+     * @param familyDescription 家庭描述
+     * @return 更新结果
+     */
+    @PUT("/api/user/family/update")
+    Call<BaseResponse<Boolean>> updateFamily(
+            @Header("Authorization") String token,
+            @Query("familyId") Long familyId,
+            @Query("familyName") String familyName,
+            @Query("familyDescription") String familyDescription
+    );
+
+    /**
+     * 删除家庭
+     * @param token JWT令牌
+     * @return 删除结果
+     * 响应码说明：
+     * - 1: 删除成功
+     * - 40010: token失效
+     * - 40000: 家庭不存在
+     */
+    @DELETE("api/user/family/delete/family")
+    Call<BaseResponse<Boolean>> deleteFamily(@Header("Authorization") String token);
+
+    /**
+     * 志愿者用户一键登录接口
+     * @param phone 手机号码
+     * @return 登录成功后的用户信息，包含token等数据
+     */
+    @POST("/api/user/volunteer/login/loginAndRegisterQuickly")
+    Call<BaseResponse<VolunteerVO>> volunteerQuickLogin(@Query("phone") String phone);
+
+    /**
+     * 志愿者用户密码登录接口
+     * @param phone    手机号码
+     * @param password 密码
+     * @return 登录成功后的用户信息，包含token等数据
+     */
+    @POST("/api/user/volunteer/login/loginAndRegister")
+    Call<BaseResponse<VolunteerVO>> volunteerLoginAndRegister(
+            @Query("phone") String phone,
+            @Query("password") String password
+    );
+
+    /**
+     * 检查志愿者登录状态接口
+     * 响应码说明：
+     * - 1: token有效
+     * - 40010: token失效，需要重新登录
+     * - 40000: 需要重新选择身份
+     */
+    @GET("/api/user/volunteer/login/check")
+    Call<BaseResponse<Void>> checkVolunteerLogin(@Header("Authorization") String token);
+
+    /**
+     * 获取志愿者用户详细信息
+     * @param volunteerId 志愿者用户ID
+     * @return 用户详细信息
+     * 响应码说明：
+     * - 1: 获取成功
+     * - 40010: token失效
+     * - 40000: 用户不存在
+     */
+    @GET("/api/user/volunteer/get/id/vo")
+    Call<BaseResponse<VolunteerVO>> getVolunteerVOById(
+            @Header("Authorization") String token,
+            @Query("volunteerId") Long volunteerId
+    );
+
+    /**
+     * 注销志愿者账户接口
+     * 永久删除志愿者账号及相关数据
+     *
+     * @param token "Bearer ${token}"
+     * @param volunteerId 要删除的志愿者用户ID
+     * @return 注销结果
+     * 响应码说明：
+     * - 1: 注销成功
+     * - 40010: token失效
+     * - 40000: 用户不存在
+     */
+    @POST("/api/user/volunteer/delete")
+    Call<BaseResponse<Boolean>> deleteVolunteer(
+            @Header("Authorization") String token,
+            @Query("volunteerId") Long volunteerId
+    );
+
+    /**
+     * 志愿者退出登录接口
+     * - 1: 退出成功
+     * - 40010: token已失效
+     */
+    @GET("/api/user/volunteer/login/logout")
+    Call<BaseResponse<Boolean>> volunteerLogout(@Header("Authorization") String token);
+
+    @GET("/api/user/familyJoinReview/get/list/vo")
+    Call<BaseResponse<List<FamilyJoinReviewVO>>> getFamilyJoinReviewVOList(@Header("Authorization") String token);
+
+    /**
+     * 更新家庭加入申请的审核状态
+     * @param token JWT令牌
+     * @param reviewId 审核ID
+     * @param reviewResult 审核结果（true为同意，false为拒绝）
+     * @param reviewerId 审核者ID
+     * @return 更新结果
+     */
+    @PUT("/api/user/familyJoinReview/update")
+    Call<BaseResponse<Boolean>> updateFamilyJoinReview(
+            @Header("Authorization") String token,
+            @Query("reviewId") Long reviewId,
+            @Query("reviewResult") Boolean reviewResult,
+            @Query("reviewerId") Long reviewerId
+    );
+
+    /**
+     * 获取家庭加入申请详情
+     * @param token JWT令牌
+     * @param reviewId 申请记录ID
+     * @return 申请详情
+     * 响应码说明：
+     * - 1: 获取成功
+     * - 40010: token失效
+     * - 40000: 记录不存在
+     */
+    @GET("/api/user/familyJoinReview/get/id/vo")
+    Call<BaseResponse<FamilyJoinReviewVO>> getFamilyJoinReviewVOById(
+            @Header("Authorization") String token,
+            @Query("reviewId") Long reviewId
+    );
+
+    @DELETE("/api/user/family/delete/user")
+    Call<BaseResponse<Boolean>> removeUserFromFamily(
+            @Header("Authorization") String token,
+            @Query("familyId") Long familyId,
+            @Query("blindId") Long blindId,
+            @Query("volunteerId") Long volunteerId
+    );
+
+    @DELETE("/api/user/family/delete/leave")
+    Call<BaseResponse<Boolean>> leaveFamily(@Header("Authorization") String token);
+
+    @POST("/api/user/volunteer/update/password")
+    Call<BaseResponse<Boolean>> updateVolunteerPassword(
+            @Header("Authorization") String token,
+            @Query("volunteerId") Long volunteerId,
+            @Query("originPassword") String originPassword,
+            @Query("newPassword") String newPassword
+    );
+
+    @POST("/api/user/volunteer/update/phone")
+    Call<BaseResponse<Boolean>> updateVolunteerPhone(
+            @Header("Authorization") String token,
+            @Query("volunteerId") Long volunteerId,
+            @Query("phone") String phone
+    );
+
+    @PUT("/api/user/blind/update")
+    Call<BaseResponse<Boolean>> updateBlindInfo(
+            @Header("Authorization") String token,
+            @Body BlindVO blind
+    );
+
+    @POST("/api/user/blind/update/password")
+    Call<BaseResponse<Boolean>> updateBlindPassword(
+            @Header("Authorization") String token,
+            @Query("blindId") Long blindId,
+            @Query("originPassword") String originPassword,
+            @Query("newPassword") String newPassword
+    );
+
+    @POST("/api/user/blind/update/phone")
+    Call<BaseResponse<Boolean>> updateBlindPhone(
+            @Header("Authorization") String token,
+            @Query("blindId") Long blindId,
+            @Query("phone") String phone
+    );
+
+
+}

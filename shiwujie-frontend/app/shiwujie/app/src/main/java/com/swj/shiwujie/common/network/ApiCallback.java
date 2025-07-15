@@ -2,7 +2,10 @@ package com.swj.shiwujie.common.network;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
 
+import com.swj.shiwujie.ChooseIdentityActivity;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.data.model.BaseResponse;
 
@@ -11,49 +14,91 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public abstract class ApiCallback<T> implements Callback<BaseResponse<T>> {
-    
+    private static final String TAG = "ApiCallback";
+    private final Context context;
+
+    public ApiCallback(Context context) {
+        this.context = context;
+    }
+
+    private boolean isLoginPage() {
+        return context instanceof com.swj.shiwujie.blind.LoginActivity ||
+               context instanceof com.swj.shiwujie.volunteer.LoginActivity ||
+               context instanceof com.swj.shiwujie.blind.QuickLoginActivity ||
+               context instanceof com.swj.shiwujie.volunteer.QuickLoginActivity;
+    }
+
     @Override
     public void onResponse(Call<BaseResponse<T>> call, Response<BaseResponse<T>> response) {
-        if (response.isSuccessful() && response.body() != null) {
-            BaseResponse<T> res = response.body();
-            
-            // code=1表示成功，存储用户信息
-            if (res.getCode() == 1) {
-                onSuccess(res.getData());
-                return;
+        android.util.Log.d("ApiCallback", "API响应: " + call.request().url());
+        
+        if (!response.isSuccessful()) {
+            android.util.Log.e("ApiCallback", "请求失败: HTTP " + response.code());
+            try {
+                String errorBody = response.errorBody() != null ? response.errorBody().string() : "";
+                android.util.Log.e("ApiCallback", "错误响应: " + errorBody);
+            } catch (Exception e) {
+                android.util.Log.e("ApiCallback", "读取错误响应失败", e);
             }
+            onError(response.message());
+            return;
+        }
+        
+        if (response.body() == null) {
+            android.util.Log.e("ApiCallback", "响应体为空");
+            return;
+        }
+
+        BaseResponse<T> res = response.body();
+        android.util.Log.d("ApiCallback", "响应码: " + res.getCode() + ", 消息: " + res.getMessage());
             
-            // code=40010表示未登录，跳转登录页
-            if (res.getCode() == 40010) {
-                Context context = getContext();
-                if (context != null) {
+        switch (res.getCode()) {
+            case 1:
+                onSuccess(res.getData());
+                break;
+                
+            case 40010:
+                Log.w(TAG, "Token失效,需要重新登录");
+                if (context != null && !isLoginPage()) {
                     SharedPrefsUtil.init(context);
-                    // 根据用户跳转
-                    Intent intent;
-                    if (SharedPrefsUtil.isBlind()) {
-                        intent = new Intent(context, com.swj.shiwujie.blind.LoginActivity.class);
-                    } else {
-                        intent = new Intent(context, com.swj.shiwujie.volunteer.LoginActivity.class);
-                    }
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    SharedPrefsUtil.clearAll();
+                    Intent intent = new Intent(context, ChooseIdentityActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     context.startActivity(intent);
                 }
-                return;
-            }
-            onError(res.getMessage());
-        } else {
-            onError("网络请求失败");
+                onError(res.getMessage());
+                break;
+                
+            case 40000:
+                android.util.Log.w("ApiCallback", "需要重新选择身份");
+                if (context != null && !isLoginPage()) {
+                    Intent intent = new Intent(context, ChooseIdentityActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    context.startActivity(intent);
+                }
+                onError(res.getMessage());
+                break;
+                
+            default:
+                android.util.Log.e("ApiCallback", "请求失败: " + res.getCode() + ", " + res.getMessage());
+                onError(res.getMessage());
+                break;
         }
     }
 
     @Override
     public void onFailure(Call<BaseResponse<T>> call, Throwable t) {
+        android.util.Log.e("ApiCallback", "网络请求失败: " + call.request().url(), t);
         onError(t.getMessage());
     }
 
-    protected abstract Context getContext();
+    public void onError(String message) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+    }
 
-    public abstract void onSuccess(T data);
+    public abstract void onSuccess(T response);
 
-    public abstract void onError(String message);
+    public Context getContext() {
+        return context;
+    }
 }

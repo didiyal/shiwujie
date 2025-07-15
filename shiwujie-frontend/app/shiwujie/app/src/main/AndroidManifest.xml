@@ -33,6 +33,9 @@
         <activity android:name=".blind.BlindHomeActivity" />
         <activity android:name=".volunteer.VolunteerHomeActivity" />
         <activity android:name=".blind.QuickLoginActivity" />
+        <activity android:name=".volunteer.QuickLoginActivity" />
+        <activity android:name=".blind.EditProfileActivity" />
+        <activity android:name=".volunteer.EditProfileActivity" />
         
     </application>
 
