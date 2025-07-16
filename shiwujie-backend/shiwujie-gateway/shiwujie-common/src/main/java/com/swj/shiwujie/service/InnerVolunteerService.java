@@ -34,4 +34,12 @@ public interface InnerVolunteerService  {
     Volunteer getByPhone(String phone);
 
 
+    /**
+     * 通过家庭id获取用户信息
+     * @param familyId 家庭id
+     * @return 用户列表
+     */
+    List<Volunteer> getListByFamilyId(Long familyId);
+
+
 }

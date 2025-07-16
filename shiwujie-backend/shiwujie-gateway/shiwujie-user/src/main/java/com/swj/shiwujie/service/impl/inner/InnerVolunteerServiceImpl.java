@@ -14,6 +14,7 @@ import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @author Administrator
@@ -54,6 +55,21 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
         QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
         volunteerQueryWrapper.eq("phone", phone);
         return volunteerService.getOne(volunteerQueryWrapper);
+    }
+
+
+
+    /**
+     * 通过家庭id获取用户信息
+     * @param familyId 家庭id
+     * @return 用户列表
+     */
+    @Override
+    public List<Volunteer> getListByFamilyId(Long familyId) {
+        QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
+        volunteerQueryWrapper.eq("family_id", familyId);
+        List<Volunteer> volunteerList = volunteerService.list(volunteerQueryWrapper);
+        return volunteerList;
     }
 
 

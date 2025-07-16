@@ -1,6 +1,7 @@
 package com.swj.shiwujie.socket;
 
 
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
@@ -9,6 +10,7 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.call.SocketVO;
+import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.call.SocketData;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -21,6 +23,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -90,7 +93,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             String response = this.getResponse(0, "匹配成功", 1, socketData);
             channel.writeAndFlush(new TextWebSocketFrame(response));
         }else{
-//            throw new BusinessException(ErrorCode.PARAMS_ERROR,"该用户未连接服务器");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"该用户未连接服务器");
         }
     }
 
@@ -126,4 +129,25 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
     }
 
 
+    /**
+     * 向家属紧急求助 - 3
+     * @param volunteerList 家属列表
+     * @param socketData 返回类型
+     */
+    public void urgenthelpToFamily(List<Volunteer> volunteerList,SocketData socketData) {
+
+        for (Volunteer volunteer : volunteerList) {
+            String phone = volunteer.getPhone();
+            if(ObjUtil.isNotNull(phone)){
+                if(cmap.containsKey(phone)){
+                    Channel channel = cmap.get(phone);
+                    socketData.setVolunteerPhone(phone);
+                    socketData.setChannelId(volunteer.getVolunteerId());
+                    String response = this.getResponse(0, "紧急求助", 3, socketData);
+                    channel.writeAndFlush(new TextWebSocketFrame(response));
+                }
+            }
+        }
+
+    }
 }
