@@ -42,7 +42,7 @@ public class UrgenthelpController {
      */
     @GetMapping("/blind/add")
     @Transactional(rollbackFor = Exception.class)
-    public BaseResponse<Boolean> createUrgenthelp(HttpServletRequest request) {
+    public BaseResponse<Boolean> blindCreateUrgenthelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
@@ -63,7 +63,7 @@ public class UrgenthelpController {
      * @return 是否成功
      */
     @DeleteMapping("/blind/delete")
-    public BaseResponse<Boolean> removeVolunteerFromUrgenthelp(HttpServletRequest request) {
+    public BaseResponse<Boolean> blindLeaveUrgenthelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
@@ -87,7 +87,7 @@ public class UrgenthelpController {
      * @return 是否成功
      */
     @PostMapping("/join")
-    public BaseResponse<Boolean> updateVideoPath(String videoPath, HttpServletRequest request) {
+    public BaseResponse<Boolean> blindUpdateVideoPath(String videoPath, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
 
@@ -113,7 +113,7 @@ public class UrgenthelpController {
      */
 
     @GetMapping("/volunteer/join")
-    public BaseResponse<Boolean> joinUrgenthelp(Long blindId,HttpServletRequest request) {
+    public BaseResponse<Boolean> familyJoinUrgenthelp(Long blindId,HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
@@ -135,7 +135,7 @@ public class UrgenthelpController {
      * @return 是否成功
      */
     @DeleteMapping("/delete/leave")
-    public BaseResponse<Boolean> UrgenthelpEnd(HttpServletRequest request) {
+    public BaseResponse<Boolean> hangupUrgenthelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         Long loginBlindId = LoginUtils.getLoginBlindId(request);

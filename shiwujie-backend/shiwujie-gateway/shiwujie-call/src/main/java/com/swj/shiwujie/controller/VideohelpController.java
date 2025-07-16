@@ -44,7 +44,7 @@ public class VideohelpController {
      */
     @GetMapping("/volunteer/add")
     @Transactional(rollbackFor = Exception.class)
-    public BaseResponse<Boolean> createVideohelp(HttpServletRequest request) {
+    public BaseResponse<Boolean> volunteerCreateVideohelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
@@ -64,7 +64,7 @@ public class VideohelpController {
      */
     @DeleteMapping("/volunteer/delete")
     @Transactional(rollbackFor = Exception.class)
-    public BaseResponse<Boolean> removeVolunteerFromVideohelp(HttpServletRequest request) {
+    public BaseResponse<Boolean> volunteerLeaveVideohelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
@@ -91,7 +91,7 @@ public class VideohelpController {
 
     @GetMapping("/blind/join")
     @Transactional(rollbackFor = Exception.class)
-    public BaseResponse<Boolean> joinVideohelp(HttpServletRequest request) {
+    public BaseResponse<Boolean> blindJoinVideohelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
@@ -111,7 +111,7 @@ public class VideohelpController {
      */
     @PostMapping("/join")
     @Transactional(rollbackFor = Exception.class)
-    public BaseResponse<Boolean> updateVideoPath(String videoPath, HttpServletRequest request) {
+    public BaseResponse<Boolean> blindUpdateVideoPath(String videoPath, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
 
@@ -137,7 +137,7 @@ public class VideohelpController {
      * @return 是否成功
      */
     @DeleteMapping("/delete/leave")
-    public BaseResponse<Boolean> VideohelpEnd(HttpServletRequest request) {
+    public BaseResponse<Boolean> hangupVideohelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
