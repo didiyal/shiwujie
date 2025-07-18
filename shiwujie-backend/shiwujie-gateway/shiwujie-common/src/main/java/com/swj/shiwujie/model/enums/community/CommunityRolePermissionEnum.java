@@ -19,11 +19,11 @@ public enum CommunityRolePermissionEnum {
 
     private String description;
 
-    private int typeId;
+    private long roleId;
 
-    CommunityRolePermissionEnum(String name, String description, int typeId) {
+    CommunityRolePermissionEnum(String name, String description, long roleId) {
         this.name = name;
         this.description = description;
-        this.typeId = typeId;
+        this.roleId = roleId;
     }
 }

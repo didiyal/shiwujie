@@ -22,6 +22,11 @@ public class CommunityRegisterRequest implements Serializable {
     private String communityName;
 
     /**
+     * 社区类型
+     */
+    private String communityType;
+
+    /**
      * 社区介绍
      */
     private String communityDescription;

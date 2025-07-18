@@ -24,7 +24,13 @@ public interface InnerVolunteerService  {
      */
     Volunteer getById(Long id);
 
-
+    /**
+     * 插入数据
+     *
+     * @param volunteer 志愿者信息
+     * @return 信息
+     */
+    boolean save(Volunteer volunteer);
 
     /**
      * 通过手机号查询用户信息

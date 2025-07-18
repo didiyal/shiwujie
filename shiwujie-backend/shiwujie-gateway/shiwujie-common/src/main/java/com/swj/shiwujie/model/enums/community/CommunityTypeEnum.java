@@ -20,11 +20,23 @@ public enum CommunityTypeEnum {
 
     private String description;
 
-    private int typeId;
+    private long typeId;
 
-    CommunityTypeEnum(String name, String description, int typeId) {
+    CommunityTypeEnum(String name, String description, long typeId) {
         this.name = name;
         this.description = description;
         this.typeId = typeId;
     }
+
+
+    public static CommunityTypeEnum getByName(String name){
+        for (CommunityTypeEnum value : CommunityTypeEnum.values()) {
+            if(value.name.equals(name)){
+                return value;
+            }
+        }
+        return null;
+    }
+
+
 }

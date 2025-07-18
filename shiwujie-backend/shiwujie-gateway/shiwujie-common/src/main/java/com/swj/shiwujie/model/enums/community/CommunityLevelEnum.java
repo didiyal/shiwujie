@@ -19,9 +19,9 @@ public enum CommunityLevelEnum {
 
     private String description;
 
-    private int levelId;
+    private long levelId;
 
-    CommunityLevelEnum(String name, String description, int levelId) {
+    CommunityLevelEnum(String name, String description, long levelId) {
         this.name = name;
         this.description = description;
         this.levelId = levelId;

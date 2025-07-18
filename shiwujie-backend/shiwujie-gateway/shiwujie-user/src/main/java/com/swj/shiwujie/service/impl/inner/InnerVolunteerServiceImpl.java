@@ -41,6 +41,23 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
         return volunteerService.getById(id);
     }
 
+
+
+    /**
+     * 插入数据
+     *
+     * @param volunteer 志愿者信息
+     * @return 信息
+     */
+    @Override
+    public boolean save(Volunteer volunteer) {
+        if(ObjUtil.isNull(volunteer)){
+            return false;
+        }
+        return volunteerService.save(volunteer);
+    }
+
+
     /**
      * 通过手机号查询用户(志愿者)信息
      *
