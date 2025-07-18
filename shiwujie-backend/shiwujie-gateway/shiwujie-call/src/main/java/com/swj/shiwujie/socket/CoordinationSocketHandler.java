@@ -60,7 +60,8 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
                 toBlindJoin(res);
                 break;
         }
-        System.out.println(String.format("收到客户端%s的数据：%s", ctx.channel().id(), msg.text()));
+        ctx.channel().writeAndFlush(new TextWebSocketFrame("收到客户端的数据"));
+//        System.out.println(String.format("收到客户端%s的数据：%s", ctx.channel().id(), msg.text()));
     }
 
     /**

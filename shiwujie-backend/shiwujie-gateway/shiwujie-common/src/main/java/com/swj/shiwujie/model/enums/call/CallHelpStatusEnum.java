@@ -3,6 +3,9 @@ package com.swj.shiwujie.model.enums.call;
 
 import lombok.Getter;
 
+/**
+ * 视频过程状态枚举类
+ */
 @Getter
 public enum CallHelpStatusEnum {
 

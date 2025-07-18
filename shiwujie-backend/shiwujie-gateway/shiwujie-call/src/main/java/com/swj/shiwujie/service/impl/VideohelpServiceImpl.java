@@ -8,6 +8,7 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.constants.CallConstant;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.domain.call.Videohelp;
+import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.enums.call.CallHelpStatusEnum;
 import com.swj.shiwujie.model.request.call.SocketData;
 import com.swj.shiwujie.service.InnerVolunteerService;
