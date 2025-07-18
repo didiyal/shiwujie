@@ -1,14 +1,23 @@
 package com.swj.shiwujie.blind;
 
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.navigation.NavigationHelper;
@@ -17,15 +26,24 @@ import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ApiCallback;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
+import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.data.model.BlindVO;
 
 public class LoginActivity extends AppCompatActivity {
+    private static final String TAG = "BlindLoginActivity";
+    private static final int PERMISSION_REQUEST_CODE = 100;
+    private static final int OVERLAY_PERMISSION_REQUEST_CODE = 101;
+    
     private EditText etPhone;
     private EditText etPassword;
     private Button btnLogin;
     private Button btnQuickLogin;
     private ImageButton btnBack;
     private ApiService apiService;
+    
+    // 权限相关
+    private boolean isWaitingForPermissions = false;
+    private BlindVO loginData = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,7 +105,12 @@ public class LoginActivity extends AppCompatActivity {
                 SharedPrefsUtil.setUserId(data.getBlindId());
                 SharedPrefsUtil.setPhone(data.getPhone());
 
-                NavigationHelper.toBlindHome(LoginActivity.this);
+                // 建立WebSocket连接
+                WebSocketManager.connectWebSocket(LoginActivity.this, data.getPhone(), false);
+
+                // 登录成功后请求权限
+                loginData = data;
+                requestAllPermissions();
             }
 
             @Override
@@ -95,5 +118,103 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    /**
+     * 请求所有必要权限
+     */
+    private void requestAllPermissions() {
+        // 检查音视频权限和蓝牙权限
+        String[] permissions = {
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.MODIFY_AUDIO_SETTINGS,
+            Manifest.permission.BLUETOOTH_CONNECT
+        };
+        
+        boolean allGranted = true;
+        for (String permission : permissions) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                allGranted = false;
+                break;
+            }
+        }
+        
+        // 检查悬浮窗权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                allGranted = false;
+            }
+        }
+        
+        if (allGranted) {
+            // 所有权限都已授予，直接进入主页
+            NavigationHelper.toBlindHome(LoginActivity.this);
+        } else {
+            // 请求权限
+            isWaitingForPermissions = true;
+            
+            // 先请求音视频权限
+            ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE);
+            
+            // 再请求悬浮窗权限
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (!Settings.canDrawOverlays(this)) {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                    startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST_CODE);
+                }
+            }
+        }
+    }
+    
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_CODE && isWaitingForPermissions) {
+            boolean allGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allGranted = false;
+                    break;
+                }
+            }
+            
+            if (!allGranted) {
+                Toast.makeText(this, "需要相关权限才能使用视频通话功能", Toast.LENGTH_LONG).show();
+                finish(); // 退出APP
+            } else {
+                // 音视频权限已授予，检查悬浮窗权限
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (Settings.canDrawOverlays(this)) {
+                        // 所有权限都已授予
+                        isWaitingForPermissions = false;
+                        NavigationHelper.toBlindHome(LoginActivity.this);
+                    }
+                    // 如果悬浮窗权限未授予，等待onActivityResult回调
+                } else {
+                    // 低版本Android不需要悬浮窗权限
+                    isWaitingForPermissions = false;
+                    NavigationHelper.toBlindHome(LoginActivity.this);
+                }
+            }
+        }
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == OVERLAY_PERMISSION_REQUEST_CODE && isWaitingForPermissions) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Settings.canDrawOverlays(this)) {
+                    // 悬浮窗权限已授予
+                    isWaitingForPermissions = false;
+                    NavigationHelper.toBlindHome(LoginActivity.this);
+                } else {
+                    Toast.makeText(this, "需要悬浮窗权限才能使用完整功能", Toast.LENGTH_LONG).show();
+                    finish(); // 退出APP
+                }
+            }
+        }
     }
 } 

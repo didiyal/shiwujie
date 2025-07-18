@@ -19,3 +19,15 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# AnyRTC SDK 防混淆规则
+-keep class org.ar.**{*;}
+-keep class org.anyrtc.**{*;}
+-keep class org.webrtc.**{*;}
+
+# WebSocket 防混淆规则
+-keep class org.java_websocket.**{*;}
+
+# 保持网络相关类
+-keep class com.swj.shiwujie.common.network.**{*;}
+-keep class com.swj.shiwujie.data.model.**{*;}

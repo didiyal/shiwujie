@@ -35,6 +35,8 @@ android {
     }
 }
 
+
+
 dependencies {
     // AndroidX
     implementation(libs.appcompat)
@@ -52,13 +54,11 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.gson)
     
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // WebSocket
+    implementation(libs.java.websocket)
     
-    // OkHttp
-    implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
+    // AnyRTC SDK (官方Maven仓库)
+    implementation("io.anyrtc:rtc:4.3.1.2")
     
     // Test
     testImplementation(libs.junit)

@@ -317,5 +317,50 @@ public interface ApiService {
             @Query("phone") String phone
     );
 
+    // ==================== 视频求助相关接口 ====================
+
+    /**
+     * 盲人加入视频求助匹配
+     * @param token JWT令牌
+     * @return 加入匹配结果
+     */
+    @GET("/api/call/videohelp/blind/join")
+    Call<BaseResponse<Boolean>> blindJoinVideohelp(@Header("Authorization") String token);
+
+    /**
+     * 盲人上传录屏路径
+     * @param token JWT令牌
+     * @param videoPath 录屏文件路径
+     * @return 上传结果
+     */
+    @POST("/api/call/videohelp/join")
+    Call<BaseResponse<Boolean>> blindUpdateVideoPath(
+            @Header("Authorization") String token,
+            @Query("videoPath") String videoPath
+    );
+
+    /**
+     * 挂断视频通话
+     * @param token JWT令牌
+     * @return 挂断结果
+     */
+    @DELETE("/api/call/videohelp/delete/leave")
+    Call<BaseResponse<Boolean>> hangupVideohelp(@Header("Authorization") String token);
+
+    /**
+     * 志愿者加入视频求助匹配
+     * @param token JWT令牌
+     * @return 加入匹配结果
+     */
+    @GET("/api/call/videohelp/volunteer/add")
+    Call<BaseResponse<Boolean>> volunteerCreateVideohelp(@Header("Authorization") String token);
+
+    /**
+     * 志愿者取消视频求助匹配
+     * @param token JWT令牌
+     * @return 取消匹配结果
+     */
+    @DELETE("/api/call/videohelp/volunteer/delete")
+    Call<BaseResponse<Boolean>> volunteerLeaveVideohelp(@Header("Authorization") String token);
 
 }

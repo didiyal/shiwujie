@@ -68,7 +68,7 @@
                 android:layout_height="36dp"
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_button_red"
+                android:background="@drawable/bg_button_primary"
                 android:text="拒绝"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"/>

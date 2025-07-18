@@ -234,8 +234,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:background="@null"
-                    android:hint="请输入残疾证号"
-                    android:inputType="text"
+                    android:hint="请输入20位残疾证号"
+                    android:inputType="number"
+                    android:maxLength="20"
                     android:textSize="16sp"/>
             </LinearLayout>
 

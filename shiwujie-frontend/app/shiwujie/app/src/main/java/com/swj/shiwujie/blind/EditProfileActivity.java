@@ -161,6 +161,12 @@ public class EditProfileActivity extends AppCompatActivity {
             return;
         }
 
+        // 验证残疾证号长度
+        if (!TextUtils.isEmpty(disabilityCard) && disabilityCard.length() != 20) {
+            Toast.makeText(this, "残疾证号必须为20位", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // 创建请求体
         BlindVO blind = new BlindVO();
         blind.setBlindId(userId);

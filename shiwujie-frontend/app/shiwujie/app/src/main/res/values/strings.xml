@@ -17,4 +17,14 @@
     <string name="back">返回</string>
     <string name="auth_provider">中国移动提供认证服务</string>
     <string name="agreement_text">我已阅读并同意中国移动认证服务条款和用户服务协议并使用本机号码登录</string>
+    <string name="globe_icon">地球图标</string>
+    <string name="blind_count">641,982</string>
+    <string name="volunteer_count">7,432,736</string>
+    <string name="blind_label">盲人</string>
+    <string name="volunteer_label">志愿者</string>
+    <string name="register_date">注册于 %1$s</string>
+    <string name="chinese">中文</string>
+    <string name="english">English</string>
+    <string name="learn_call">学习接听电话</string>
+    <string name="help_notification">当有人需要你的帮助时，您将收到通知。</string>
 </resources>

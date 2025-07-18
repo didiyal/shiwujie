@@ -250,7 +250,7 @@
                         android:layout_height="wrap_content"
                         android:text="解散家庭"
                         android:textColor="@android:color/white"
-                        android:background="@drawable/bg_button_red"
+                        android:background="@drawable/bg_button_primary"
                         android:layout_marginTop="16dp"
                         android:visibility="gone" />
 
@@ -260,7 +260,7 @@
                         android:layout_height="wrap_content"
                         android:text="移除成员"
                         android:textColor="@android:color/white"
-                        android:background="@drawable/bg_button_red"
+                        android:background="@drawable/bg_button_primary"
                         android:layout_marginTop="8dp"
                         android:visibility="gone" />
 
@@ -270,7 +270,7 @@
                         android:layout_height="wrap_content"
                         android:text="退出家庭"
                         android:textColor="@android:color/white"
-                        android:background="@drawable/bg_button_red"
+                        android:background="@drawable/bg_button_primary"
                         android:layout_marginTop="8dp"
                         android:visibility="gone" />
 

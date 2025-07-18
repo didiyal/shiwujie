@@ -22,6 +22,7 @@ import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ApiCallback;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.data.model.VolunteerVO;
+import com.swj.shiwujie.common.network.WebSocketManager;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -133,6 +134,9 @@ public class QuickLoginActivity extends AppCompatActivity {
                 SharedPrefsUtil.setUserType(false); // false表示志愿者用户
                 SharedPrefsUtil.setUserId(data.getVolunteerId());
                 SharedPrefsUtil.setPhone(data.getPhone());
+                
+                // 建立WebSocket连接
+                WebSocketManager.connectWebSocket(QuickLoginActivity.this, data.getPhone(), true);
                 
                 // 跳转到主页
                 NavigationHelper.toVolunteerHome(QuickLoginActivity.this);

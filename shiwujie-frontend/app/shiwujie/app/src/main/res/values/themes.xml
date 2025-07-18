@@ -11,4 +11,12 @@
         
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
     </style>
+    
+    <!-- 视频通话全屏主题 -->
+    <style name="Theme.Shiwujie.Fullscreen" parent="Theme.Shiwujie">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
 </resources>

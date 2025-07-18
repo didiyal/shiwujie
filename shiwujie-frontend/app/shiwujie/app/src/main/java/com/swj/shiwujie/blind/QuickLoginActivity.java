@@ -23,6 +23,7 @@ import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ApiCallback;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.data.model.BlindVO;
+import com.swj.shiwujie.common.network.WebSocketManager;
 
 public class QuickLoginActivity extends AppCompatActivity {
     private static final String TAG = "QuickLoginActivity";
@@ -69,6 +70,7 @@ public class QuickLoginActivity extends AppCompatActivity {
         try {
             apiService = RetrofitClient.getInstance().createService(ApiService.class);
             SharedPrefsUtil.init(this);
+            
             Log.d(TAG, "初始化服务完成");
         } catch (Exception e) {
             Log.e(TAG, "初始化服务失败", e);
@@ -171,9 +173,8 @@ public class QuickLoginActivity extends AppCompatActivity {
                 SharedPrefsUtil.setUserId(data.getBlindId());
                 SharedPrefsUtil.setPhone(data.getPhone());
                 
-                // 设置结果并结束当前页面
-                setResult(RESULT_OK);
-                finish();
+                // 建立WebSocket连接
+                WebSocketManager.connectWebSocket(QuickLoginActivity.this, data.getPhone(), false);
                 
                 // 跳转到主页
                 NavigationHelper.toBlindHome(QuickLoginActivity.this);
