@@ -157,6 +157,11 @@ public class FloatingWindowService extends Service {
         isWaiting = false;
         tvStatus.setText("正在取消...");
         
+        // 立即停止定时器
+        if (handler != null && timeRunnable != null) {
+            handler.removeCallbacks(timeRunnable);
+        }
+        
         // 发送取消匹配请求
         ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
         String token = "Bearer " + SharedPrefsUtil.getToken();
@@ -174,12 +179,14 @@ public class FloatingWindowService extends Service {
                 } else {
                     Toast.makeText(FloatingWindowService.this, "网络请求失败", Toast.LENGTH_SHORT).show();
                 }
+                // 无论成功失败都要停止服务
                 stopSelf();
             }
             
             @Override
             public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
                 Toast.makeText(FloatingWindowService.this, "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                // 网络失败也要停止服务
                 stopSelf();
             }
         });

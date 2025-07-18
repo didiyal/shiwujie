@@ -370,21 +370,15 @@ public class WebSocketManager {
      */
     private void checkConnectionStatus() {
         boolean currentStatus = isConnected && webSocketClient != null && webSocketClient.isOpen();
-        if (currentStatus != socketData.isSocketConnected()) {
+        boolean previousStatus = socketData.isSocketConnected();
+        
+        if (currentStatus != previousStatus) {
             socketData.updateConnectionStatus(currentStatus);
             Log.d(TAG, "Connection status updated: " + currentStatus);
             
             if (currentStatus) {
-                // 如果连接状态变为已连接，重新发送初始化消息
-                if (context != null) {
-                    Log.d(TAG, "连接状态恢复，重新发送初始化消息");
-                    // 从SharedPrefs获取用户信息并重新发送初始化消息
-                    String phone = SharedPrefsUtil.getPhone();
-                    boolean isVolunteer = !SharedPrefsUtil.isBlind();
-                    if (phone != null && !phone.isEmpty()) {
-                        sendLoginMessage(phone, isVolunteer);
-                    }
-                }
+                // 连接状态变为已连接，只更新状态，不发送任何消息
+                Log.d(TAG, "连接状态恢复，仅更新状态");
                 
                 // 通知连接状态变化
                 mainHandler.post(() -> {
@@ -393,7 +387,7 @@ public class WebSocketManager {
                     }
                 });
             } else {
-                // 如果连接状态变为断开，尝试自动重连
+                // 连接状态变为断开，尝试自动重连
                 Log.d(TAG, "检测到连接断开，尝试自动重连");
                 if (!isConnecting && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                     scheduleReconnect();

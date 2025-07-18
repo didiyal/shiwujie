@@ -30,6 +30,8 @@ public class HomeFragment extends Fragment {
     private CardView cardConnectVolunteer;
     private CardView cardEmergencyHelp;
     private WebSocketManager webSocketManager;
+    private WebSocketManager.MessageListener messageListener;
+    private boolean isMatching = false; // 防止重复请求
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -58,19 +60,29 @@ public class HomeFragment extends Fragment {
     private void initWebSocket() {
         webSocketManager = WebSocketManager.getInstance();
         
-        // 添加全局Socket消息监听
-        webSocketManager.addMessageListener(new WebSocketManager.MessageListener() {
+        // 创建消息监听器
+        messageListener = new WebSocketManager.MessageListener() {
             @Override
             public void onMessageReceived(SocketDataV0 data) {
                 handleSocketMessage(data);
             }
-        });
+        };
+        
+        // 添加全局Socket消息监听
+        webSocketManager.addMessageListener(messageListener);
     }
     
 
     
     private void startVideoHelpMatching() {
         Log.d(TAG, "开始连线志愿者");
+        
+        // 防止重复请求
+        if (isMatching) {
+            Log.d(TAG, "正在匹配中，忽略重复请求");
+            Toast.makeText(requireContext(), "正在匹配中，请稍候...", Toast.LENGTH_SHORT).show();
+            return;
+        }
         
         // 获取并打印token信息
         String token = SharedPrefsUtil.getToken();
@@ -81,6 +93,55 @@ public class HomeFragment extends Fragment {
             Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
             return;
         }
+        
+        // 先检查登录状态
+        checkLoginStatusBeforeMatching(token);
+        
+        // 设置匹配状态
+        isMatching = true;
+    }
+    
+    private void checkLoginStatusBeforeMatching(String token) {
+        Log.d(TAG, "检查登录状态");
+        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        String authToken = "Bearer " + token;
+        
+        apiService.checkLogin(authToken).enqueue(new Callback<BaseResponse<Void>>() {
+            @Override
+            public void onResponse(Call<BaseResponse<Void>> call, Response<BaseResponse<Void>> response) {
+                Log.d(TAG, "登录状态检查响应 - HTTP状态码: " + response.code());
+                
+                if (response.isSuccessful() && response.body() != null) {
+                    BaseResponse<Void> result = response.body();
+                    Log.d(TAG, "登录状态检查结果: code=" + result.getCode() + ", message=" + result.getMessage());
+                    
+                    if (result.getCode() == 1) {
+                        // 登录状态有效，继续匹配
+                        Log.d(TAG, "登录状态有效，开始匹配");
+                        startVideoHelpMatchingRequest(token);
+                    } else {
+                        Log.e(TAG, "登录状态无效: " + result.getMessage());
+                        Toast.makeText(requireContext(), "登录状态异常: " + result.getMessage(), Toast.LENGTH_SHORT).show();
+                        isMatching = false;
+                    }
+                } else {
+                    Log.e(TAG, "登录状态检查失败");
+                    Toast.makeText(requireContext(), "登录状态检查失败", Toast.LENGTH_SHORT).show();
+                    isMatching = false;
+                }
+            }
+            
+            @Override
+            public void onFailure(Call<BaseResponse<Void>> call, Throwable t) {
+                Log.e(TAG, "登录状态检查网络失败", t);
+                Toast.makeText(requireContext(), "登录状态检查失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                isMatching = false;
+            }
+        });
+    }
+    
+    private void startVideoHelpMatchingRequest(String token) {
+        Log.d(TAG, "开始发送匹配请求");
         
         // 发送盲人加入视频求助请求
         ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
@@ -104,10 +165,14 @@ public class HomeFragment extends Fragment {
                         } else {
                             Log.e(TAG, "连线失败 - 业务错误: " + result.getMessage());
                             Toast.makeText(requireContext(), "连线失败: " + result.getMessage(), Toast.LENGTH_SHORT).show();
+                            // 重置匹配状态
+                            isMatching = false;
                         }
                     } else {
                         Log.e(TAG, "响应体为空");
                         Toast.makeText(requireContext(), "服务器响应异常", Toast.LENGTH_SHORT).show();
+                        // 重置匹配状态
+                        isMatching = false;
                     }
                 } else {
                     Log.e(TAG, "HTTP请求失败 - 状态码: " + response.code());
@@ -118,6 +183,8 @@ public class HomeFragment extends Fragment {
                         Log.e(TAG, "读取错误响应体失败", e);
                     }
                     Toast.makeText(requireContext(), "网络请求失败 - HTTP " + response.code(), Toast.LENGTH_SHORT).show();
+                    // 重置匹配状态
+                    isMatching = false;
                 }
             }
             
@@ -128,6 +195,8 @@ public class HomeFragment extends Fragment {
                 Log.e(TAG, "请求方法: " + call.request().method());
                 Log.e(TAG, "请求头: " + call.request().headers());
                 Toast.makeText(requireContext(), "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                // 重置匹配状态
+                isMatching = false;
             }
         });
     }
@@ -149,6 +218,9 @@ public class HomeFragment extends Fragment {
             // 视频初始化成功通知，进入视频通话页面
             Log.d(TAG, "收到视频初始化成功通知，准备进入视频通话页面");
             Log.d(TAG, "频道ID: " + data.getChannelId() + ", 志愿者手机号: " + data.getVolunteerPhone());
+            
+            // 重置匹配状态
+            isMatching = false;
             
             try {
                 // 跳转到视频通话页面
@@ -174,8 +246,8 @@ public class HomeFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         // 移除Socket消息监听
-        if (webSocketManager != null) {
-            webSocketManager.removeMessageListener(null);
+        if (webSocketManager != null && messageListener != null) {
+            webSocketManager.removeMessageListener(messageListener);
         }
     }
 } 

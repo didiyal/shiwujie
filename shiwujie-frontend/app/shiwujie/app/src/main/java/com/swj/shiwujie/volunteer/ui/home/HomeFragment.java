@@ -30,7 +30,8 @@ public class HomeFragment extends Fragment {
     
     private Button btnLearnCall;
     private WebSocketManager webSocketManager;
-    
+    private WebSocketManager.MessageListener messageListener;
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                            ViewGroup container, Bundle savedInstanceState) {
@@ -51,13 +52,16 @@ public class HomeFragment extends Fragment {
     private void initWebSocket() {
         webSocketManager = WebSocketManager.getInstance();
         
-        // 添加全局Socket消息监听
-        webSocketManager.addMessageListener(new WebSocketManager.MessageListener() {
+        // 创建消息监听器
+        messageListener = new WebSocketManager.MessageListener() {
             @Override
             public void onMessageReceived(SocketDataV0 data) {
                 handleSocketMessage(data);
             }
-        });
+        };
+        
+        // 添加全局Socket消息监听
+        webSocketManager.addMessageListener(messageListener);
     }
     
 
@@ -177,13 +181,13 @@ public class HomeFragment extends Fragment {
 
     
 
-    
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         // 移除Socket消息监听
-        if (webSocketManager != null) {
-            webSocketManager.removeMessageListener(null);
+        if (webSocketManager != null && messageListener != null) {
+            webSocketManager.removeMessageListener(messageListener);
         }
     }
 } 
