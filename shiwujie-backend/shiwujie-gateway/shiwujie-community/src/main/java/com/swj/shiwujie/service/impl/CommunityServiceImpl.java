@@ -12,8 +12,10 @@ import com.swj.shiwujie.mapper.CommunityMapper;
 import com.swj.shiwujie.mapper.CommunitymanagerMapper;
 import com.swj.shiwujie.model.VO.community.CommunityLoginSuccessVO;
 import com.swj.shiwujie.model.domain.community.Community;
+import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.enums.community.CommunityLevelEnum;
+import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.model.enums.community.CommunityTypeEnum;
 import com.swj.shiwujie.model.enums.community.IsDefaultCommunityEnum;
 import com.swj.shiwujie.model.request.community.CommunityRegisterRequest;
@@ -21,11 +23,20 @@ import com.swj.shiwujie.model.request.user.volunteer.CommunityVolunteerRegisterR
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.service.CommunityService;
 import com.swj.shiwujie.service.InnerVolunteerService;
+import com.swj.shiwujie.utils.JwtUtils;
+import com.swj.shiwujie.utils.RedisUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
+import static com.swj.shiwujie.constants.UserConstants.TOKEN_SECRETKEY;
 
 /**
 * @author Administrator
@@ -42,6 +53,12 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
 
     @Resource
     private CommunitymanagerMapper communitymanagerMapper;
+
+
+    @Resource
+    private RedisUtils redisUtils;
+
+
 
 
     /**
@@ -129,11 +146,16 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
 
 
         this.save(community);
-//        innerVolunteerService.updateByid();
-//        communitymanagerMapper.insert();
+        innerVolunteerService.updateById(volunteer);
+
 
         //4- 绑定职位表
+        Communitymanager communitymanager = new Communitymanager();
+        communitymanager.setCommunityId(community.getCommunityId());
+        communitymanager.setVolunteerId(volunteer.getVolunteerId());
+        communitymanager.setRolePermissionId(CommunityRolePermissionEnum.REGISTRANT.getRoleId());
 
+        communitymanagerMapper.insert(communitymanager);
         //5- 颁发token
 
         //6- 脱敏
@@ -169,6 +191,28 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         return community;
     }
 
+
+
+    /**
+     * 登录成功实现令牌生成与redis储存
+     *
+     * @param volunteer 盲人信息
+     * @return token
+     */
+    @Override
+    public String loginSuccess(Volunteer volunteer,Community community) {
+        // 生成token并脱敏返回,token存入redis
+        Map<String, Object> jwtMap = new HashMap<>();
+        jwtMap.put("volunteerId", volunteer.getVolunteerId());
+        jwtMap.put("communityId", community.getCommunityId());
+        jwtMap.put("phone", volunteer.getPhone());
+        String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
+
+        redisUtils.setToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId(), token, 1L);
+
+
+        return token;
+    }
 
     // endregion
 }

@@ -5,15 +5,15 @@ import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.servlet.HandlerInterceptor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.servlet.HandlerInterceptor;
+
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.util.Map;
 
 import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;

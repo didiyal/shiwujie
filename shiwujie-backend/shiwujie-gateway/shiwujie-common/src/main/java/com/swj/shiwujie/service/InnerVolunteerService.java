@@ -32,6 +32,17 @@ public interface InnerVolunteerService  {
      */
     boolean save(Volunteer volunteer);
 
+
+    /**
+     * 更新志愿者信息
+     * @param volunteer 要更新的志愿者
+     * @return 是否成功
+     */
+    public boolean updateById(Volunteer volunteer);
+
+
+
+
     /**
      * 通过手机号查询用户信息
      * @param phone 手机号

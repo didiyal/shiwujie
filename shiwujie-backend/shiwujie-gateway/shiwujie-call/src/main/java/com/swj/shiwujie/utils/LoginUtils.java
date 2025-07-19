@@ -1,9 +1,5 @@
 package com.swj.shiwujie.utils;
 
-import com.swj.shiwujie.common.ErrorCode;
-import com.swj.shiwujie.exception.BusinessException;
-import org.springframework.stereotype.Component;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**

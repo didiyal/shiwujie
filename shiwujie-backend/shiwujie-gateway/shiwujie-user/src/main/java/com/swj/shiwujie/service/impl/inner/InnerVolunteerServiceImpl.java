@@ -58,6 +58,18 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
     }
 
 
+
+    /**
+     * 更新志愿者信息
+     * @param volunteer 要更新的志愿者
+     * @return 是否成功
+     */
+    @Override
+    public boolean updateById(Volunteer volunteer) {
+        boolean b = volunteerService.updateById(volunteer);
+        return b;
+    }
+
     /**
      * 通过手机号查询用户(志愿者)信息
      *
