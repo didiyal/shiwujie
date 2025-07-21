@@ -35,7 +35,7 @@ public interface UrgenthelpService extends IService<Urgenthelp> {
      * @param blindId 求助盲人ID
      * @return 是否成功
      */
-    boolean joinUrgenthelp(Long blindId,Long loginVolunteerId,String loginUserPhone);
+    boolean joinUrgenthelp(String blindId,Long loginVolunteerId,String loginUserPhone);
 
 
 

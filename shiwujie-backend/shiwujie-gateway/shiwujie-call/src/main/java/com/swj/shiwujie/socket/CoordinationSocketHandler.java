@@ -20,6 +20,7 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
@@ -30,11 +31,14 @@ import java.util.UUID;
 
 @Configuration
 @ChannelHandler.Sharable
+@Slf4j
 public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
     public static ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
-    public Map<String, Channel> cmap = new HashMap<>();
+    public static Map<String, Channel> cmap = new HashMap<>();
+
+    public static Map<Channel, String> pmap = new HashMap<>();
 
 
     @Override
@@ -44,7 +48,11 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("与客户端断开连接，通道关闭！");
+        Channel channel = ctx.channel();
+        String phone = pmap.get(channel);
+        pmap.remove(channel);
+        cmap.remove(phone);
+        System.out.println(phone+"与客户端断开连接，通道关闭！");
     }
 
     @Override
@@ -61,7 +69,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
                 break;
         }
         ctx.channel().writeAndFlush(new TextWebSocketFrame("收到客户端的数据"));
-//        System.out.println(String.format("收到客户端%s的数据：%s", ctx.channel().id(), msg.text()));
+        System.out.println(String.format("收到客户端%s的数据：%s", pmap.get(ctx.channel()), msg.text()));
     }
 
     /**
@@ -78,6 +86,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             String response = this.getResponse(1, "系统错误", 2, socketData);
             channel.writeAndFlush(new TextWebSocketFrame(response));
         }
+        log.info("志愿者初始化成功,向盲人转发 - 2" );
     }
 
 
@@ -93,6 +102,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
 
             String response = this.getResponse(0, "匹配成功", 1, socketData);
             channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info("匹配成功,向志愿者发送信息 - 1" );
         }else{
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"该用户未连接服务器");
         }
@@ -100,7 +110,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
 
 
     /**
-     * 初始化socket - 0
+     * 初始化socket登录 - 0
      * 返回type,0
      *
      * @param socketData
@@ -112,9 +122,11 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             phone = socketData.getBlindPhone();
         }
         cmap.put(phone, ctx.channel());
+        pmap.put(ctx.channel(), phone);
         System.out.println(phone + "登录");
 
         String response = this.getResponse(0, "初始化成功", 0, socketData);
+        log.info("初始化socket登录 - 0" );
         ctx.channel().writeAndFlush(new TextWebSocketFrame(response));
     }
 
@@ -131,7 +143,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
 
 
     /**
-     * 向家属紧急求助 - 3
+     * 盲人向家属紧急求助,向家属转发 - 3
      * @param volunteerList 家属列表
      * @param socketData 返回类型
      */
@@ -149,6 +161,33 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
                 }
             }
         }
+        log.info("盲人向家属紧急求助,向家属转发 - 3" );
 
     }
+
+
+    /**
+     * 盲人取消求助通知 - 4
+     * @param volunteerList 家属列表
+     * @param socketData 返回类型
+     */
+    public void cancelUrgenthelp(List<Volunteer> volunteerList,SocketData socketData) {
+
+        for (Volunteer volunteer : volunteerList) {
+            String phone = volunteer.getPhone();
+            if(ObjUtil.isNotNull(phone)){
+                if(cmap.containsKey(phone)){
+                    Channel channel = cmap.get(phone);
+                    socketData.setVolunteerPhone(phone);
+                    socketData.setChannelId(volunteer.getVolunteerId());
+                    String response = this.getResponse(0, "家属取消紧急求助", 4, socketData);
+                    channel.writeAndFlush(new TextWebSocketFrame(response));
+                }
+            }
+        }
+
+
+        log.info("盲人取消求助通知 - 4" );
+    }
+
 }

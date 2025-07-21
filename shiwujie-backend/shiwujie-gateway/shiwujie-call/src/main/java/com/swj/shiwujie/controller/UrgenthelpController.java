@@ -108,17 +108,17 @@ public class UrgenthelpController {
 
     /**
      * 家属加入求助
-     * @param blindId 求助盲人id
+     * @param blindPhone 求助盲人id
      * @return 是否成功
      */
 
     @GetMapping("/volunteer/join")
-    public BaseResponse<Boolean> familyJoinUrgenthelp(Long blindId,HttpServletRequest request) {
+    public BaseResponse<Boolean> familyJoinUrgenthelp(String blindPhone,HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
 
-        boolean result = urgenthelpService.joinUrgenthelp(blindId,loginVolunteerId,loginUserPhone);
+        boolean result = urgenthelpService.joinUrgenthelp(blindPhone,loginVolunteerId,loginUserPhone);
 
         return ResultUtils.success(result);
 
@@ -153,7 +153,8 @@ public class UrgenthelpController {
         urgenthelp.setHelp_status(CallHelpStatusEnum.END_HELP.getHelpStatus());
         long between = DateUtil.between(urgenthelp.getResponse_time(), urgenthelp.getEnd_time(), DateUnit.MINUTE);
         urgenthelp.setDuration(between);
-        urgenthelpService.updateById(urgenthelp);
+        boolean b = urgenthelpService.updateById(urgenthelp);
+        ThrowUtils.throwIf(!b,ErrorCode.SYSTEM_ERROR);
 
         return ResultUtils.success(true);
     }

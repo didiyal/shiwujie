@@ -19,6 +19,7 @@ import com.swj.shiwujie.mapper.UrgenthelpMapper;
 import com.swj.shiwujie.socket.CoordinationSocketHandler;
 import com.swj.shiwujie.utils.ConverterUtils;
 import com.swj.shiwujie.utils.RedisUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ import java.util.Queue;
  * @createDate 2025-07-11 21:26:52
  */
 @Service
+@Slf4j
 public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenthelp>
         implements UrgenthelpService {
 
@@ -63,9 +65,9 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
 
         //1. 检查是否在求助中
         Urgenthelp urgenthelp = this.getWaitingByBlindId(loginBlindId);
-        ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp), ErrorCode.PARAMS_ERROR, "您已经在求助中了");
+        ThrowUtils.throwIf(ObjUtil.isNotNull(urgenthelp), ErrorCode.PARAMS_ERROR, "您已经在求助中了");
         urgenthelp = this.getHelpingByBlindId(loginBlindId);
-        ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp), ErrorCode.PARAMS_ERROR, "您已经在求助中了");
+        ThrowUtils.throwIf(ObjUtil.isNotNull(urgenthelp), ErrorCode.PARAMS_ERROR, "您已经在求助中了");
         //2. 查询是否存在家庭
         Blind blind = innerBlindService.getById(loginBlindId);
         Long familyId = blind.getFamilyId();
@@ -102,14 +104,25 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
     @Override
     public boolean removeFromUrgenthelp(Long loginBlindId, String loginUserPhone) {
 
-        Urgenthelp urgenthelp = this.getWaitingByVolunteerId(loginBlindId);
+        Urgenthelp urgenthelp = this.getWaitingByBlindId(loginBlindId);
         ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp), ErrorCode.PARAMS_ERROR, "您并未求助");
 
+        //2. 查询是否存在家庭
+        Blind blind = innerBlindService.getById(loginBlindId);
+        Long familyId = blind.getFamilyId();
+        ThrowUtils.throwIf(ObjUtil.isNull(familyId), ErrorCode.PARAMS_ERROR, "您没有加入家庭");
+        //拿到家庭成员信息
+        List<Volunteer> volunteerList = innerVolunteerService.getListByFamilyId(familyId);
 
         //修改匹配表信息
         urgenthelp.setHelp_status(CallHelpStatusEnum.FALL.getHelpStatus());
         boolean b = this.updateById(urgenthelp);
         ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+
+        //4. 向家庭成员发起求助
+        SocketData socketData = new SocketData();
+        socketData.setBlindPhone(blind.getPhone());
+        coordinationSocketHandler.cancelUrgenthelp(volunteerList, socketData);
 
 
         return true;
@@ -118,14 +131,15 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
     /**
      * 家属加入帮助
      * @param loginVolunteerId 登录志愿者id
-     * @param blindId 求助盲人ID
+     * @param blindPhone 求助盲人ID
      * @return 是否成功
      */
     @Override
-    public boolean joinUrgenthelp(Long blindId,Long loginVolunteerId,String loginUserPhone) {
+    public boolean joinUrgenthelp(String blindPhone,Long loginVolunteerId,String loginUserPhone) {
 
         //4. 更新求助表内容
-        Urgenthelp urgenthelp = this.getWaitingByBlindId(blindId);
+        Blind blind = innerBlindService.getByPhone(blindPhone);
+        Urgenthelp urgenthelp = this.getWaitingByBlindId(blind.getBlindId());
         ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp), ErrorCode.PARAMS_ERROR,"对方没有在求助");
 
         urgenthelp.setVolunteer_id(loginVolunteerId);
