@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/background_dark_card"
+    android:padding="16dp"
+    android:layout_margin="16dp">
+
+    <!-- 标题 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="紧急求助"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 状态信息 -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="正在等待家属响应..."
+        android:textSize="14sp"
+        android:textColor="#CCCCCC"
+        android:gravity="center"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 等待时间 -->
+    <TextView
+        android:id="@+id/tvWaitTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="等待时间: 00:00"
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 取消按钮 -->
+    <Button
+        android:id="@+id/btnCancel"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="取消求助"
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/bg_button_primary"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout> 

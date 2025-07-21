@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="0dp"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="320dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_card_round_white"
+        android:padding="32dp"
+        android:layout_marginTop="80dp"
+        android:layout_marginBottom="80dp"
+        android:gravity="center"
+        android:elevation="8dp">
+
+        <!-- 顶部来电图标 -->
+        <ImageView
+            android:id="@+id/ivCall"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/icon_call_incoming"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 提示语 -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="有视障人士发起紧急求助"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:gravity="center"
+            android:layout_marginBottom="12dp" />
+
+        <!-- 盲人手机号 -->
+        <TextView
+            android:id="@+id/tvBlindPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="手机号：134****9652"
+            android:textSize="16sp"
+            android:textColor="#666666"
+            android:gravity="center"
+            android:layout_marginBottom="32dp" />
+
+        <!-- 按钮区 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnAccept"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="响应"
+                android:textSize="18sp"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_button_green_round"
+                android:layout_marginEnd="16dp" />
+
+            <Button
+                android:id="@+id/btnReject"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="拒绝"
+                android:textSize="18sp"
+                android:textColor="#666666"
+                android:background="@drawable/bg_button_gray_round" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout> 
