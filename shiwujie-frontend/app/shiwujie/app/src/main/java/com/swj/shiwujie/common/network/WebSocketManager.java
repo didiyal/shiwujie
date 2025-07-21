@@ -253,6 +253,13 @@ public class WebSocketManager {
         Log.d(TAG, "开始处理消息: " + message);
         Log.d(TAG, "原始接收到的消息: " + message);
         
+        // 检查是否为纯字符串消息（非JSON格式）
+        if (isPlainStringMessage(message)) {
+            Log.d(TAG, "收到字符串确认消息: " + message);
+            handleStringMessage(message);
+            return;
+        }
+        
         try {
             Gson gson = new Gson();
             
@@ -361,8 +368,60 @@ public class WebSocketManager {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "消息处理失败: " + e.getMessage(), e);
+            Log.e(TAG, "JSON消息处理失败: " + e.getMessage(), e);
+            // 如果JSON解析失败，尝试作为字符串消息处理
+            Log.d(TAG, "尝试作为字符串消息处理");
+            handleStringMessage(message);
         }
+    }
+    
+    /**
+     * 检查是否为纯字符串消息（非JSON格式）
+     */
+    private boolean isPlainStringMessage(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return false;
+        }
+        
+        String trimmed = message.trim();
+        
+        // 如果消息不是以 { 或 [ 开头，且不是JSON格式，则认为是字符串消息
+        if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+            return true;
+        }
+        
+        // 尝试解析JSON，如果失败则认为是字符串消息
+        try {
+            new Gson().fromJson(trimmed, Object.class);
+            return false; // 成功解析为JSON
+        } catch (Exception e) {
+            return true; // 解析失败，认为是字符串消息
+        }
+    }
+    
+    /**
+     * 处理字符串消息
+     */
+    private void handleStringMessage(String message) {
+        Log.d(TAG, "处理字符串消息: " + message);
+        
+        // 根据消息内容进行不同的处理
+        if (message.contains("连接成功") || message.contains("connected")) {
+            Log.d(TAG, "收到连接成功确认消息");
+            // 可以在这里处理连接成功的逻辑
+        } else if (message.contains("心跳") || message.contains("heartbeat")) {
+            Log.d(TAG, "收到心跳确认消息");
+            // 可以在这里处理心跳确认的逻辑
+        } else if (message.contains("消息已收到") || message.contains("received")) {
+            Log.d(TAG, "收到消息确认");
+            // 可以在这里处理消息确认的逻辑
+        } else {
+            Log.d(TAG, "收到未知字符串消息: " + message);
+            // 可以在这里处理其他字符串消息
+        }
+        
+        // 通知字符串消息监听器（如果需要的话）
+        // 这里可以根据需要添加字符串消息的监听器
     }
     
     /**

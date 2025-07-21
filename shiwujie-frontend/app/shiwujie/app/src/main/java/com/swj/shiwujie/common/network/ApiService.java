@@ -363,4 +363,42 @@ public interface ApiService {
     @DELETE("/api/call/videohelp/volunteer/delete")
     Call<BaseResponse<Boolean>> volunteerLeaveVideohelp(@Header("Authorization") String token);
 
+    // ==================== 紧急求助相关接口 ====================
+
+    /**
+     * 盲人紧急求助
+     * @param token JWT令牌
+     * @return 求助结果
+     */
+    @GET("/api/call/urgenthelp/blind/add")
+    Call<BaseResponse<Boolean>> blindCreateUrgenthelp(@Header("Authorization") String token);
+
+    /**
+     * 盲人取消求助
+     * @param token JWT令牌
+     * @return 取消结果
+     */
+    @DELETE("/api/call/urgenthelp/blind/delete")
+    Call<BaseResponse<Boolean>> blindLeaveUrgenthelp(@Header("Authorization") String token);
+
+    /**
+     * 挂断紧急求助视频通话
+     * @param token JWT令牌
+     * @return 挂断结果
+     */
+    @DELETE("/api/call/urgenthelp/delete/leave")
+    Call<BaseResponse<Boolean>> hangupUrgenthelp(@Header("Authorization") String token);
+
+    /**
+     * 家属回应求助
+     * @param token JWT令牌
+     * @param blindPhone 求助盲人手机号
+     * @return 回应结果
+     */
+    @GET("/api/call/urgenthelp/volunteer/join")
+    Call<BaseResponse<Boolean>> familyJoinUrgenthelp(
+            @Header("Authorization") String token,
+            @Query("blindPhone") String blindPhone
+    );
+
 }

@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -31,13 +32,14 @@ public class EditProfileActivity extends AppCompatActivity {
     private RadioButton rbMale;
     private RadioButton rbFemale;
     private EditText etIdCard;
-    private EditText etDisabilityCard;
     private EditText etOtherInfo;
     private TextView tvFamilyId;
     private Button btnChangePassword;
     private Button btnChangePhone;
     private Button btnConfirm;
     private ApiService apiService;
+    private LinearLayout layoutDisabilityCard;
+    private EditText etDisabilityCard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,12 +67,13 @@ public class EditProfileActivity extends AppCompatActivity {
         rbMale = findViewById(R.id.rbMale);
         rbFemale = findViewById(R.id.rbFemale);
         etIdCard = findViewById(R.id.etIdCard);
-        etDisabilityCard = findViewById(R.id.etDisabilityCard);
         etOtherInfo = findViewById(R.id.etOtherInfo);
         tvFamilyId = findViewById(R.id.tvFamilyId);
         btnChangePassword = findViewById(R.id.btnChangePassword);
         btnChangePhone = findViewById(R.id.btnChangePhone);
         btnConfirm = findViewById(R.id.btnConfirm);
+        layoutDisabilityCard = findViewById(R.id.layoutDisabilityCard);
+        etDisabilityCard = findViewById(R.id.etDisabilityCard);
     }
 
     private void initListeners() {
@@ -120,11 +123,6 @@ public class EditProfileActivity extends AppCompatActivity {
                         etIdCard.setText(data.getIdCard());
                     }
                     
-                    // 设置残疾证号
-                    if (data.getDisabilityCard() != null) {
-                        etDisabilityCard.setText(data.getDisabilityCard());
-                    }
-                    
                     // 设置其他信息
                     if (data.getOtherInfo() != null) {
                         etOtherInfo.setText(data.getOtherInfo());
@@ -135,6 +133,20 @@ public class EditProfileActivity extends AppCompatActivity {
                         tvFamilyId.setText(String.valueOf(data.getFamilyId()));
                     } else {
                         tvFamilyId.setText("暂未加入家庭");
+                    }
+
+                    // 残疾证号动态显示与可编辑控制
+                    layoutDisabilityCard.setVisibility(View.VISIBLE);
+                    SharedPrefsUtil.setBoolean("isDisabilityCard", data.getIsDisabilityCard() != null && data.getIsDisabilityCard());
+                    if (data.getIsDisabilityCard() == null || !data.getIsDisabilityCard()) {
+                        etDisabilityCard.setEnabled(true);
+                        etDisabilityCard.setFocusable(true);
+                        etDisabilityCard.setFocusableInTouchMode(true);
+                        etDisabilityCard.setText(data.getDisabilityCard() != null ? data.getDisabilityCard() : "");
+                    } else {
+                        etDisabilityCard.setText("已完成身份校验");
+                        etDisabilityCard.setEnabled(false);
+                        etDisabilityCard.setFocusable(false);
                     }
                 }
             }
@@ -152,7 +164,6 @@ public class EditProfileActivity extends AppCompatActivity {
 
         String username = etUsername.getText().toString().trim();
         String idCard = etIdCard.getText().toString().trim();
-        String disabilityCard = etDisabilityCard.getText().toString().trim();
         String otherInfo = etOtherInfo.getText().toString().trim();
         int gender = rbMale.isChecked() ? 0 : 1;
 
@@ -162,10 +173,10 @@ public class EditProfileActivity extends AppCompatActivity {
         }
 
         // 验证残疾证号长度
-        if (!TextUtils.isEmpty(disabilityCard) && disabilityCard.length() != 20) {
-            Toast.makeText(this, "残疾证号必须为20位", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // 删除：if (!TextUtils.isEmpty(disabilityCard) && disabilityCard.length() != 20) {
+        // 删除：Toast.makeText(this, "残疾证号必须为20位", Toast.LENGTH_SHORT).show();
+        // 删除：return;
+        // }
 
         // 创建请求体
         BlindVO blind = new BlindVO();
@@ -173,8 +184,21 @@ public class EditProfileActivity extends AppCompatActivity {
         blind.setName(username);
         blind.setGender(gender);
         blind.setIdCard(idCard);
-        blind.setDisabilityCard(disabilityCard);
         blind.setOtherInfo(otherInfo);
+
+        // 只有未完成身份校验时才校验和提交残疾证号
+        String disabilityCard = etDisabilityCard.getText().toString().trim();
+        if (etDisabilityCard.isEnabled()) {
+            if (TextUtils.isEmpty(disabilityCard)) {
+                Toast.makeText(this, "残疾证号不能为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!disabilityCard.matches("^\\d{17}(\\d|X)[0-6][1-4]$")) {
+                Toast.makeText(this, "残疾证号格式错误，应为18位身份证+1位类别(0-6)+1位等级(1-4)", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+        blind.setDisabilityCard(disabilityCard);
 
         // 调用更新用户信息的API
         apiService.updateBlindInfo(

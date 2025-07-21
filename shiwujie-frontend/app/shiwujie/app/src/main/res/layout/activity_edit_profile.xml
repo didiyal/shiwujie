@@ -212,14 +212,16 @@
                     android:textSize="16sp"/>
             </LinearLayout>
 
-            <!-- 残疾证号 -->
+            <!-- 残疾证号（仅盲人端显示，动态控制） -->
             <LinearLayout
+                android:id="@+id/layoutDisabilityCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/edit_text_background"
                 android:padding="16dp"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -235,7 +237,7 @@
                     android:layout_marginTop="8dp"
                     android:background="@null"
                     android:hint="请输入20位残疾证号"
-                    android:inputType="number"
+                    android:inputType="text"
                     android:maxLength="20"
                     android:textSize="16sp"/>
             </LinearLayout>

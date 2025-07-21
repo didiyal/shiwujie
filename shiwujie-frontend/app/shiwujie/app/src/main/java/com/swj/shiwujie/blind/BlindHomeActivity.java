@@ -10,6 +10,12 @@ import com.swj.shiwujie.R;
 import com.swj.shiwujie.databinding.ActivityBlindHomeBinding;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
+import android.app.AlertDialog;
+import android.content.Intent;
+import com.swj.shiwujie.common.network.ApiService;
+import com.swj.shiwujie.common.network.RetrofitClient;
+import com.swj.shiwujie.common.network.ApiCallback;
+import com.swj.shiwujie.data.model.BlindVO;
 
 public class BlindHomeActivity extends AppCompatActivity {
     private static final String TAG = "BlindHomeActivity";
@@ -52,6 +58,36 @@ public class BlindHomeActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "初始化WebSocket连接失败", e);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String token = SharedPrefsUtil.getToken();
+        Long userId = SharedPrefsUtil.getUserId();
+        if (token == null || userId == null) return;
+
+        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        apiService.getBlindById("Bearer " + token, userId).enqueue(new ApiCallback<BlindVO>(this) {
+            @Override
+            public void onSuccess(BlindVO data) {
+                boolean isDisabilityCard = data.getIsDisabilityCard() != null && data.getIsDisabilityCard();
+                SharedPrefsUtil.setBoolean("isDisabilityCard", isDisabilityCard);
+                if (!isDisabilityCard) {
+                    new AlertDialog.Builder(BlindHomeActivity.this)
+                        .setTitle("残疾证校验提醒")
+                        .setMessage("您还未完成残疾证校验，请先补充残疾证信息")
+                        .setCancelable(false)
+                        .setPositiveButton("去校验", (dialog, which) -> {
+                            startActivity(new Intent(BlindHomeActivity.this, EditProfileActivity.class));
+                        })
+                        .setNegativeButton("退出APP", (dialog, which) -> {
+                            finishAffinity();
+                        })
+                        .show();
+                }
+            }
+        });
     }
 
     @Override

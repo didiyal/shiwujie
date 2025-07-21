@@ -20,6 +20,8 @@ import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.data.model.BaseResponse;
 import com.swj.shiwujie.data.model.SocketDataV0;
+import com.swj.shiwujie.common.ui.EmergencyHelpFloatingWindow;
+import com.swj.shiwujie.common.ui.EmergencyHelpIncomingWindow;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -31,6 +33,9 @@ public class HomeFragment extends Fragment {
     private Button btnLearnCall;
     private WebSocketManager webSocketManager;
     private WebSocketManager.MessageListener messageListener;
+    private EmergencyHelpFloatingWindow emergencyHelpFloatingWindow;
+    private EmergencyHelpIncomingWindow emergencyHelpIncomingWindow;
+    private String currentBlindIdForHelp = null;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -149,10 +154,28 @@ public class HomeFragment extends Fragment {
               ", 志愿者手机号: " + data.getVolunteerPhone() + 
               ", 频道ID: " + data.getChannelId());
         
-        if (data.getRequestType() == 1) {
+        if (data.getRequestType() == 3) {
+            // 志愿者端来电提醒弹窗
+            if (emergencyHelpIncomingWindow == null) {
+                emergencyHelpIncomingWindow = new EmergencyHelpIncomingWindow(requireActivity());
+            }
+            emergencyHelpIncomingWindow.setBlindPhone(data.getBlindPhone());
+            emergencyHelpIncomingWindow.setOnAcceptListener(v -> {
+                respondToEmergencyHelp(data);
+                emergencyHelpIncomingWindow.hide();
+            });
+            emergencyHelpIncomingWindow.setOnRejectListener(v -> {
+                emergencyHelpIncomingWindow.hide();
+            });
+            emergencyHelpIncomingWindow.show();
+            currentBlindIdForHelp = data.getBlindPhone();
+        } else if (data.getRequestType() == 1) {
             // 志愿者匹配成功通知
             Log.d(TAG, "收到匹配成功通知，准备进入视频通话页面");
             Log.d(TAG, "频道ID: " + data.getChannelId() + ", 盲人手机号: " + data.getBlindPhone());
+            
+            // 立即发送type=2消息给盲人端，确保盲人端能收到通知
+            sendVideoInitMessage(data);
             
             try {
                 // 停止悬浮窗服务
@@ -178,6 +201,78 @@ public class HomeFragment extends Fragment {
         }
     }
     
+    private void sendVideoInitMessage(SocketDataV0 matchData) {
+        try {
+            Log.d(TAG, "HomeFragment准备发送视频初始化成功消息");
+            Log.d(TAG, "匹配信息 - channelId: " + matchData.getChannelId() + 
+                  ", blindPhone: " + matchData.getBlindPhone() + 
+                  ", volunteerPhone: " + matchData.getVolunteerPhone());
+            
+            // 创建视频初始化成功消息
+            SocketDataV0 initData = new SocketDataV0();
+            initData.setRequestType(2); // 视频初始化成功通知
+            initData.setBlindPhone(matchData.getBlindPhone());
+            initData.setVolunteerPhone(matchData.getVolunteerPhone());
+            initData.setChannelId(matchData.getChannelId());
+            
+            Log.d(TAG, "HomeFragment发送视频初始化成功消息");
+            Log.d(TAG, "消息内容: requestType=" + initData.getRequestType() + 
+                  ", blindPhone=" + initData.getBlindPhone() + 
+                  ", volunteerPhone=" + initData.getVolunteerPhone() + 
+                  ", channelId=" + initData.getChannelId());
+            
+            webSocketManager.sendMessage(initData);
+            Log.d(TAG, "HomeFragment视频初始化成功消息已发送");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "HomeFragment发送视频初始化消息失败: " + e.getMessage());
+        }
+    }
+
+    private void respondToEmergencyHelp(SocketDataV0 data) {
+        // 调用ApiService家属响应紧急求助接口
+        String blindPhone = data.getBlindPhone();
+        if (blindPhone == null) {
+            Toast.makeText(requireContext(), "盲人手机号为空，无法响应紧急求助", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String token = SharedPrefsUtil.getToken();
+        if (token == null || token.isEmpty()) {
+            Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        String authToken = "Bearer " + token;
+        apiService.familyJoinUrgenthelp(authToken, blindPhone).enqueue(new Callback<BaseResponse<Boolean>>() {
+            @Override
+            public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    BaseResponse<Boolean> result = response.body();
+                    if (result.getCode() == 1 && Boolean.TRUE.equals(result.getData())) {
+                        Toast.makeText(requireContext(), "响应成功，进入视频通话", Toast.LENGTH_SHORT).show();
+                        // 关闭来电弹窗
+                        if (emergencyHelpIncomingWindow != null) emergencyHelpIncomingWindow.hide();
+                        // 跳转到视频通话页面，传递isEmergencyHelp=true
+                        Intent videoIntent = new Intent(requireContext(), com.swj.shiwujie.volunteer.VideoCallActivity.class);
+                        videoIntent.putExtra("channelId", data.getChannelId());
+                        videoIntent.putExtra("blindPhone", data.getBlindPhone());
+                        videoIntent.putExtra("volunteerPhone", data.getVolunteerPhone());
+                        videoIntent.putExtra("isEmergencyHelp", true);
+                        startActivity(videoIntent);
+                    } else {
+                        Toast.makeText(requireContext(), "响应失败: " + result.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "网络请求失败", Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override
+            public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
+                Toast.makeText(requireContext(), "网络异常: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
 
     
 
@@ -188,6 +283,16 @@ public class HomeFragment extends Fragment {
         // 移除Socket消息监听
         if (webSocketManager != null && messageListener != null) {
             webSocketManager.removeMessageListener(messageListener);
+        }
+        // 销毁紧急求助来电弹窗
+        if (emergencyHelpIncomingWindow != null) {
+            emergencyHelpIncomingWindow.destroy();
+            emergencyHelpIncomingWindow = null;
+        }
+        // 销毁紧急求助悬浮窗（盲人端专用）
+        if (emergencyHelpFloatingWindow != null) {
+            emergencyHelpFloatingWindow.destroy();
+            emergencyHelpFloatingWindow = null;
         }
     }
 } 

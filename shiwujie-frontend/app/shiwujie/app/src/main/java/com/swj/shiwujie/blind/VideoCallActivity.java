@@ -17,6 +17,9 @@ import com.swj.shiwujie.common.network.VideoCallManager;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.data.model.SocketDataV0;
+import com.swj.shiwujie.common.network.ApiService;
+import com.swj.shiwujie.common.network.RetrofitClient;
+import com.swj.shiwujie.data.model.BaseResponse;
 
 import org.ar.rtc.Constants;
 import org.ar.rtc.IRtcEngineEventHandler;
@@ -25,6 +28,13 @@ import org.ar.rtc.video.VideoCanvas;
 import org.webrtc.TextureViewRenderer;
 
 import java.util.HashMap;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import android.content.Intent;
+import android.widget.ImageButton;
+import org.ar.rtc.Constants;
 
 /**
  * 盲人端视频通话Activity
@@ -36,9 +46,10 @@ public class VideoCallActivity extends AppCompatActivity {
     // UI组件
     private FrameLayout localVideoContainer;
     private FrameLayout remoteVideoContainer;
-    private Button btnHangup;
-    private Button btnMute;
-    private Button btnSwitchCamera;
+    private ImageButton btnHangup;
+    private ImageButton btnMute;
+    private ImageButton btnSwitchCamera;
+    private ImageButton btnSpeaker;
     private TextView tvCallStatus;
     private TextView tvCallDuration;
     
@@ -53,19 +64,54 @@ public class VideoCallActivity extends AppCompatActivity {
     // 通话状态
     private boolean isMuted = false;
     private boolean isFrontCamera = true;
+    private boolean isSpeakerOn = true; // 默认开启扬声器
     private long callStartTime = 0;
+    private android.os.Handler callDurationHandler;
+    private Runnable callDurationRunnable;
     private String remoteUserId = "";
     
-
+    // 匹配信息 - 从Intent中获取
+    private long matchChannelId = 0;
+    private String matchVolunteerPhone = "";
+    private boolean isInitialized = false; // 防止重复初始化
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // 防止重复初始化
+        if (isInitialized) {
+            Log.w(TAG, "VideoCallActivity已初始化，跳过重复初始化");
+            return;
+        }
+        
         setContentView(R.layout.activity_video_call);
+        
+        // 从Intent中获取匹配信息
+        Intent intent = getIntent();
+        if (intent != null) {
+            matchChannelId = intent.getLongExtra("channelId", 0);
+            matchVolunteerPhone = intent.getStringExtra("volunteerPhone");
+            
+            Log.d(TAG, "从Intent获取匹配信息 - channelId: " + matchChannelId + 
+                  ", volunteerPhone: " + matchVolunteerPhone);
+        }
         
         initViews();
         initManagers();
         initEngineAndJoinChannel();
+        
+        // 如果从Intent获取到了频道信息，立即加入频道
+        if (matchChannelId > 0) {
+            Log.d(TAG, "从Intent获取到频道信息，立即加入频道");
+            // 延迟一点时间，确保RtcEngine初始化完成
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                String channelId = String.valueOf(matchChannelId);
+                joinVideoChannel(channelId);
+            }, 1000);
+        }
+        
+        isInitialized = true;
     }
     
     private void initViews() {
@@ -74,13 +120,25 @@ public class VideoCallActivity extends AppCompatActivity {
         btnHangup = findViewById(R.id.btn_hangup);
         btnMute = findViewById(R.id.btn_mute);
         btnSwitchCamera = findViewById(R.id.btn_switch_camera);
+        btnSpeaker = findViewById(R.id.btn_speaker);
         tvCallStatus = findViewById(R.id.tv_call_status);
         tvCallDuration = findViewById(R.id.tv_call_duration);
         
-        // 设置点击事件
+        // 设置按钮点击事件
         btnHangup.setOnClickListener(v -> hangupCall());
         btnMute.setOnClickListener(v -> toggleMute());
         btnSwitchCamera.setOnClickListener(v -> switchCamera());
+        btnSpeaker.setOnClickListener(v -> toggleSpeaker());
+        
+        // 初始化计时器
+        callDurationHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+        callDurationRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateCallDuration();
+                callDurationHandler.postDelayed(this, 1000);
+            }
+        };
     }
     
     private void initManagers() {
@@ -129,7 +187,7 @@ public class VideoCallActivity extends AppCompatActivity {
             
             // 设置音频参数
             mRtcEngine.setAudioProfile(Constants.AUDIO_PROFILE_DEFAULT, Constants.AUDIO_SCENARIO_DEFAULT);
-            mRtcEngine.setDefaultAudioRoutetoSpeakerphone(false);
+            mRtcEngine.setDefaultAudioRoutetoSpeakerphone(true); // 默认使用扬声器
             
             // 启用本地预览
             mRtcEngine.startPreview();
@@ -139,11 +197,14 @@ public class VideoCallActivity extends AppCompatActivity {
             mRtcEngine.adjustPlaybackSignalVolume(100);
             mRtcEngine.muteLocalAudioStream(false);
             
-            Log.d(TAG, "AnyRTC SDK初始化成功");
+            // 设置视频参数
+            mRtcEngine.setParameters("{\"che.video.lowBitRateStreamParameter\":{\"width\":320,\"height\":180,\"frameRate\":15,\"bitRate\":140}}");
+            
+            Log.d(TAG, "RTC引擎初始化成功");
             
         } catch (Exception e) {
-            Log.e(TAG, "AnyRTC SDK初始化失败: " + e.getMessage());
-            throw new RuntimeException("RTC SDK初始化失败：" + e.getMessage());
+            Log.e(TAG, "RTC引擎初始化失败: " + e.getMessage(), e);
+            Toast.makeText(this, "视频引擎初始化失败", Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -171,11 +232,16 @@ public class VideoCallActivity extends AppCompatActivity {
     private void setupRemoteVideo(String uid) {
         try {
             Log.d(TAG, "开始设置远程视频 - 用户ID: " + uid);
+            Log.d(TAG, "当前RtcEngine状态: " + (mRtcEngine != null ? "已初始化" : "未初始化"));
+            Log.d(TAG, "远程视频容器状态: " + (remoteVideoContainer != null ? "已创建" : "未创建"));
             
             // 使用RtcEngine.CreateRendererView创建视图
             TextureView remoteView = RtcEngine.CreateRendererView(getBaseContext());
+            Log.d(TAG, "远程视频视图创建成功");
+            
             remoteVideoContainer.addView(remoteView);
             renderers.put(uid, (TextureViewRenderer) remoteView);
+            Log.d(TAG, "远程视频视图已添加到容器，渲染器已保存");
             
             // 设置远程视频视图
             VideoCanvas videoCanvas = new VideoCanvas(
@@ -183,13 +249,20 @@ public class VideoCallActivity extends AppCompatActivity {
                 Constants.RENDER_MODE_HIDDEN,
                 uid
             );
+            Log.d(TAG, "VideoCanvas创建成功 - uid: " + uid);
+            
             mRtcEngine.setupRemoteVideo(videoCanvas);
+            Log.d(TAG, "setupRemoteVideo调用完成");
             
             runOnUiThread(() -> {
-                Log.d(TAG, "远程视频设置成功");
+                Log.d(TAG, "远程视频设置成功 - 用户ID: " + uid);
+                Toast.makeText(VideoCallActivity.this, "远程视频已连接", Toast.LENGTH_SHORT).show();
             });
         } catch (Exception e) {
-            Log.e(TAG, "设置远程视频失败: " + e.getMessage());
+            Log.e(TAG, "设置远程视频失败: " + e.getMessage(), e);
+            runOnUiThread(() -> {
+                Toast.makeText(VideoCallActivity.this, "远程视频设置失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
         }
     }
     
@@ -213,17 +286,60 @@ public class VideoCallActivity extends AppCompatActivity {
         @Override
         public void onUserOffline(final String uid, int reason) {
             runOnUiThread(() -> {
-                Log.i(TAG, "远程用户离开 - 用户ID: " + uid);
+                Log.i(TAG, "远程用户离开 - 用户ID: " + uid + ", 原因: " + reason);
                 Toast.makeText(VideoCallActivity.this, "对方已离开通话", Toast.LENGTH_SHORT).show();
                 removeRemoteVideo(uid);
+                
+                // 立即销毁RTC实例并关闭页面
+                Log.d(TAG, "检测到对方离开，立即销毁RTC实例并关闭页面");
+                if (mRtcEngine != null) {
+                    try {
+                        RtcEngine.destroy();
+                        mRtcEngine = null;
+                        Log.d(TAG, "RTC实例已销毁");
+                    } catch (Exception e) {
+                        Log.e(TAG, "销毁RTC实例时发生异常: " + e.getMessage(), e);
+                    }
+                }
+                
+                // 立即关闭页面
+                finish();
             });
         }
         
         @Override
         public void onRemoteVideoStateChanged(String uid, int state, int reason, int elapsed) {
             runOnUiThread(() -> {
-                if (state == Constants.REMOTE_VIDEO_STATE_DECODING) {
+                String stateStr = "";
+                switch (state) {
+                    case Constants.REMOTE_VIDEO_STATE_STOPPED:
+                        stateStr = "已停止";
+                        break;
+                    case Constants.REMOTE_VIDEO_STATE_STARTING:
+                        stateStr = "正在启动";
+                        break;
+                    case Constants.REMOTE_VIDEO_STATE_DECODING:
+                        stateStr = "正在解码";
+                        break;
+                    case Constants.REMOTE_VIDEO_STATE_FROZEN:
+                        stateStr = "已冻结";
+                        break;
+                    case Constants.REMOTE_VIDEO_STATE_FAILED:
+                        stateStr = "失败";
+                        break;
+                    default:
+                        stateStr = "未知状态(" + state + ")";
+                        break;
+                }
+                
+                Log.d(TAG, "远程视频状态改变 - 用户ID: " + uid + ", 状态: " + stateStr + ", 原因: " + reason + ", 延迟: " + elapsed);
+                
+                // 如果视频状态是正在解码或正在启动，都尝试设置远程视频
+                if (state == Constants.REMOTE_VIDEO_STATE_DECODING || state == Constants.REMOTE_VIDEO_STATE_STARTING) {
+                    Log.d(TAG, "尝试设置远程视频 - 用户ID: " + uid + ", 状态: " + stateStr);
                     setupRemoteVideo(uid);
+                } else if (state == Constants.REMOTE_VIDEO_STATE_FAILED) {
+                    Log.e(TAG, "远程视频解码失败 - 用户ID: " + uid + ", 原因: " + reason);
                 }
             });
         }
@@ -265,10 +381,8 @@ public class VideoCallActivity extends AppCompatActivity {
                 break;
             case VideoCallManager.CALL_STATUS_IN_CALL:
                 statusText = "通话中";
-                if (callStartTime == 0) {
-                    callStartTime = System.currentTimeMillis();
-                    startCallDurationTimer();
-                }
+                // 直接使用VideoCallManager的callStartTime，不再自己管理
+                startCallDurationTimer();
                 break;
             case VideoCallManager.CALL_STATUS_ENDED:
                 statusText = "通话结束";
@@ -284,11 +398,11 @@ public class VideoCallActivity extends AppCompatActivity {
         Log.d(TAG, "处理WebSocket消息: " + data.toString());
         
         switch (data.getRequestType()) {
-            case 2: // 匹配成功
-                handleMatchSuccess(data);
-                break;
             case 5: // 通话结束
                 handleCallEnd(data);
+                break;
+            default:
+                Log.d(TAG, "收到其他类型消息: " + data.getRequestType());
                 break;
         }
     }
@@ -324,13 +438,39 @@ public class VideoCallActivity extends AppCompatActivity {
     private void hangupCall() {
         Log.d(TAG, "用户主动挂断通话");
         
-        // 发送挂断消息
-        SocketDataV0 hangupData = SocketDataV0.createCallEnd(
-            videoCallManager.getCurrentCallId(),
-            SharedPrefsUtil.getPhone(),
-            false // 盲人用户
-        );
-        webSocketManager.sendMessage(hangupData);
+        // 调用API挂断视频通话
+        String token = SharedPrefsUtil.getToken();
+        if (token != null && !token.isEmpty()) {
+            String authToken = "Bearer " + token;
+            ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+            
+            apiService.hangupVideohelp(authToken).enqueue(new Callback<BaseResponse<Boolean>>() {
+                @Override
+                public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
+                    Log.d(TAG, "挂断API响应 - HTTP状态码: " + response.code());
+                    
+                    if (response.isSuccessful() && response.body() != null) {
+                        BaseResponse<Boolean> result = response.body();
+                        Log.d(TAG, "挂断API响应: code=" + result.getCode() + ", message=" + result.getMessage());
+                        
+                        if (result.getCode() == 1 && Boolean.TRUE.equals(result.getData())) {
+                            Log.d(TAG, "挂断API调用成功");
+                        } else {
+                            Log.e(TAG, "挂断API调用失败: " + result.getMessage());
+                        }
+                    } else {
+                        Log.e(TAG, "挂断API调用失败 - HTTP状态码: " + response.code());
+                    }
+                }
+                
+                @Override
+                public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
+                    Log.e(TAG, "挂断API调用失败", t);
+                }
+            });
+        } else {
+            Log.e(TAG, "Token为空，无法调用挂断API");
+        }
         
         // 结束通话
         endCall();
@@ -341,7 +481,9 @@ public class VideoCallActivity extends AppCompatActivity {
             isMuted = !isMuted;
             mRtcEngine.muteLocalAudioStream(isMuted);
             
-            btnMute.setText(isMuted ? "取消静音" : "静音");
+            // 更新按钮图标
+            btnMute.setImageResource(isMuted ? R.drawable.icon_mic_off : R.drawable.icon_mic_on);
+            
             Toast.makeText(this, isMuted ? "已静音" : "已取消静音", Toast.LENGTH_SHORT).show();
         }
     }
@@ -356,22 +498,106 @@ public class VideoCallActivity extends AppCompatActivity {
     }
     
     private void startCallDurationTimer() {
-        // 这里可以添加定时器来更新通话时长显示
-        // 简化实现，实际可以使用Handler或Timer
+        if (callDurationHandler != null && callDurationRunnable != null) {
+            callDurationHandler.post(callDurationRunnable);
+        }
+    }
+    
+    private void updateCallDuration() {
+        // 直接使用VideoCallManager的callStartTime
+        long managerCallStartTime = videoCallManager.getCallStartTime();
+        if (managerCallStartTime > 0) {
+            long duration = System.currentTimeMillis() - managerCallStartTime;
+            long seconds = duration / 1000;
+            long minutes = seconds / 60;
+            seconds = seconds % 60;
+            String timeText = String.format("%02d:%02d", minutes, seconds);
+            tvCallDuration.setText(timeText);
+        }
+    }
+    
+    private void toggleSpeaker() {
+        if (mRtcEngine != null) {
+            isSpeakerOn = !isSpeakerOn;
+            mRtcEngine.setDefaultAudioRoutetoSpeakerphone(isSpeakerOn);
+            
+            // 更新按钮图标
+            btnSpeaker.setImageResource(isSpeakerOn ? R.drawable.icon_speaker_on : R.drawable.icon_speaker_off);
+            
+            Toast.makeText(this, isSpeakerOn ? "已开启扬声器" : "已关闭扬声器", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void endCall() {
-        if (mRtcEngine != null) {
-            mRtcEngine.leaveChannel();
+        Log.d(TAG, "开始结束通话");
+        
+        try {
+            if (mRtcEngine != null) {
+                Log.d(TAG, "调用leaveChannel");
+                int result = mRtcEngine.leaveChannel();
+                Log.d(TAG, "leaveChannel调用结果: " + result);
+                
+                if (result != 0) {
+                    Log.w(TAG, "leaveChannel返回非零结果: " + result + "，但继续执行清理");
+                }
+            } else {
+                Log.w(TAG, "RtcEngine为null，跳过leaveChannel调用");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "调用leaveChannel时发生异常: " + e.getMessage(), e);
+            // 即使发生异常也继续执行清理
         }
         
-        callStartTime = 0;
-        finish();
+        // 清理资源
+        try {
+            // 清理视频视图
+            if (localVideoContainer != null) {
+                localVideoContainer.removeAllViews();
+            }
+            if (remoteVideoContainer != null) {
+                remoteVideoContainer.removeAllViews();
+            }
+            
+            // 清理渲染器
+            renderers.clear();
+            
+            Log.d(TAG, "资源清理完成");
+        } catch (Exception e) {
+            Log.e(TAG, "清理资源时发生异常: " + e.getMessage(), e);
+        }
+        
+        // 销毁RTC实例
+        try {
+            if (mRtcEngine != null) {
+                Log.d(TAG, "销毁RTC实例");
+                RtcEngine.destroy();
+                mRtcEngine = null;
+                Log.d(TAG, "RTC实例已销毁");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "销毁RTC实例时发生异常: " + e.getMessage(), e);
+        }
+        
+        // 停止计时器
+        if (callDurationHandler != null && callDurationRunnable != null) {
+            callDurationHandler.removeCallbacks(callDurationRunnable);
+        }
+        
+        // 延迟一点时间再结束Activity，给leaveChannel一些时间
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            Log.d(TAG, "结束VideoCallActivity");
+            finish();
+        }, 500);
     }
     
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        
+        // 停止计时器
+        if (callDurationHandler != null && callDurationRunnable != null) {
+            callDurationHandler.removeCallbacks(callDurationRunnable);
+        }
         
         // 移除监听器
         if (videoCallManager != null) {

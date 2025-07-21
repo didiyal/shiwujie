@@ -35,6 +35,7 @@ public class EditProfileActivity extends AppCompatActivity {
     private Button btnChangePassword;
     private Button btnChangePhone;
     private Button btnConfirm;
+    private EditText etIdCard;
     private ApiService apiService;
 
     @Override
@@ -66,6 +67,7 @@ public class EditProfileActivity extends AppCompatActivity {
         btnChangePassword = findViewById(R.id.btnChangePassword);
         btnChangePhone = findViewById(R.id.btnChangePhone);
         btnConfirm = findViewById(R.id.btnConfirm);
+        etIdCard = findViewById(R.id.etIdCard);
     }
 
     private void initListeners() {
@@ -205,7 +207,6 @@ public class EditProfileActivity extends AppCompatActivity {
 
         if (token == null || userId == null) {
             Toast.makeText(this, "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
-            finish();
             return;
         }
 
@@ -242,7 +243,26 @@ public class EditProfileActivity extends AppCompatActivity {
                     } else {
                         tvFamilyId.setText("暂未加入家庭");
                     }
+
+                    // 身份证编辑框逻辑
+                    if (data.getIsIdCard() != null && data.getIsIdCard()) {
+                        // 已实名，显示“已实名”且不可编辑
+                        etIdCard.setText("已实名");
+                        etIdCard.setEnabled(false);
+                        etIdCard.setFocusable(false);
+                    } else {
+                        // 未实名，可编辑
+                        etIdCard.setText(data.getIdCard() != null ? data.getIdCard() : "");
+                        etIdCard.setEnabled(true);
+                        etIdCard.setFocusable(true);
+                        etIdCard.setFocusableInTouchMode(true);
+                    }
                 }
+            }
+
+            @Override
+            public void onError(String message) {
+                Toast.makeText(EditProfileActivity.this, message, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -265,12 +285,28 @@ public class EditProfileActivity extends AppCompatActivity {
             return;
         }
 
+        // 只有未实名时才校验身份证号
+        if (etIdCard.isEnabled()) {
+            String idCard = etIdCard.getText().toString().trim();
+            if (TextUtils.isEmpty(idCard)) {
+                Toast.makeText(this, "身份证号不能为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!idCard.matches("^[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[0-9Xx]$")) {
+                Toast.makeText(this, "身份证号格式不正确", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
         // 创建请求体
         VolunteerVO volunteer = new VolunteerVO();
         volunteer.setVolunteerId(userId);
         volunteer.setName(username);
         volunteer.setGender(gender);
         volunteer.setEmail(email);
+        if (etIdCard.isEnabled()) {
+            volunteer.setIdCard(etIdCard.getText().toString().trim());
+        }
 
         // 调用更新用户信息的API
         apiService.updateVolunteerInfo(

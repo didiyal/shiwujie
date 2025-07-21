@@ -20,6 +20,9 @@ public class SocketDataV0 {
     @SerializedName("channelId")
     private long channelId;
     
+    @SerializedName("blindId")
+    private Long blindId;
+    
     // 新增字段：管理用户socket连接状况
     private boolean isSocketConnected = false;
     
@@ -173,6 +176,13 @@ public class SocketDataV0 {
         isSocketConnected = socketConnected;
     }
     
+    public Long getBlindId() {
+        return blindId;
+    }
+    public void setBlindId(Long blindId) {
+        this.blindId = blindId;
+    }
+    
     // 视频通话相关字段的getter和setter
     public int getCallStatus() {
         return callStatus;
@@ -223,6 +233,7 @@ public class SocketDataV0 {
                 ", blindPhone='" + blindPhone + '\'' +
                 ", volunteerPhone='" + volunteerPhone + '\'' +
                 ", channelId=" + channelId +
+                ", blindId=" + blindId +
                 ", isSocketConnected=" + isSocketConnected +
                 ", callStatus=" + callStatus +
                 ", callId='" + callId + '\'' +

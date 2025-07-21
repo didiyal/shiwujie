@@ -64,4 +64,12 @@ public class SharedPrefsUtil {
         init(context);
         return prefs.getLong(key, defaultValue);
     }
+
+    public static void setBoolean(String key, boolean value) {
+        prefs.edit().putBoolean(key, value).apply();
+    }
+
+    public static boolean getBoolean(String key, boolean defaultValue) {
+        return prefs.getBoolean(key, defaultValue);
+    }
 } 

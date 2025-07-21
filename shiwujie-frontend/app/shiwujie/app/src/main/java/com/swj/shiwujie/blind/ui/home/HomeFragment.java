@@ -16,6 +16,8 @@ import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.WebSocketManager;
+import com.swj.shiwujie.common.network.EmergencyHelpManager;
+import com.swj.shiwujie.common.ui.EmergencyHelpFloatingWindow;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.data.model.BaseResponse;
 import com.swj.shiwujie.data.model.SocketDataV0;
@@ -32,6 +34,12 @@ public class HomeFragment extends Fragment {
     private WebSocketManager webSocketManager;
     private WebSocketManager.MessageListener messageListener;
     private boolean isMatching = false; // 防止重复请求
+    private boolean isVideoCallStarted = false; // 防止重复启动视频通话
+    
+    // 紧急求助相关
+    private EmergencyHelpManager emergencyHelpManager;
+    private EmergencyHelpFloatingWindow emergencyHelpFloatingWindow;
+    private boolean isEmergencyHelpRequested = false; // 防止重复请求
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -52,8 +60,7 @@ public class HomeFragment extends Fragment {
 
         // 设置紧急求助按钮点击事件
         cardEmergencyHelp.setOnClickListener(v -> {
-            // TODO: 实现紧急求助功能
-            Toast.makeText(requireContext(), "紧急求助功能开发中...", Toast.LENGTH_SHORT).show();
+            startEmergencyHelp();
         });
     }
     
@@ -70,6 +77,9 @@ public class HomeFragment extends Fragment {
         
         // 添加全局Socket消息监听
         webSocketManager.addMessageListener(messageListener);
+        
+        // 初始化紧急求助管理器
+        initEmergencyHelp();
     }
     
 
@@ -83,6 +93,10 @@ public class HomeFragment extends Fragment {
             Toast.makeText(requireContext(), "正在匹配中，请稍候...", Toast.LENGTH_SHORT).show();
             return;
         }
+        
+        // 重置视频通话启动标志，允许新的视频通话
+        isVideoCallStarted = false;
+        Log.d(TAG, "重置视频通话启动标志，允许新的视频通话");
         
         // 获取并打印token信息
         String token = SharedPrefsUtil.getToken();
@@ -219,18 +233,35 @@ public class HomeFragment extends Fragment {
             Log.d(TAG, "收到视频初始化成功通知，准备进入视频通话页面");
             Log.d(TAG, "频道ID: " + data.getChannelId() + ", 志愿者手机号: " + data.getVolunteerPhone());
             
+            // 防止重复启动视频通话
+            if (isVideoCallStarted) {
+                Log.w(TAG, "视频通话已启动，忽略重复的type=2消息");
+                return;
+            }
+            
             // 重置匹配状态
             isMatching = false;
+            isVideoCallStarted = true;
+            
+            // 如果是紧急求助，隐藏悬浮窗
+            if (isEmergencyHelpRequested && emergencyHelpFloatingWindow != null) {
+                emergencyHelpFloatingWindow.hide();
+                isEmergencyHelpRequested = false;
+            }
             
             try {
                 // 跳转到视频通话页面
                 Intent videoIntent = new Intent(requireContext(), com.swj.shiwujie.blind.VideoCallActivity.class);
                 videoIntent.putExtra("channelId", data.getChannelId());
                 videoIntent.putExtra("volunteerPhone", data.getVolunteerPhone());
+                // 添加标志，确保只有一个实例
+                videoIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                videoIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(videoIntent);
                 Log.d(TAG, "已启动视频通话Activity");
             } catch (Exception e) {
                 Log.e(TAG, "启动视频通话Activity失败", e);
+                isVideoCallStarted = false; // 启动失败时重置标志
             }
         } else if (data.getRequestType() == 0) {
             // 收到登录确认消息
@@ -242,6 +273,132 @@ public class HomeFragment extends Fragment {
     
 
     
+    /**
+     * 初始化紧急求助
+     */
+    private void initEmergencyHelp() {
+        emergencyHelpManager = EmergencyHelpManager.getInstance();
+        emergencyHelpManager.setContext(requireContext());
+        
+        // 使用Activity的上下文创建悬浮窗
+        if (getActivity() != null) {
+            emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
+        }
+        
+        // 设置紧急求助回调
+        emergencyHelpManager.setCallback(new EmergencyHelpManager.EmergencyHelpCallback() {
+            @Override
+            public void onHelpRequestSuccess() {
+                Log.d(TAG, "紧急求助请求成功");
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "紧急求助请求已发送", Toast.LENGTH_SHORT).show();
+                        // 显示悬浮窗
+                        Log.d(TAG, "准备显示悬浮窗，emergencyHelpFloatingWindow: " + (emergencyHelpFloatingWindow != null));
+                        if (emergencyHelpFloatingWindow != null) {
+                            Log.d(TAG, "开始显示悬浮窗");
+                            emergencyHelpFloatingWindow.show();
+                            isEmergencyHelpRequested = true;
+                            Log.d(TAG, "悬浮窗显示完成，isEmergencyHelpRequested: " + isEmergencyHelpRequested);
+                        } else {
+                            Log.e(TAG, "emergencyHelpFloatingWindow为null，无法显示悬浮窗");
+                        }
+                    });
+                } else {
+                    Log.w(TAG, "Fragment未attached，无法显示悬浮窗");
+                }
+            }
+            
+            @Override
+            public void onHelpRequestFailed(String error) {
+                Log.e(TAG, "紧急求助请求失败: " + error);
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "紧急求助请求失败: " + error, Toast.LENGTH_SHORT).show();
+                        isEmergencyHelpRequested = false;
+                    });
+                }
+            }
+            
+            @Override
+            public void onHelpCancelled() {
+                Log.d(TAG, "紧急求助已取消");
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "紧急求助已取消", Toast.LENGTH_SHORT).show();
+                        isEmergencyHelpRequested = false;
+                    });
+                }
+            }
+            
+            @Override
+            public void onHelpResponseSuccess() {
+                // 盲人端不会收到这个回调
+            }
+            
+            @Override
+            public void onHelpResponseFailed(String error) {
+                // 盲人端不会收到这个回调
+            }
+            
+            @Override
+            public void onHelpHangupSuccess() {
+                Log.d(TAG, "紧急求助通话已结束");
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "通话已结束", Toast.LENGTH_SHORT).show();
+                        isEmergencyHelpRequested = false;
+                    });
+                }
+            }
+            
+            @Override
+            public void onHelpHangupFailed(String error) {
+                Log.e(TAG, "紧急求助挂断失败: " + error);
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(requireContext(), "挂断失败: " + error, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        });
+    }
+    
+    /**
+     * 开始紧急求助
+     */
+    private void startEmergencyHelp() {
+        Log.d(TAG, "开始紧急求助");
+        
+        // 防止重复请求
+        if (isEmergencyHelpRequested) {
+            Log.d(TAG, "已在紧急求助中，忽略重复请求");
+            Toast.makeText(requireContext(), "已在紧急求助中，请稍候...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 检查登录状态
+        String token = SharedPrefsUtil.getToken();
+        if (token == null || token.isEmpty()) {
+            Log.e(TAG, "Token为空，无法发起紧急求助");
+            Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 获取用户手机号
+        String phone = SharedPrefsUtil.getPhone();
+        if (phone == null || phone.isEmpty()) {
+            Log.e(TAG, "手机号为空，无法发起紧急求助");
+            Toast.makeText(requireContext(), "用户信息异常，请重新登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Log.d(TAG, "发起紧急求助，手机号: " + phone);
+        
+        // 发起紧急求助请求
+        emergencyHelpManager.requestEmergencyHelp(phone);
+    }
+    
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -249,5 +406,17 @@ public class HomeFragment extends Fragment {
         if (webSocketManager != null && messageListener != null) {
             webSocketManager.removeMessageListener(messageListener);
         }
+        
+        // 销毁紧急求助悬浮窗
+        if (emergencyHelpFloatingWindow != null) {
+            emergencyHelpFloatingWindow.destroy();
+            emergencyHelpFloatingWindow = null;
+        }
+        
+        // 重置紧急求助状态
+        if (emergencyHelpManager != null) {
+            emergencyHelpManager.resetEmergencyHelp();
+        }
+        isEmergencyHelpRequested = false;
     }
 } 

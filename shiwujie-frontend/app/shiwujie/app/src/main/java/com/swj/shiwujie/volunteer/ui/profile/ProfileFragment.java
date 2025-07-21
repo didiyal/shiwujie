@@ -88,10 +88,10 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onSuccess(VolunteerVO data) {
                 updateUI(data);
-                // 如果未进行身份验证，显示提示弹窗
-                if (!data.getIsIdCard()) {
-                    showIdCardVerificationDialog();
-                }
+                // 取消未实名弹窗
+                // if (data.getIdCard() == null || data.getIdCard().isEmpty()) {
+                //     showIdCardVerificationDialog();
+                // }
             }
 
             @Override
@@ -123,14 +123,29 @@ public class ProfileFragment extends Fragment {
             btnFamily.setText("已加入家庭");
         }
 
-        // 更新身份认证状态
-        StringBuilder authStatus = new StringBuilder();
-        if (data.getIsIdCard()) {
-            authStatus.append("已实名认证");
+        // 只要身份证字段不为空就显示已实名，并脱敏显示身份证号
+        String idCard = data.getIdCard();
+        if (idCard != null && !idCard.isEmpty()) {
+            tvAuthStatus.setText("已实名认证");
+            // 脱敏身份证号（前3后4，中间*）
+            String masked = idCard;
+            if (idCard.length() > 7) {
+                masked = idCard.substring(0, 3) + "***********" + idCard.substring(idCard.length() - 4);
+            }
+            // 假设有一个TextView用于显示身份证号，如tvIdCard
+            TextView tvIdCard = getView().findViewById(R.id.tvIdCard);
+            if (tvIdCard != null) {
+                tvIdCard.setText(masked);
+                tvIdCard.setVisibility(View.VISIBLE);
+            }
         } else {
-            authStatus.append("未实名认证");
+            tvAuthStatus.setText("未实名认证");
+            // 隐藏身份证号显示
+            TextView tvIdCard = getView().findViewById(R.id.tvIdCard);
+            if (tvIdCard != null) {
+                tvIdCard.setVisibility(View.GONE);
+            }
         }
-        tvAuthStatus.setText(authStatus.toString());
     }
 
     private void showIdCardVerificationDialog() {
