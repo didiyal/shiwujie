@@ -11,11 +11,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.content.pm.PackageManager;
+import androidx.annotation.NonNull;
 
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.network.VideoCallManager;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
+import com.swj.shiwujie.common.utils.PermissionManager;
 import com.swj.shiwujie.data.model.SocketDataV0;
 
 import org.ar.rtc.Constants;
@@ -69,20 +74,33 @@ public class VideoCallActivity extends AppCompatActivity {
     private String matchBlindPhone = "";
     private String matchVolunteerPhone = "";
     
+    private boolean isVideoInit = false;
+    private boolean hasHandledMatchSuccess = false;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // 最后检查权限，确保AnyRTC SDK能正常初始化
+        if (!PermissionManager.hasVideoCallPermissions(this)) {
+            Log.e(TAG, "视频通话权限不足，退出Activity");
+            Toast.makeText(this, "权限不足，无法进行视频通话", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        
         setContentView(R.layout.activity_video_call);
         
         // 从Intent中获取匹配信息
         Intent intent = getIntent();
+        boolean isEmergencyHelp = false;
         if (intent != null) {
             matchChannelId = intent.getLongExtra("channelId", 0);
             matchBlindPhone = intent.getStringExtra("blindPhone");
             matchVolunteerPhone = intent.getStringExtra("volunteerPhone");
-            
+            isEmergencyHelp = intent.getBooleanExtra("isEmergencyHelp", false);
+            Log.d(TAG, "onCreate: isEmergencyHelp = " + isEmergencyHelp);
             Log.d(TAG, "从Intent获取匹配信息 - channelId: " + matchChannelId + 
                   ", blindPhone: " + matchBlindPhone + 
                   ", volunteerPhone: " + matchVolunteerPhone);
@@ -106,6 +124,16 @@ public class VideoCallActivity extends AppCompatActivity {
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                 handleMatchSuccess(mockData);
             }, 1000);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!isVideoInit) {
+            isVideoInit = true;
+            initViews();
+            initManagers();
         }
     }
     
@@ -174,7 +202,7 @@ public class VideoCallActivity extends AppCompatActivity {
             // 等待WebSocket消息触发加入频道
         } catch (Exception e) {
             Log.e(TAG, "初始化引擎失败: " + e.getMessage());
-            Toast.makeText(this, "初始化引擎失败", Toast.LENGTH_SHORT).show();
+          //  Toast.makeText(this, "初始化引擎失败", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -207,7 +235,7 @@ public class VideoCallActivity extends AppCompatActivity {
             
         } catch (Exception e) {
             Log.e(TAG, "RTC引擎初始化失败: " + e.getMessage(), e);
-            Toast.makeText(this, "视频引擎初始化失败", Toast.LENGTH_SHORT).show();
+        //    Toast.makeText(this, "视频引擎初始化失败", Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -262,7 +290,6 @@ public class VideoCallActivity extends AppCompatActivity {
         public void onJoinChannelSuccess(String channel, final String uid, int elapsed) {
             runOnUiThread(() -> {
                 Log.i(TAG, "加入频道成功 - 频道: " + channel + ", 用户ID: " + uid);
-                Toast.makeText(VideoCallActivity.this, "成功加入视频通话", Toast.LENGTH_SHORT).show();
                 
                 // 发送视频初始化成功消息
                 sendVideoInitMessage(channel);
@@ -314,7 +341,7 @@ public class VideoCallActivity extends AppCompatActivity {
         public void onError(int err) {
             runOnUiThread(() -> {
                 Log.e(TAG, "发生错误: " + err);
-                Toast.makeText(VideoCallActivity.this, "视频通话引擎错误: " + err, Toast.LENGTH_SHORT).show();
+
             });
         }
     };
@@ -337,6 +364,10 @@ public class VideoCallActivity extends AppCompatActivity {
     }
     
     private void updateCallStatus(int status, String callId, String blindPhone, String volunteerPhone) {
+        if (isFinishing() || (android.os.Build.VERSION.SDK_INT >= 17 && isDestroyed()) || tvCallStatus == null) {
+            Log.w(TAG, "Activity已销毁或tvCallStatus为null，跳过UI更新");
+            return;
+        }
         String statusText = "";
         switch (status) {
             case VideoCallManager.CALL_STATUS_IDLE:
@@ -355,9 +386,8 @@ public class VideoCallActivity extends AppCompatActivity {
                 endCall();
                 break;
         }
-        
         tvCallStatus.setText(statusText);
-        if (blindPhone != null && !blindPhone.isEmpty()) {
+        if (blindPhone != null && !blindPhone.isEmpty() && tvBlindInfo != null) {
             tvBlindInfo.setText("视障用户: " + blindPhone);
         }
         Log.d(TAG, "通话状态更新: " + statusText);
@@ -377,8 +407,12 @@ public class VideoCallActivity extends AppCompatActivity {
     }
     
     private void handleMatchSuccess(SocketDataV0 data) {
-        Log.d(TAG, "匹配成功，开始视频通话");
-        Toast.makeText(this, "匹配成功，开始视频通话", Toast.LENGTH_SHORT).show();
+        if (hasHandledMatchSuccess) {
+            Log.d(TAG, "handleMatchSuccess已处理，忽略重复调用");
+            return;
+        }
+        hasHandledMatchSuccess = true;
+        Log.d(TAG, "handleMatchSuccess首次处理，开始初始化视频通话");
         
         // 存储匹配信息 - 直接使用WebSocket消息中的数据
         matchChannelId = data.getChannelId();
@@ -411,12 +445,12 @@ public class VideoCallActivity extends AppCompatActivity {
                                 joinVideoChannel(channelId);
                             } else {
                                 Log.e(TAG, "RtcEngine重新初始化失败");
-                                Toast.makeText(VideoCallActivity.this, "视频引擎初始化失败", Toast.LENGTH_SHORT).show();
+
                             }
                         }, 1000);
                     } catch (Exception e) {
                         Log.e(TAG, "重新初始化RtcEngine失败: " + e.getMessage());
-                        Toast.makeText(VideoCallActivity.this, "视频引擎初始化失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
                     }
                 }
             }, 500);
@@ -441,7 +475,8 @@ public class VideoCallActivity extends AppCompatActivity {
             
             if (mRtcEngine == null) {
                 Log.e(TAG, "RtcEngine为null，无法加入频道");
-                Toast.makeText(this, "视频引擎未初始化，无法加入频道", Toast.LENGTH_SHORT).show();
+
+              //  Toast.makeText(this, "视频引擎未初始化，无法加入频道", Toast.LENGTH_SHORT).show();
                 return;
             }
             
@@ -494,41 +529,40 @@ public class VideoCallActivity extends AppCompatActivity {
     
     private void hangupCall() {
         Log.d(TAG, "用户主动挂断通话");
-        
-        // 调用API挂断视频通话
+        boolean isEmergencyHelp = getIntent().getBooleanExtra("isEmergencyHelp", false);
+        Log.d(TAG, "hangupCall: isEmergencyHelp = " + isEmergencyHelp);
         String token = SharedPrefsUtil.getToken();
         if (token != null && !token.isEmpty()) {
             String authToken = "Bearer " + token;
             com.swj.shiwujie.common.network.ApiService apiService = com.swj.shiwujie.common.network.RetrofitClient.getInstance().createService(com.swj.shiwujie.common.network.ApiService.class);
-            
-            apiService.hangupVideohelp(authToken).enqueue(new retrofit2.Callback<com.swj.shiwujie.data.model.BaseResponse<Boolean>>() {
-                @Override
-                public void onResponse(retrofit2.Call<com.swj.shiwujie.data.model.BaseResponse<Boolean>> call, retrofit2.Response<com.swj.shiwujie.data.model.BaseResponse<Boolean>> response) {
-                    Log.d(TAG, "挂断API响应 - HTTP状态码: " + response.code());
-                    
-                    if (response.isSuccessful() && response.body() != null) {
-                        com.swj.shiwujie.data.model.BaseResponse<Boolean> result = response.body();
-                        Log.d(TAG, "挂断API响应: code=" + result.getCode() + ", message=" + result.getMessage());
-                        
-                        if (result.getCode() == 1 && Boolean.TRUE.equals(result.getData())) {
-                            Log.d(TAG, "挂断API调用成功");
-                        } else {
-                            Log.e(TAG, "挂断API调用失败: " + result.getMessage());
-                        }
-                    } else {
-                        Log.e(TAG, "挂断API调用失败 - HTTP状态码: " + response.code());
+            if (isEmergencyHelp) {
+                // 紧急求助挂断
+                apiService.hangupUrgenthelp(authToken).enqueue(new retrofit2.Callback<com.swj.shiwujie.data.model.BaseResponse<Boolean>>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.swj.shiwujie.data.model.BaseResponse<Boolean>> call, retrofit2.Response<com.swj.shiwujie.data.model.BaseResponse<Boolean>> response) {
+                        Log.d(TAG, "紧急求助挂断API响应 - HTTP状态码: " + response.code());
                     }
-                }
-                
-                @Override
-                public void onFailure(retrofit2.Call<com.swj.shiwujie.data.model.BaseResponse<Boolean>> call, Throwable t) {
-                    Log.e(TAG, "挂断API调用失败", t);
-                }
-            });
+                    @Override
+                    public void onFailure(retrofit2.Call<com.swj.shiwujie.data.model.BaseResponse<Boolean>> call, Throwable t) {
+                        Log.e(TAG, "紧急求助挂断API调用失败", t);
+                    }
+                });
+            } else {
+                // 普通视频挂断
+                apiService.hangupVideohelp(authToken).enqueue(new retrofit2.Callback<com.swj.shiwujie.data.model.BaseResponse<Boolean>>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.swj.shiwujie.data.model.BaseResponse<Boolean>> call, retrofit2.Response<com.swj.shiwujie.data.model.BaseResponse<Boolean>> response) {
+                        Log.d(TAG, "挂断API响应 - HTTP状态码: " + response.code());
+                    }
+                    @Override
+                    public void onFailure(retrofit2.Call<com.swj.shiwujie.data.model.BaseResponse<Boolean>> call, Throwable t) {
+                        Log.e(TAG, "挂断API调用失败", t);
+                    }
+                });
+            }
         } else {
             Log.e(TAG, "Token为空，无法调用挂断API");
         }
-        
         // 结束通话
         endCall();
     }
@@ -541,7 +575,6 @@ public class VideoCallActivity extends AppCompatActivity {
             // 更新按钮图标
             btnMute.setImageResource(isMuted ? R.drawable.icon_mic_off : R.drawable.icon_mic_on);
             
-            Toast.makeText(this, isMuted ? "已静音" : "已取消静音", Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -550,7 +583,6 @@ public class VideoCallActivity extends AppCompatActivity {
             isFrontCamera = !isFrontCamera;
             mRtcEngine.switchCamera();
             
-            Toast.makeText(this, "切换摄像头", Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -581,7 +613,6 @@ public class VideoCallActivity extends AppCompatActivity {
             // 更新按钮图标
             btnSpeaker.setImageResource(isSpeakerOn ? R.drawable.icon_speaker_on : R.drawable.icon_speaker_off);
             
-            Toast.makeText(this, isSpeakerOn ? "已开启扬声器" : "已关闭扬声器", Toast.LENGTH_SHORT).show();
         }
     }
     

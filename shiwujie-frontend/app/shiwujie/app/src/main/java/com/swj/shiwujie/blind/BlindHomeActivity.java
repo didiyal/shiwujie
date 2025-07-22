@@ -10,6 +10,7 @@ import com.swj.shiwujie.R;
 import com.swj.shiwujie.databinding.ActivityBlindHomeBinding;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
+import com.swj.shiwujie.common.utils.PermissionManager;
 import android.app.AlertDialog;
 import android.content.Intent;
 import com.swj.shiwujie.common.network.ApiService;
@@ -30,8 +31,27 @@ public class BlindHomeActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupWithNavController(binding.navView, navController);
         
+        // 检查权限
+        checkPermissions();
+        
         // 检查登录状态并建立WebSocket连接
         initWebSocketConnection();
+    }
+    
+    private void checkPermissions() {
+        // 检查视频通话所需的所有权限（包括蓝牙权限）
+        if (!PermissionManager.hasVideoCallPermissions(this)) {
+            PermissionManager.showPermissionRequiredDialog(this, 
+                "需要摄像头、麦克风和蓝牙权限才能使用视频通话功能。请在设置中开启相关权限。");
+            return;
+        }
+        
+        // 检查悬浮窗权限
+        if (!PermissionManager.hasOverlayPermission(this)) {
+            PermissionManager.showPermissionRequiredDialog(this, 
+                "需要悬浮窗权限才能使用完整功能。请在设置中开启悬浮窗权限。");
+            return;
+        }
     }
     
     private void initWebSocketConnection() {
@@ -82,7 +102,20 @@ public class BlindHomeActivity extends AppCompatActivity {
                             startActivity(new Intent(BlindHomeActivity.this, EditProfileActivity.class));
                         })
                         .setNegativeButton("退出APP", (dialog, which) -> {
-                            finishAffinity();
+                            ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+                            String token = SharedPrefsUtil.getToken();
+                            apiService.logout("Bearer " + token).enqueue(new ApiCallback<Boolean>(BlindHomeActivity.this) {
+                                @Override
+                                public void onSuccess(Boolean data) {
+                                    SharedPrefsUtil.clearAll();
+                                    finishAffinity();
+                                }
+                                @Override
+                                public void onError(String message) {
+                                    SharedPrefsUtil.clearAll();
+                                    finishAffinity();
+                                }
+                            });
                         })
                         .show();
                 }

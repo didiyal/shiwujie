@@ -48,7 +48,7 @@ public class ChooseIdentityActivity extends AppCompatActivity {
             apiService = RetrofitClient.getInstance().createService(ApiService.class);
         } catch (Exception e) {
             Log.e(TAG, "初始化服务失败", e);
-            Toast.makeText(this, "初始化失败：" + e.getMessage(), Toast.LENGTH_SHORT).show();
+      //      Toast.makeText(this, "初始化失败：" + e.getMessage(), Toast.LENGTH_SHORT).show();
             finish();
             return;
         }

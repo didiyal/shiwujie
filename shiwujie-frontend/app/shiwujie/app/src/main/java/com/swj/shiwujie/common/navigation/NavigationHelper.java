@@ -134,4 +134,12 @@ public class NavigationHelper {
         Intent intent = new Intent(context, com.swj.shiwujie.volunteer.EditProfileActivity.class);
         context.startActivity(intent);
     }
+    
+    /**
+     * 跳转到权限设置页面
+     */
+    public static void toPermissionSettings(Context context) {
+        Intent intent = new Intent(context, com.swj.shiwujie.common.activity.PermissionSettingsActivity.class);
+        context.startActivity(intent);
+    }
 } 

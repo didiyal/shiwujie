@@ -104,7 +104,7 @@ public class HomeFragment extends Fragment {
                             Log.d(TAG, "匹配请求成功，开始等待匹配");
                             // 启动悬浮窗服务
                             startFloatingWindowService();
-                            Toast.makeText(requireContext(), "已开始等待匹配", Toast.LENGTH_SHORT).show();
+                          //  Toast.makeText(requireContext(), "已开始等待匹配", Toast.LENGTH_SHORT).show();
                         } else {
                             Log.e(TAG, "匹配失败 - 业务错误: " + result.getMessage());
                             Toast.makeText(requireContext(), "匹配失败: " + result.getMessage(), Toast.LENGTH_SHORT).show();
@@ -169,6 +169,12 @@ public class HomeFragment extends Fragment {
             });
             emergencyHelpIncomingWindow.show();
             currentBlindIdForHelp = data.getBlindPhone();
+        } else if (data.getRequestType() == 4) {
+            // 盲人取消紧急求助，家属端关闭弹窗
+            Log.d(TAG, "收到紧急求助取消通知，关闭弹窗");
+            if (emergencyHelpIncomingWindow != null) {
+                emergencyHelpIncomingWindow.hide();
+            }
         } else if (data.getRequestType() == 1) {
             // 志愿者匹配成功通知
             Log.d(TAG, "收到匹配成功通知，准备进入视频通话页面");

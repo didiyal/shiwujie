@@ -19,7 +19,7 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="60dp"
-        android:layout_marginEnd="20dp"
+            android:layout_marginEnd="20dp"
         android:background="@android:color/transparent" />
 
     <!-- 顶部状态栏 -->

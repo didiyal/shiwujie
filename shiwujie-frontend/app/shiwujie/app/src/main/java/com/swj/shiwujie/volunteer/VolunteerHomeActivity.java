@@ -13,6 +13,7 @@ import com.swj.shiwujie.R;
 import com.swj.shiwujie.databinding.ActivityVolunteerHomeBinding;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
+import com.swj.shiwujie.common.utils.PermissionManager;
 
 public class VolunteerHomeActivity extends AppCompatActivity {
     private static final String TAG = "VolunteerHomeActivity";
@@ -26,8 +27,70 @@ public class VolunteerHomeActivity extends AppCompatActivity {
 
         setupViews();
         
+        // 检查权限
+        checkPermissions();
+        
         // 检查登录状态并建立WebSocket连接
         initWebSocketConnection();
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String token = SharedPrefsUtil.getToken();
+        Long userId = SharedPrefsUtil.getUserId();
+        if (token == null || userId == null) return;
+
+        com.swj.shiwujie.common.network.ApiService apiService = com.swj.shiwujie.common.network.RetrofitClient.getInstance().createService(com.swj.shiwujie.common.network.ApiService.class);
+        apiService.getVolunteerVOById("Bearer " + token, userId).enqueue(new com.swj.shiwujie.common.network.ApiCallback<com.swj.shiwujie.data.model.VolunteerVO>(this) {
+            @Override
+            public void onSuccess(com.swj.shiwujie.data.model.VolunteerVO data) {
+                boolean isIdCard = data.getIsIdCard() != null && data.getIsIdCard();
+                com.swj.shiwujie.common.utils.SharedPrefsUtil.setBoolean("isIdCard", isIdCard);
+                if (!isIdCard) {
+                    new android.app.AlertDialog.Builder(VolunteerHomeActivity.this)
+                        .setTitle("实名认证提醒")
+                        .setMessage("您还未完成实名认证，请先进行实名校验")
+                        .setCancelable(false)
+                        .setPositiveButton("去实名", (dialog, which) -> {
+                            startActivity(new android.content.Intent(VolunteerHomeActivity.this, com.swj.shiwujie.volunteer.EditProfileActivity.class));
+                        })
+                        .setNegativeButton("退出APP", (dialog, which) -> {
+                            com.swj.shiwujie.common.network.ApiService apiService = com.swj.shiwujie.common.network.RetrofitClient.getInstance().createService(com.swj.shiwujie.common.network.ApiService.class);
+                            String token = com.swj.shiwujie.common.utils.SharedPrefsUtil.getToken();
+                            apiService.volunteerLogout("Bearer " + token).enqueue(new com.swj.shiwujie.common.network.ApiCallback<Boolean>(VolunteerHomeActivity.this) {
+                                @Override
+                                public void onSuccess(Boolean data) {
+                                    com.swj.shiwujie.common.utils.SharedPrefsUtil.clearAll();
+                                    finishAffinity();
+                                }
+                                @Override
+                                public void onError(String message) {
+                                    com.swj.shiwujie.common.utils.SharedPrefsUtil.clearAll();
+                                    finishAffinity();
+                                }
+                            });
+                        })
+                        .show();
+                }
+            }
+        });
+    }
+    
+    private void checkPermissions() {
+        // 检查视频通话所需的所有权限（包括蓝牙权限）
+        if (!PermissionManager.hasVideoCallPermissions(this)) {
+            PermissionManager.showPermissionRequiredDialog(this, 
+                "需要摄像头、麦克风和蓝牙权限才能使用视频通话功能。请在设置中开启相关权限。");
+            return;
+        }
+        
+        // 检查悬浮窗权限
+        if (!PermissionManager.hasOverlayPermission(this)) {
+            PermissionManager.showPermissionRequiredDialog(this, 
+                "需要悬浮窗权限才能使用完整功能。请在设置中开启悬浮窗权限。");
+            return;
+        }
     }
     
     private void initWebSocketConnection() {

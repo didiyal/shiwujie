@@ -15,6 +15,32 @@
         android:textSize="24sp"
         android:textStyle="bold" />
 
+    <!-- logo区，自适应比例 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp"
+        android:layout_weight="0.35">
+        <ImageView
+            android:id="@+id/img_logo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/logo"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:contentDescription="logo"/>
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:text="欢迎使用视无界"
+        android:textColor="@color/gray_400"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -22,13 +48,6 @@
         android:orientation="vertical"
         android:gravity="center"
         android:padding="20dp">
-
-        <ImageView
-            android:id="@+id/img_volunteer"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:src="@drawable/img_volunteer"
-            android:contentDescription="@string/i_am_volunteer"/>
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_volunteer"
@@ -41,20 +60,12 @@
             android:textColor="@color/black"
             android:textSize="16sp"/>
 
-        <ImageView
-            android:id="@+id/img_blind"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_marginTop="40dp"
-            android:src="@drawable/img_blind"
-            android:contentDescription="@string/i_am_blind"/>
-
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_blind"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="40dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="32dp"
             android:background="@drawable/bg_button_primary"
             android:text="@string/i_am_blind"
             android:textColor="@color/white"

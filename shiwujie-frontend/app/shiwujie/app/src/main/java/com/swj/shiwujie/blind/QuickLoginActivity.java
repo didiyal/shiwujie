@@ -1,8 +1,12 @@
 package com.swj.shiwujie.blind;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -18,6 +22,7 @@ import androidx.core.content.ContextCompat;
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.navigation.NavigationHelper;
 import com.swj.shiwujie.common.utils.PhoneUtils;
+import com.swj.shiwujie.common.utils.PermissionManager;
 import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ApiCallback;
@@ -27,13 +32,15 @@ import com.swj.shiwujie.common.network.WebSocketManager;
 
 public class QuickLoginActivity extends AppCompatActivity {
     private static final String TAG = "QuickLoginActivity";
-    private static final int PERMISSION_REQUEST_CODE = 100;
     private TextView tvPhone;
     private Button btnQuickLogin;
     private Button btnPasswordLogin;
     private CheckBox cbAgreement;
     private String phoneNumber;
     private ApiService apiService;
+    
+    // 权限相关
+    private boolean isWaitingForPermissions = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +55,7 @@ public class QuickLoginActivity extends AppCompatActivity {
             checkAndRequestPermissions();
         } catch (Exception e) {
             Log.e(TAG, "onCreate failed", e);
-            Toast.makeText(this, "页面初始化失败：" + e.getMessage(), Toast.LENGTH_SHORT).show();
+        //    Toast.makeText(this, "页面初始化失败：" + e.getMessage(), Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -116,7 +123,7 @@ public class QuickLoginActivity extends AppCompatActivity {
         }
 
         if (needRequest) {
-            ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE);
+            ActivityCompat.requestPermissions(this, permissions, PermissionManager.PERMISSION_REQUEST_CODE);
         } else {
             showPhoneNumber();
         }
@@ -126,20 +133,34 @@ public class QuickLoginActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                          @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            boolean allGranted = true;
-            for (int result : grantResults) {
-                if (result != PackageManager.PERMISSION_GRANTED) {
-                    allGranted = false;
-                    break;
+        if (requestCode == PermissionManager.PERMISSION_REQUEST_CODE) {
+            if (isWaitingForPermissions) {
+                // 处理登录后的权限请求结果
+                boolean success = PermissionManager.handlePermissionResult(requestCode, permissions, grantResults);
+                if (success) {
+                    // 权限授予成功，进入主页
+                    isWaitingForPermissions = false;
+                    NavigationHelper.toBlindHome(QuickLoginActivity.this);
+                } else {
+                    // 核心权限被拒绝，显示提示并退出
+                    PermissionManager.showPermissionDeniedDialog(this);
                 }
-            }
-            if (allGranted) {
-                showPhoneNumber();
             } else {
-                Toast.makeText(this, "需要获取手机号权限才能使用一键登录功能", Toast.LENGTH_LONG).show();
-                tvPhone.setText(R.string.phone_number_not_available);
-                btnQuickLogin.setEnabled(false);
+                // 处理手机号权限请求结果
+                boolean allGranted = true;
+                for (int result : grantResults) {
+                    if (result != PackageManager.PERMISSION_GRANTED) {
+                        allGranted = false;
+                        break;
+                    }
+                }
+                if (allGranted) {
+                    showPhoneNumber();
+                } else {
+                    Toast.makeText(this, "需要获取手机号权限才能使用一键登录功能", Toast.LENGTH_LONG).show();
+                    tvPhone.setText(R.string.phone_number_not_available);
+                    btnQuickLogin.setEnabled(false);
+                }
             }
         }
     }
@@ -172,12 +193,19 @@ public class QuickLoginActivity extends AppCompatActivity {
                 SharedPrefsUtil.setUserType(true); // true表示盲人用户
                 SharedPrefsUtil.setUserId(data.getBlindId());
                 SharedPrefsUtil.setPhone(data.getPhone());
-                
+
                 // 建立WebSocket连接
                 WebSocketManager.connectWebSocket(QuickLoginActivity.this, data.getPhone(), false);
-                
-                // 跳转到主页
-                NavigationHelper.toBlindHome(QuickLoginActivity.this);
+
+                // 登录成功后请求权限
+                isWaitingForPermissions = true;
+                java.util.List<String> missing = com.swj.shiwujie.common.utils.PermissionManager.getMissingPermissions(QuickLoginActivity.this);
+                if (missing.isEmpty() && com.swj.shiwujie.common.utils.PermissionManager.hasOverlayPermission(QuickLoginActivity.this)) {
+                    isWaitingForPermissions = false;
+                    com.swj.shiwujie.common.navigation.NavigationHelper.toBlindHome(QuickLoginActivity.this);
+                } else {
+                    com.swj.shiwujie.common.utils.PermissionManager.checkAndRequestLoginPermissions(QuickLoginActivity.this);
+                }
             }
 
             @Override
@@ -185,5 +213,22 @@ public class QuickLoginActivity extends AppCompatActivity {
                 Toast.makeText(QuickLoginActivity.this, message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PermissionManager.OVERLAY_PERMISSION_REQUEST_CODE && isWaitingForPermissions) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Settings.canDrawOverlays(this)) {
+                    // 悬浮窗权限已授予
+                    isWaitingForPermissions = false;
+                    NavigationHelper.toBlindHome(QuickLoginActivity.this);
+                } else {
+                    // 悬浮窗权限被拒绝，显示提示并退出
+                    PermissionManager.showPermissionDeniedDialog(this);
+                }
+            }
+        }
     }
 } 
