@@ -22,6 +22,11 @@ spring:
           uri: ws://localhost:8350
           predicates:
             - Path=/api/ws/call
+    # 社区转发配置
+        - id: route_call
+          uri: http://localhost:8400
+          predicates:
+            - Path=/api/community/**
 logging:
   level:
     org:
