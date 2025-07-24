@@ -87,7 +87,7 @@ public interface BlindService extends IService<Blind> {
      * @param blind 盲人信息
      * @return token
      */
-    String loginSuccess(Blind blind);
+    String generateLoginToken(Blind blind);
 
 
     /**

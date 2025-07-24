@@ -1,4 +1,4 @@
-package com.swj.shiwujie.service;
+package com.swj.shiwujie.service.user;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
@@ -57,6 +57,15 @@ public interface InnerVolunteerService  {
      * @return 用户列表
      */
     List<Volunteer> getListByFamilyId(Long familyId);
+
+
+    /**
+     * 生成登录令牌并返回
+     * 令牌包含:id,手机号,社区权限
+     * @param volunteer 志愿者信息
+     * @return 令牌
+     */
+    String generateLoginToken(Volunteer volunteer);
 
 
 }

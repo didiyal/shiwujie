@@ -8,7 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 public class LoginUtils {
 
 
-
     /**
      * 获取当前登录盲人id
      *
@@ -41,6 +40,18 @@ public class LoginUtils {
      */
     public static String getLoginUserPhone(HttpServletRequest request) {
         String phone = (String)request.getAttribute("phone");
+        return phone;
+    }
+
+
+    /**
+     * 获取当前登录用户社区职位id
+     *
+     * @param request
+     * @return
+     */
+    public static Long getVolunteerRole(HttpServletRequest request) {
+        Long phone = (Long)request.getAttribute("role");
         return phone;
     }
 

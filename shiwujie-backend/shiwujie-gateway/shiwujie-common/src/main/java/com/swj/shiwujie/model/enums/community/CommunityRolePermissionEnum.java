@@ -26,4 +26,23 @@ public enum CommunityRolePermissionEnum {
         this.description = description;
         this.roleId = roleId;
     }
+
+    public static CommunityRolePermissionEnum getByName(String name){
+        for (CommunityRolePermissionEnum value : CommunityRolePermissionEnum.values()) {
+            if(value.name.equals(name)){
+                return value;
+            }
+        }
+        return null;
+    }
+
+    public static CommunityRolePermissionEnum getById(long roleId) {
+        for (CommunityRolePermissionEnum value : CommunityRolePermissionEnum.values()) {
+            if (value.roleId == roleId) {
+                return value;
+            }
+        }
+        return null;
+    }
+
 }

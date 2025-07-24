@@ -22,14 +22,14 @@ public class CommunityVO {
     private Long communityId;
 
     /**
-     * 社区类型ID
+     * 社区类型
      */
-    private String communityType;
+    private String communityTypeName;
 
     /**
-     * 社区级别ID
+     * 社区级别
      */
-    private String communityLevel;
+    private String communityLevelName;
 
 
     /**

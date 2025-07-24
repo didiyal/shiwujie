@@ -7,14 +7,24 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.VolunteerMapper;
+import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Volunteer;
-import com.swj.shiwujie.service.InnerVolunteerService;
 import com.swj.shiwujie.service.VolunteerService;
+import com.swj.shiwujie.service.user.InnerVolunteerService;
+import com.swj.shiwujie.utils.JwtUtils;
+import com.swj.shiwujie.utils.RedisUtils;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
+import static com.swj.shiwujie.constants.UserConstants.TOKEN_SECRETKEY;
 
 /**
  * @author Administrator
@@ -26,6 +36,11 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
 
     @Resource
     private VolunteerService volunteerService;
+
+
+
+
+
 
     /**
      * 通过手机号查询信息
@@ -101,6 +116,17 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
         return volunteerList;
     }
 
+
+    /**
+     * 登录成功实现令牌生成与redis储存
+     *
+     * @param volunteer 盲人信息
+     * @return token
+     */
+    @Override
+    public String generateLoginToken(Volunteer volunteer) {
+        return volunteerService.generateLoginToken(volunteer);
+    }
 
 }
 

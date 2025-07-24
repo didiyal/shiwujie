@@ -13,6 +13,7 @@ import com.swj.shiwujie.mapper.VolunteerMapper;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
+import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.domain.user.Volunteer;
@@ -20,8 +21,10 @@ import com.swj.shiwujie.model.enums.user.GenderEnum;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
 import com.swj.shiwujie.service.VolunteerService;
+import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -54,6 +57,9 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
     private RedisUtils redisUtils;
 
 
+    @DubboReference
+    private InnerCommunitymanagerService innerCommunitymanagerService;
+
     /**
      * 手机号一键登录注册
      * 账号存在,登录
@@ -72,7 +78,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         Volunteer volunteer = this.getByPhone(phone);
         if (ObjUtil.isNotNull(volunteer)) {
             //生成token并存入redis
-            String token = this.loginSuccess(volunteer);
+            String token = this.generateLoginToken(volunteer);
             return this.getLoginSuccessVO(volunteer, token);
         }
 
@@ -87,7 +93,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
 
         //生成token并存入redis
-        String token = this.loginSuccess(newVolunteer);
+        String token = this.generateLoginToken(newVolunteer);
         return this.getLoginSuccessVO(newVolunteer, token);
 
 
@@ -124,7 +130,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
             ThrowUtils.throwIf(!md5Password.equals(volunteerPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
 
             //生成token并存入redis
-            String token = this.loginSuccess(volunteer);
+            String token = this.generateLoginToken(volunteer);
             return this.getLoginSuccessVO(volunteer, token);
         }
 
@@ -141,7 +147,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
 
 
         //生成token并存入redis
-        String token = this.loginSuccess(newVolunteer);
+        String token = this.generateLoginToken(newVolunteer);
         return this.getLoginSuccessVO(newVolunteer, token);
 
     }
@@ -370,7 +376,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
      * @return token
      */
     @Override
-    public String loginSuccess(Volunteer volunteer) {
+    public String generateLoginToken(Volunteer volunteer) {
         // 生成token并脱敏返回,token存入redis
         Map<String, Object> jwtMap = new HashMap<>();
         jwtMap.put("volunteerId", volunteer.getVolunteerId());
@@ -379,6 +385,16 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
 
         redisUtils.setToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId(), token, 1L);
+
+
+        // 获取社区管理员角色(如果加入了社区)
+        Long communityId = volunteer.getCommunityId();
+        if(ObjUtil.isNotNull(communityId)){
+            Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(volunteer.getVolunteerId(),communityId);
+            ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无社区管理权限");
+            Long role = communitymanager.getRolePermissionId();
+            jwtMap.put("role", role);
+        }
 
 
         return token;

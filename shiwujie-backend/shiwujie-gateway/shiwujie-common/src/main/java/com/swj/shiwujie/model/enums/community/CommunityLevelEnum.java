@@ -26,4 +26,14 @@ public enum CommunityLevelEnum {
         this.description = description;
         this.levelId = levelId;
     }
+
+
+    public static CommunityLevelEnum getById(long levelId){
+        for (CommunityLevelEnum value : CommunityLevelEnum.values()) {
+            if(value.levelId == levelId){
+                return value;
+            }
+        }
+        return null;
+    }
 }

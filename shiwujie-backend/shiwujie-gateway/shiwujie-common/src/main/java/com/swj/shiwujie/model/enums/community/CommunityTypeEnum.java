@@ -38,5 +38,14 @@ public enum CommunityTypeEnum {
         return null;
     }
 
+    public static CommunityTypeEnum getById(long typeId) {
+        for (CommunityTypeEnum value : CommunityTypeEnum.values()) {
+            if (value.typeId == typeId) {
+                return value;
+            }
+        }
+        return null;
+    }
+
 
 }

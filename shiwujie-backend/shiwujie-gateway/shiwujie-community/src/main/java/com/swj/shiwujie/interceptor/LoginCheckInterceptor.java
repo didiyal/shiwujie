@@ -62,17 +62,12 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
 
 
 
-        Long blindId = null;
         Long volunteerID = null;
         String phone = null;
         // 解析JWT令牌
         try {
             Map<String, Object> map = JwtUtils.validateToken(token, TOKEN_SECRETKEY, true);
-            if((boolean)map.get("isBlind")){
-                blindId = Long.parseLong(map.get("blindId").toString());
-            }else{
-                volunteerID = Long.parseLong(map.get("volunteerId").toString());
-            }
+            volunteerID = Long.parseLong(map.get("volunteerId").toString());
             phone = map.get("phone").toString();
         } catch (Exception e) {
             log.info("解析令牌失败, 返回未登录错误信息");
@@ -80,7 +75,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         }
 
         // 检查 Redis 中的令牌信息
-        Object fromRedisObj = redisUtils.getFromRedis(REDIS_SECRETKEY +  (blindId != null ? "-blind-"+blindId : "-volunteer-"+volunteerID));
+        Object fromRedisObj = redisUtils.getFromRedis(REDIS_SECRETKEY +   "-volunteer-" + volunteerID);
         ThrowUtils.throwIf(fromRedisObj == null,ErrorCode.NOT_LOGIN, "未登录");
 
         // 比对token是否相同
@@ -89,16 +84,12 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
 
 
         // 续期 Redis 中的用户信息
-        redisUtils.renewKey(REDIS_SECRETKEY+"-"+ (blindId != null ? blindId:volunteerID), 1L); // 续期 24 小时
+        redisUtils.renewKey(REDIS_SECRETKEY+"-"+ volunteerID, 1L); // 续期 24 小时
 
 
 
         // 将用户信息添加到请求中
-        if(blindId!=null)
-
-            req.setAttribute("loginBlindId", blindId);
-        else
-            req.setAttribute("loginVolunteerId",volunteerID);
+        req.setAttribute("loginVolunteerId",volunteerID);
 
         req.setAttribute("phone",phone);
 

@@ -101,7 +101,7 @@ public interface VolunteerService extends IService<Volunteer> {
      * @param volunteer 盲人信息
      * @return token
      */
-    String loginSuccess(Volunteer volunteer);
+    String generateLoginToken(Volunteer volunteer);
 
 
     /**

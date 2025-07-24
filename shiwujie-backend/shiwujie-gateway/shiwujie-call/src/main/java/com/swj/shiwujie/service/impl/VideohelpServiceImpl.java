@@ -11,9 +11,10 @@ import com.swj.shiwujie.model.domain.call.Videohelp;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.enums.call.CallHelpStatusEnum;
 import com.swj.shiwujie.model.request.call.SocketData;
-import com.swj.shiwujie.service.InnerVolunteerService;
+
 import com.swj.shiwujie.service.VideohelpService;
 import com.swj.shiwujie.mapper.VideohelpMapper;
+import com.swj.shiwujie.service.user.InnerVolunteerService;
 import com.swj.shiwujie.socket.CoordinationSocketHandler;
 import com.swj.shiwujie.utils.ConverterUtils;
 import com.swj.shiwujie.utils.RedisUtils;
@@ -26,13 +27,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
-* @author Administrator
-* @description 针对表【VideoHelp(视频求助表)】的数据库操作Service实现
-* @createDate 2025-07-11 21:26:52
-*/
+ * @author Administrator
+ * @description 针对表【VideoHelp(视频求助表)】的数据库操作Service实现
+ * @createDate 2025-07-11 21:26:52
+ */
 @Service
 public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp>
-    implements VideohelpService{
+        implements VideohelpService {
 
 
     @DubboReference
@@ -60,17 +61,17 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
         //1. 检查redis是否有队列,有则使用,无则创建
         Boolean hasKey = (Boolean) redisUtils.hasKey(CallConstant.VOLUNTEER_QUEUE_REDIS);
         Queue<Long> queue = null;
-        if(!hasKey){
+        if (!hasKey) {
             queue = new LinkedList<>();
-        }else{
+        } else {
             queue = ConverterUtils.ObjToQueueLong(redisUtils.getFromRedis(CallConstant.VOLUNTEER_QUEUE_REDIS));
         }
         //2. 检查是否在匹配中:检查redis中是否有用用户信息
-        ThrowUtils.throwIf(queue.contains(loginVolunteerId), ErrorCode.PARAMS_ERROR,"您已经在匹配中了");
+        ThrowUtils.throwIf(queue.contains(loginVolunteerId), ErrorCode.PARAMS_ERROR, "您已经在匹配中了");
         //3. 检查是否在通话
         Videohelp videohelp = this.getWaitingByVolunteerId(loginVolunteerId);
-        ThrowUtils.throwIf(ObjUtil.isNotNull(videohelp),ErrorCode.PARAMS_ERROR);
-        synchronized (loginUserPhone.intern()){
+        ThrowUtils.throwIf(ObjUtil.isNotNull(videohelp), ErrorCode.PARAMS_ERROR);
+        synchronized (loginUserPhone.intern()) {
             //4. 将志愿者信息加入到队列中
             queue.offer(loginVolunteerId);
 
@@ -81,12 +82,11 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
             videohelp.setStart_time(DateUtil.date());
             videohelp.setHelp_status(CallHelpStatusEnum.WAITING.getHelpStatus());
             boolean b = this.save(videohelp);
-            ThrowUtils.throwIf(!b,ErrorCode.SYSTEM_ERROR);
-
+            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
 
             //5. 志愿者信息上传redis
-            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS,queue,30L);
+            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, 30L);
         }
 
         return true;
@@ -105,9 +105,9 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
         //1. 检查redis是否有队列,有则使用,无则报错
         Boolean hasKey = (Boolean) redisUtils.hasKey(CallConstant.VOLUNTEER_QUEUE_REDIS);
         Queue<Long> queue = null;
-        if(!hasKey){
-            ThrowUtils.throwIf(queue.contains(loginVolunteerId), ErrorCode.PARAMS_ERROR,"您不在匹配之中,无法取消匹配");
-        }else{
+        if (!hasKey) {
+            ThrowUtils.throwIf(queue.contains(loginVolunteerId), ErrorCode.PARAMS_ERROR, "您不在匹配之中,无法取消匹配");
+        } else {
             queue = ConverterUtils.ObjToQueueLong(redisUtils.getFromRedis(CallConstant.VOLUNTEER_QUEUE_REDIS));
         }
         //2. 检查是否在匹配中:检查redis中是否有用用户信息
@@ -117,18 +117,18 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
         queue.remove(loginVolunteerId);
 
         Videohelp videohelp = this.getWaitingByVolunteerId(loginVolunteerId);
-        ThrowUtils.throwIf(ObjUtil.isNull(videohelp),ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(ObjUtil.isNull(videohelp), ErrorCode.PARAMS_ERROR);
 
-        synchronized (loginUserPhone.intern()){
+        synchronized (loginUserPhone.intern()) {
 
             //5. 修改匹配表信息
             videohelp.setHelp_status(CallHelpStatusEnum.FALL.getHelpStatus());
             boolean b = this.updateById(videohelp);
-            ThrowUtils.throwIf(!b,ErrorCode.SYSTEM_ERROR);
+            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
 
             //4. 志愿者信息上传redis
-            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS,queue,30L);
+            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, 30L);
         }
 
         return true;
@@ -146,20 +146,19 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
 
         //1. 检查是否有志愿者
         Object fromRedis = redisUtils.getFromRedis(CallConstant.VOLUNTEER_QUEUE_REDIS);
-        ThrowUtils.throwIf(ObjUtil.isNull(fromRedis),ErrorCode.PARAMS_ERROR,"没有空闲的志愿者");
+        ThrowUtils.throwIf(ObjUtil.isNull(fromRedis), ErrorCode.PARAMS_ERROR, "没有空闲的志愿者");
         //2. 获取志愿者信息
         Queue<Long> queue = ConverterUtils.ObjToQueueLong(fromRedis);
         Long volunteerId = queue.poll();
-        synchronized (loginUserPhone.intern()){
+        synchronized (loginUserPhone.intern()) {
             //4. 更新求助表内容
             Videohelp videohelp = this.getWaitingByVolunteerId(volunteerId);
-            ThrowUtils.throwIf(ObjUtil.isNull(videohelp),ErrorCode.PARAMS_ERROR);
+            ThrowUtils.throwIf(ObjUtil.isNull(videohelp), ErrorCode.PARAMS_ERROR);
             videohelp.setBlind_id(loginBlindId);
             videohelp.setResponse_time(DateUtil.date());
             videohelp.setHelp_status(CallHelpStatusEnum.HELPING.getHelpStatus());
             videohelp.setChannel_id(volunteerId);
             this.updateById(videohelp);
-
 
 
             //5. 向志愿者发送socket消息
@@ -172,8 +171,7 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
 
 
             //3. 更新redis
-            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS,queue,30L);
-
+            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, 30L);
 
 
         }
@@ -193,14 +191,13 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
      */
     @Override
     public Videohelp getByVolunteerId(Long volunteerId) {
-        if(ObjUtil.isNull(volunteerId)){
+        if (ObjUtil.isNull(volunteerId)) {
             return null;
         }
         QueryWrapper<Videohelp> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("volunteer_id",volunteerId);
+        queryWrapper.eq("volunteer_id", volunteerId);
         return this.getOne(queryWrapper);
     }
-
 
 
     /**
@@ -211,12 +208,12 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
      */
     @Override
     public Videohelp getWaitingByVolunteerId(Long volunteerId) {
-        if(ObjUtil.isNull(volunteerId)){
+        if (ObjUtil.isNull(volunteerId)) {
             return null;
         }
         QueryWrapper<Videohelp> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("volunteer_id",volunteerId);
-        queryWrapper.eq("help_status",CallHelpStatusEnum.WAITING.getHelpStatus());
+        queryWrapper.eq("volunteer_id", volunteerId);
+        queryWrapper.eq("help_status", CallHelpStatusEnum.WAITING.getHelpStatus());
         return this.getOne(queryWrapper);
     }
 
@@ -229,16 +226,14 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
      */
     @Override
     public Videohelp getHelpingByVolunteerId(Long volunteerId) {
-        if(ObjUtil.isNull(volunteerId)){
+        if (ObjUtil.isNull(volunteerId)) {
             return null;
         }
         QueryWrapper<Videohelp> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("volunteer_id",volunteerId);
-        queryWrapper.eq("help_status",CallHelpStatusEnum.HELPING.getHelpStatus());
+        queryWrapper.eq("volunteer_id", volunteerId);
+        queryWrapper.eq("help_status", CallHelpStatusEnum.HELPING.getHelpStatus());
         return this.getOne(queryWrapper);
     }
-
-
 
 
     /**
@@ -249,11 +244,11 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
      */
     @Override
     public Videohelp getByBlindId(Long blindId) {
-        if(ObjUtil.isNull(blindId)){
+        if (ObjUtil.isNull(blindId)) {
             return null;
         }
         QueryWrapper<Videohelp> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("blind_id",blindId);
+        queryWrapper.eq("blind_id", blindId);
         return this.getOne(queryWrapper);
     }
 
@@ -266,12 +261,12 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
      */
     @Override
     public Videohelp getHelpingByBlindId(Long blindId) {
-        if(ObjUtil.isNull(blindId)){
+        if (ObjUtil.isNull(blindId)) {
             return null;
         }
         QueryWrapper<Videohelp> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("blind_id",blindId);
-        queryWrapper.eq("help_status",CallHelpStatusEnum.HELPING.getHelpStatus());
+        queryWrapper.eq("blind_id", blindId);
+        queryWrapper.eq("help_status", CallHelpStatusEnum.HELPING.getHelpStatus());
         return this.getOne(queryWrapper);
     }
 

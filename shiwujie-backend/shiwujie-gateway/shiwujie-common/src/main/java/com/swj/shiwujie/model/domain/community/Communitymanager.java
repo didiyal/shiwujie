@@ -16,7 +16,7 @@ public class Communitymanager implements Serializable {
     /**
      * 社区管理人员ID
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long managerId;
 
     /**

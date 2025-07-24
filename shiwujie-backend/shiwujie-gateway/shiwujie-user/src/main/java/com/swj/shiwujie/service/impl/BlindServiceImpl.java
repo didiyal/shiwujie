@@ -69,7 +69,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         Blind blind = this.getByPhone(phone);
         if (ObjUtil.isNotNull(blind)) {
             //生成token并存入redis
-            String token = this.loginSuccess(blind);
+            String token = this.generateLoginToken(blind);
             return this.getLoginSuccessVO(blind, token);
         }
 
@@ -84,7 +84,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
 
         //生成token并存入redis
-        String token = this.loginSuccess(newBlind);
+        String token = this.generateLoginToken(newBlind);
         return this.getLoginSuccessVO(newBlind, token);
 
 
@@ -121,7 +121,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
             ThrowUtils.throwIf(!md5Password.equals(blindPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
 
             //生成token并存入redis
-            String token = this.loginSuccess(blind);
+            String token = this.generateLoginToken(blind);
             return this.getLoginSuccessVO(blind, token);
         }
 
@@ -138,7 +138,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
 
 
         //生成token并存入redis
-        String token = this.loginSuccess(newBlind);
+        String token = this.generateLoginToken(newBlind);
         return this.getLoginSuccessVO(newBlind, token);
 
     }
@@ -332,7 +332,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
      * @return token
      */
     @Override
-    public String loginSuccess(Blind blind) {
+    public String generateLoginToken(Blind blind) {
         // 生成token并脱敏返回,token存入redis
         Map<String, Object> jwtMap = new HashMap<>();
         jwtMap.put("blindId", blind.getBlindId());

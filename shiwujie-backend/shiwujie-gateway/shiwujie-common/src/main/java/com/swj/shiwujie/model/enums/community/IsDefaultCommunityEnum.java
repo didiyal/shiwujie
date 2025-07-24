@@ -23,4 +23,7 @@ public enum IsDefaultCommunityEnum {
         this.name = name;
         this.isDefaultCommunity = isDefaultCommunity;
     }
+
+
+
 }

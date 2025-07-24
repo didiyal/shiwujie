@@ -16,7 +16,7 @@ public class Community implements Serializable {
     /**
      * 社区ID
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long communityId;
 
     /**

@@ -17,8 +17,8 @@ server:
   port: 8400
 mybatis-plus:
   configuration:
-    # 关闭自动映射下划线到驼峰的规则
-    map-underscore-to-camel-case: false
+    # 启用自动映射下划线到驼峰的规则
+    map-underscore-to-camel-case: true
   global-config:
     db-config:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)

@@ -30,10 +30,6 @@ public class CommunityVolunteerRegisterRequest {
      */
     private String wechatId;
 
-    /**
-     * QQ账号
-     */
-    private String qqId;
 
     /**
      * 身份证号

@@ -6,7 +6,7 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.service.BlindService;
-import com.swj.shiwujie.service.InnerBlindService;
+import com.swj.shiwujie.service.user.InnerBlindService;
 import org.apache.dubbo.config.annotation.DubboService;
 
 import javax.annotation.Resource;

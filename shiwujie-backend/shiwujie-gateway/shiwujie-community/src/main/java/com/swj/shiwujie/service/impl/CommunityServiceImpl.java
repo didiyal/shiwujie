@@ -22,12 +22,17 @@ import com.swj.shiwujie.model.request.community.CommunityRegisterRequest;
 import com.swj.shiwujie.model.request.user.volunteer.CommunityVolunteerRegisterRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.service.CommunityService;
-import com.swj.shiwujie.service.InnerVolunteerService;
+import com.swj.shiwujie.service.user.InnerVolunteerService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.Resource;
 import java.time.Duration;
@@ -39,26 +44,21 @@ import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
 import static com.swj.shiwujie.constants.UserConstants.TOKEN_SECRETKEY;
 
 /**
-* @author Administrator
-* @description 针对表【Community(社区信息表)】的数据库操作Service实现
-* @createDate 2025-07-18 14:44:37
-*/
+ * @author Administrator
+ * @description 针对表【Community(社区信息表)】的数据库操作Service实现
+ * @createDate 2025-07-18 14:44:37
+ */
 @Service
 public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community>
-    implements CommunityService{
+        implements CommunityService {
 
 
     @DubboReference
     private InnerVolunteerService innerVolunteerService;
 
+
     @Resource
     private CommunitymanagerMapper communitymanagerMapper;
-
-
-    @Resource
-    private RedisUtils redisUtils;
-
-
 
 
     /**
@@ -70,23 +70,23 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     @Override
     public CommunityLoginSuccessVO communityRegister(CommunityRegisterRequest communityRegisterRequest) {
 
-
+        //todo 处理分布式事务
         //1- 判断社区注册人手机号格式是否正确,手机号是否存在
         CommunityVolunteerRegisterRequest requestVolunteer = communityRegisterRequest.getVolunteer();
-        ThrowUtils.throwIf(ObjUtil.hasEmpty(requestVolunteer),ErrorCode.PARAMS_ERROR,"信息填写不全");
+        ThrowUtils.throwIf(ObjUtil.hasEmpty(requestVolunteer), ErrorCode.PARAMS_ERROR, "信息填写不全");
         String phone = requestVolunteer.getPhone();
         Volunteer volunteer = innerVolunteerService.getByPhone(phone);
-        if(ObjUtil.isNull(volunteer)){
+        if (ObjUtil.isNull(volunteer)) {
             //  - 不存在
             //    - 自动注册志愿者账号且实名,身份证是否合法
             volunteer = new Volunteer();
-            BeanUtils.copyProperties(requestVolunteer,volunteer);
+            BeanUtils.copyProperties(requestVolunteer, volunteer);
             boolean save = innerVolunteerService.save(volunteer);
         }
         //  - 存在
         //    - 检查是否实名,没实名自动实名,身份证是否合法
         String idCard = requestVolunteer.getIdCard();
-        if(IdcardUtil.isValidCard(idCard)){
+        if (IdcardUtil.isValidCard(idCard)) {
             volunteer.setIdCard(SecureUtil.md5(idCard));
         }
 
@@ -95,39 +95,39 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         // 检查省
         String province = communityRegisterRequest.getProvince();
         Community provinceCommunity = this.getByName(province);
-        if(ObjUtil.isNull(provinceCommunity)){
+        if (ObjUtil.isNull(provinceCommunity)) {
             //  - 不存在
             //    - 自动创建上级社区
-            Community community = new Community();
-            community.setProvince(province);
-            community.setCommunityLevelId(CommunityLevelEnum.PROVINCE.getLevelId());
-            community.setIsDefaultCommunity(IsDefaultCommunityEnum.TRUE.getIsDefaultCommunity());
-            community.setCommunityName(province);
-            community.setCommunityStatus(1);
-            boolean save = this.save(community);
-            ThrowUtils.throwIf(!save,ErrorCode.SYSTEM_ERROR);
+            provinceCommunity = new Community();
+            provinceCommunity.setProvince(province);
+            provinceCommunity.setCommunityLevelId(CommunityLevelEnum.PROVINCE.getLevelId());
+            provinceCommunity.setIsDefaultCommunity(IsDefaultCommunityEnum.TRUE.getIsDefaultCommunity());
+            provinceCommunity.setCommunityName(province);
+            provinceCommunity.setCommunityStatus(1);
+            boolean save = this.save(provinceCommunity);
+            ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR);
         }
         // 检查市
         String city = communityRegisterRequest.getCity();
         Community cityCommunity = this.getByName(city);
-        if(ObjUtil.isNull(cityCommunity)){
-            Community community = new Community();
-            community.setProvince(province);
-            community.setIsDefaultCommunity(IsDefaultCommunityEnum.TRUE.getIsDefaultCommunity());
-            community.setCommunityLevelId(CommunityLevelEnum.CITY.getLevelId());
+        if (ObjUtil.isNull(cityCommunity)) {
+            cityCommunity = new Community();
+            cityCommunity.setProvince(province);
+            cityCommunity.setCity(city);
+            cityCommunity.setIsDefaultCommunity(IsDefaultCommunityEnum.TRUE.getIsDefaultCommunity());
+            cityCommunity.setCommunityLevelId(CommunityLevelEnum.CITY.getLevelId());
             // 绑定上级社区
             cityCommunity.setParentCommunityId(provinceCommunity.getCommunityId());
-            community.setCommunityName(province);
-            community.setCommunityStatus(1);
-            boolean save = this.save(community);
-            ThrowUtils.throwIf(!save,ErrorCode.SYSTEM_ERROR);
+            cityCommunity.setCommunityName(city);
+            cityCommunity.setCommunityStatus(1);
+            boolean save = this.save(cityCommunity);
+            ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR);
         }
-
 
 
         //3- 创建社区
         Community community = new Community();
-        BeanUtils.copyProperties(communityRegisterRequest,community);
+        BeanUtils.copyProperties(communityRegisterRequest, community);
         community.setIsDefaultCommunity(IsDefaultCommunityEnum.FALSE.getIsDefaultCommunity());
         community.setCommunityLevelId(CommunityLevelEnum.STREET.getLevelId());
         community.setCommunityStatus(1);
@@ -137,17 +137,16 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         //- 检查是否存在对应的社区类别,将类别id存入
         String communityType = communityRegisterRequest.getCommunityType();
         CommunityTypeEnum communityTypeEnum = CommunityTypeEnum.getByName(communityType);
-        ThrowUtils.throwIf(ObjUtil.isNull(communityTypeEnum),ErrorCode.PARAMS_ERROR,"社区类型输入错误");
+        ThrowUtils.throwIf(ObjUtil.isNull(communityTypeEnum), ErrorCode.PARAMS_ERROR, "社区类型输入错误");
         community.setCommunityTypeId(communityTypeEnum.getTypeId());
 
         //- 使用社区与创建人绑定管理表
         community.setRegisterVolunteerId(volunteer.getVolunteerId());
 
-
-
-        this.save(community);
+        boolean save = this.save(community);
+        ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "社区创建失败");
+        volunteer.setCommunityId(community.getCommunityId());
         innerVolunteerService.updateById(volunteer);
-
 
         //4- 绑定职位表
         Communitymanager communitymanager = new Communitymanager();
@@ -155,11 +154,14 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         communitymanager.setVolunteerId(volunteer.getVolunteerId());
         communitymanager.setRolePermissionId(CommunityRolePermissionEnum.REGISTRANT.getRoleId());
 
-        communitymanagerMapper.insert(communitymanager);
-        //5- 颁发token
+        int insert = communitymanagerMapper.insert(communitymanager);
+        ThrowUtils.throwIf(insert <= 0, ErrorCode.SYSTEM_ERROR, "管理员绑定失败");
 
-        //6- 脱敏
-        return null;
+
+        //5- 构建并返回结果
+        return buildCommunityLoginResult(community, volunteer);
+
+
     }
 
     /**
@@ -170,7 +172,30 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
      */
     @Override
     public CommunityLoginSuccessVO communityLogin(VolunteerLARRequest volunteerLARRequest) {
-        return null;
+        ThrowUtils.throwIf(ObjUtil.hasEmpty(volunteerLARRequest.getPhone(), volunteerLARRequest.getPassword()),
+                ErrorCode.PARAMS_ERROR, "手机号或密码不能为空");
+
+        // 1. 根据手机号查询志愿者
+        Volunteer volunteer = innerVolunteerService.getByPhone(volunteerLARRequest.getPhone());
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.OPERATION_ERROR, "用户不存在");
+
+        // 2. 验证密码
+        String encryptPassword = SecureUtil.md5(volunteerLARRequest.getPassword());
+        ThrowUtils.throwIf(!encryptPassword.equals(volunteer.getPassword()),
+                ErrorCode.PARAMS_ERROR, "密码错误");
+
+        // 3. 检查该志愿者是否为社区管理员
+        QueryWrapper<Communitymanager> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("volunteer_id", volunteer.getVolunteerId()).eq("community_id",volunteer.getCommunityId());
+        Communitymanager communitymanager = communitymanagerMapper.selectOne(queryWrapper);
+        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无社区管理权限");
+
+        // 4. 获取社区信息
+        Community community = this.getById(communitymanager.getCommunityId());
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.OPERATION_ERROR, "社区不存在");
+
+        //5. 构建并返回结果
+        return buildCommunityLoginResult(community, volunteer);
     }
 
 
@@ -186,32 +211,34 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     @Override
     public Community getByName(String communityName) {
         QueryWrapper<Community> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("community_name",communityName);
+        queryWrapper.eq("community_name", communityName);
         Community community = this.getOne(queryWrapper);
         return community;
     }
 
 
-
     /**
-     * 登录成功实现令牌生成与redis储存
-     *
-     * @param volunteer 盲人信息
-     * @return token
+     * 构建社区登录注册返回结果
      */
-    @Override
-    public String loginSuccess(Volunteer volunteer,Community community) {
-        // 生成token并脱敏返回,token存入redis
-        Map<String, Object> jwtMap = new HashMap<>();
-        jwtMap.put("volunteerId", volunteer.getVolunteerId());
-        jwtMap.put("communityId", community.getCommunityId());
-        jwtMap.put("phone", volunteer.getPhone());
-        String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
+    private CommunityLoginSuccessVO buildCommunityLoginResult(Community community, Volunteer volunteer) {
+        CommunityLoginSuccessVO result = new CommunityLoginSuccessVO();
+        // 从 community 对象中获取对应属性值并设置到 result 中
+        result.setCommunityTypeName(community.getCommunityTypeId() != null ? CommunityTypeEnum.getById(community.getCommunityTypeId()).getName() : null);
+        result.setCommunityLevelName(community.getCommunityLevelId() != null ? CommunityLevelEnum.getById(community.getCommunityLevelId()).getName() : null);
+        result.setParentCommunityId(community.getParentCommunityId());
+        result.setCommunityDescription(community.getCommunityDescription());
+        result.setProvince(community.getProvince());
+        result.setCity(community.getCity());
+        result.setDistrict(community.getDistrict());
+        result.setAddress(community.getAddress());
+        result.setRegistrationInfo(community.getRegistrationInfo());
+        result.setRegisterVolunteerId(community.getRegisterVolunteerId());
+        result.setCommunityStatus(community.getCommunityStatus());
 
-        redisUtils.setToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId(), token, 1L);
-
-
-        return token;
+        result.setCommunityId(community.getCommunityId());
+        result.setCommunityName(community.getCommunityName());
+        result.setToken(innerVolunteerService.generateLoginToken(volunteer));
+        return result;
     }
 
     // endregion

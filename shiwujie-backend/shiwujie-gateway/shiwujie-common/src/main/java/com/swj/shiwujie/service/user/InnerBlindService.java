@@ -1,4 +1,4 @@
-package com.swj.shiwujie.service;
+package com.swj.shiwujie.service.user;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Blind;
