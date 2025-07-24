@@ -43,7 +43,7 @@ public class CommunityController {
      *
      * @return 是否成功
      */
-    @GetMapping("/Check")
+    @GetMapping("/login/check")
     public BaseResponse<Boolean> checkLogin(HttpServletRequest request) {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
@@ -57,7 +57,7 @@ public class CommunityController {
      * @param communityRegisterRequest 社区注册信息
      * @return 脱敏后的社区信息
      */
-    @PostMapping("/register")
+    @PostMapping("/Register")
     public BaseResponse<CommunityLoginSuccessVO> communityRegister(CommunityRegisterRequest communityRegisterRequest) {
         ThrowUtils.throwIf(ObjUtil.isNull(communityRegisterRequest), ErrorCode.PARAMS_ERROR,"信息填写不全");
         ThrowUtils.throwIf(ObjUtil.hasEmpty(communityRegisterRequest), ErrorCode.PARAMS_ERROR, "信息填写不全");
@@ -75,7 +75,7 @@ public class CommunityController {
      * @param volunteerLARRequest 用户的手机号与密码
      * @return 脱敏后的用户信息
      */
-    @PostMapping("/login")
+    @PostMapping("/Login")
     public BaseResponse<CommunityLoginSuccessVO> communityLogin(VolunteerLARRequest volunteerLARRequest) {
         ThrowUtils.throwIf(ObjUtil.hasEmpty(volunteerLARRequest), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
 

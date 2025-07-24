@@ -40,7 +40,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         log.info("请求的url: {}", url);
 
         // 判断请求url中是否包含login，如果包含，说明是登录操作，放行。
-        if(url.contains("loginAndRegister")) {
+        if(url.contains("loginAndRegister") || url.contains("Login") || url.contains("Register")) {
             log.info("登录或者注册操作, 放行...");
             return true;
         }
@@ -65,6 +65,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         Long blindId = null;
         Long volunteerID = null;
         String phone = null;
+        Long role = null;
         // 解析JWT令牌
         try {
             Map<String, Object> map = JwtUtils.validateToken(token, TOKEN_SECRETKEY, true);
@@ -74,6 +75,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
                 volunteerID = Long.parseLong(map.get("volunteerId").toString());
             }
             phone = map.get("phone").toString();
+            role = Long.parseLong(map.get("role").toString());
         } catch (Exception e) {
             log.info("解析令牌失败, 返回未登录错误信息");
             throw new BusinessException(ErrorCode.NOT_LOGIN, "未登录");
@@ -101,6 +103,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
             req.setAttribute("loginVolunteerId",volunteerID);
 
         req.setAttribute("phone",phone);
+        req.setAttribute("role",role);
 
         // 放行请求
         return true;
