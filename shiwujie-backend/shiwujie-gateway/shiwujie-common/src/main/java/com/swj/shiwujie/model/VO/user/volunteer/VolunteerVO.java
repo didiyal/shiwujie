@@ -8,12 +8,14 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
 
 @Data
-public class VolunteerVO {
+public class VolunteerVO  implements Serializable {
+
 
 
     /**
@@ -112,5 +114,12 @@ public class VolunteerVO {
     private Date locationUpdateTime;
 
 
+    /**
+     * 社区身份
+     */
+    private String communityManager;
 
+
+
+    private static final long serialVersionUID = 979605044917576396L;
 }

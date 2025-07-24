@@ -33,6 +33,12 @@ knife4j:
         # 路由前缀
         context-path: /
         order: 3
+      - name: community
+        url: /api/community/v2/api-docs?group=community
+        service-name: order-service
+        # 路由前缀
+        context-path: /
+        order: 4
 
 
 

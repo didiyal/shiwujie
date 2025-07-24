@@ -29,6 +29,7 @@ dubbo:
   application:
     name: shiwujie-user-provider
     logger: slf4j
+    serialize-check-status: DISABLE
   protocol:
     name: dubbo
     port: 50052

@@ -1,8 +1,10 @@
 package com.swj.shiwujie.service;
 
 import com.swj.shiwujie.model.VO.community.CommunityLoginSuccessVO;
+import com.swj.shiwujie.model.VO.community.CommunityVO;
 import com.swj.shiwujie.model.domain.community.Community;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.community.CommunityRegisterRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 
@@ -12,6 +14,18 @@ import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 * @createDate 2025-07-18 14:44:37
 */
 public interface CommunityService extends IService<Community> {
+
+
+    /**
+     * 测试登录
+     * @param loginVolunteerId
+     */
+    void checkLogin(Long loginVolunteerId);
+
+
+
+
+
 
     /**
      * 社区入驻
@@ -39,6 +53,20 @@ public interface CommunityService extends IService<Community> {
      * @return 社区
      */
     Community getByName(String communityName);
+
+
+    /**
+     * 构建社区登录注册返回结果
+     */
+    CommunityLoginSuccessVO buildCommunityLoginResult(Community community, Volunteer volunteer);
+
+
+    /**
+     * 封装脱敏
+     * @param community
+     * @return
+     */
+    CommunityVO getCommunityVO(Community community);
 
 
 

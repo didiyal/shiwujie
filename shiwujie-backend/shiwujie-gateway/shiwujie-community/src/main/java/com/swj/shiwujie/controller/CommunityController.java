@@ -6,12 +6,14 @@ import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.community.CommunityLoginSuccessVO;
+import com.swj.shiwujie.model.VO.community.CommunityVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.community.CommunityRegisterRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.service.CommunityService;
+import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,7 @@ public class CommunityController {
     public BaseResponse<Boolean> checkLogin(HttpServletRequest request) {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
+        communityService.checkLogin(loginVolunteerId);
         return ResultUtils.success(true);
     }
 
@@ -84,6 +87,18 @@ public class CommunityController {
         return ResultUtils.success(res);
     }
 
+
+    /**
+     * 根据id获取封装类
+     * @param communityId
+     * @return
+     */
+    @GetMapping("/get/id/vo")
+    public BaseResponse<CommunityVO> getVOById(Long communityId){
+        ThrowUtils.throwIf(ObjUtil.isNull(communityId), ErrorCode.PARAMS_ERROR);
+
+        return ResultUtils.success(communityService.getCommunityVO(communityService.getById(communityId)));
+    }
 
 
 }

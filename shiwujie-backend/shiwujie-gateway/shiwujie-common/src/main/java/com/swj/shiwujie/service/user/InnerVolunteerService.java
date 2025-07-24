@@ -68,4 +68,13 @@ public interface InnerVolunteerService  {
     String generateLoginToken(Volunteer volunteer);
 
 
+
+    /**
+     * 用户信息脱敏(不含token)
+     *
+     * @param newVolunteer 盲人信息
+     * @return 脱敏后的信息
+     */
+    public VolunteerVO getVolunteerVO(Volunteer newVolunteer);
+
 }

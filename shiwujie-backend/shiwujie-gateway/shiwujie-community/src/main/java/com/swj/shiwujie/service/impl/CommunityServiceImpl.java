@@ -2,7 +2,6 @@ package com.swj.shiwujie.service.impl;
 
 import cn.hutool.core.util.IdcardUtil;
 import cn.hutool.core.util.ObjUtil;
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,6 +10,7 @@ import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.CommunityMapper;
 import com.swj.shiwujie.mapper.CommunitymanagerMapper;
 import com.swj.shiwujie.model.VO.community.CommunityLoginSuccessVO;
+import com.swj.shiwujie.model.VO.community.CommunityVO;
 import com.swj.shiwujie.model.domain.community.Community;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Volunteer;
@@ -22,26 +22,13 @@ import com.swj.shiwujie.model.request.community.CommunityRegisterRequest;
 import com.swj.shiwujie.model.request.user.volunteer.CommunityVolunteerRegisterRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.service.CommunityService;
+import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.service.user.InnerVolunteerService;
-import com.swj.shiwujie.utils.JwtUtils;
-import com.swj.shiwujie.utils.RedisUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Resource;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
-import static com.swj.shiwujie.constants.UserConstants.TOKEN_SECRETKEY;
 
 /**
  * @author Administrator
@@ -58,8 +45,22 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
 
 
     @Resource
-    private CommunitymanagerMapper communitymanagerMapper;
+    private CommunitymanagerService communitymanagerService;
 
+
+    /**
+     * 测试登录
+     *
+     * @param loginVolunteerId
+     */
+    @Override
+    public void checkLogin(Long loginVolunteerId) {
+        Volunteer volunteer = innerVolunteerService.getById(loginVolunteerId);
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer.getCommunityId()),ErrorCode.NO_AUTH);
+        Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(
+                volunteer.getVolunteerId(), volunteer.getCommunityId());
+        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager),ErrorCode.NO_AUTH);
+    }
 
     /**
      * 社区入驻
@@ -154,8 +155,8 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         communitymanager.setVolunteerId(volunteer.getVolunteerId());
         communitymanager.setRolePermissionId(CommunityRolePermissionEnum.REGISTRANT.getRoleId());
 
-        int insert = communitymanagerMapper.insert(communitymanager);
-        ThrowUtils.throwIf(insert <= 0, ErrorCode.SYSTEM_ERROR, "管理员绑定失败");
+        boolean insert = communitymanagerService.save(communitymanager);
+        ThrowUtils.throwIf(!insert, ErrorCode.SYSTEM_ERROR, "管理员绑定失败");
 
 
         //5- 构建并返回结果
@@ -187,7 +188,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         // 3. 检查该志愿者是否为社区管理员
         QueryWrapper<Communitymanager> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("volunteer_id", volunteer.getVolunteerId()).eq("community_id",volunteer.getCommunityId());
-        Communitymanager communitymanager = communitymanagerMapper.selectOne(queryWrapper);
+        Communitymanager communitymanager = communitymanagerService.getOne(queryWrapper);
         ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无社区管理权限");
 
         // 4. 获取社区信息
@@ -212,33 +213,50 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     public Community getByName(String communityName) {
         QueryWrapper<Community> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("community_name", communityName);
-        Community community = this.getOne(queryWrapper);
-        return community;
+        return this.getOne(queryWrapper);
     }
 
 
     /**
      * 构建社区登录注册返回结果
      */
-    private CommunityLoginSuccessVO buildCommunityLoginResult(Community community, Volunteer volunteer) {
+    @Override
+    public CommunityLoginSuccessVO buildCommunityLoginResult(Community community, Volunteer volunteer) {
         CommunityLoginSuccessVO result = new CommunityLoginSuccessVO();
-        // 从 community 对象中获取对应属性值并设置到 result 中
-        result.setCommunityTypeName(community.getCommunityTypeId() != null ? CommunityTypeEnum.getById(community.getCommunityTypeId()).getName() : null);
-        result.setCommunityLevelName(community.getCommunityLevelId() != null ? CommunityLevelEnum.getById(community.getCommunityLevelId()).getName() : null);
-        result.setParentCommunityId(community.getParentCommunityId());
-        result.setCommunityDescription(community.getCommunityDescription());
-        result.setProvince(community.getProvince());
-        result.setCity(community.getCity());
-        result.setDistrict(community.getDistrict());
-        result.setAddress(community.getAddress());
-        result.setRegistrationInfo(community.getRegistrationInfo());
-        result.setRegisterVolunteerId(community.getRegisterVolunteerId());
-        result.setCommunityStatus(community.getCommunityStatus());
-
-        result.setCommunityId(community.getCommunityId());
-        result.setCommunityName(community.getCommunityName());
+        result.setVolunteer(innerVolunteerService.getVolunteerVO(volunteer));
         result.setToken(innerVolunteerService.generateLoginToken(volunteer));
         return result;
+    }
+
+
+
+
+
+    /**
+     * 封装脱敏
+     *
+     * @param community
+     * @return
+     */
+    @Override
+    public CommunityVO getCommunityVO(Community community) {
+        CommunityVO communityVO = new CommunityVO();
+        communityVO.setCommunityId(community.getCommunityId());
+        communityVO.setCommunityTypeName(community.getCommunityTypeId() == null
+                ? null : CommunityTypeEnum.getById(community.getCommunityTypeId()).getName());
+        communityVO.setCommunityLevelName(community.getCommunityLevelId() == null
+                ? null : CommunityLevelEnum.getById(community.getCommunityLevelId()).getName());
+        communityVO.setParentCommunityId(community.getParentCommunityId());
+        communityVO.setCommunityName(community.getCommunityName());
+        communityVO.setCommunityDescription(community.getCommunityDescription());
+        communityVO.setProvince(community.getProvince());
+        communityVO.setCity(community.getCity());
+        communityVO.setDistrict(community.getDistrict());
+        communityVO.setAddress(community.getAddress());
+        communityVO.setRegistrationInfo(community.getRegistrationInfo());
+        communityVO.setRegisterVolunteerId(community.getRegisterVolunteerId());
+        communityVO.setCommunityStatus(community.getCommunityStatus());
+        return communityVO;
     }
 
     // endregion

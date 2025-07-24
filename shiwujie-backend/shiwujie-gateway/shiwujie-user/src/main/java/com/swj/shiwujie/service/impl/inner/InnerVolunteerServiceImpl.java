@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.VolunteerMapper;
+import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.service.VolunteerService;
@@ -128,6 +129,20 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
         return volunteerService.generateLoginToken(volunteer);
     }
 
+
+
+
+
+    /**
+     * 用户信息脱敏(不含token)
+     *
+     * @param newVolunteer 盲人信息
+     * @return 脱敏后的信息
+     */
+    @Override
+    public VolunteerVO getVolunteerVO(Volunteer newVolunteer){
+        return volunteerService.getVolunteerVO(newVolunteer);
+    }
 }
 
 

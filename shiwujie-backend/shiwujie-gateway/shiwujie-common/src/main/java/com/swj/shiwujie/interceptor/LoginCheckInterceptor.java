@@ -1,5 +1,6 @@
 package com.swj.shiwujie.interceptor;
 
+import cn.hutool.core.util.ObjUtil;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -75,7 +76,10 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
                 volunteerID = Long.parseLong(map.get("volunteerId").toString());
             }
             phone = map.get("phone").toString();
-            role = Long.parseLong(map.get("role").toString());
+            if(ObjUtil.isNotNull(map.get("role"))){
+                role = Long.parseLong(map.get("role").toString());
+            }
+
         } catch (Exception e) {
             log.info("解析令牌失败, 返回未登录错误信息");
             throw new BusinessException(ErrorCode.NOT_LOGIN, "未登录");

@@ -17,6 +17,7 @@ import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.domain.user.Volunteer;
+import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.model.enums.user.GenderEnum;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
@@ -366,6 +367,18 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         res.setLongitude(newVolunteer.getLongitude());
         res.setLocationAddress(newVolunteer.getLocationAddress());
         res.setLocationUpdateTime(newVolunteer.getLocationUpdateTime());
+
+
+        //设置社区职位
+        if(ObjUtil.isNotNull(newVolunteer.getCommunityId())){
+            Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(
+                    newVolunteer.getVolunteerId(),newVolunteer.getCommunityId());
+            Long role = communitymanager.getRolePermissionId();
+            if(ObjUtil.isNotNull(role)){
+                res.setCommunityManager(CommunityRolePermissionEnum.getById(role).getName());
+            }
+        }
+
         return res;
     }
 
@@ -382,20 +395,22 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         jwtMap.put("volunteerId", volunteer.getVolunteerId());
         jwtMap.put("isBlind", false);
         jwtMap.put("phone", volunteer.getPhone());
-        String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
-
-        redisUtils.setToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId(), token, 1L);
 
 
         // 获取社区管理员角色(如果加入了社区)
         Long communityId = volunteer.getCommunityId();
+        jwtMap.put("role", null);
         if(ObjUtil.isNotNull(communityId)){
-            Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(volunteer.getVolunteerId(),communityId);
+            Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(
+                    volunteer.getVolunteerId(),communityId);
             ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无社区管理权限");
             Long role = communitymanager.getRolePermissionId();
             jwtMap.put("role", role);
         }
 
+        String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
+
+        redisUtils.setToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId(), token, 1L);
 
         return token;
     }

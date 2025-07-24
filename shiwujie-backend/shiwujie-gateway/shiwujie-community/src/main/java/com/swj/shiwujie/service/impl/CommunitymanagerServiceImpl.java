@@ -1,5 +1,6 @@
 package com.swj.shiwujie.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.service.CommunitymanagerService;
@@ -14,7 +15,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class CommunitymanagerServiceImpl extends ServiceImpl<CommunitymanagerMapper, Communitymanager>
     implements CommunitymanagerService{
-
+    /**
+     * 通过志愿者id,社区id查询信息
+     */
+    @Override
+    public Communitymanager getByVolunteerIdAndCommunityId(Long volunteerId, Long communityId) {
+        QueryWrapper<Communitymanager> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("volunteer_id", volunteerId).eq("community_id",communityId);
+        return this.getOne(queryWrapper);
+    }
 }
 
 

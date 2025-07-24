@@ -1,5 +1,6 @@
 package com.swj.shiwujie.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -9,5 +10,14 @@ import com.baomidou.mybatisplus.extension.service.IService;
 * @createDate 2025-07-19 01:31:15
 */
 public interface CommunitymanagerService extends IService<Communitymanager> {
+
+
+
+    /**
+     * 通过志愿者id,社区id查询信息
+     */
+    Communitymanager getByVolunteerIdAndCommunityId(Long volunteerId, Long communityId);
+
+
 
 }
