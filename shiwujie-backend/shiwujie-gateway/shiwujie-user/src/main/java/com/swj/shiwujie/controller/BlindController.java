@@ -16,6 +16,11 @@ import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
+import com.swj.shiwujie.model.request.community.CommunityBlindQueryRequest;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
+import com.swj.shiwujie.model.VO.user.blind.BlindVO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePhoneRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdateRequest;
@@ -168,6 +173,27 @@ public class BlindController {
         BeanUtils.copyProperties(blindUpdateRequest, blind);
         Boolean result = blindService.updateBlind(blind);
 
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 分页查询社区视障人士
+     */
+    @GetMapping("/community/blinds")
+    public BaseResponse<Page<BlindVO>> pageQueryCommunityBlinds(CommunityBlindQueryRequest request) {
+        long current = request.getCurrent();
+        long size = request.getPageSize();
+        Page<BlindVO> blindVOPage = blindService.pageQueryByCommunityId(request.getCommunityId(), current, size);
+        return ResultUtils.success(blindVOPage);
+    }
+
+    /**
+     * 加入社区
+     */
+    @PostMapping("/community/join")
+    public BaseResponse<Boolean> joinCommunity(@RequestBody CommunityJoinRequest communityJoinRequest, HttpServletRequest request) {
+        Long blindId = LoginUtils.getLoginBlindId(request);
+        boolean result = blindService.joinCommunity(blindId, communityJoinRequest);
         return ResultUtils.success(result);
     }
 

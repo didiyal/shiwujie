@@ -13,15 +13,20 @@ import com.swj.shiwujie.mapper.VolunteerMapper;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
+import com.swj.shiwujie.model.domain.community.Community;
+import com.swj.shiwujie.model.domain.community.Communityjoinreview;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.domain.user.Volunteer;
+import com.swj.shiwujie.model.enums.community.CommunityReviewStatusEnum;
 import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.model.enums.user.GenderEnum;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
 import com.swj.shiwujie.service.VolunteerService;
+import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
@@ -32,11 +37,12 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.swj.shiwujie.service.community.InnerCommunityService;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.swj.shiwujie.constants.UserConstants.*;
 
@@ -60,6 +66,14 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
 
     @DubboReference
     private InnerCommunitymanagerService innerCommunitymanagerService;
+
+
+    @DubboReference
+    private InnerCommunityjoinreviewService innerCommunityjoinreviewService;
+
+    @DubboReference
+    private InnerCommunityService innerCommunityService;
+
 
     /**
      * 手机号一键登录注册
@@ -185,6 +199,65 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         boolean result = this.updateById(volunteer);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
 
+
+        return true;
+    }
+
+    /**
+     * 分页查询社区下的志愿者
+     */
+    @Override
+    public Page<VolunteerVO> pageQueryByCommunityId(Long communityId, long current, long size) {
+        // 参数校验
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(current <= 0 || size <= 0 || size > 100, ErrorCode.PARAMS_ERROR, "分页参数不合法");
+
+        // 查询社区是否存在（通过RPC调用社区服务）
+        Community community = innerCommunityService.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 分页查询志愿者
+        Page<Volunteer> volunteerPage = new Page<>(current, size);
+        QueryWrapper<Volunteer> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("community_id", communityId);
+        queryWrapper.orderByDesc("create_time");
+        Page<Volunteer> resultPage = this.page(volunteerPage, queryWrapper);
+
+        // 转换为VO并脱敏
+        Page<VolunteerVO> volunteerVOPage = new Page<>();
+        BeanUtils.copyProperties(resultPage, volunteerVOPage);
+        List<VolunteerVO> volunteerVOList = resultPage.getRecords().stream()
+                .map(this::getVolunteerVO)
+                .collect(Collectors.toList());
+        volunteerVOPage.setRecords(volunteerVOList);
+
+        return volunteerVOPage;
+    }
+
+
+    /**
+     * 加入社区
+     */
+    @Override
+    public boolean joinCommunity(Long volunteerId, CommunityJoinRequest request) {
+        // 参数校验
+        ThrowUtils.throwIf(volunteerId == null || volunteerId <= 0, ErrorCode.PARAMS_ERROR, "志愿者ID不合法");
+        Long communityId = request.getCommunityId();
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+
+        // 查询社区是否存在（通过RPC调用社区服务）
+        Community community = innerCommunityService.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 创建社区加入审核记录
+        Communityjoinreview communityJoinReview = new Communityjoinreview();
+        communityJoinReview.setVolunteerId(volunteerId);
+        communityJoinReview.setReviewStatus(CommunityReviewStatusEnum.WAIT_REVIEW.getReviewStatus());// 待审核状态
+        communityJoinReview.setApplyTime(new Date());
+
+        // 调用RPC服务创建审核记录
+        boolean createResult = innerCommunityjoinreviewService.save(communityJoinReview);
+        ThrowUtils.throwIf(!createResult, ErrorCode.SYSTEM_ERROR, "加入申请创建失败");
 
         return true;
     }

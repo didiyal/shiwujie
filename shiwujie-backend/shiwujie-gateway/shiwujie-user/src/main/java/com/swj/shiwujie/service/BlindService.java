@@ -1,10 +1,12 @@
 package com.swj.shiwujie.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Volunteer;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 
@@ -56,6 +58,23 @@ public interface BlindService extends IService<Blind> {
      * @return 脱敏后的用户信息
      */
     boolean updateBlind(Blind blind);
+
+    /**
+     * 分页查询社区视障人士
+     * @param communityId 社区ID
+     * @param current 当前页
+     * @param size 每页大小
+     * @return 分页视障人士VO列表
+     */
+    Page<BlindVO> pageQueryByCommunityId(Long communityId, long current, long size);
+
+    /**
+     * 加入社区
+     * @param blindId 视障人士ID
+     * @param request 加入社区请求
+     * @return 是否成功
+     */
+    boolean joinCommunity(Long blindId, CommunityJoinRequest request);
 
     // region 工具方法
 

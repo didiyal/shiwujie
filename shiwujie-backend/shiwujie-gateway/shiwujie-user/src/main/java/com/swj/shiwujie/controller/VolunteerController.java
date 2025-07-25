@@ -10,10 +10,13 @@ import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.user.Volunteer;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePhoneRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdateRequest;
+import com.swj.shiwujie.model.request.community.CommunityVolunteerQueryRequest;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.RedisUtils;
@@ -158,6 +161,7 @@ public class VolunteerController {
         return ResultUtils.success(result);
     }
 
+
     /**
      * 修改手机号
      *
@@ -232,30 +236,26 @@ public class VolunteerController {
 
     // endregion
 
+
     /**
-     * 加入社区
-     * 根据id加入社区
-     *
-     * @param communityId 社区id
-     * @return 是否成功
+     * 分页条件查询社区下的志愿者
      */
-    @GetMapping("/community/join")
-    public BaseResponse<Boolean> joinCommunity(Long communityId,
-                                               HttpServletRequest request) {
-
-        Long volunteerId = LoginUtils.getLoginVolunteerId(request);
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
-        ThrowUtils.throwIf(communityId == null, ErrorCode.PARAMS_ERROR);
-
-        synchronized (loginUserPhone.intern()) {
-            Volunteer volunteer = volunteerService.getById(volunteerId);
-            volunteer.setCommunityId(communityId);
-            boolean result = volunteerService.updateById(volunteer);
-            ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-
-            return ResultUtils.success(true);
-        }
+    @GetMapping("/community/volunteers")
+    public BaseResponse<Page<VolunteerVO>> pageQueryCommunityVolunteers(CommunityVolunteerQueryRequest request) {
+        long current = request.getCurrent();
+        long size = request.getPageSize();
+        Page<VolunteerVO> volunteerVOPage = volunteerService.pageQueryByCommunityId(request.getCommunityId(), current, size);
+        return ResultUtils.success(volunteerVOPage);
     }
 
+    /**
+     * 加入社区
+     */
+    @PostMapping("/community/join")
+    public BaseResponse<Boolean> joinCommunity(@RequestBody CommunityJoinRequest communityJoinRequest,HttpServletRequest request) {
+        Long volunteerId = LoginUtils.getLoginVolunteerId(request);
+        boolean result = volunteerService.joinCommunity(volunteerId, communityJoinRequest);
+        return ResultUtils.success(result);
+    }
 
 }

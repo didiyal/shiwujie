@@ -11,14 +11,18 @@ import com.swj.shiwujie.mapper.BlindMapper;
 import com.swj.shiwujie.mapper.VolunteerMapper;
 import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
+import com.swj.shiwujie.model.domain.community.Community;
+import com.swj.shiwujie.model.domain.community.Communityjoinreview;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.enums.user.GenderEnum;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 import com.swj.shiwujie.service.BlindService;
+import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +34,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.swj.shiwujie.service.community.InnerCommunityService;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
+import com.swj.shiwujie.model.enums.community.CommunityReviewStatusEnum;
+import java.util.Date;
+import java.util.stream.Collectors;
 
 import static com.swj.shiwujie.constants.UserConstants.*;
 
@@ -49,6 +59,14 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
 
     @Resource
     private RedisUtils redisUtils;
+
+    @DubboReference
+    private InnerCommunityService innerCommunityService;
+
+
+
+    @DubboReference
+    private InnerCommunityjoinreviewService innerCommunityjoinreviewService;
 
 
     /**
@@ -145,7 +163,6 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
 
     /**
      * 修改密码
-     *
      * @param blindUpdatePassword 原密码与要修改的密码
      * @return 是否成功
      */
@@ -160,17 +177,14 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         boolean isNewMatch = this.validatePassword(newPassword);
         ThrowUtils.throwIf(!(isOriginMatch && isNewMatch), ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
 
-
         Blind blind = this.getById(blindUpdatePassword.getBlindId());
         ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
         //检查原密码
         String md5OriginPassword = SecureUtil.md5(originPassword);
         ThrowUtils.throwIf(!md5OriginPassword.equals(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
 
-
         // 密码加密更新
         blind.setPassword(SecureUtil.md5(newPassword));
-
 
         boolean result = this.updateById(blind);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
@@ -227,6 +241,57 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
 
     }
 
+    @Override
+    public Page<BlindVO> pageQueryByCommunityId(Long communityId, long current, long size) {
+        // 参数校验
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(current <= 0 || size <= 0 || size > 100, ErrorCode.PARAMS_ERROR, "分页参数不合法");
+
+        // 查询社区是否存在（通过RPC调用社区服务）
+        Community community = innerCommunityService.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 分页查询视障人士
+        Page<Blind> blindPage = new Page<>(current, size);
+        QueryWrapper<Blind> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("community_id", communityId);
+        queryWrapper.orderByDesc("create_time");
+        Page<Blind> resultPage = this.page(blindPage, queryWrapper);
+
+        // 转换为VO并脱敏
+        Page<BlindVO> blindVOPage = new Page<>();
+        BeanUtils.copyProperties(resultPage, blindVOPage);
+        List<BlindVO> blindVOList = resultPage.getRecords().stream()
+                .map(this::getBlindVO)
+                .collect(Collectors.toList());
+        blindVOPage.setRecords(blindVOList);
+
+        return blindVOPage;
+    }
+
+    @Override
+    public boolean joinCommunity(Long blindId, CommunityJoinRequest request) {
+        // 参数校验
+        ThrowUtils.throwIf(blindId == null || blindId <= 0, ErrorCode.PARAMS_ERROR, "视障人士ID不合法");
+        Long communityId = request.getCommunityId();
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+
+        // 查询社区是否存在（通过RPC调用社区服务）
+        Community community = innerCommunityService.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 创建社区加入审核记录
+        Communityjoinreview communityJoinReview = new Communityjoinreview();
+        communityJoinReview.setBlindId(blindId);
+        communityJoinReview.setReviewStatus(CommunityReviewStatusEnum.WAIT_REVIEW.getReviewStatus());// 待审核状态
+        communityJoinReview.setApplyTime(new Date());
+
+        // 调用RPC服务创建审核记录
+        boolean createResult = innerCommunityjoinreviewService.save(communityJoinReview);
+        ThrowUtils.throwIf(!createResult, ErrorCode.SYSTEM_ERROR, "加入申请创建失败");
+
+        return true;
+    }
 
     // region 工具方法
 

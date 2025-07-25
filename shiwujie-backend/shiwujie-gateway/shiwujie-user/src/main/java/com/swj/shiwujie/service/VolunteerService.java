@@ -1,5 +1,6 @@
 package com.swj.shiwujie.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
@@ -7,6 +8,7 @@ import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Volunteer;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
 
@@ -95,6 +97,23 @@ public interface VolunteerService extends IService<Volunteer> {
      * @return 脱敏后的对象
      */
     VolunteerLoginSuccessVO getLoginSuccessVO(Volunteer newVolunteer, String token);
+
+    /**
+     * 分页查询社区下的志愿者
+     * @param communityId 社区ID
+     * @param current 当前页
+     * @param size 每页大小
+     * @return 分页志愿者VO列表
+     */
+    Page<VolunteerVO> pageQueryByCommunityId(Long communityId, long current, long size);
+
+    /**
+     * 加入社区
+     * @param volunteerId 志愿者ID
+     * @param request 加入社区请求
+     * @return 是否成功
+     */
+    boolean joinCommunity(Long volunteerId, CommunityJoinRequest request);
 
     /**
      * 登录成功实现令牌生成与redis储存

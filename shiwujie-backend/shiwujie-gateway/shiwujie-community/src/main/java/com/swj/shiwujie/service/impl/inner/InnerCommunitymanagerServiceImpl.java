@@ -26,9 +26,7 @@ public class InnerCommunitymanagerServiceImpl implements InnerCommunitymanagerSe
      */
     @Override
     public Communitymanager getByVolunteerIdAndCommunityId(Long volunteerId, Long communityId) {
-        QueryWrapper<Communitymanager> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("volunteer_id", volunteerId).eq("community_id",communityId);
-        return communitymanagerService.getOne(queryWrapper);
+        return communitymanagerService.getByVolunteerIdAndCommunityId(volunteerId,communityId);
     }
 }
 
