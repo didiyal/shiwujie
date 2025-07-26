@@ -1,8 +1,8 @@
 package com.swj.shiwujie.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.swj.shiwujie.model.VO.community.CommunityLoginSuccessVO;
-import com.swj.shiwujie.model.VO.community.CommunityVO;
+import com.swj.shiwujie.model.VO.community.community.CommunityLoginSuccessVO;
+import com.swj.shiwujie.model.VO.community.community.CommunityVO;
 import com.swj.shiwujie.model.domain.community.Community;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Volunteer;

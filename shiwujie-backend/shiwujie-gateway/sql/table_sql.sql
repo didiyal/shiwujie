@@ -40,6 +40,23 @@ create index idx_activity_community_status_time
 create index idx_activity_status_participants
     on Activity (activity_status, max_participants);
 
+create table ActivitySign
+(
+    sign_id           bigint auto_increment comment '活动报名签到ID'
+        primary key,
+    activity_id       bigint                             null comment '活动id',
+    blind_id          bigint                             not null comment '视障人士ID',
+    volunteer_id      bigint                             null comment '志愿者id',
+    sign_up_time      datetime                           not null comment '活动报名时间',
+    check_in_time     datetime                           null comment '活动签到时间',
+    check_in_location varchar(300)                       null comment '活动签到地点',
+    check_out_time    datetime                           null comment '活动签退时间',
+    create_time       datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time       datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '信息更新时间',
+    is_delete         tinyint  default 0                 not null comment '逻辑删除 0-存在 1-删除'
+)
+    comment '活动报名签到表';
+
 create table Blind
 (
     blind_id             bigint auto_increment comment '视障人士ID'
@@ -67,21 +84,6 @@ create table Blind
 )
     comment '视障人士信息表';
 
-create table BlindActivitySign
-(
-    sign_id           bigint auto_increment comment '活动报名签到ID'
-        primary key,
-    blind_id          bigint                             not null comment '视障人士ID',
-    sign_up_time      datetime                           not null comment '活动报名时间',
-    check_in_time     datetime                           null comment '活动签到时间',
-    check_in_location varchar(300)                       null comment '活动签到地点',
-    check_out_time    datetime                           null comment '活动签退时间',
-    create_time       datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    update_time       datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '信息更新时间',
-    is_delete         tinyint  default 0                 not null comment '逻辑删除 0-存在 1-删除'
-)
-    comment '视障人士活动报名签到表';
-
 create table Community
 (
     community_id          bigint auto_increment comment '社区ID'
@@ -93,11 +95,11 @@ create table Community
     community_name        varchar(100)                         not null comment '社区名字',
     community_description tinytext                             null comment '社区介绍',
     province              char(20)                             not null comment '省',
-    city                  char(20)                             not null comment '市',
-    district              char(20)                             not null comment '区',
+    city                  char(20)                             null comment '市',
+    district              char(20)                             null comment '区',
     address               varchar(200)                         null comment '具体地址',
     registration_info     text                                 null comment '社区注册信息',
-    register_volunteer_id bigint                               not null comment '社区注册人ID（关联志愿者表）',
+    register_volunteer_id bigint                               null comment '社区注册人ID（关联志愿者表）',
     community_status      tinyint    default 0                 null comment '社区状态  0-未审核, 1-已审核, 2-已停用',
     create_time           datetime   default CURRENT_TIMESTAMP not null comment '创建时间',
     update_time           datetime   default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '信息更新时间',
@@ -118,6 +120,7 @@ create table CommunityJoinReview
 (
     review_id     bigint auto_increment comment '社区审核ID'
         primary key,
+    community_id  bigint                             null comment '社区id',
     blind_id      bigint                             null comment '视障人士ID',
     volunteer_id  bigint                             null comment '志愿者ID',
     apply_time    datetime                           not null comment '请求加入时间',
@@ -214,7 +217,7 @@ create table FamilyJoinReview
 
 create table HelpPost
 (
-    post_id       bigint auto_increment comment '求助帖ID'
+    helppost_id   bigint auto_increment comment '求助帖ID'
         primary key,
     community_id  bigint                             null comment '社区ID',
     blind_id      bigint                             not null comment '视障人士ID',
@@ -374,19 +377,4 @@ create index idx_volunteer_community_status
 
 create index idx_volunteer_family_rating
     on Volunteer (family_id, rating);
-
-create table VolunteerActivitySign
-(
-    sign_id           bigint auto_increment comment '活动报名签到ID'
-        primary key,
-    volunteer_id      bigint                             not null comment '志愿者ID',
-    sign_up_time      datetime                           not null comment '活动报名时间',
-    check_in_time     datetime                           null comment '活动签到时间',
-    check_in_location varchar(300)                       null comment '活动签到地点',
-    check_out_time    datetime                           null comment '活动签退时间',
-    create_time       datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    update_time       datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '信息更新时间',
-    is_delete         tinyint  default 0                 not null comment '逻辑删除 0-存在 1-删除'
-)
-    comment '志愿者活动报名签到表';
 

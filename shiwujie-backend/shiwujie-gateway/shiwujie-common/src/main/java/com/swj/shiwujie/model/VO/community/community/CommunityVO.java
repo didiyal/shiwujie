@@ -1,4 +1,4 @@
-package com.swj.shiwujie.model.VO.community;
+package com.swj.shiwujie.model.VO.community.community;
 
 
 
