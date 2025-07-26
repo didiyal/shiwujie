@@ -82,8 +82,7 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
      */
     @Override
     public boolean updateById(Volunteer volunteer) {
-        boolean b = volunteerService.updateById(volunteer);
-        return b;
+        return volunteerService.updateById(volunteer);
     }
 
     /**
@@ -94,12 +93,7 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
      */
     @Override
     public Volunteer getByPhone(String phone) {
-        // 手机号合法校验
-        ThrowUtils.throwIf(!PhoneUtil.isPhone(phone), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
-        // 有账号直接登录
-        QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
-        volunteerQueryWrapper.eq("phone", phone);
-        return volunteerService.getOne(volunteerQueryWrapper);
+        return volunteerService.getByPhone(phone);
     }
 
 
@@ -111,10 +105,7 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
      */
     @Override
     public List<Volunteer> getListByFamilyId(Long familyId) {
-        QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
-        volunteerQueryWrapper.eq("family_id", familyId);
-        List<Volunteer> volunteerList = volunteerService.list(volunteerQueryWrapper);
-        return volunteerList;
+        return volunteerService.getListByFamilyId(familyId);
     }
 
 
@@ -143,6 +134,17 @@ public class InnerVolunteerServiceImpl implements InnerVolunteerService {
     public VolunteerVO getVolunteerVO(Volunteer newVolunteer){
         return volunteerService.getVolunteerVO(newVolunteer);
     }
+
+
+    /**
+     * 删除社区后关联的所有用户信息
+     */
+    @Override
+    public boolean removeCommunityId(Long communityId) {
+        return volunteerService.removeCommunityId(communityId);
+    }
+
+
 }
 
 

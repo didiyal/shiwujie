@@ -34,11 +34,9 @@ public class InnerBlindServiceImpl implements InnerBlindService {
      */
     @Override
     public Blind getById(Long id) {
-        if(ObjUtil.isNull(id)){
-            return null;
-        }
         return blindService.getById(id);
     }
+
 
     /**
      * 通过手机号查询用户(视障人士)信息
@@ -48,15 +46,22 @@ public class InnerBlindServiceImpl implements InnerBlindService {
      */
     @Override
     public Blind getByPhone(String phone) {
-        // 手机号合法校验
-        ThrowUtils.throwIf(!PhoneUtil.isPhone(phone), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
-        // 有账号直接登录
-        QueryWrapper<Blind> blindQueryWrapper = new QueryWrapper<>();
-        blindQueryWrapper.eq("phone", phone);
-        return blindService.getOne(blindQueryWrapper);
+        return blindService.getByPhone(phone);
+    }
+
+    @Override
+    public boolean updateById(Blind blind) {
+        return blindService.updateById(blind);
     }
 
 
+    /**
+     * 删除社区后关联的所有用户信息
+     */
+    @Override
+    public boolean removeCommunityId(Long communityId) {
+        return blindService.removeCommunityId(communityId);
+    }
 }
 
 

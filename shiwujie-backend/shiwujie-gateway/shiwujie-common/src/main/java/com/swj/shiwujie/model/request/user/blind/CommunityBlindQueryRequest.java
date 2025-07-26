@@ -1,4 +1,4 @@
-package com.swj.shiwujie.model.request.community;
+package com.swj.shiwujie.model.request.user.blind;
 
 import com.swj.shiwujie.common.PageRequest;
 import lombok.Data;

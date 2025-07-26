@@ -11,11 +11,7 @@ import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
-import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
-import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
-import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePhoneRequest;
-import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdateRequest;
-import com.swj.shiwujie.model.request.community.CommunityVolunteerQueryRequest;
+import com.swj.shiwujie.model.request.user.volunteer.*;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.utils.LoginUtils;
@@ -209,8 +205,6 @@ public class VolunteerController {
 
 
         return ResultUtils.success(result);
-
-
     }
 
 
@@ -255,6 +249,30 @@ public class VolunteerController {
     public BaseResponse<Boolean> joinCommunity(@RequestBody CommunityJoinRequest communityJoinRequest,HttpServletRequest request) {
         Long volunteerId = LoginUtils.getLoginVolunteerId(request);
         boolean result = volunteerService.joinCommunity(volunteerId, communityJoinRequest);
+        return ResultUtils.success(result);
+    }
+
+
+    /**
+     * 将志愿者踢出社区
+     *
+     * @param request 请求参数
+     * @param httpRequest 请求对象
+     * @return 是否成功
+     */
+    @PostMapping("/removeFromCommunity")
+    public BaseResponse<Boolean> removeFromCommunity(@RequestBody VolunteerRemoveFromCommunityRequest request, HttpServletRequest httpRequest) {
+        // 参数校验
+        ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        ThrowUtils.throwIf(ObjUtil.isNull(request.getCommunityId()) || request.getCommunityId() <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(ObjUtil.isNull(request.getVolunteerId()) || request.getVolunteerId() <= 0, ErrorCode.PARAMS_ERROR, "志愿者ID不合法");
+
+        // 获取当前登录志愿者ID
+        Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
+        ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
+
+        // 执行踢出社区操作
+        boolean result = volunteerService.removeFromCommunity(request, loginVolunteerId);
         return ResultUtils.success(result);
     }
 

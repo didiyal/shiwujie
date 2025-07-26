@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
+import com.swj.shiwujie.model.request.user.blind.BlindRemoveFromCommunityRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 
 import java.util.List;
@@ -132,6 +133,22 @@ public interface BlindService extends IService<Blind> {
      */
     List<BlindVO> getBlindListByFamilyId(Long familyId);
 
+    /**
+     * 将视障人士踢出社区
+     *
+     * @param request 请求参数
+     * @param loginVolunteerId 当前登录志愿者ID
+     * @return 是否成功
+     */
+    boolean removeFromCommunity(BlindRemoveFromCommunityRequest request, Long loginVolunteerId);
 
+
+
+
+
+    /**
+     * 删除社区后关联的所有用户信息
+     */
+    boolean removeCommunityId(Long communityId);
     // endregion
 }

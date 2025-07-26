@@ -20,6 +20,11 @@ public interface InnerCommunitymanagerService {
     Communitymanager getByVolunteerIdAndCommunityId(Long volunteerId, Long communityId);
 
 
+    /**
+     * 删除信息
+     * @return
+     */
+    int removeByVolunteerIdAndCommunityId(Long volunteerId,Long communityId);
 
 }
 

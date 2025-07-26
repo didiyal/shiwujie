@@ -75,6 +75,12 @@ public interface InnerVolunteerService  {
      * @param newVolunteer 盲人信息
      * @return 脱敏后的信息
      */
-    public VolunteerVO getVolunteerVO(Volunteer newVolunteer);
+    VolunteerVO getVolunteerVO(Volunteer newVolunteer);
 
+
+
+    /**
+     * 删除社区后关联的所有用户信息
+     */
+    boolean removeCommunityId(Long communityId);
 }

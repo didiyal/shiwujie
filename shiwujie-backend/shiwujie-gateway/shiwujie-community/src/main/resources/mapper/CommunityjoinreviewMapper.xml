@@ -6,6 +6,7 @@
 
     <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.community.Communityjoinreview">
             <id property="reviewId" column="review_id" jdbcType="BIGINT"/>
+            <result property="communityId" column="community_id" jdbcType="BIGINT"/>
             <result property="blindId" column="blind_id" jdbcType="BIGINT"/>
             <result property="volunteerId" column="volunteer_id" jdbcType="BIGINT"/>
             <result property="applyTime" column="apply_time" jdbcType="TIMESTAMP"/>
@@ -18,7 +19,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        review_id,blind_id,volunteer_id,
+        review_id,community_id,blind_id,volunteer_id,
         apply_time,review_time,review_status,
         reviewer_id,create_time,update_time,
         is_delete

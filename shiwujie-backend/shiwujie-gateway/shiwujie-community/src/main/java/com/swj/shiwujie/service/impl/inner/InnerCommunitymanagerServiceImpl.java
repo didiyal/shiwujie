@@ -28,6 +28,14 @@ public class InnerCommunitymanagerServiceImpl implements InnerCommunitymanagerSe
     public Communitymanager getByVolunteerIdAndCommunityId(Long volunteerId, Long communityId) {
         return communitymanagerService.getByVolunteerIdAndCommunityId(volunteerId,communityId);
     }
+
+    /**
+     * 通过志愿者id,社区id删除信息
+     */
+    @Override
+    public int removeByVolunteerIdAndCommunityId(Long volunteerId, Long communityId) {
+        return communitymanagerService.removeByVolunteerIdAndCommunityId(volunteerId,communityId);
+    }
 }
 
 

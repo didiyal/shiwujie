@@ -5,8 +5,11 @@ import com.swj.shiwujie.model.VO.community.CommunityVO;
 import com.swj.shiwujie.model.domain.community.Community;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Volunteer;
-import com.swj.shiwujie.model.request.community.CommunityRegisterRequest;
+import com.swj.shiwujie.model.request.community.community.CommunityRegisterRequest;
+import com.swj.shiwujie.model.request.community.community.CommunityUpdateRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
+
+import java.util.List;
 
 /**
 * @author Administrator
@@ -15,17 +18,13 @@ import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 */
 public interface CommunityService extends IService<Community> {
 
+    //region 社区注册登录
 
     /**
      * 测试登录
      * @param loginVolunteerId
      */
     void checkLogin(Long loginVolunteerId);
-
-
-
-
-
 
     /**
      * 社区入驻
@@ -42,6 +41,34 @@ public interface CommunityService extends IService<Community> {
      * @return 脱敏后的登录数据
      */
     CommunityLoginSuccessVO communityLogin(VolunteerLARRequest volunteerLARRequest);
+
+    //endregion
+
+    /**
+     * 修改社区信息
+     * @param request 修改请求
+     * @param volunteerId 操作人ID
+     * @return 更新后的社区信息
+     */
+    CommunityVO updateCommunity(CommunityUpdateRequest request, Long volunteerId);
+
+    /**
+     * 删除社区
+     * @param communityId 社区ID
+     * @param volunteerId 操作人ID
+     * @return 是否删除成功
+     */
+    boolean deleteCommunity(Long communityId, Long volunteerId);
+
+    /**
+     * 分页查询社区下的子社区
+     * @param communityId 父社区ID
+     * @param current 页码
+     * @param size 每页条数
+     * @param volunteerId 操作人ID
+     * @return 子社区列表
+     */
+    List<CommunityVO> getSubCommunities(Long communityId, long current, long size, Long volunteerId);
 
 
     // region 工具方法

@@ -4,8 +4,10 @@ import cn.hutool.core.util.IdcardUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
+import com.swj.shiwujie.constants.UserConstants;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.CommunityMapper;
 import com.swj.shiwujie.mapper.CommunitymanagerMapper;
@@ -18,17 +20,24 @@ import com.swj.shiwujie.model.enums.community.CommunityLevelEnum;
 import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.model.enums.community.CommunityTypeEnum;
 import com.swj.shiwujie.model.enums.community.IsDefaultCommunityEnum;
-import com.swj.shiwujie.model.request.community.CommunityRegisterRequest;
+import com.swj.shiwujie.model.request.community.community.CommunityRegisterRequest;
+import com.swj.shiwujie.model.request.community.community.CommunityUpdateRequest;
 import com.swj.shiwujie.model.request.user.volunteer.CommunityVolunteerRegisterRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 import com.swj.shiwujie.service.CommunityService;
 import com.swj.shiwujie.service.CommunitymanagerService;
+import com.swj.shiwujie.service.user.InnerBlindService;
 import com.swj.shiwujie.service.user.InnerVolunteerService;
+import com.swj.shiwujie.utils.RedisUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
 
 /**
  * @author Administrator
@@ -43,10 +52,18 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     @DubboReference
     private InnerVolunteerService innerVolunteerService;
 
+    @DubboReference
+    private InnerBlindService innerBlindService;
+
+
+    @Resource
+    private RedisUtils redisUtils;
 
     @Resource
     private CommunitymanagerService communitymanagerService;
 
+
+    //region 注册登录
 
     /**
      * 测试登录
@@ -199,6 +216,124 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         return buildCommunityLoginResult(community, volunteer);
     }
 
+    //endregion
+
+    /**
+     * 修改社区信息
+     * @param request 修改请求
+     * @param volunteerId 操作人ID
+     * @return 更新后的社区信息
+     */
+    @Override
+    public CommunityVO updateCommunity(CommunityUpdateRequest request, Long volunteerId) {
+        Long communityId = request.getCommunityId();
+        String communityName = request.getCommunityName();
+        String communityDescription = request.getCommunityDescription();
+
+        // 检查社区是否存在
+        Community community = this.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 检查权限(只有注册人)
+        Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(volunteerId, communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限操作该社区");
+        Long roleId = communitymanager.getRolePermissionId();
+        ThrowUtils.throwIf(!roleId.equals(CommunityRolePermissionEnum.REGISTRANT.getRoleId()), ErrorCode.NO_AUTH, "无权限修改社区信息");
+
+        // 更新字段（仅非空值）
+        if (ObjUtil.isNotNull(communityName) && !communityName.trim().isEmpty()) {
+            community.setCommunityName(communityName);
+        }
+        if (ObjUtil.isNotNull(communityDescription) && !communityDescription.trim().isEmpty()) {
+            community.setCommunityDescription(communityDescription);
+        }
+
+        boolean updateResult = this.updateById(community);
+        ThrowUtils.throwIf(!updateResult, ErrorCode.SYSTEM_ERROR, "社区信息更新失败");
+
+        return this.getCommunityVO(community);
+    }
+
+    /**
+     * 删除社区
+     * @param communityId 社区ID
+     * @param volunteerId 操作人ID
+     * @return 是否删除成功
+     */
+    @Override
+    public boolean deleteCommunity(Long communityId, Long volunteerId) {
+        // 参数校验
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(volunteerId == null || volunteerId <= 0, ErrorCode.PARAMS_ERROR, "操作人ID不合法");
+
+        // 检查社区是否存在
+        Community community = this.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 检查权限（必须是注册人）
+        Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(volunteerId, communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限操作该社区");
+        Long roleId = communitymanager.getRolePermissionId();
+        ThrowUtils.throwIf(!roleId.equals(CommunityRolePermissionEnum.REGISTRANT.getRoleId()), ErrorCode.NO_AUTH, "只有社区注册人可删除社区");
+
+        // 将社区内所有视障人士移出社区
+        boolean blindResult = innerBlindService.removeCommunityId(communityId);
+        ThrowUtils.throwIf(!blindResult, ErrorCode.SYSTEM_ERROR, "视障人士移出社区失败");
+
+        // 将社区内所有志愿者移出社区
+        boolean volunteerResult = innerVolunteerService.removeCommunityId(communityId);
+        ThrowUtils.throwIf(!volunteerResult, ErrorCode.SYSTEM_ERROR, "志愿者移出社区失败");
+
+        // 删除社区管理记录
+        int managerDeleteCount = communitymanagerService.removeByCommunityId(communityId);
+        ThrowUtils.throwIf(managerDeleteCount < 0, ErrorCode.SYSTEM_ERROR, "删除社区管理记录失败");
+
+        // 删除社区
+        boolean deleteResult = this.removeById(communityId);
+        ThrowUtils.throwIf(!deleteResult, ErrorCode.SYSTEM_ERROR, "删除社区失败");
+
+        return true;
+    }
+
+    /**
+     * 分页查询社区下的子社区
+     * @param communityId 父社区ID
+     * @param current 页码
+     * @param size 每页条数
+     * @param volunteerId 操作人ID
+     * @return 子社区列表
+     */
+    @Override
+    public List<CommunityVO> getSubCommunities(Long communityId, long current, long size, Long volunteerId) {
+        // 参数校验
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(current <= 0 || size <= 0 || size > 100, ErrorCode.PARAMS_ERROR, "分页参数不合法");
+        ThrowUtils.throwIf(volunteerId == null || volunteerId <= 0, ErrorCode.PARAMS_ERROR, "操作人ID不合法");
+
+        // 检查父社区是否存在
+        Community parentCommunity = this.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(parentCommunity), ErrorCode.PARAMS_ERROR, "父社区不存在");
+
+        // 检查权限（注册人或管理员）
+        Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(volunteerId, communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限操作该社区");
+        Long roleId = communitymanager.getRolePermissionId();
+        ThrowUtils.throwIf(!(roleId.equals(CommunityRolePermissionEnum.REGISTRANT.getRoleId()) ||
+                roleId.equals(CommunityRolePermissionEnum.ADMIN.getRoleId())), ErrorCode.NO_AUTH, "无权限查看子社区");
+
+        // 分页查询子社区
+        Page<Community> page = new Page<>(current, size);
+        QueryWrapper<Community> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("parent_community_id", communityId)
+                .orderByDesc("create_time");
+        Page<Community> communityPage = this.page(page, queryWrapper);
+
+        // 转换为VO并返回
+        return communityPage.getRecords().stream()
+                .map(this::getCommunityVO)
+                .collect(Collectors.toList());
+    }
+
 
     // region 工具方法
 
@@ -224,7 +359,15 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     public CommunityLoginSuccessVO buildCommunityLoginResult(Community community, Volunteer volunteer) {
         CommunityLoginSuccessVO result = new CommunityLoginSuccessVO();
         result.setVolunteer(innerVolunteerService.getVolunteerVO(volunteer));
-        result.setToken(innerVolunteerService.generateLoginToken(volunteer));
+        //检查是否有token
+        String token = (String)redisUtils.getFromRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId());
+        if(ObjUtil.isNotNull(token)){
+            result.setToken(token);
+        }else{
+            //不存在
+            result.setToken(innerVolunteerService.generateLoginToken(volunteer));
+        }
+
         return result;
     }
 

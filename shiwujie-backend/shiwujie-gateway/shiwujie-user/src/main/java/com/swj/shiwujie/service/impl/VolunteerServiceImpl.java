@@ -9,8 +9,6 @@ import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.BlindMapper;
 import com.swj.shiwujie.mapper.VolunteerMapper;
-import com.swj.shiwujie.mapper.VolunteerMapper;
-import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.community.Community;
@@ -18,12 +16,12 @@ import com.swj.shiwujie.model.domain.community.Communityjoinreview;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
-import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.enums.community.CommunityReviewStatusEnum;
 import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.model.enums.user.GenderEnum;
 import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
+import com.swj.shiwujie.model.request.user.volunteer.VolunteerRemoveFromCommunityRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequest;
 import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
@@ -252,6 +250,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         // 创建社区加入审核记录
         Communityjoinreview communityJoinReview = new Communityjoinreview();
         communityJoinReview.setVolunteerId(volunteerId);
+        communityJoinReview.setCommunityId(communityId);
         communityJoinReview.setReviewStatus(CommunityReviewStatusEnum.WAIT_REVIEW.getReviewStatus());// 待审核状态
         communityJoinReview.setApplyTime(new Date());
 
@@ -300,7 +299,53 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
 
         return true;
 
+    }
 
+    /**
+     * 将志愿者踢出社区
+     *
+     * @param request 请求参数
+     * @param loginVolunteerId 当前登录志愿者ID
+     * @return 是否成功
+     */
+    @Override
+    public boolean removeFromCommunity(VolunteerRemoveFromCommunityRequest request, Long loginVolunteerId) {
+        // 参数校验
+        Long communityId = request.getCommunityId();
+        Long volunteerId = request.getVolunteerId();
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(volunteerId == null || volunteerId <= 0, ErrorCode.PARAMS_ERROR, "志愿者ID不合法");
+        ThrowUtils.throwIf(Objects.equals(loginVolunteerId, volunteerId), ErrorCode.PARAMS_ERROR, "不能将自己踢出社区");
+
+        // 检查社区是否存在
+        Community community = innerCommunityService.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 检查被踢出志愿者是否属于该社区
+        Volunteer volunteer = this.getById(volunteerId);
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.PARAMS_ERROR, "志愿者不存在");
+        ThrowUtils.throwIf(!Objects.equals(volunteer.getCommunityId(), communityId), ErrorCode.PARAMS_ERROR, "志愿者不属于该社区");
+
+        // 检查当前登录用户权限
+        Communitymanager communityManager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(communityManager), ErrorCode.NO_AUTH, "无权限执行此操作");
+
+        // 检查是否为社区管理员或创建者
+        Long rolePermissionId = communityManager.getRolePermissionId();
+        ThrowUtils.throwIf(rolePermissionId == CommunityRolePermissionEnum.EMPLOYEE.getRoleId(), ErrorCode.NO_AUTH, "无权限执行此操作");
+
+        // 执行踢出操作
+        volunteer.setCommunityId(null);
+        boolean updateResult = this.updateById(volunteer);
+        ThrowUtils.throwIf(!updateResult, ErrorCode.SYSTEM_ERROR, "踢出社区失败");
+
+        // 删除社区管理记录（如果存在）
+        Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(volunteerId, communityId);
+        if(ObjUtil.isNotNull(communitymanager)){
+            innerCommunitymanagerService.removeByVolunteerIdAndCommunityId(volunteerId, communityId);
+        }
+
+        return true;
     }
 
     /**
@@ -520,9 +565,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
             return null;
         }
 
-        QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
-        volunteerQueryWrapper.eq("family_id", familyId);
-        List<Volunteer> volunteerList = this.list(volunteerQueryWrapper);
+        List<Volunteer> volunteerList = this.getListByFamilyId(familyId);
 
         List<VolunteerVO> volunteerVOList = new ArrayList<>();
         for (Volunteer volunteer : volunteerList) {
@@ -531,6 +574,38 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         }
 
         return volunteerVOList;
+    }
+
+
+    /**
+     * 通过家庭id获取用户信息
+     * @param familyId 家庭id
+     * @return 用户列表
+     */
+    @Override
+    public List<Volunteer> getListByFamilyId(Long familyId) {
+        QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
+        volunteerQueryWrapper.eq("family_id", familyId);
+        List<Volunteer> volunteerList = this.list(volunteerQueryWrapper);
+        return volunteerList;
+    }
+
+
+    /**
+     * 删除社区后关联的所有用户信息
+     */
+    @Override
+    public boolean removeCommunityId(Long communityId) {
+        // 参数校验
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+
+        // 将社区内所有志愿者的communityId设为null
+        Volunteer updateVolunteer = new Volunteer();
+        updateVolunteer.setCommunityId(null);
+        QueryWrapper<Volunteer> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("community_id", communityId);
+
+        return this.update(updateVolunteer, queryWrapper);
     }
     // endregion
 }

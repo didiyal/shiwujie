@@ -87,7 +87,8 @@ public class FamilyJoinReviewServiceImpl extends ServiceImpl<FamilyJoinReviewMap
                 review.setReviewStatus(FamilyReviewStatusEnum.REJECTED.getReviewStatus());
                 review.setReviewTime(DateUtil.date());
             }
-
+            // 设置操作人id
+            review.setReviewerId(loginVolunteerId);
 
             boolean b = this.updateById(review);
             ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
@@ -114,7 +115,7 @@ public class FamilyJoinReviewServiceImpl extends ServiceImpl<FamilyJoinReviewMap
         queryWrapper.eq("family_id", familyId);
         // 仅查找未审核的
 //        queryWrapper.eq("review_status", FamilyReviewStatusEnum.WAIT_REVIEW.getReviewStatus());
-        queryWrapper.orderByAsc("review_status");
+        queryWrapper.orderByAsc("review_status").orderByDesc("apply_time");
         List<FamilyJoinReview> familyJoinReviewList = this.list(queryWrapper);
 
         // 返回
@@ -144,7 +145,7 @@ public class FamilyJoinReviewServiceImpl extends ServiceImpl<FamilyJoinReviewMap
         result.setBlindId(familyJoinReview.getBlindId());
         result.setVolunteerId(familyJoinReview.getVolunteerId());
         result.setApplyTime(familyJoinReview.getApplyTime());
-
+        result.setReviewerId(familyJoinReview.getReviewerId());
 
         // 审核状态修改
         String reviewStatusString = null;

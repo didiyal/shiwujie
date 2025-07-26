@@ -15,15 +15,11 @@ import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
-import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
-import com.swj.shiwujie.model.request.community.CommunityBlindQueryRequest;
+import com.swj.shiwujie.model.request.user.blind.*;
 import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.common.BaseResponse;
-import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
-import com.swj.shiwujie.model.request.user.blind.BlindUpdatePhoneRequest;
-import com.swj.shiwujie.model.request.user.blind.BlindUpdateRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.RedisUtils;
@@ -176,26 +172,6 @@ public class BlindController {
         return ResultUtils.success(result);
     }
 
-    /**
-     * 分页查询社区视障人士
-     */
-    @GetMapping("/community/blinds")
-    public BaseResponse<Page<BlindVO>> pageQueryCommunityBlinds(CommunityBlindQueryRequest request) {
-        long current = request.getCurrent();
-        long size = request.getPageSize();
-        Page<BlindVO> blindVOPage = blindService.pageQueryByCommunityId(request.getCommunityId(), current, size);
-        return ResultUtils.success(blindVOPage);
-    }
-
-    /**
-     * 加入社区
-     */
-    @PostMapping("/community/join")
-    public BaseResponse<Boolean> joinCommunity(@RequestBody CommunityJoinRequest communityJoinRequest, HttpServletRequest request) {
-        Long blindId = LoginUtils.getLoginBlindId(request);
-        boolean result = blindService.joinCommunity(blindId, communityJoinRequest);
-        return ResultUtils.success(result);
-    }
 
     /**
      * 修改手机号
@@ -223,10 +199,31 @@ public class BlindController {
         boolean b = blindService.updateById(blind);
         ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
-
         return ResultUtils.success(true);
 
+    }
 
+    /**
+     * 将视障人士踢出社区
+     *
+     * @param request 请求参数
+     * @param httpRequest 请求对象
+     * @return 是否成功
+     */
+    @PostMapping("/removeFromCommunity")
+    public BaseResponse<Boolean> removeFromCommunity(@RequestBody BlindRemoveFromCommunityRequest request, HttpServletRequest httpRequest) {
+        // 参数校验
+        ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        ThrowUtils.throwIf(ObjUtil.isNull(request.getCommunityId()) || request.getCommunityId() <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(ObjUtil.isNull(request.getBlindId()) || request.getBlindId() <= 0, ErrorCode.PARAMS_ERROR, "视障人士ID不合法");
+
+        // 获取当前登录志愿者ID
+        Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
+        ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
+
+        // 执行踢出社区操作
+        boolean result = blindService.removeFromCommunity(request, loginVolunteerId);
+        return ResultUtils.success(result);
     }
 
     /**
@@ -273,32 +270,25 @@ public class BlindController {
 
 
     /**
-     * 加入社区
-     * 根据id加入社区
-     *
-     * @param communityId 社区id
-     * @return 是否成功
+     * 分页查询社区视障人士
      */
-    @GetMapping("/community/join")
-    public BaseResponse<Boolean> joinCommunity(Long communityId, HttpServletRequest request) {
-
-        Long blindId = LoginUtils.getLoginBlindId(request);
-        String loginUserPhone = LoginUtils.getLoginUserPhone(request);
-        ThrowUtils.throwIf(communityId == null, ErrorCode.PARAMS_ERROR);
-
-        synchronized (loginUserPhone.intern()) {
-            Blind blind = blindService.getById(blindId);
-            blind.setCommunityId(communityId);
-            boolean result = blindService.updateById(blind);
-            ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-
-            return ResultUtils.success(true);
-        }
+    @GetMapping("/community/blinds")
+    public BaseResponse<Page<BlindVO>> pageQueryCommunityBlinds(CommunityBlindQueryRequest request) {
+        long current = request.getCurrent();
+        long size = request.getPageSize();
+        Page<BlindVO> blindVOPage = blindService.pageQueryByCommunityId(request.getCommunityId(), current, size);
+        return ResultUtils.success(blindVOPage);
     }
 
-
-
-
+    /**
+     * 加入社区
+     */
+    @PostMapping("/community/join")
+    public BaseResponse<Boolean> joinCommunity(@RequestBody CommunityJoinRequest communityJoinRequest, HttpServletRequest request) {
+        Long blindId = LoginUtils.getLoginBlindId(request);
+        boolean result = blindService.joinCommunity(blindId, communityJoinRequest);
+        return ResultUtils.success(result);
+    }
 
 
 

@@ -1,4 +1,4 @@
-package com.swj.shiwujie.model.request.community;
+package com.swj.shiwujie.model.request.community.community;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.swj.shiwujie.model.request.user.volunteer.CommunityVolunteerRegisterRequest;

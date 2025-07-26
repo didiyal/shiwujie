@@ -19,6 +19,13 @@ public class Communityjoinreview implements Serializable {
     @TableId(type = IdType.ASSIGN_ID)
     private Long reviewId;
 
+
+    /**
+     * 社区ID
+     */
+    private Long communityId;
+
+
     /**
      * 视障人士ID
      */

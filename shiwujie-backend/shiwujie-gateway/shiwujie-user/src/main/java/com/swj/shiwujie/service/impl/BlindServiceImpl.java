@@ -13,13 +13,17 @@ import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.community.Community;
 import com.swj.shiwujie.model.domain.community.Communityjoinreview;
+import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
+import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.model.enums.user.GenderEnum;
 import com.swj.shiwujie.model.request.user.blind.BlindLARRequest;
+import com.swj.shiwujie.model.request.user.blind.BlindRemoveFromCommunityRequest;
 import com.swj.shiwujie.model.request.user.blind.BlindUpdatePasswordRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
+import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -68,6 +72,10 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
     @DubboReference
     private InnerCommunityjoinreviewService innerCommunityjoinreviewService;
 
+
+
+    @DubboReference
+    private InnerCommunitymanagerService innerCommunitymanagerService;
 
     /**
      * 手机号一键登录注册
@@ -283,6 +291,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 创建社区加入审核记录
         Communityjoinreview communityJoinReview = new Communityjoinreview();
         communityJoinReview.setBlindId(blindId);
+        communityJoinReview.setCommunityId(communityId);
         communityJoinReview.setReviewStatus(CommunityReviewStatusEnum.WAIT_REVIEW.getReviewStatus());// 待审核状态
         communityJoinReview.setApplyTime(new Date());
 
@@ -390,6 +399,43 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         return res;
     }
 
+
+
+
+    @Override
+    public boolean removeFromCommunity(BlindRemoveFromCommunityRequest request, Long currentVolunteerId) {
+        // 参数校验
+        Long communityId = request.getCommunityId();
+        Long blindId = request.getBlindId();
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(blindId == null || blindId <= 0, ErrorCode.PARAMS_ERROR, "视障人士ID不合法");
+        ThrowUtils.throwIf(currentVolunteerId == null || currentVolunteerId <= 0, ErrorCode.PARAMS_ERROR, "当前登录用户ID不合法");
+
+        // 检查社区是否存在
+        Community community = innerCommunityService.getById(communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 检查操作者权限（必须是社区创建者或管理员）
+        // 通过社区管理服务获取志愿者角色
+        Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(currentVolunteerId, communityId);
+        Long rolePermissionId = communitymanager.getRolePermissionId();
+        CommunityRolePermissionEnum volunteerRole = CommunityRolePermissionEnum.getById(rolePermissionId);
+        ThrowUtils.throwIf(volunteerRole == CommunityRolePermissionEnum.EMPLOYEE, ErrorCode.NO_AUTH, "无权限执行此操作");
+
+        // 检查视障人士是否存在且属于该社区
+        Blind blind = this.getById(blindId);
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "视障人士不存在");
+        ThrowUtils.throwIf(!communityId.equals(blind.getCommunityId()), ErrorCode.PARAMS_ERROR, "视障人士不属于该社区");
+
+        // 将视障人士踢出社区（设置communityId为null）
+        blind.setCommunityId(null);
+        boolean updateResult = this.updateById(blind);
+        ThrowUtils.throwIf(!updateResult, ErrorCode.SYSTEM_ERROR, "踢出社区失败");
+
+        return true;
+    }
+
+
     /**
      * 登录成功实现令牌生成与redis储存
      *
@@ -451,6 +497,25 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         }
 
         return blindVOList;
+    }
+
+
+
+    /**
+     * 删除社区后关联的所有用户信息
+     */
+    @Override
+    public boolean removeCommunityId(Long communityId) {
+        // 参数校验
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+
+        // 将社区内所有视障人士的communityId设为null
+        Blind updateBlind = new Blind();
+        updateBlind.setCommunityId(null);
+        QueryWrapper<Blind> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("community_id", communityId);
+
+        return this.update(updateBlind, queryWrapper);
     }
     // endregion
 }

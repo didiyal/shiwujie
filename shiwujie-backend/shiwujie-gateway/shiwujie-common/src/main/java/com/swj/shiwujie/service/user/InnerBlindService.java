@@ -26,6 +26,19 @@ public interface InnerBlindService  {
      * @return 视障人士信息
      */
     Blind getByPhone(String phone);
-    
 
+
+
+
+    /**
+     * 更新信息
+     * @param blind 要更新的
+     * @return 是否成功
+     */
+    boolean updateById(Blind blind);
+
+    /**
+     * 删除社区后关联的所有用户信息
+     */
+    boolean removeCommunityId(Long communityId);
 }
