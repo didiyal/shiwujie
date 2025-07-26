@@ -1,6 +1,7 @@
 package com.swj.shiwujie.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
@@ -22,8 +23,11 @@ public interface CommunitymanagerService extends IService<Communitymanager> {
 
     /**
      * 查询社区下的员工(志愿者)
+     *
+     * @param request 请求参数
+     * @return 志愿者VO分页列表
      */
-    List<VolunteerVO> queryCommunityEmployees(CommunityEmployeeQueryRequest request);
+    Page<VolunteerVO> queryCommunityEmployees(CommunityEmployeeQueryRequest request);
 
     /**
      * 添加社区管理成员(志愿者)

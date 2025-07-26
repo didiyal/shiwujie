@@ -1,5 +1,6 @@
 package com.swj.shiwujie.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.model.VO.community.CommunityLoginSuccessVO;
 import com.swj.shiwujie.model.VO.community.CommunityVO;
 import com.swj.shiwujie.model.domain.community.Community;
@@ -66,9 +67,9 @@ public interface CommunityService extends IService<Community> {
      * @param current 页码
      * @param size 每页条数
      * @param volunteerId 操作人ID
-     * @return 子社区列表
+     * @return 子社区VO分页对象
      */
-    List<CommunityVO> getSubCommunities(Long communityId, long current, long size, Long volunteerId);
+    Page<CommunityVO> getSubCommunities(Long communityId, long current, long size, Long volunteerId);
 
 
     // region 工具方法

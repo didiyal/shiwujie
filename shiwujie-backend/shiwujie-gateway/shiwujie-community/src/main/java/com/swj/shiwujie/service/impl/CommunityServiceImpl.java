@@ -304,7 +304,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
      * @return 子社区列表
      */
     @Override
-    public List<CommunityVO> getSubCommunities(Long communityId, long current, long size, Long volunteerId) {
+    public Page<CommunityVO> getSubCommunities(Long communityId, long current, long size, Long volunteerId) {
         // 参数校验
         ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
         ThrowUtils.throwIf(current <= 0 || size <= 0 || size > 100, ErrorCode.PARAMS_ERROR, "分页参数不合法");
@@ -328,10 +328,13 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
                 .orderByDesc("create_time");
         Page<Community> communityPage = this.page(page, queryWrapper);
 
-        // 转换为VO并返回
-        return communityPage.getRecords().stream()
+        // 转换为VO分页对象
+        Page<CommunityVO> voPage = new Page<>(current, size, communityPage.getTotal());
+        voPage.setRecords(communityPage.getRecords().stream()
                 .map(this::getCommunityVO)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
+
+        return voPage;
     }
 
 

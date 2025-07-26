@@ -1,6 +1,7 @@
 package com.swj.shiwujie.controller;
 
 import cn.hutool.core.util.ObjUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -32,9 +33,10 @@ public class CommunitymanagerController {
      * 查询社区下的员工(志愿者)
      */
     @GetMapping("/employees")
-    public BaseResponse<List<VolunteerVO>> queryCommunityEmployees(CommunityEmployeeQueryRequest request) {
+    public BaseResponse<Page<VolunteerVO>> queryCommunityEmployees(CommunityEmployeeQueryRequest request) {
         ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR);
-        List<VolunteerVO> result = communitymanagerService.queryCommunityEmployees(request);
+        ThrowUtils.throwIf(ObjUtil.isNull(request.getCommunityId()), ErrorCode.PARAMS_ERROR, "社区ID不能为空");
+        Page<VolunteerVO> result = communitymanagerService.queryCommunityEmployees(request);
         return ResultUtils.success(result);
     }
 

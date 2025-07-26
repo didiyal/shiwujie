@@ -2,6 +2,7 @@ package com.swj.shiwujie.service.impl;
 
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -49,30 +50,40 @@ public class CommunitymanagerServiceImpl extends ServiceImpl<CommunitymanagerMap
      * 添加社区管理成员(志愿者)
      */
     @Override
-    public List<VolunteerVO> queryCommunityEmployees(CommunityEmployeeQueryRequest request) {
+    public Page<VolunteerVO> queryCommunityEmployees(CommunityEmployeeQueryRequest request) {
         Long communityId = request.getCommunityId();
+        long current = request.getCurrent();
+        long size = request.getPageSize();
         ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(current <= 0 || size <= 0 || size > 100, ErrorCode.PARAMS_ERROR, "分页参数不合法");
 
         Community community = communityMapper.selectById(communityId);
         ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
 
+        // 分页查询社区管理员记录
+        Page<Communitymanager> page = new Page<>(current, size);
         QueryWrapper<Communitymanager> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("community_id", communityId);
-        List<Communitymanager> communitymanagerList = communitymanagerMapper.selectList(queryWrapper);
+        Page<Communitymanager> communitymanagerPage = communitymanagerMapper.selectPage(page, queryWrapper);
 
-        List<Long> volunteerIdList = communitymanagerList.stream()
-                .map(Communitymanager::getVolunteerId)
-                .collect(Collectors.toList());
-
+        List<Communitymanager> communitymanagerList = communitymanagerPage.getRecords();
         List<VolunteerVO> volunteerVOList = new ArrayList<>();
-        for (Long volunteerId : volunteerIdList) {
-            Volunteer volunteer = innerVolunteerService.getById(volunteerId);
-            if (ObjUtil.isNotNull(volunteer)) {
-                volunteerVOList.add(innerVolunteerService.getVolunteerVO(volunteer));
+        if (!communitymanagerList.isEmpty()) {
+            List<Long> volunteerIdList = communitymanagerList.stream()
+                    .map(Communitymanager::getVolunteerId)
+                    .collect(Collectors.toList());
+
+            for (Long volunteerId : volunteerIdList) {
+                Volunteer volunteer = innerVolunteerService.getById(volunteerId);
+                if (ObjUtil.isNotNull(volunteer)) {
+                    volunteerVOList.add(innerVolunteerService.getVolunteerVO(volunteer));
+                }
             }
         }
 
-        return volunteerVOList;
+        Page<VolunteerVO> resultPage = new Page<>(current, size, communitymanagerPage.getTotal());
+        resultPage.setRecords(volunteerVOList);
+        return resultPage;
     }
 
 

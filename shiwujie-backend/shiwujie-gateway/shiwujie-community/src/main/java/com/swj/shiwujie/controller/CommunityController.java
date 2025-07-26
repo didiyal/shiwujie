@@ -2,6 +2,7 @@ package com.swj.shiwujie.controller;
 
 
 import cn.hutool.core.util.ObjUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -146,20 +147,31 @@ public class CommunityController {
     /**
      * 分页查询社区下的子社区
      *
+     * @param request 分页查询请求
      * @param httpRequest 登录信息
-     * @return 子社区列表
+     * @return 子社区分页列表
      */
     @GetMapping("/sub/list")
-    public BaseResponse<List<CommunityVO>> getSubCommunities(CommunitySubListRequest request, HttpServletRequest httpRequest) {
+    public BaseResponse<Page<CommunityVO>> getSubCommunities(CommunitySubListRequest request, HttpServletRequest httpRequest) {
         Long communityId = request.getCommunityId();
         long current = request.getCurrent();
         long size = request.getPageSize();
 
+        // 参数校验
+        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(current <= 0 || size <= 0 || size > 100, ErrorCode.PARAMS_ERROR, "分页参数不合法");
+
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
         ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
 
-        List<CommunityVO> subCommunities = communityService.getSubCommunities(communityId, current, size, loginVolunteerId);
-        return ResultUtils.success(subCommunities);
+        // 权限检查
+        Long roleId = LoginUtils.getVolunteerRole(httpRequest);
+        CommunityRolePermissionEnum roleEnum = CommunityRolePermissionEnum.getById(roleId);
+        ThrowUtils.throwIf(roleEnum == null || (!roleEnum.equals(CommunityRolePermissionEnum.REGISTRANT) && !roleEnum.equals(CommunityRolePermissionEnum.ADMIN)),
+                ErrorCode.NO_AUTH, "无权限查看子社区");
+
+        Page<CommunityVO> subCommunitiesPage = communityService.getSubCommunities(communityId, current, size, loginVolunteerId);
+        return ResultUtils.success(subCommunitiesPage);
     }
 
 
