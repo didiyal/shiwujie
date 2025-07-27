@@ -102,6 +102,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
             volunteer = new Volunteer();
             BeanUtils.copyProperties(requestVolunteer, volunteer);
             boolean save = innerVolunteerService.save(volunteer);
+            volunteer = innerVolunteerService.getByPhone(phone);
         }
         //    - 存在
         //    - 检查是否实名,没实名自动实名,身份证是否合法
