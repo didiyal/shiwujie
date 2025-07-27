@@ -13,6 +13,7 @@ import com.swj.shiwujie.mapper.CommunityMapper;
 import com.swj.shiwujie.mapper.CommunitymanagerMapper;
 import com.swj.shiwujie.model.VO.community.community.CommunityLoginSuccessVO;
 import com.swj.shiwujie.model.VO.community.community.CommunityVO;
+import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.community.Community;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.user.Volunteer;
@@ -71,12 +72,13 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
      * @param loginVolunteerId
      */
     @Override
-    public void checkLogin(Long loginVolunteerId) {
+    public VolunteerVO checkLogin(Long loginVolunteerId) {
         Volunteer volunteer = innerVolunteerService.getById(loginVolunteerId);
-        ThrowUtils.throwIf(ObjUtil.isNull(volunteer.getCommunityId()),ErrorCode.NO_AUTH);
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer.getCommunityId()), ErrorCode.NO_AUTH);
         Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(
                 volunteer.getVolunteerId(), volunteer.getCommunityId());
-        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager),ErrorCode.NO_AUTH);
+        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH);
+        return innerVolunteerService.getVolunteerVO(volunteer);
     }
 
     /**
@@ -101,7 +103,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
             BeanUtils.copyProperties(requestVolunteer, volunteer);
             boolean save = innerVolunteerService.save(volunteer);
         }
-        //  - 存在
+        //    - 存在
         //    - 检查是否实名,没实名自动实名,身份证是否合法
         String idCard = requestVolunteer.getIdCard();
         if (IdcardUtil.isValidCard(idCard)) {
@@ -204,7 +206,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
 
         // 3. 检查该志愿者是否为社区管理员
         QueryWrapper<Communitymanager> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("volunteer_id", volunteer.getVolunteerId()).eq("community_id",volunteer.getCommunityId());
+        queryWrapper.eq("volunteer_id", volunteer.getVolunteerId()).eq("community_id", volunteer.getCommunityId());
         Communitymanager communitymanager = communitymanagerService.getOne(queryWrapper);
         ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无社区管理权限");
 
@@ -220,7 +222,8 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
 
     /**
      * 修改社区信息
-     * @param request 修改请求
+     *
+     * @param request     修改请求
      * @param volunteerId 操作人ID
      * @return 更新后的社区信息
      */
@@ -233,12 +236,6 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         // 检查社区是否存在
         Community community = this.getById(communityId);
         ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
-
-        // 检查权限(只有注册人)
-        Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(volunteerId, communityId);
-        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限操作该社区");
-        Long roleId = communitymanager.getRolePermissionId();
-        ThrowUtils.throwIf(!roleId.equals(CommunityRolePermissionEnum.REGISTRANT.getRoleId()), ErrorCode.NO_AUTH, "无权限修改社区信息");
 
         // 更新字段（仅非空值）
         if (ObjUtil.isNotNull(communityName) && !communityName.trim().isEmpty()) {
@@ -256,6 +253,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
 
     /**
      * 删除社区
+     *
      * @param communityId 社区ID
      * @param volunteerId 操作人ID
      * @return 是否删除成功
@@ -269,12 +267,6 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         // 检查社区是否存在
         Community community = this.getById(communityId);
         ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
-
-        // 检查权限（必须是注册人）
-        Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(volunteerId, communityId);
-        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限操作该社区");
-        Long roleId = communitymanager.getRolePermissionId();
-        ThrowUtils.throwIf(!roleId.equals(CommunityRolePermissionEnum.REGISTRANT.getRoleId()), ErrorCode.NO_AUTH, "只有社区注册人可删除社区");
 
         // 将社区内所有视障人士移出社区
         boolean blindResult = innerBlindService.removeCommunityId(communityId);
@@ -297,9 +289,10 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
 
     /**
      * 分页查询社区下的子社区
+     *
      * @param communityId 父社区ID
-     * @param current 页码
-     * @param size 每页条数
+     * @param current     页码
+     * @param size        每页条数
      * @param volunteerId 操作人ID
      * @return 子社区列表
      */
@@ -313,13 +306,6 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         // 检查父社区是否存在
         Community parentCommunity = this.getById(communityId);
         ThrowUtils.throwIf(ObjUtil.isNull(parentCommunity), ErrorCode.PARAMS_ERROR, "父社区不存在");
-
-        // 检查权限（注册人或管理员）
-        Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(volunteerId, communityId);
-        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限操作该社区");
-        Long roleId = communitymanager.getRolePermissionId();
-        ThrowUtils.throwIf(!(roleId.equals(CommunityRolePermissionEnum.REGISTRANT.getRoleId()) ||
-                roleId.equals(CommunityRolePermissionEnum.ADMIN.getRoleId())), ErrorCode.NO_AUTH, "无权限查看子社区");
 
         // 分页查询子社区
         Page<Community> page = new Page<>(current, size);
@@ -362,20 +348,12 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     public CommunityLoginSuccessVO buildCommunityLoginResult(Community community, Volunteer volunteer) {
         CommunityLoginSuccessVO result = new CommunityLoginSuccessVO();
         result.setVolunteer(innerVolunteerService.getVolunteerVO(volunteer));
-        //检查是否有token
-        String token = (String)redisUtils.getFromRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId());
-        if(ObjUtil.isNotNull(token)){
-            result.setToken(token);
-        }else{
-            //不存在
-            result.setToken(innerVolunteerService.generateLoginToken(volunteer));
-        }
+
+        result.setToken(innerVolunteerService.generateLoginToken(volunteer));
+
 
         return result;
     }
-
-
-
 
 
     /**

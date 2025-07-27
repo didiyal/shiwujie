@@ -12,6 +12,8 @@ import com.swj.shiwujie.model.request.user.family.FamilyUpdateRequest;
 import com.swj.shiwujie.service.FamilyService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -27,9 +29,9 @@ import javax.servlet.http.HttpServletRequest;
  *
  */
 @RestController
-@CrossOrigin
 @Slf4j
 @RequestMapping("/family")
+@Api(tags = "家庭操作接口")
 public class FamilyController {
 
 
@@ -46,6 +48,7 @@ public class FamilyController {
      * @return 脱敏后的家庭信息
      */
     @GetMapping("/add")
+    @ApiOperation("创建家庭")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<FamilyVO> createFamily(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
@@ -65,6 +68,7 @@ public class FamilyController {
      * @return 是否成功
      */
     @DeleteMapping("/delete/family")
+    @ApiOperation("删除家庭")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> deleteFamily(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
@@ -86,6 +90,7 @@ public class FamilyController {
      * @return 更新后脱敏后的家庭信息
      */
     @PutMapping("/update")
+    @ApiOperation("更新家庭信息")
     public BaseResponse<Boolean> updateFamily(FamilyUpdateRequest familyUpdateRequest, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
@@ -110,6 +115,7 @@ public class FamilyController {
      * @return 更新后脱敏后的家庭信息
      */
     @DeleteMapping("/delete/user")
+    @ApiOperation("从家庭中移除用户")
     public BaseResponse<Boolean> removeUserFromFamily(FamilyRemoveUserRequest familyRemoveUserRequest, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
@@ -139,6 +145,7 @@ public class FamilyController {
      */
 
     @GetMapping("/get/id/vo")
+    @ApiOperation("根据ID获取家庭信息")
     public BaseResponse<FamilyVO> getFamilyVOById(Long familyId, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
@@ -161,6 +168,7 @@ public class FamilyController {
      * @return 脱敏后的家庭信息
      */
     @PostMapping("/join")
+    @ApiOperation("加入家庭")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> joinFamily(Long familyId, HttpServletRequest request){
         //1. 获取操作用户的id与手机号
@@ -183,6 +191,7 @@ public class FamilyController {
      * @return 是否成功
      */
     @DeleteMapping("/delete/leave")
+    @ApiOperation("退出家庭")
     public BaseResponse<Boolean> leaveFamily(HttpServletRequest request){
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);

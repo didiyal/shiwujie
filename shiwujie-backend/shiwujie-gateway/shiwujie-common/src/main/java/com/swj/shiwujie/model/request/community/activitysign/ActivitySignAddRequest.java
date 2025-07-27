@@ -23,8 +23,5 @@ public class ActivitySignAddRequest {
      */
     private Long volunteerId;
 
-    /**
-     * 活动报名时间
-     */
-    private Date signUpTime;
+
 }

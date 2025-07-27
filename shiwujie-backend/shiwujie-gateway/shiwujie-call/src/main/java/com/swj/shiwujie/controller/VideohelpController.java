@@ -13,6 +13,8 @@ import com.swj.shiwujie.model.enums.call.CallHelpStatusEnum;
 import com.swj.shiwujie.service.VideohelpService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +30,7 @@ import java.sql.Time;
 @RestController
 @RequestMapping("/videohelp")
 @Slf4j
+@Api(tags = "视频求助接口")
 public class VideohelpController {
 
 
@@ -43,6 +46,7 @@ public class VideohelpController {
      * @return 加入是否成功
      */
     @GetMapping("/volunteer/add")
+    @ApiOperation("志愿者加入视频求助匹配")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> volunteerCreateVideohelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
@@ -63,6 +67,7 @@ public class VideohelpController {
      * @return 是否成功
      */
     @DeleteMapping("/volunteer/delete")
+    @ApiOperation("志愿者退出视频求助匹配")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> volunteerLeaveVideohelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
@@ -90,6 +95,7 @@ public class VideohelpController {
      */
 
     @GetMapping("/blind/join")
+    @ApiOperation("视障人士加入视频求助匹配")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> blindJoinVideohelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
@@ -110,6 +116,7 @@ public class VideohelpController {
      * @return 是否成功
      */
     @PostMapping("/join")
+    @ApiOperation("上传视频求助视频")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> blindUpdateVideoPath(String videoPath, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
@@ -137,6 +144,7 @@ public class VideohelpController {
      * @return 是否成功
      */
     @DeleteMapping("/delete/leave")
+    @ApiOperation("挂断视频求助通话")
     public BaseResponse<Boolean> hangupVideohelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);

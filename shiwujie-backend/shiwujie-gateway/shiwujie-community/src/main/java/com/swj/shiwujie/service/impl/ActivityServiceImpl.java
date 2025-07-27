@@ -59,10 +59,6 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         ThrowUtils.throwIf(startTime.after(endTime), ErrorCode.PARAMS_ERROR, "活动开始时间不能晚于结束时间");
         ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID无效");
 
-        // 权限校验：必须是志愿者且是社区注册人/管理员
-        Long role = LoginUtils.getVolunteerRole(request);
-        ThrowUtils.throwIf(!(CommunityRolePermissionEnum.EMPLOYEE.getRoleId() == role), ErrorCode.NO_AUTH, "无权限创建活动");
-
         // 新建活动
         Activity activity = new Activity();
         BeanUtils.copyProperties(activityAddRequest, activity);
@@ -126,10 +122,6 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         Activity activity = this.getById(activityId);
         ThrowUtils.throwIf(activity == null, ErrorCode.SYSTEM_ERROR, "活动不存在");
 
-        // 权限校验：必须是志愿者且是社区注册人/管理员
-        Long role = LoginUtils.getVolunteerRole(request);
-        ThrowUtils.throwIf(!(CommunityRolePermissionEnum.EMPLOYEE.getRoleId() == role), ErrorCode.NO_AUTH, "无权限创建活动");
-
         return this.removeById(activityId);
     }
 
@@ -140,10 +132,6 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
 
         Activity activity = this.getById(id);
         ThrowUtils.throwIf(activity == null, ErrorCode.SYSTEM_ERROR, "活动不存在");
-
-        // 权限校验：必须是志愿者且是社区注册人/管理员
-        Long role = LoginUtils.getVolunteerRole(request);
-        ThrowUtils.throwIf(!(CommunityRolePermissionEnum.EMPLOYEE.getRoleId() == role), ErrorCode.NO_AUTH, "无权限创建活动");
 
         // 更新活动信息
         if (StringUtils.isNotBlank(activityUpdateRequest.getActivityName())) {

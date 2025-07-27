@@ -42,7 +42,6 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
         Long activityId = activitySignAddRequest.getActivityId();
         Long blindId = activitySignAddRequest.getBlindId();
         Long volunteerId = activitySignAddRequest.getVolunteerId();
-        Date signUpTime = activitySignAddRequest.getSignUpTime();
 
         // 活动ID校验
         ThrowUtils.throwIf(activityId == null || activityId <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
@@ -50,8 +49,6 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
         // 二选一校验
         ThrowUtils.throwIf((blindId == null || blindId <= 0) && (volunteerId == null || volunteerId <= 0), ErrorCode.PARAMS_ERROR, "视障人士ID和志愿者ID必须提供一个");
 
-        // 报名时间校验
-        ThrowUtils.throwIf(signUpTime == null, ErrorCode.PARAMS_ERROR, "报名时间不能为空");
 
         // 查询活动是否存在
         Activity activity = activityService.getById(activityId);
@@ -60,6 +57,7 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
         // 创建活动报名签到记录
         Activitysign activitysign = new Activitysign();
         BeanUtils.copyProperties(activitySignAddRequest, activitysign);
+        activitysign.setSignUpTime(new Date());
 
         // 保存到数据库
         return this.save(activitysign);

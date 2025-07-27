@@ -40,9 +40,9 @@ public class ActivitysignController {
     /**
      * 通过id查询活动报名签到VO
      */
-    @GetMapping("/get")
+    @GetMapping("/get/vo")
     @ApiOperation("通过id查询活动报名签到VO")
-    public BaseResponse<ActivitysignVO> getActivitySignVOById(@RequestParam Long signId, HttpServletRequest request) {
+    public BaseResponse<ActivitysignVO> getActivitySignVOById(Long signId, HttpServletRequest request) {
         ActivitysignVO activitysignVO = activitysignService.getActivitySignVOById(signId, request);
         return ResultUtils.success(activitysignVO);
     }
@@ -50,9 +50,9 @@ public class ActivitysignController {
     /**
      * 分页查询活动下的报名签到VO
      */
-    @GetMapping("/list/page")
+    @GetMapping("/list/page/vo")
     @ApiOperation("分页查询活动下的报名签到VO")
-    public BaseResponse<Page<ActivitysignVO>> listActivitySignByActivity(@ModelAttribute ActivitySignQueryRequest activitySignQueryRequest) {
+    public BaseResponse<Page<ActivitysignVO>> listActivitySignByActivity(ActivitySignQueryRequest activitySignQueryRequest) {
         Page<ActivitysignVO> activitysignVOPage = activitysignService.listActivitySignByActivity(activitySignQueryRequest);
         return ResultUtils.success(activitysignVOPage);
     }

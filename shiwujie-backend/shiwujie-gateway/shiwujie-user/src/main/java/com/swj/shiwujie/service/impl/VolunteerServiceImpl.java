@@ -3,6 +3,7 @@ package com.swj.shiwujie.service.impl;
 import cn.hutool.core.util.*;
 import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
@@ -178,16 +179,21 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         String newPassword = volunteerUpdatePassword.getNewPassword();
         String originPassword = volunteerUpdatePassword.getOriginPassword();
 
-        boolean isOriginMatch = this.validatePassword(originPassword);
-        boolean isNewMatch = this.validatePassword(newPassword);
-        ThrowUtils.throwIf(!(isOriginMatch && isNewMatch), ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-
-
         Volunteer volunteer = this.getById(volunteerUpdatePassword.getVolunteerId());
-        ThrowUtils.throwIf(StrUtil.isBlank(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
-        //检查原密码
-        String md5OriginPassword = SecureUtil.md5(originPassword);
-        ThrowUtils.throwIf(!md5OriginPassword.equals(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+        // 若用户没有密码则设置密码
+        if(StrUtil.isNotBlank(originPassword)){
+            boolean isOriginMatch = this.validatePassword(originPassword);
+            ThrowUtils.throwIf(!isOriginMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
+
+            ThrowUtils.throwIf(StrUtil.isBlank(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
+            //检查原密码
+            String md5OriginPassword = SecureUtil.md5(originPassword);
+            ThrowUtils.throwIf(!md5OriginPassword.equals(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+        }
+
+        boolean isNewMatch = this.validatePassword(newPassword);
+        ThrowUtils.throwIf(!isNewMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
+
 
 
         // 密码加密更新
@@ -599,13 +605,26 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         // 参数校验
         ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
 
-        // 将社区内所有志愿者的communityId设为null
-        Volunteer updateVolunteer = new Volunteer();
-        updateVolunteer.setCommunityId(null);
+//        // 将社区内所有志愿者的communityId设为null
+//        UpdateWrapper<Volunteer> updateWrapper = new UpdateWrapper<>();
+//        updateWrapper.eq("community_id", communityId).set("community_id",null);
+//        return this.update(updateWrapper);
+
+
+        // 将社区内所有视障人士的communityId设为null
+        Volunteer volunteer = new Volunteer();
+        volunteer.setCommunityId(null);
         QueryWrapper<Volunteer> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("community_id", communityId);
 
-        return this.update(updateVolunteer, queryWrapper);
+        long count = this.count(queryWrapper);
+        if(count != 0){
+            return this.update(volunteer, queryWrapper);
+        }
+
+        return true;
+
+
     }
     // endregion
 }

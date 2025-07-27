@@ -11,8 +11,6 @@ import lombok.Data;
 @Data
 public class HelppostAddRequest {
 
-    private Long blindId;
-
     private String helpContent;
 
     private String helpLocation;

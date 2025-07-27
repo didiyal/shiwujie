@@ -12,6 +12,8 @@ import com.swj.shiwujie.model.enums.call.CallHelpStatusEnum;
 import com.swj.shiwujie.service.UrgenthelpService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/urgenthelp")
 @Slf4j
+@Api(tags = "紧急求助接口")
 public class UrgenthelpController {
 
 
@@ -41,6 +44,7 @@ public class UrgenthelpController {
      * @return 加入是否成功
      */
     @GetMapping("/blind/add")
+    @ApiOperation("视障人士发起紧急求助")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> blindCreateUrgenthelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
@@ -63,6 +67,7 @@ public class UrgenthelpController {
      * @return 是否成功
      */
     @DeleteMapping("/blind/delete")
+    @ApiOperation("视障人士取消紧急求助")
     public BaseResponse<Boolean> blindLeaveUrgenthelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
@@ -87,6 +92,7 @@ public class UrgenthelpController {
      * @return 是否成功
      */
     @PostMapping("/join")
+    @ApiOperation("上传紧急求助视频")
     public BaseResponse<Boolean> blindUpdateVideoPath(String videoPath, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
@@ -113,6 +119,7 @@ public class UrgenthelpController {
      */
 
     @GetMapping("/volunteer/join")
+    @ApiOperation("家属加入紧急求助")
     public BaseResponse<Boolean> familyJoinUrgenthelp(String blindPhone,HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
@@ -135,6 +142,7 @@ public class UrgenthelpController {
      * @return 是否成功
      */
     @DeleteMapping("/delete/leave")
+    @ApiOperation("挂断紧急求助视频")
     public BaseResponse<Boolean> hangupUrgenthelp(HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);

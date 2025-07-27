@@ -10,6 +10,8 @@ import com.swj.shiwujie.model.request.community.communityJoinReview.CommunityJoi
 import com.swj.shiwujie.service.CommunityjoinreviewService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/communityjoinreview")
 @Slf4j
+@Api(tags = "社区加入审核接口")
 public class CommunityjoinreviewController {
 
     @Resource
@@ -39,12 +42,10 @@ public class CommunityjoinreviewController {
      * @return 是否成功
      */
     @PutMapping("/update")
+    @ApiOperation("更新社区加入审核状态")
     public BaseResponse<Boolean> updateCommunityJoinReview(@RequestBody CommunityJoinReviewUpdateRequest updateRequest, HttpServletRequest request) {
         // 获取登录管理员ID
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
-        Long volunteerRole = LoginUtils.getVolunteerRole(request);
-        CommunityRolePermissionEnum rolePermissionEnum = CommunityRolePermissionEnum.getById(volunteerRole);
-        ThrowUtils.throwIf(rolePermissionEnum.equals(CommunityRolePermissionEnum.EMPLOYEE),ErrorCode.NO_AUTH,"社区权限不足");
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
 
         ThrowUtils.throwIf(ObjUtil.isNull(updateRequest), ErrorCode.PARAMS_ERROR);
@@ -59,11 +60,9 @@ public class CommunityjoinreviewController {
      * @return 审核列表
      */
     @GetMapping("/get/list/vo")
+    @ApiOperation("获取社区待审核列表")
     public BaseResponse<List<CommunityJoinReviewVO>> getCommunityJoinReviewVOList(HttpServletRequest request) {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
-        Long volunteerRole = LoginUtils.getVolunteerRole(request);
-        CommunityRolePermissionEnum rolePermissionEnum = CommunityRolePermissionEnum.getById(volunteerRole);
-        ThrowUtils.throwIf(rolePermissionEnum.equals(CommunityRolePermissionEnum.EMPLOYEE),ErrorCode.NO_AUTH,"社区权限不足");
 
         List<CommunityJoinReviewVO> result = communityjoinreviewService.getCommunityJoinReviewVOList(loginVolunteerId);
         return ResultUtils.success(result);
@@ -76,10 +75,9 @@ public class CommunityjoinreviewController {
      * @return 脱敏后的审核信息
      */
     @GetMapping("/get/id/vo")
-    public BaseResponse<CommunityJoinReviewVO> getCommunityJoinReviewVOById(Long reviewId,HttpServletRequest request) {
+    @ApiOperation("根据ID获取社区审核详情")
+    public BaseResponse<CommunityJoinReviewVO> getCommunityJoinReviewVOById(Long reviewId, HttpServletRequest request) {
         Long volunteerRole = LoginUtils.getVolunteerRole(request);
-        CommunityRolePermissionEnum rolePermissionEnum = CommunityRolePermissionEnum.getById(volunteerRole);
-        ThrowUtils.throwIf(rolePermissionEnum.equals(CommunityRolePermissionEnum.EMPLOYEE),ErrorCode.NO_AUTH,"社区权限不足");
         ThrowUtils.throwIf(reviewId == null || reviewId <= 0, ErrorCode.PARAMS_ERROR, "审核ID不合法");
 
         CommunityJoinReviewVO result = communityjoinreviewService.getCommunityJoinReviewVOById(reviewId);

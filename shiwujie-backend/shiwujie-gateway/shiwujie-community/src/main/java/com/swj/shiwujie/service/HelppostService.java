@@ -20,9 +20,10 @@ public interface HelppostService extends IService<Helppost> {
     /**
      * 视障人士发出求助帖
      * @param helppostAddRequest 求助帖创建请求
+     * @param loginBlindId 登录视障人士id
      * @return 求助帖VO
      */
-    HelppostVO addHelppost(HelppostAddRequest helppostAddRequest);
+    HelppostVO addHelppost(HelppostAddRequest helppostAddRequest,Long loginBlindId);
 
     /**
      * 通过id查询求助帖VO

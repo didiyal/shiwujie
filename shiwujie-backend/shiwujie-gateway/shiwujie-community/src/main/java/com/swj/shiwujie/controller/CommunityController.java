@@ -20,6 +20,8 @@ import com.swj.shiwujie.service.CommunityService;
 import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +37,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/community")
 @Slf4j
+@Api(tags = "社区操作接口")
 public class CommunityController {
 
 
@@ -49,11 +52,12 @@ public class CommunityController {
      * @return 是否成功
      */
     @GetMapping("/login/check")
-    public BaseResponse<Boolean> checkLogin(HttpServletRequest request) {
+    @ApiOperation("检查社区管理员登录状态")
+    public BaseResponse<VolunteerVO> checkLogin(HttpServletRequest request) {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
-        communityService.checkLogin(loginVolunteerId);
-        return ResultUtils.success(true);
+        VolunteerVO volunteerVO = communityService.checkLogin(loginVolunteerId);
+        return ResultUtils.success(volunteerVO);
     }
 
 
@@ -64,7 +68,8 @@ public class CommunityController {
      * @return 脱敏后的社区信息
      */
     @PostMapping("/Register")
-    public BaseResponse<CommunityLoginSuccessVO> communityRegister(CommunityRegisterRequest communityRegisterRequest) {
+    @ApiOperation("社区入驻注册")
+    public BaseResponse<CommunityLoginSuccessVO> communityRegister(@RequestBody CommunityRegisterRequest communityRegisterRequest) {
         ThrowUtils.throwIf(ObjUtil.isNull(communityRegisterRequest), ErrorCode.PARAMS_ERROR, "信息填写不全");
         ThrowUtils.throwIf(ObjUtil.hasEmpty(communityRegisterRequest), ErrorCode.PARAMS_ERROR, "信息填写不全");
 
@@ -81,7 +86,8 @@ public class CommunityController {
      * @return 脱敏后的用户信息
      */
     @PostMapping("/Login")
-    public BaseResponse<CommunityLoginSuccessVO> communityLogin(VolunteerLARRequest volunteerLARRequest) {
+    @ApiOperation("社区管理人员登录")
+    public BaseResponse<CommunityLoginSuccessVO> communityLogin(@RequestBody VolunteerLARRequest volunteerLARRequest) {
         ThrowUtils.throwIf(ObjUtil.hasEmpty(volunteerLARRequest), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
 
         CommunityLoginSuccessVO res = communityService.communityLogin(volunteerLARRequest);
@@ -94,12 +100,13 @@ public class CommunityController {
 
 
     /**
-     * 根据id获取封装类
+     * 通过ID查询社区信息vo
      *
      * @param communityId
      * @return
      */
     @GetMapping("/get/id/vo")
+    @ApiOperation("通过ID查询社区信息vo")
     public BaseResponse<CommunityVO> getVOById(Long communityId) {
         ThrowUtils.throwIf(ObjUtil.isNull(communityId), ErrorCode.PARAMS_ERROR);
 
@@ -114,7 +121,8 @@ public class CommunityController {
      * @return 更新后的社区信息
      */
     @PostMapping("/update")
-    public BaseResponse<CommunityVO> updateCommunity(CommunityUpdateRequest request, HttpServletRequest httpRequest) {
+    @ApiOperation("修改社区信息")
+    public BaseResponse<CommunityVO> updateCommunity(@RequestBody CommunityUpdateRequest request, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         Long communityId = request.getCommunityId();
         ThrowUtils.throwIf(ObjUtil.isNull(communityId) || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
@@ -134,6 +142,7 @@ public class CommunityController {
      * @return 是否成功
      */
     @PostMapping("/delete")
+    @ApiOperation("删除社区")
     public BaseResponse<Boolean> deleteCommunity(Long communityId, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(ObjUtil.isNull(communityId) || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
 
@@ -151,7 +160,8 @@ public class CommunityController {
      * @param httpRequest 登录信息
      * @return 子社区分页列表
      */
-    @GetMapping("/sub/list")
+    @GetMapping("/sub/list/vo")
+    @ApiOperation("分页查询社区下的子社区列表")
     public BaseResponse<Page<CommunityVO>> getSubCommunities(CommunitySubListRequest request, HttpServletRequest httpRequest) {
         Long communityId = request.getCommunityId();
         long current = request.getCurrent();
@@ -164,11 +174,6 @@ public class CommunityController {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
         ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
 
-        // 权限检查
-        Long roleId = LoginUtils.getVolunteerRole(httpRequest);
-        CommunityRolePermissionEnum roleEnum = CommunityRolePermissionEnum.getById(roleId);
-        ThrowUtils.throwIf(roleEnum == null || (!roleEnum.equals(CommunityRolePermissionEnum.REGISTRANT) && !roleEnum.equals(CommunityRolePermissionEnum.ADMIN)),
-                ErrorCode.NO_AUTH, "无权限查看子社区");
 
         Page<CommunityVO> subCommunitiesPage = communityService.getSubCommunities(communityId, current, size, loginVolunteerId);
         return ResultUtils.success(subCommunitiesPage);

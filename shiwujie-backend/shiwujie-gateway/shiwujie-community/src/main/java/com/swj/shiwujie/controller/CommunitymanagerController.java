@@ -11,6 +11,8 @@ import com.swj.shiwujie.model.request.community.communitymanager.CommunityManage
 import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/communitymanager")
 @Slf4j
+@Api(tags = "社区管理人员操作接口")
 public class CommunitymanagerController {
 
     @Resource
@@ -33,6 +36,7 @@ public class CommunitymanagerController {
      * 查询社区下的员工(志愿者)
      */
     @GetMapping("/employees")
+    @ApiOperation("查询社区下的员工(志愿者)")
     public BaseResponse<Page<VolunteerVO>> queryCommunityEmployees(CommunityEmployeeQueryRequest request) {
         ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(ObjUtil.isNull(request.getCommunityId()), ErrorCode.PARAMS_ERROR, "社区ID不能为空");
@@ -44,6 +48,7 @@ public class CommunitymanagerController {
      * 添加社区管理成员(志愿者)
      */
     @PostMapping("/manager/add")
+    @ApiOperation("添加社区管理成员(志愿者)")
     public BaseResponse<Boolean> addCommunityManager(@RequestBody CommunityManagerRequest request, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR);
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
@@ -55,6 +60,7 @@ public class CommunitymanagerController {
      * 修改社区管理成员信息(志愿者)
      */
     @PutMapping("/manager/update")
+    @ApiOperation("修改社区管理成员信息(志愿者)")
     public BaseResponse<Boolean> updateCommunityManager(@RequestBody CommunityManagerRequest request, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR);
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);

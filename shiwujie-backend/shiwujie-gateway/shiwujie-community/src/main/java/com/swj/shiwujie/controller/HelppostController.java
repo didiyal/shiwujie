@@ -41,11 +41,11 @@ public class HelppostController {
     public BaseResponse<HelppostVO> addHelppost(@RequestBody HelppostAddRequest helppostAddRequest, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(helppostAddRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
 
-        // 获取登录视障人士ID（实际应从登录态获取，此处暂时作为参数传入）
-        Long loginBlindId = helppostAddRequest.getBlindId();
+        // 获取登录视障人士ID
+        Long loginBlindId = LoginUtils.getLoginBlindId(httpRequest);
         ThrowUtils.throwIf(loginBlindId == null || loginBlindId <= 0, ErrorCode.PARAMS_ERROR, "视障人士ID不合法");
 
-        HelppostVO helppostVO = helppostService.addHelppost(helppostAddRequest);
+        HelppostVO helppostVO = helppostService.addHelppost(helppostAddRequest,loginBlindId);
         return ResultUtils.success(helppostVO);
     }
 
@@ -54,7 +54,7 @@ public class HelppostController {
      */
     @GetMapping("/get")
     @ApiOperation("通过id查询求助帖")
-    public BaseResponse<HelppostVO> getHelppostById(@RequestParam Long helppostId, HttpServletRequest httpRequest) {
+    public BaseResponse<HelppostVO> getHelppostById(Long helppostId, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(helppostId == null || helppostId <= 0, ErrorCode.PARAMS_ERROR, "求助帖ID不合法");
 
         HelppostVO helppostVO = helppostService.getHelppostVOById(helppostId);
@@ -78,7 +78,7 @@ public class HelppostController {
      */
     @DeleteMapping("/delete")
     @ApiOperation("删除求助帖")
-    public BaseResponse<Boolean> deleteHelppost(@RequestParam Long helppostId, HttpServletRequest httpRequest) {
+    public BaseResponse<Boolean> deleteHelppost(Long helppostId, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(helppostId == null || helppostId <= 0, ErrorCode.PARAMS_ERROR, "求助帖ID不合法");
 
         Long loginBlindId = LoginUtils.getLoginBlindId(httpRequest);
@@ -99,7 +99,6 @@ public class HelppostController {
 
         Long loginBlindId = LoginUtils.getLoginBlindId(httpRequest);
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
-        ThrowUtils.throwIf(loginBlindId == null, ErrorCode.NOT_LOGIN, "未登录");
 
         boolean result = helppostService.updateHelppost(helppostUpdateRequest, loginBlindId,loginVolunteerId);
         return ResultUtils.success(result);

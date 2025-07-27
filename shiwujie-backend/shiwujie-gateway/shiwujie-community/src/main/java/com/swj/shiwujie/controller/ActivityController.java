@@ -11,6 +11,7 @@ import com.swj.shiwujie.model.request.community.activity.ActivityAddRequest;
 import com.swj.shiwujie.model.request.community.activity.ActivityQueryRequest;
 import com.swj.shiwujie.model.request.community.activity.ActivityUpdateRequest;
 import com.swj.shiwujie.service.ActivityService;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
@@ -32,9 +33,10 @@ public class ActivityController {
     private ActivityService activityService;
 
     /**
-     * 创建活动
+     * 社区管理人员创建活动
      */
     @PostMapping("/add")
+    @ApiOperation("社区管理人员创建活动")
     public BaseResponse<ActivityVO> addActivity(@RequestBody ActivityAddRequest activityAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(activityAddRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         ActivityVO activityVO = activityService.addActivity(activityAddRequest, request);
@@ -44,7 +46,8 @@ public class ActivityController {
     /**
      * 通过ID查询活动
      */
-    @GetMapping("/get")
+    @GetMapping("/get/vo")
+    @ApiOperation("通过ID查询活动")
     public BaseResponse<ActivityVO> getActivityVOById(Long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
         ActivityVO activityVO = activityService.getActivityVOById(id, request);
@@ -54,7 +57,8 @@ public class ActivityController {
     /**
      * 分页查询社区下的活动
      */
-    @GetMapping("/list")
+    @GetMapping("/list/vo")
+    @ApiOperation("分页查询社区下的活动列表")
     public BaseResponse<Page<ActivityVO>> listActivitiesByCommunity(ActivityQueryRequest activityQueryRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(activityQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         Page<ActivityVO> activityVOPage = activityService.listActivitiesByCommunity(activityQueryRequest, request);
@@ -65,6 +69,7 @@ public class ActivityController {
      * 删除活动
      */
     @PostMapping("/delete")
+    @ApiOperation("删除活动")
     public BaseResponse<Boolean> deleteActivity(Long activityId, HttpServletRequest request) {
         ThrowUtils.throwIf(activityId == null || activityId <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
         boolean result = activityService.deleteActivity(activityId, request);
@@ -75,6 +80,7 @@ public class ActivityController {
      * 修改活动
      */
     @PostMapping("/update")
+    @ApiOperation("修改活动信息")
     public BaseResponse<Boolean> updateActivity(@RequestBody ActivityUpdateRequest activityUpdateRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(activityUpdateRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         boolean result = activityService.updateActivity(activityUpdateRequest, request);

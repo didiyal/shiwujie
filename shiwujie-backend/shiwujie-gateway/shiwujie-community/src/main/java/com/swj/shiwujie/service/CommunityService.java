@@ -3,6 +3,7 @@ package com.swj.shiwujie.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.model.VO.community.community.CommunityLoginSuccessVO;
 import com.swj.shiwujie.model.VO.community.community.CommunityVO;
+import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.community.Community;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Volunteer;
@@ -25,7 +26,7 @@ public interface CommunityService extends IService<Community> {
      * 测试登录
      * @param loginVolunteerId
      */
-    void checkLogin(Long loginVolunteerId);
+    VolunteerVO checkLogin(Long loginVolunteerId);
 
     /**
      * 社区入驻

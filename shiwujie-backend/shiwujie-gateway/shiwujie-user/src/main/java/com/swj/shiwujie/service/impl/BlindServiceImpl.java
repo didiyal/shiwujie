@@ -181,16 +181,20 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         String newPassword = blindUpdatePassword.getNewPassword();
         String originPassword = blindUpdatePassword.getOriginPassword();
 
-        boolean isOriginMatch = this.validatePassword(originPassword);
-        boolean isNewMatch = this.validatePassword(newPassword);
-        ThrowUtils.throwIf(!(isOriginMatch && isNewMatch), ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-
         Blind blind = this.getById(blindUpdatePassword.getBlindId());
-        ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
-        //检查原密码
-        String md5OriginPassword = SecureUtil.md5(originPassword);
-        ThrowUtils.throwIf(!md5OriginPassword.equals(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+        // 若用户没有密码则设置密码
+        if(StrUtil.isNotBlank(originPassword)){
+            boolean isOriginMatch = this.validatePassword(originPassword);
+            ThrowUtils.throwIf(!isOriginMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
 
+            ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
+            //检查原密码
+            String md5OriginPassword = SecureUtil.md5(originPassword);
+            ThrowUtils.throwIf(!md5OriginPassword.equals(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+        }
+
+        boolean isNewMatch = this.validatePassword(newPassword);
+        ThrowUtils.throwIf(!isNewMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
         // 密码加密更新
         blind.setPassword(SecureUtil.md5(newPassword));
 
@@ -515,7 +519,12 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         QueryWrapper<Blind> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("community_id", communityId);
 
-        return this.update(updateBlind, queryWrapper);
+        long count = this.count(queryWrapper);
+        if(count != 0){
+            return this.update(updateBlind, queryWrapper);
+        }
+
+        return true;
     }
     // endregion
 }

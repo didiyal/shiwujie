@@ -13,7 +13,7 @@ public class ActivityVO {
     /**
      * 活动ID
      */
-    private Long id;
+    private Long activityId;
 
     /**
      * 活动名字

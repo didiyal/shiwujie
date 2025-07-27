@@ -46,25 +46,23 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
      * 视障人士发出求助帖
      */
     @Override
-    public HelppostVO addHelppost(HelppostAddRequest helppostAddRequest) {
+    public HelppostVO addHelppost(HelppostAddRequest helppostAddRequest,Long loginBlindId) {
         // 参数校验
         ThrowUtils.throwIf(helppostAddRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
-        Long blindId = helppostAddRequest.getBlindId();
         String helpContent = helppostAddRequest.getHelpContent();
         String helpLocation = helppostAddRequest.getHelpLocation();
 
-        ThrowUtils.throwIf(blindId == null || blindId <= 0, ErrorCode.PARAMS_ERROR, "视障人士ID不合法");
         ThrowUtils.throwIf(helpContent == null || helpContent.trim().isEmpty(), ErrorCode.PARAMS_ERROR, "求助内容不能为空");
         ThrowUtils.throwIf(helpLocation == null || helpLocation.trim().isEmpty(), ErrorCode.PARAMS_ERROR, "求助地点不能为空");
 
         // 校验视障人士是否有社区
-        Blind blind = innerBlindService.getById(blindId);
+        Blind blind = innerBlindService.getById(loginBlindId);
         Long communityId = blind.getCommunityId();
         ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.NO_AUTH, "视障人士未加入任何社区，无法发布求助帖");
 
         // 创建求助帖
         Helppost helppost = new Helppost();
-        helppost.setBlindId(blindId);
+        helppost.setBlindId(loginBlindId);
         helppost.setCommunityId(communityId);
         helppost.setHelpContent(helpContent);
         helppost.setHelpLocation(helpLocation);
@@ -139,16 +137,15 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
         Helppost helppost = this.getById(helppostId);
         ThrowUtils.throwIf(helppost == null, ErrorCode.PARAMS_ERROR, "求助帖不存在");
 
-        Long communityId = helppost.getCommunityId();
-        Long blindId = helppost.getBlindId();
-
-        // 权限检查：创建者或社区管理员/注册人
-        boolean isCreator = blindId.equals(loginBlindId);
-        if (!isCreator) {
-            // 检查是否为社区管理员或注册人
-            Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, communityId);
-            ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限删除该求助帖");
-        }
+//        Long communityId = helppost.getCommunityId();
+//        Long blindId = helppost.getBlindId();
+//        // 权限检查：创建者或社区管理员/注册人
+//        boolean isCreator = blindId.equals(loginBlindId);
+//        if (!isCreator) {
+//            // 检查是否为社区管理员或注册人
+//            Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, communityId);
+//            ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限删除该求助帖");
+//        }
 
         return this.removeById(helppostId);
     }
@@ -165,22 +162,21 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
         String helpLocation = helppostUpdateRequest.getHelpLocation();
 
         ThrowUtils.throwIf(helppostId == null || helppostId <= 0, ErrorCode.PARAMS_ERROR, "求助帖ID不合法");
-        ThrowUtils.throwIf(loginBlindId == null || loginBlindId <= 0, ErrorCode.PARAMS_ERROR, "用户ID不合法");
 
         // 查询求助帖
         Helppost helppost = this.getById(helppostId);
-        Long communityId = helppost.getCommunityId();
         ThrowUtils.throwIf(helppost == null, ErrorCode.PARAMS_ERROR, "求助帖不存在");
 
-        // 权限检查：创建者或社区管理员/注册人
-        Long blindId = helppost.getBlindId();
-        // 权限检查：创建者或社区管理员/注册人
-        boolean isCreator = blindId.equals(loginBlindId);
-        if (!isCreator) {
-            // 检查是否为社区管理员或注册人
-            Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, communityId);
-            ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限删除该求助帖");
-        }
+//        // 权限检查：创建者或社区管理员/注册人
+//        Long blindId = helppost.getBlindId();
+//        Long communityId = helppost.getCommunityId();
+//        // 权限检查：创建者或社区管理员/注册人
+//        boolean isCreator = blindId.equals(loginBlindId);
+//        if (!isCreator) {
+//            // 检查是否为社区管理员或注册人
+//            Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, communityId);
+//            ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限删除该求助帖");
+//        }
 
         // 更新字段
         if (helpContent != null && !helpContent.isEmpty()) {
