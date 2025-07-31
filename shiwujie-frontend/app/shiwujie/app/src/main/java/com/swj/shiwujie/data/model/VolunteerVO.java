@@ -57,6 +57,11 @@ public class VolunteerVO {
     private String idCard;
 
     /**
+     * 密码,脱敏
+     */
+    private String password;
+
+    /**
      * 其它信息
      */
     private String otherInfo;
@@ -95,6 +100,11 @@ public class VolunteerVO {
      * 位置更新时间
      */
     private String locationUpdateTime;
+
+    /**
+     * 社区身份
+     */
+    private String communityManager;
 
     /**
      * 创建时间
@@ -213,6 +223,14 @@ public class VolunteerVO {
         this.idCard = idCard;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public String getOtherInfo() {
         return otherInfo;
     }
@@ -275,6 +293,14 @@ public class VolunteerVO {
 
     public void setLocationUpdateTime(String locationUpdateTime) {
         this.locationUpdateTime = locationUpdateTime;
+    }
+
+    public String getCommunityManager() {
+        return communityManager;
+    }
+
+    public void setCommunityManager(String communityManager) {
+        this.communityManager = communityManager;
     }
 
     public Long getCreateTime() {
