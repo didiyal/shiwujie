@@ -4,7 +4,7 @@
     <a-layout-header class="header">
       <div class="header-content">
         <div class="logo">
-          <span class="logo-text">视物界社区管理</span>
+          <span class="logo-text">视无界社区管理</span>
         </div>
         <div class="header-right">
           <div class="user-info">
@@ -81,6 +81,12 @@
             <a-menu-item key="community-stats">社区统计</a-menu-item>
             <a-menu-item key="activity-stats">活动统计</a-menu-item>
           </a-sub-menu>
+          
+          <!-- 退出登录 -->
+          <a-menu-item key="logout" class="logout-item">
+            🚪
+            <span>退出登录</span>
+          </a-menu-item>
         </a-menu>
       </a-layout-sider>
 
@@ -114,7 +120,13 @@ export default {
     const volunteerInfo = computed(() => authStore.volunteerInfo);
 
     const handleMenuClick = ({ key }) => {
-      router.push({ name: key });
+      if (key === 'logout') {
+        // 退出登录
+        authStore.clearLoginInfo();
+        router.push('/login');
+      } else {
+        router.push({ name: key });
+      }
     };
 
     return {
@@ -180,5 +192,29 @@ export default {
   background: #fff;
   border-radius: 8px;
   min-height: calc(100vh - 112px);
+}
+
+/* 退出登录样式 */
+.logout-item {
+  margin-top: auto !important;
+  border-top: 1px solid #303030;
+  color: #ff4d4f !important;
+}
+
+.logout-item:hover {
+  background-color: #ff4d4f !important;
+  color: #fff !important;
+}
+
+/* 确保退出登录在底部 */
+:deep(.ant-menu) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+:deep(.ant-menu-item.logout-item) {
+  margin-top: auto;
+  border-top: 1px solid #303030;
 }
 </style> 

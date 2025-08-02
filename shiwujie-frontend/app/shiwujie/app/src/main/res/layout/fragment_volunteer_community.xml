@@ -52,7 +52,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:text="全国资讯汇总"
+                        android:text="全国资讯资讯汇总"
                         android:textColor="@color/white"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -62,8 +62,8 @@
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="end">
+                    android:gravity="end"
+                    android:orientation="horizontal">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -84,9 +84,9 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_marginTop="4dp"
-                        android:src="@drawable/personalcenter"
                         android:background="@drawable/circle_background"
-                        android:padding="4dp" />
+                        android:padding="4dp"
+                        android:src="@drawable/personalcenter" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -94,7 +94,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="6dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
@@ -206,6 +206,7 @@
                 android:background="@drawable/circle_background_white"
                 android:padding="8dp" />
         </LinearLayout>
+
 
         <!-- 快速访问图标 -->
         <LinearLayout
@@ -333,9 +334,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="与全国大学生一起参与"大学生能力素质学习打卡提升计划""
+                android:text="与全国大学生一起参与大学生能力素质学习打卡提升计划"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                android:textSize="10sp" />
 
             <!-- 打卡状态 -->
             <LinearLayout
@@ -351,14 +352,14 @@
                     android:layout_weight="1"
                     android:text="已连续签到 0天"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="累计打卡 0天"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -376,7 +377,7 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <!-- 日历卡片 -->
+                <!-- 日历卡片1 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -415,6 +416,7 @@
                         android:tint="@color/red_primary" />
                 </LinearLayout>
 
+                <!-- 日历卡片2 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -453,6 +455,7 @@
                         android:tint="@color/green_primary" />
                 </LinearLayout>
 
+                <!-- 日历卡片3 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -523,7 +526,7 @@
                 android:layout_marginTop="12dp"
                 android:text="展开更多 >"
                 android:textColor="@color/blue_primary"
-                android:textSize="14sp" />
+                android:textSize="10sp" />
         </LinearLayout>
 
         <!-- 人气活动区域 -->
@@ -547,7 +550,7 @@
                     android:layout_weight="1"
                     android:text="人气活动"
                     android:textColor="@color/text_primary"
-                    android:textSize="18sp"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -555,7 +558,7 @@
                     android:layout_height="wrap_content"
                     android:text="参与获证书"
                     android:textColor="@color/blue_primary"
-                    android:textSize="14sp" />
+                    android:textSize="10sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -571,7 +574,7 @@
                     android:layout_marginStart="8dp"
                     android:text="查看更多实信网活动 >"
                     android:textColor="@color/blue_primary"
-                    android:textSize="14sp" />
+                    android:textSize="10sp" />
             </LinearLayout>
 
             <!-- 活动列表 -->
@@ -585,4 +588,4 @@
         </LinearLayout>
 
     </LinearLayout>
-</ScrollView> 
+</ScrollView>
