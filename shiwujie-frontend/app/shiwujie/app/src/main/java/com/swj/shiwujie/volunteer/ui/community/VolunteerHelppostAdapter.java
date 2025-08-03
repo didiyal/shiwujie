@@ -1,4 +1,4 @@
-package com.swj.shiwujie.blind.ui.community;
+package com.swj.shiwujie.volunteer.ui.community;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,23 +18,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class HelppostAdapter extends RecyclerView.Adapter<HelppostAdapter.HelppostViewHolder> {
+public class VolunteerHelppostAdapter extends RecyclerView.Adapter<VolunteerHelppostAdapter.HelppostViewHolder> {
     
     private List<HelppostVO> helppostList = new ArrayList<>();
     private OnHelppostClickListener onHelppostClickListener;
-    private OnHelppostEditClickListener onHelppostEditClickListener;
-    private OnHelppostDeleteClickListener onHelppostDeleteClickListener;
+    private OnHelppostRespondClickListener onHelppostRespondClickListener;
 
     public interface OnHelppostClickListener {
         void onHelppostClick(HelppostVO helppost);
     }
 
-    public interface OnHelppostEditClickListener {
-        void onHelppostEditClick(HelppostVO helppost);
-    }
-
-    public interface OnHelppostDeleteClickListener {
-        void onHelppostDeleteClick(HelppostVO helppost);
+    public interface OnHelppostRespondClickListener {
+        void onHelppostRespondClick(HelppostVO helppost);
     }
 
     public void setHelppostList(List<HelppostVO> helppostList) {
@@ -46,18 +41,14 @@ public class HelppostAdapter extends RecyclerView.Adapter<HelppostAdapter.Helppo
         this.onHelppostClickListener = listener;
     }
 
-    public void setOnHelppostEditClickListener(OnHelppostEditClickListener listener) {
-        this.onHelppostEditClickListener = listener;
-    }
-
-    public void setOnHelppostDeleteClickListener(OnHelppostDeleteClickListener listener) {
-        this.onHelppostDeleteClickListener = listener;
+    public void setOnHelppostRespondClickListener(OnHelppostRespondClickListener listener) {
+        this.onHelppostRespondClickListener = listener;
     }
 
     @NonNull
     @Override
     public HelppostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_helppost, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_volunteer_helppost, parent, false);
         return new HelppostViewHolder(view);
     }
 
@@ -79,8 +70,7 @@ public class HelppostAdapter extends RecyclerView.Adapter<HelppostAdapter.Helppo
         private TextView helpLocationText;
         private TextView postTimeText;
         private TextView communityNameText;
-        private Button editHelppostButton;
-        private Button deleteHelppostButton;
+        private Button respondHelppostButton;
 
         public HelppostViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -90,8 +80,7 @@ public class HelppostAdapter extends RecyclerView.Adapter<HelppostAdapter.Helppo
             helpLocationText = itemView.findViewById(R.id.helpLocationText);
             postTimeText = itemView.findViewById(R.id.postTimeText);
             communityNameText = itemView.findViewById(R.id.communityNameText);
-            editHelppostButton = itemView.findViewById(R.id.editHelppostButton);
-            deleteHelppostButton = itemView.findViewById(R.id.deleteHelppostButton);
+            respondHelppostButton = itemView.findViewById(R.id.respondHelppostButton);
         }
 
         public void bind(HelppostVO helppost) {
@@ -118,19 +107,19 @@ public class HelppostAdapter extends RecyclerView.Adapter<HelppostAdapter.Helppo
                 }
             });
 
-            // 设置修改按钮点击事件
-            editHelppostButton.setOnClickListener(v -> {
-                if (onHelppostEditClickListener != null) {
-                    onHelppostEditClickListener.onHelppostEditClick(helppost);
+            // 设置响应按钮点击事件
+            respondHelppostButton.setOnClickListener(v -> {
+                if (onHelppostRespondClickListener != null) {
+                    onHelppostRespondClickListener.onHelppostRespondClick(helppost);
                 }
             });
 
-            // 设置删除按钮点击事件
-            deleteHelppostButton.setOnClickListener(v -> {
-                if (onHelppostDeleteClickListener != null) {
-                    onHelppostDeleteClickListener.onHelppostDeleteClick(helppost);
-                }
-            });
+            // 根据状态设置按钮可见性
+            if ("待响应".equals(helppost.getPostStatus())) {
+                respondHelppostButton.setVisibility(View.VISIBLE);
+            } else {
+                respondHelppostButton.setVisibility(View.GONE);
+            }
         }
 
         private String getStatusText(String status) {

@@ -28,6 +28,7 @@ import com.swj.shiwujie.data.model.CommunityVO;
 import com.swj.shiwujie.data.model.VolunteerVO;
 import com.swj.shiwujie.data.model.HelppostAddRequest;
 import com.swj.shiwujie.data.model.HelppostVO;
+import com.swj.shiwujie.data.model.Page;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +59,7 @@ public class CommunityFragment extends Fragment {
     private Button helpSearchButton;
     private RecyclerView helpRecyclerView;
     private Button addHelpPostButton;
+    private VolunteerHelppostAdapter volunteerHelppostAdapter;
     
     // 我的社区页面组件
     private LinearLayout noJoinLayout;
@@ -270,6 +272,9 @@ public class CommunityFragment extends Fragment {
         if (myCommunityLayout != null) {
             myCommunityLayout.setVisibility(View.GONE);
         }
+        
+        // 加载社区求助帖列表
+        loadCommunityHelppostList();
     }
     
     private void showMyCommunityTab() {
@@ -384,6 +389,13 @@ public class CommunityFragment extends Fragment {
             
             if (addHelpPostButton != null) {
                 addHelpPostButton.setOnClickListener(v -> showHelpPostDialog());
+            }
+            
+            // 初始化志愿者求助帖适配器
+            if (helpRecyclerView != null) {
+                helpRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+                volunteerHelppostAdapter = new VolunteerHelppostAdapter();
+                helpRecyclerView.setAdapter(volunteerHelppostAdapter);
             }
             
             // 初始化我的社区页面组件
@@ -636,5 +648,73 @@ public class CommunityFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        // 清理资源
+    }
+    
+    /**
+     * 加载社区求助帖列表
+     */
+    private void loadCommunityHelppostList() {
+        String token = SharedPrefsUtil.getToken();
+        if (token == null) {
+            Toast.makeText(getContext(), "请先登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 检查用户是否已加入社区
+        if (currentUserInfo == null || currentUserInfo.getCommunityId() == null || currentUserInfo.getCommunityId() <= 0) {
+            Toast.makeText(getContext(), "请先加入社区", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 调用API获取社区求助帖列表
+        apiService.getCommunityHelppostList(
+                "Bearer " + token,
+                currentUserInfo.getCommunityId(),
+                1, // 当前页码
+                20, // 每页大小
+                "待响应" // 查询待响应的求助帖
+        ).enqueue(new ApiCallback<Page<HelppostVO>>(getContext()) {
+            @Override
+            public void onSuccess(Page<HelppostVO> page) {
+                if (volunteerHelppostAdapter != null && page.getRecords() != null) {
+                    volunteerHelppostAdapter.setHelppostList(page.getRecords());
+                    volunteerHelppostAdapter.setOnHelppostClickListener(helppostItem -> {
+                        // 点击求助帖时的处理
+                        Toast.makeText(getContext(), "查看求助帖详情: " + helppostItem.getHelppostId(), Toast.LENGTH_SHORT).show();
+                    });
+                    
+                    volunteerHelppostAdapter.setOnHelppostRespondClickListener(helppostItem -> {
+                        // 响应求助帖
+                        respondToHelppost(helppostItem);
+                    });
+                    
+                    // 显示结果提示
+                    if (page.getRecords().isEmpty()) {
+                        Toast.makeText(getContext(), "暂无待响应的求助帖", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "加载了 " + page.getRecords().size() + " 条求助帖", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+            
+            @Override
+            public void onError(String message) {
+                Toast.makeText(getContext(), "加载求助帖列表失败: " + message, Toast.LENGTH_SHORT).show();
+                // 如果获取失败，显示空列表
+                if (volunteerHelppostAdapter != null) {
+                    volunteerHelppostAdapter.setHelppostList(new ArrayList<>());
+                }
+            }
+        });
+    }
+    
+    /**
+     * 响应求助帖
+     */
+    private void respondToHelppost(HelppostVO helppost) {
+        // 这里可以添加响应求助帖的逻辑
+        // 比如跳转到响应页面或显示响应对话框
+        Toast.makeText(getContext(), "响应求助帖: " + helppost.getHelppostId(), Toast.LENGTH_SHORT).show();
     }
 } 

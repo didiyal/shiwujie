@@ -127,8 +127,15 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
 
     @Override
     public boolean updateActivity(ActivityUpdateRequest activityUpdateRequest, HttpServletRequest request) {
-        Long id = activityUpdateRequest.getActivityId();
-        ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
+        String idStr = activityUpdateRequest.getActivityId();
+        ThrowUtils.throwIf(idStr == null || idStr.trim().isEmpty(), ErrorCode.PARAMS_ERROR, "活动ID无效");
+        
+        Long id;
+        try {
+            id = Long.parseLong(idStr);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "活动ID格式无效");
+        }
 
         Activity activity = this.getById(id);
         ThrowUtils.throwIf(activity == null, ErrorCode.SYSTEM_ERROR, "活动不存在");

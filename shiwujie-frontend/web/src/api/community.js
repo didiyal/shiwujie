@@ -150,6 +150,25 @@ class CommunityApiService extends BaseApiService {
       pageSize
     })
   }
+
+  /**
+   * 分页查询社区下的求助帖
+   * @param {Object} params 查询参数
+   * @param {number|string} params.communityId 社区ID
+   * @param {number} params.current 当前页
+   * @param {number} params.pageSize 每页大小
+   * @param {string} params.postStatus 求助帖状态
+   * @returns {Promise<Page<HelppostVO>>}
+   */
+  getHelpPostList(params) {
+    const { communityId, current = 1, pageSize = 10, postStatus } = params
+    return http.get('/community/helppost/list', {
+      communityId: communityId ? String(communityId) : undefined,
+      current,
+      pageSize,
+      postStatus
+    })
+  }
 }
 
 // 创建单例实例
