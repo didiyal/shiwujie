@@ -113,6 +113,21 @@
                     <span class="sub-community-address">{{ getFullAddress(subCommunity) }}</span>
                   </div>
                 </div>
+                
+                <!-- 子社区分页控件 -->
+                <div v-if="community.subCommunitiesTotal > 0" class="sub-communities-pagination">
+                  <a-pagination
+                    :current="community.subCommunitiesCurrent || 1"
+                    :page-size="community.subCommunitiesPageSize || 10"
+                    :total="community.subCommunitiesTotal || 0"
+                    :show-size-changer="true"
+                    :show-quick-jumper="true"
+                    :show-total="(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`"
+                    @change="(page, pageSize) => handleSubCommunityPageChange(community.communityId, page, pageSize)"
+                    @show-size-change="(current, size) => handleSubCommunityPageChange(community.communityId, 1, size)"
+                    size="small"
+                  />
+                </div>
               </div>
               <div v-else-if="community.subCommunitiesLoaded" class="sub-communities-empty">
                 <span class="empty-text">暂无子社区</span>
@@ -224,6 +239,9 @@ export default {
               // 添加子社区相关属性
               response.subCommunities = [];
               response.subCommunitiesLoaded = false;
+              response.subCommunitiesTotal = 0;
+              response.subCommunitiesCurrent = 1;
+              response.subCommunitiesPageSize = 10;
               communities.push(response);
             } catch (error) {
               console.error(`❌ 获取社区 ${communityId} 信息失败:`, error);
@@ -247,12 +265,12 @@ export default {
     };
 
     // 加载子社区列表
-    const loadSubCommunities = async (communityId) => {
-      console.log(`🔍 开始加载社区 ${communityId} 的子社区列表`);
+    const loadSubCommunities = async (communityId, page = 1, pageSize = 10) => {
+      console.log(`🔍 开始加载社区 ${communityId} 的子社区列表 - 第${page}页，每页${pageSize}条`);
       loadingSubCommunities.value = communityId;
       
       try {
-        const response = await communityApi.getSubCommunityList(communityId, 1, 50);
+        const response = await communityApi.getSubCommunityList(communityId, page, pageSize);
         console.log(`✅ 社区 ${communityId} 子社区列表获取成功:`, response);
         
         // 找到对应的社区并更新子社区信息
@@ -260,7 +278,10 @@ export default {
         if (communityIndex !== -1) {
           communityList.value[communityIndex].subCommunities = response.records || [];
           communityList.value[communityIndex].subCommunitiesLoaded = true;
-          console.log(`✅ 已更新社区 ${communityId} 的子社区信息`);
+          communityList.value[communityIndex].subCommunitiesTotal = response.total || 0;
+          communityList.value[communityIndex].subCommunitiesCurrent = page;
+          communityList.value[communityIndex].subCommunitiesPageSize = pageSize;
+          console.log(`✅ 已更新社区 ${communityId} 的子社区信息 - 总数: ${response.total}`);
         }
       } catch (error) {
         console.error(`❌ 获取社区 ${communityId} 子社区列表失败:`, error);
@@ -271,10 +292,19 @@ export default {
         if (communityIndex !== -1) {
           communityList.value[communityIndex].subCommunities = [];
           communityList.value[communityIndex].subCommunitiesLoaded = true;
+          communityList.value[communityIndex].subCommunitiesTotal = 0;
+          communityList.value[communityIndex].subCommunitiesCurrent = 1;
+          communityList.value[communityIndex].subCommunitiesPageSize = 10;
         }
       } finally {
         loadingSubCommunities.value = null;
       }
+    };
+
+    // 子社区分页处理
+    const handleSubCommunityPageChange = async (communityId, page, pageSize) => {
+      console.log(`🔄 子社区分页变化 - 社区ID: ${communityId}, 页码: ${page}, 每页大小: ${pageSize}`);
+      await loadSubCommunities(communityId, page, pageSize);
     };
 
     // 删除社区
@@ -765,6 +795,19 @@ export default {
 
 .empty-text {
   color: #999;
+}
+
+/* 子社区分页样式 */
+.sub-communities-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.sub-communities-pagination .ant-pagination {
+  margin: 0;
 }
 
 /* 子社区标题区域样式 */

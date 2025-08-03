@@ -5,6 +5,8 @@ import com.swj.shiwujie.data.model.BlindVO;
 import com.swj.shiwujie.data.model.FamilyJoinReviewVO;
 import com.swj.shiwujie.data.model.FamilyVO;
 import com.swj.shiwujie.data.model.VolunteerVO;
+import com.swj.shiwujie.data.model.CommunityJoinRequest;
+import com.swj.shiwujie.data.model.CommunityVO;
 
 import java.util.List;
 
@@ -399,6 +401,32 @@ public interface ApiService {
     Call<BaseResponse<Boolean>> familyJoinUrgenthelp(
             @Header("Authorization") String token,
             @Query("blindPhone") String blindPhone
+    );
+
+    // ==================== 社区相关接口 ====================
+
+    /**
+     * 志愿者加入社区
+     * @param token JWT令牌
+     * @param communityId 社区ID
+     * @return 加入结果
+     */
+    @POST("/api/user/volunteer/community/join")
+    Call<BaseResponse<Boolean>> volunteerJoinCommunity(
+            @Header("Authorization") String token,
+            @Body CommunityJoinRequest request
+    );
+
+    /**
+     * 根据ID查询社区信息
+     * @param token JWT令牌
+     * @param communityId 社区ID
+     * @return 社区信息
+     */
+    @GET("/api/community/community/get/id/vo")
+    Call<BaseResponse<CommunityVO>> getCommunityById(
+            @Header("Authorization") String token,
+            @Query("communityId") Long communityId
     );
 
 }

@@ -448,15 +448,15 @@ export default {
          console.error('❌ 注册失败:', error)
          // 直接显示错误信息
          message.error(error.message || '注册失败')
-       } finally {
-         loading.value = false
-       }
-     }
+      } finally {
+        loading.value = false
+      }
+    }
 
-     return {
-       loginForm,
+    return {
+      loginForm,
        registerForm,
-       loading,
+      loading,
        isRegister,
        switchToLogin,
        switchToRegister,
@@ -464,7 +464,7 @@ export default {
        handleLogin,
        handleRegister,
        handleRegisterClick
-     }
+    }
   }
 }
 </script>

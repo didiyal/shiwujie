@@ -4,7 +4,7 @@ import http from '@/utils/request'
 
 /**
  * 社区管理API服务类
- * 继承自BaseApiService，提供社区相关的API调用
+ * 继承自BaseApiService，提供社区相关的API调用方法
  */
 class CommunityApiService extends BaseApiService {
   constructor() {
@@ -60,14 +60,7 @@ class CommunityApiService extends BaseApiService {
    * @returns {Promise<CommunityVO>}
    */
   updateCommunity(updateData) {
-    // 确保communityId是字符串格式，避免精度丢失
-    const safeUpdateData = {
-      ...updateData,
-      communityId: String(updateData.communityId)
-    }
-    console.log('🔍 updateCommunity - 原始数据:', updateData)
-    console.log('🔍 updateCommunity - 安全数据:', safeUpdateData)
-    return this.post('/update', safeUpdateData)
+    return this.post('/update', updateData)
   }
 
   /**
@@ -98,40 +91,46 @@ class CommunityApiService extends BaseApiService {
     })
   }
 
-  /**
-   * 分页查询社区下的子社区列表
-   * @param {number|string} communityId 父社区ID
-   * @param {number} current 当前页
-   * @param {number} pageSize 每页大小
-   * @returns {Promise<Page<CommunityVO>>}
-   */
-  getSubCommunityList(communityId, current = 1, pageSize = 10) {
-    // 确保communityId是字符串格式，避免精度丢失
+  addCommunityManager(communityId, volunteerId, roleName) {
     const safeCommunityId = String(communityId)
-    console.log('🔍 getSubCommunityList - 原始ID:', communityId, '类型:', typeof communityId)
-    console.log('🔍 getSubCommunityList - 安全ID:', safeCommunityId, '类型:', typeof safeCommunityId)
-    return this.get('/sub/list/vo', { 
+    const safeVolunteerId = String(volunteerId)
+    console.log('🔍 addCommunityManager - 原始参数:', { communityId, volunteerId, roleName })
+    console.log('🔍 addCommunityManager - 安全参数:', { safeCommunityId, safeVolunteerId, roleName })
+    
+    return this.post('/community/communitymanager/manager/add', {
       communityId: safeCommunityId,
-      current,
-      pageSize
+      volunteerId: safeVolunteerId,
+      roleName
     })
   }
 
   /**
-   * 查询社区下的员工(志愿者)
+   * 获取社区加入审核列表
+   * @returns {Promise<CommunityJoinReviewVO[]>}
+   */
+  getCommunityJoinReviewList() {
+    return http.get('/community/communityjoinreview/get/list/vo')
+  }
+
+  /**
+   * 更新社区加入审核状态
+   * @param {Object} updateData 更新数据
+   * @returns {Promise<Boolean>}
+   */
+  updateCommunityJoinReview(updateData) {
+    return http.put('/community/communityjoinreview/update', updateData)
+  }
+
+  /**
+   * 获取社区员工列表
    * @param {number|string} communityId 社区ID
    * @param {number} current 当前页
    * @param {number} pageSize 每页大小
    * @returns {Promise<Page<VolunteerVO>>}
    */
-  getCommunityEmployees(communityId, current = 1, pageSize = 10) {
-    // 确保communityId是字符串格式，避免精度丢失
-    const safeCommunityId = String(communityId)
-    console.log('🔍 getCommunityEmployees - 原始ID:', communityId, '类型:', typeof communityId)
-    console.log('🔍 getCommunityEmployees - 安全ID:', safeCommunityId, '类型:', typeof safeCommunityId)
-    // 直接使用完整的API路径，不依赖baseURL拼接
-    return http.get('/community/communitymanager/employees', { 
-      communityId: safeCommunityId,
+  getCommunityEmployees(communityId, current, pageSize) {
+    return http.get('/community/communitymanager/employees', {
+      communityId: String(communityId),
       current,
       pageSize
     })

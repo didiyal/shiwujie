@@ -110,6 +110,17 @@
           <a-button type="default" size="small" @click="editVolunteer(volunteer)">
             编辑
           </a-button>
+          <!-- 只有注册人才能看到设为管理员按钮 -->
+          <a-button 
+            v-if="isRegistrant && volunteer.communityManager !== '注册人'"
+            type="primary" 
+            size="small" 
+            danger
+            @click="confirmSetAsManager(volunteer)"
+            :loading="settingManagerId === volunteer.volunteerId"
+          >
+            设为管理员
+          </a-button>
         </div>
       </div>
     </div>
@@ -129,7 +140,7 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="!loading" class="empty-state">
+    <div v-else-if="!loading && volunteerList.length === 0" class="empty-state">
       <div class="empty-icon">👥</div>
       <h3>暂无志愿者</h3>
       <p>当前社区下还没有志愿者信息</p>
@@ -148,7 +159,7 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { communityApi } from '@/api';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 
 export default {
   name: 'VolunteerList',
@@ -160,6 +171,12 @@ export default {
     const currentPage = ref(1);
     const pageSize = ref(10);
     const total = ref(0);
+    const settingManagerId = ref(null);
+
+    // 检查当前用户是否是注册人
+    const isRegistrant = computed(() => {
+      return authStore.volunteer?.communityManager === '注册人';
+    });
 
     // 获取志愿者列表
     const loadVolunteerList = async () => {
@@ -171,6 +188,13 @@ export default {
         router.push('/login');
         return;
       }
+
+      // 调试当前用户身份信息
+      console.log('🔍 当前用户身份信息:', {
+        volunteerId: authStore.volunteer.volunteerId,
+        communityManager: authStore.volunteer.communityManager,
+        isRegistrant: authStore.volunteer?.communityManager === '注册人'
+      });
 
       loading.value = true;
       try {
@@ -192,9 +216,27 @@ export default {
         
         const response = await communityApi.getCommunityEmployees(communityId, currentPage.value, pageSize.value);
         console.log('✅ 志愿者列表获取成功:', response);
+        console.log('🔍 响应数据详情:', {
+          records: response.records,
+          total: response.total,
+          recordsLength: response.records?.length || 0
+        });
         
         volunteerList.value = response.records || [];
         total.value = response.total || 0;
+        
+        // 调试每个志愿者的身份信息
+        if (volunteerList.value.length > 0) {
+          console.log('🔍 志愿者身份信息:');
+          volunteerList.value.forEach((volunteer, index) => {
+            console.log(`  志愿者${index + 1}:`, {
+              volunteerId: volunteer.volunteerId,
+              name: volunteer.name,
+              communityManager: volunteer.communityManager,
+              isCurrentUser: volunteer.volunteerId === authStore.volunteer?.volunteerId
+            });
+          });
+        }
         
       } catch (error) {
         console.error('获取志愿者列表失败:', error);
@@ -297,6 +339,54 @@ export default {
       }
     };
 
+    // 确认设为管理员
+    const confirmSetAsManager = (volunteer) => {
+      Modal.confirm({
+        title: '确认设为管理员',
+        content: `确定要将志愿者"${volunteer.name}"设为社区管理员吗？`,
+        okText: '确认',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: () => setAsManager(volunteer)
+      });
+    };
+
+    // 设为管理员
+    const setAsManager = async (volunteer) => {
+      settingManagerId.value = volunteer.volunteerId;
+      try {
+        console.log('🔍 开始设置管理员:', volunteer);
+        
+        // 获取用户注册的社区ID列表
+        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]');
+        if (userCommunities.length === 0) {
+          message.error('您没有管理的社区');
+          return;
+        }
+
+        const communityId = userCommunities[0];
+        console.log('🔍 使用社区ID设置管理员:', communityId);
+        
+        const response = await communityApi.addCommunityManager(
+          communityId, 
+          volunteer.volunteerId, 
+          '管理员' // 角色名称
+        );
+        
+        console.log('✅ 设置管理员成功:', response);
+        message.success('设置管理员成功');
+        
+        // 刷新志愿者列表
+        await loadVolunteerList();
+        
+      } catch (error) {
+        console.error('设置管理员失败:', error);
+        message.error('设置管理员失败');
+      } finally {
+        settingManagerId.value = null;
+      }
+    };
+
     // 组件挂载时加载数据
     onMounted(() => {
       loadVolunteerList();
@@ -308,11 +398,15 @@ export default {
       currentPage,
       pageSize,
       total,
+      settingManagerId,
+      isRegistrant,
       handleRefresh,
       handlePageChange,
       handlePageSizeChange,
       viewDetail,
       editVolunteer,
+      confirmSetAsManager,
+      setAsManager,
       getOnlineStatusText,
       getOnlineStatusClass,
       getGenderText,
@@ -634,6 +728,20 @@ export default {
 .card-actions .ant-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 设为管理员按钮特殊样式 */
+.card-actions .ant-btn-danger {
+  background: linear-gradient(135deg, #ff4d4f, #cf1322);
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+
+.card-actions .ant-btn-danger:hover {
+  background: linear-gradient(135deg, #ff7875, #ff4d4f);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
 }
 
 .pagination-container {

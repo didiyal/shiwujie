@@ -61,6 +61,7 @@ request.interceptors.response.use(
       { pattern: /"volunteerId":\s*(\d{19})/g, replacement: '"volunteerId":"$1"' },
       { pattern: /"communityId":\s*(\d{19})/g, replacement: '"communityId":"$1"' },
       { pattern: /"id":\s*(\d{19})/g, replacement: '"id":"$1"' },
+      { pattern: /"reviewId":\s*(\d{19})/g, replacement: '"reviewId":"$1"' },
       { pattern: /"familyId":\s*(\d{19})/g, replacement: '"familyId":"$1"' }
     ]
     
