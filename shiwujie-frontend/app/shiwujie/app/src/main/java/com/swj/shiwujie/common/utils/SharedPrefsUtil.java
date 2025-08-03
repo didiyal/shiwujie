@@ -72,4 +72,12 @@ public class SharedPrefsUtil {
     public static boolean getBoolean(String key, boolean defaultValue) {
         return prefs.getBoolean(key, defaultValue);
     }
+    
+    public static void putString(String key, String value) {
+        prefs.edit().putString(key, value).apply();
+    }
+    
+    public static String getString(String key, String defaultValue) {
+        return prefs.getString(key, defaultValue);
+    }
 } 

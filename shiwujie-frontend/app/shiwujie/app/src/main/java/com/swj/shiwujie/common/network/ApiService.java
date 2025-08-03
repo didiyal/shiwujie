@@ -8,6 +8,8 @@ import com.swj.shiwujie.data.model.VolunteerVO;
 import com.swj.shiwujie.data.model.CommunityJoinRequest;
 import com.swj.shiwujie.data.model.CommunityVO;
 import com.swj.shiwujie.data.model.BlindCommunityJoinRequest;
+import com.swj.shiwujie.data.model.HelppostAddRequest;
+import com.swj.shiwujie.data.model.HelppostVO;
 
 import java.util.List;
 
@@ -440,6 +442,44 @@ public interface ApiService {
     Call<BaseResponse<Boolean>> blindJoinCommunity(
             @Header("Authorization") String token,
             @Body BlindCommunityJoinRequest request
+    );
+
+    // ==================== 求助帖相关接口 ====================
+
+    /**
+     * 视障人士发出求助帖
+     * @param token JWT令牌
+     * @param request 求助帖创建请求
+     * @return 求助帖信息
+     */
+    @POST("/api/community/helppost/add")
+    Call<BaseResponse<HelppostVO>> addHelppost(
+            @Header("Authorization") String token,
+            @Body HelppostAddRequest request
+    );
+
+    /**
+     * 根据ID查询求助帖信息
+     * @param token JWT令牌
+     * @param helppostId 求助帖ID
+     * @return 求助帖信息
+     */
+    @GET("/api/community/helppost/get/id/vo")
+    Call<BaseResponse<HelppostVO>> getHelppostById(
+            @Header("Authorization") String token,
+            @Query("helppostId") Long helppostId
+    );
+
+    /**
+     * 查询盲人的求助帖信息
+     * @param token JWT令牌
+     * @param helppostId 求助帖ID
+     * @return 求助帖信息
+     */
+    @GET("/api/community/helppost/get")
+    Call<BaseResponse<HelppostVO>> getBlindHelppostInfo(
+            @Header("Authorization") String token,
+            @Query("helppostId") Long helppostId
     );
 
 }
