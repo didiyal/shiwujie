@@ -70,12 +70,8 @@ public abstract class ApiCallback<T> implements Callback<BaseResponse<T>> {
                 break;
                 
             case 40000:
-                android.util.Log.w("ApiCallback", "需要重新选择身份");
-                if (context != null && !isLoginPage()) {
-                    Intent intent = new Intent(context, ChooseIdentityActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    context.startActivity(intent);
-                }
+                android.util.Log.w("ApiCallback", "家庭不存在或其他业务错误");
+                // 对于家庭不存在的情况，不自动跳转，让具体页面处理
                 onError(res.getMessage());
                 break;
                 

@@ -54,6 +54,11 @@ const routes = [
         component: () => import('@/views/user/VolunteerList.vue')
       },
       {
+        path: 'employee-list',
+        name: 'employee-list',
+        component: () => import('@/views/user/EmployeeList.vue')
+      },
+      {
         path: 'blind-list',
         name: 'blind-list',
         component: () => import('@/views/user/BlindList.vue')

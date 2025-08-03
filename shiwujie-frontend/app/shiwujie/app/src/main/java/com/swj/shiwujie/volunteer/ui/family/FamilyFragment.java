@@ -187,10 +187,29 @@ public class FamilyFragment extends Fragment {
 
             @Override
             public void onError(String message) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-                showEmptyState();
+                // 家庭不存在时，显示加入家庭卡片而不是弹窗
+                if (message.contains("家庭不存在")) {
+                    showEmptyState();
+                    // 清除用户的家庭ID，因为家庭已被删除
+                    clearUserFamilyId();
+                } else {
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                    showEmptyState();
+                }
             }
         });
+    }
+    
+    private void clearUserFamilyId() {
+        // 清除本地存储的家庭ID，让用户重新加入家庭
+        String token = SharedPrefsUtil.getToken();
+        Long userId = SharedPrefsUtil.getUserId();
+        
+        if (token != null && userId != null) {
+            // 可以调用更新用户信息的API，清除familyId
+            // 暂时只显示提示
+
+        }
     }
 
     private void getFamilyJoinRequests() {

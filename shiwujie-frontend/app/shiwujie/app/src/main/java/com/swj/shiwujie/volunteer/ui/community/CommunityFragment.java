@@ -39,7 +39,7 @@ public class CommunityFragment extends Fragment {
     // 未加入社区时的视图组件
     private View noJoinView;
     private TextView userNameText;
-    private Button joinCommunityButton;
+
     private LinearLayout communitySelectionLayout;
     private EditText searchCommunityEditText;
     private Button searchCommunityButton;
@@ -125,9 +125,7 @@ public class CommunityFragment extends Fragment {
             userNameText.setText(currentUserInfo.getName());
         }
         
-        // 初始化加入社区按钮
-        joinCommunityButton = noJoinView.findViewById(R.id.joinCommunityButton);
-        joinCommunityButton.setOnClickListener(v -> showCommunitySelection());
+
         
         // 初始化社区选择组件
         communitySelectionLayout = noJoinView.findViewById(R.id.communitySelectionLayout);

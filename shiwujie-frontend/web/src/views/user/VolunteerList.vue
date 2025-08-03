@@ -3,20 +3,28 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <h2>志愿者管理</h2>
-      <p>管理社区下的志愿者信息</p>
+      <p>管理社区内的所有志愿者成员</p>
+      <div class="info-alert">
+        <a-alert
+          message="信息提示"
+          description="显示所有加入社区的志愿者，包括普通成员和管理员。"
+          type="info"
+          show-icon
+        />
+      </div>
     </div>
 
     <!-- 操作栏 -->
-    <div class="action-bar">
+      <div class="action-bar">
       <div class="action-left">
         <a-button type="primary" @click="handleRefresh">
           🔄 刷新
-        </a-button>
+            </a-button>
       </div>
       <div class="action-right">
         <span class="volunteer-count">共 {{ total }} 个志愿者</span>
       </div>
-    </div>
+      </div>
 
     <!-- 志愿者列表 -->
     <div class="volunteer-grid" v-if="volunteerList.length > 0">
@@ -106,10 +114,10 @@
         <div class="card-actions">
           <a-button type="primary" size="small" @click="viewDetail(volunteer)">
             查看详情
-          </a-button>
+              </a-button>
           <a-button type="default" size="small" @click="editVolunteer(volunteer)">
-            编辑
-          </a-button>
+                编辑
+              </a-button>
           <!-- 只有注册人才能看到设为管理员按钮 -->
           <a-button 
             v-if="isRegistrant && volunteer.communityManager !== '注册人'"
@@ -120,7 +128,7 @@
             :loading="settingManagerId === volunteer.volunteerId"
           >
             设为管理员
-          </a-button>
+              </a-button>
         </div>
       </div>
     </div>
@@ -213,17 +221,34 @@ export default {
         // 使用第一个社区ID查询志愿者
         const communityId = userCommunities[0];
         console.log('🔍 使用社区ID查询志愿者:', communityId);
-        
-        const response = await communityApi.getCommunityEmployees(communityId, currentPage.value, pageSize.value);
-        console.log('✅ 志愿者列表获取成功:', response);
-        console.log('🔍 响应数据详情:', {
-          records: response.records,
-          total: response.total,
-          recordsLength: response.records?.length || 0
+        console.log('🔍 请求参数:', {
+          communityId: String(communityId),
+          current: currentPage.value,
+          pageSize: pageSize.value
         });
         
-        volunteerList.value = response.records || [];
-        total.value = response.total || 0;
+        try {
+          const response = await communityApi.getCommunityVolunteers(communityId, currentPage.value, pageSize.value);
+          console.log('✅ 志愿者列表获取成功:', response);
+          console.log('🔍 响应数据详情:', {
+            records: response.records,
+            total: response.total,
+            recordsLength: response.records?.length || 0
+          });
+          
+          volunteerList.value = response.records || [];
+          total.value = response.total || 0;
+        } catch (error) {
+          console.error('❌ 志愿者列表获取失败:', error);
+          console.error('❌ 错误详情:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status
+          });
+          message.error('获取志愿者列表失败，请稍后重试');
+          volunteerList.value = [];
+          total.value = 0;
+        }
         
         // 调试每个志愿者的身份信息
         if (volunteerList.value.length > 0) {
@@ -440,6 +465,10 @@ export default {
   color: #666;
   margin: 0;
   font-size: 16px;
+}
+
+.info-alert {
+  margin-top: 16px;
 }
 
 .action-bar {

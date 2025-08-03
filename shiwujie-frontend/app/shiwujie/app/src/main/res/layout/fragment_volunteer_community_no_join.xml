@@ -154,34 +154,27 @@
                     android:textStyle="bold" />
 
                 <!-- 搜索框 -->
-                <LinearLayout
+                <EditText
+                    android:id="@+id/searchCommunityEditText"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_height="48dp"
+                    android:background="@drawable/edit_text_background"
+                    android:hint="输入社区ID"
+                    android:inputType="number"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_hint"
+                    android:textSize="14sp" />
 
-                    <EditText
-                        android:id="@+id/searchCommunityEditText"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/search_background"
-                        android:drawableStart="@drawable/ic_globe"
-                        android:drawablePadding="12dp"
-                        android:hint="输入社区ID"
-                        android:paddingHorizontal="16dp"
-                        android:textSize="14sp" />
-
-                    <Button
-                        android:id="@+id/searchCommunityButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="44dp"
-                        android:layout_marginStart="12dp"
-                        android:background="@drawable/button_primary"
-                        android:text="搜索"
-                        android:textColor="@color/white"
-                        android:textSize="14sp" />
-                </LinearLayout>
+                <Button
+                    android:id="@+id/searchCommunityButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/button_primary"
+                    android:text="搜索社区"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
             </LinearLayout>
 
             <!-- 社区信息显示区域 -->
@@ -236,16 +229,7 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- 加入社区按钮 -->
-            <Button
-                android:id="@+id/joinCommunityButton"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:background="@drawable/button_primary"
-                android:text="立即加入社区"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+
 
             <!-- 社区选择区域 -->
             <LinearLayout

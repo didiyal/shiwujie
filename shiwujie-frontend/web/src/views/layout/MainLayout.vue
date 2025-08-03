@@ -70,6 +70,7 @@
               <span>用户管理</span>
             </template>
             <a-menu-item key="volunteer-list">志愿者管理</a-menu-item>
+            <a-menu-item key="employee-list">员工管理</a-menu-item>
             <a-menu-item key="blind-list">视障人士管理</a-menu-item>
           </a-sub-menu>
 

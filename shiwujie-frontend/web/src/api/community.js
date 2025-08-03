@@ -135,6 +135,21 @@ class CommunityApiService extends BaseApiService {
       pageSize
     })
   }
+
+  /**
+   * 获取社区志愿者列表
+   * @param {number|string} communityId 社区ID
+   * @param {number} current 当前页
+   * @param {number} pageSize 每页大小
+   * @returns {Promise<Page<VolunteerVO>>}
+   */
+  getCommunityVolunteers(communityId, current, pageSize) {
+    return http.get('/user/volunteer/community/volunteers', {
+      communityId: String(communityId),
+      current,
+      pageSize
+    })
+  }
 }
 
 // 创建单例实例

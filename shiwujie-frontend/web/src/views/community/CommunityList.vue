@@ -6,16 +6,28 @@
       <p>管理您创建的社区信息</p>
     </div>
 
-    <!-- 操作栏 -->
-    <div class="action-bar">
-      <div class="action-left">
-        <a-button type="primary" @click="handleRefresh">
-          🔄 刷新
-          </a-button>
-      </div>
-      <div class="action-right">
-        <span class="community-count">共 {{ communityList.length }} 个社区</span>
-      </div>
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+      <a-row :gutter="16" align="middle">
+        <a-col :xs="24" :sm="16" :md="12" :lg="8">
+          <a-input-search
+            v-model="searchForm.communityId"
+            placeholder="输入社区ID搜索"
+            @search="handleSearch"
+            allow-clear
+            size="large"
+            class="search-input"
+          />
+        </a-col>
+        <a-col :xs="24" :sm="8" :md="12" :lg="16" class="action-col">
+          <div class="action-buttons">
+            <a-button type="primary" @click="handleRefresh" size="large">
+              🔄 刷新
+            </a-button>
+            <span class="community-count">共 {{ communityList.length }} 个社区</span>
+          </div>
+        </a-col>
+      </a-row>
     </div>
 
     <!-- 社区列表 -->
@@ -47,7 +59,7 @@
               </div>
               <div class="info-item">
                 <span class="label">注册人ID：</span>
-                <span class="value">{{ community.registerVolunteerId || '未设置' }}</span>
+                <span class="value volunteer-id">{{ community.registerVolunteerId || '未设置' }}</span>
               </div>
               <div class="info-item">
                 <span class="label">父级社区：</span>
@@ -174,6 +186,9 @@
       <a-spin size="large" />
       <p>加载中...</p>
     </div>
+
+    <!-- 底部安全区域 -->
+    <div class="bottom-safe-area"></div>
   </div>
 </template>
 
@@ -194,6 +209,45 @@ export default {
     const loadingSubCommunities = ref(null);
     const deletingCommunityId = ref(null);
     const communityList = ref([]);
+
+    // 搜索表单
+    const searchForm = reactive({
+      communityId: ''
+    });
+
+    // 搜索处理
+    const handleSearch = async () => {
+      if (!searchForm.communityId) {
+        message.warning('请输入社区ID');
+        return;
+      }
+      
+      console.log('🔍 搜索社区ID:', searchForm.communityId);
+      loading.value = true;
+      
+      try {
+        const response = await communityApi.getCommunityById(searchForm.communityId);
+        console.log('✅ 搜索社区成功:', response);
+        
+        // 清空原有列表，只显示搜索到的社区
+        communityList.value = [response];
+        
+        // 添加子社区相关属性
+        response.subCommunities = [];
+        response.subCommunitiesLoaded = false;
+        response.subCommunitiesTotal = 0;
+        response.subCommunitiesCurrent = 1;
+        response.subCommunitiesPageSize = 10;
+        
+        message.success('搜索成功');
+      } catch (error) {
+        console.error('❌ 搜索社区失败:', error);
+        message.error('未找到该社区或搜索失败');
+        communityList.value = [];
+      } finally {
+        loading.value = false;
+      }
+    };
 
     // 获取用户创建的社区列表
     const loadUserCommunities = async () => {
@@ -388,9 +442,56 @@ export default {
       return address || '地址信息未设置';
     };
 
-    // 组件挂载时加载数据
+    // 处理软键盘弹出
+    const handleKeyboardShow = () => {
+      const communityList = document.querySelector('.community-list');
+      if (communityList) {
+        communityList.style.paddingBottom = '200px';
+        communityList.style.minHeight = 'calc(100dvh - 200px)';
+      }
+    };
+
+    const handleKeyboardHide = () => {
+      const communityList = document.querySelector('.community-list');
+      if (communityList) {
+        communityList.style.paddingBottom = '';
+        communityList.style.minHeight = '';
+      }
+    };
+
+    // 检测软键盘状态
+    const detectKeyboard = () => {
+      const initialViewportHeight = window.innerHeight;
+      
+      const checkKeyboard = () => {
+        const currentViewportHeight = window.innerHeight;
+        const keyboardHeight = initialViewportHeight - currentViewportHeight;
+        
+        if (keyboardHeight > 150) {
+          // 软键盘弹出
+          handleKeyboardShow();
+        } else {
+          // 软键盘收起
+          handleKeyboardHide();
+        }
+      };
+      
+      window.addEventListener('resize', checkKeyboard);
+    };
+
+    // 组件挂载时加载数据和设置软键盘监听
     onMounted(() => {
       loadUserCommunities();
+      
+      // 设置软键盘检测
+      detectKeyboard();
+      
+      // 监听输入框焦点事件作为备用方案
+      const searchInput = document.querySelector('.search-input input');
+      if (searchInput) {
+        searchInput.addEventListener('focus', handleKeyboardShow);
+        searchInput.addEventListener('blur', handleKeyboardHide);
+      }
     });
 
     return {
@@ -398,6 +499,8 @@ export default {
       loadingSubCommunities,
       deletingCommunityId,
       communityList,
+      searchForm,
+      handleSearch,
       handleRefresh,
       loadSubCommunities,
       confirmDelete,
@@ -417,6 +520,11 @@ export default {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  /* 移动端软键盘适配 */
+  min-height: 100dvh; /* 使用动态视口高度 */
+  box-sizing: border-box;
 }
 
 .page-header {
@@ -436,6 +544,44 @@ export default {
   font-size: 16px;
 }
 
+/* 搜索栏样式 */
+.search-bar {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.search-input {
+  width: 100%;
+}
+
+.search-input .ant-input {
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.action-col {
+  display: flex;
+  align-items: center;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.community-count {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .action-bar {
   display: flex;
   justify-content: space-between;
@@ -445,11 +591,6 @@ export default {
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
-}
-
-.community-count {
-  color: #666;
-  font-size: 14px;
 }
 
 .community-grid {
@@ -593,6 +734,18 @@ export default {
    color: #333;
    flex: 1;
    font-weight: 500;
+   word-break: break-all;
+ }
+
+ /* 志愿者ID特殊样式 */
+ .volunteer-id {
+   font-family: 'Courier New', monospace;
+   font-size: 12px;
+   background: #f0f0f0;
+   padding: 2px 6px;
+   border-radius: 4px;
+   color: #1890ff;
+   font-weight: 600;
  }
 
  .address-info {
@@ -826,5 +979,109 @@ export default {
 
 .section-title .ant-btn-link:hover {
   color: #40a9ff;
+}
+
+/* 底部安全区域 */
+.bottom-safe-area {
+  height: env(safe-area-inset-bottom, 20px);
+  background: transparent;
+  min-height: 20px;
+}
+
+
+
+/* 移动端软键盘适配 */
+@media (max-width: 768px) {
+  .community-list {
+    padding: 16px;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+    /* 使用CSS环境变量处理底部安全区域 */
+    min-height: calc(100dvh - env(safe-area-inset-bottom, 0px));
+  }
+  
+  .search-bar {
+    padding: 16px;
+    /* 确保搜索栏在软键盘弹出时可见 */
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #f8f9fa;
+    margin-bottom: 16px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .community-grid {
+    grid-template-columns: 1fr;
+    /* 为软键盘留出空间 */
+    margin-bottom: 100px;
+  }
+  
+  .card-actions {
+    flex-direction: column;
+  }
+  
+  .card-actions .ant-btn {
+    width: 100%;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .info-item .label {
+    margin-bottom: 4px;
+  }
+  
+  .volunteer-id {
+    font-size: 11px;
+    padding: 1px 4px;
+  }
+  
+  /* 软键盘弹出时的特殊处理 */
+  .community-list:has(.ant-input:focus) {
+    padding-bottom: 200px; /* 为软键盘留出更多空间 */
+  }
+  
+  /* 底部安全区域 */
+  .bottom-safe-area {
+    height: env(safe-area-inset-bottom, 20px);
+    background: transparent;
+  }
+}
+
+/* 平板端适配 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .community-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+  
+  .search-bar {
+    padding: 18px;
+  }
+}
+
+/* iOS设备特殊处理 */
+@supports (-webkit-touch-callout: none) {
+  .community-list {
+    /* iOS Safari 特殊处理 */
+    min-height: -webkit-fill-available;
+  }
+  
+  @media (max-width: 768px) {
+    .community-list {
+      min-height: -webkit-fill-available;
+      padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 100px);
+    }
+  }
 }
 </style> 

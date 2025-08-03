@@ -21,7 +21,12 @@
           </a-button>
         </div>
         <div class="header-right">
-          <span class="review-count">共 {{ reviewList.length }} 条待审核申请</span>
+          <span class="review-count">
+            共 {{ reviewList.length }} 条申请
+            <span v-if="getPendingCount() > 0" class="pending-count">
+              ({{ getPendingCount() }} 条待审核)
+            </span>
+          </span>
         </div>
       </div>
 
@@ -58,29 +63,56 @@
             <span>{{ formatTime(record.applyTime) }}</span>
           </template>
 
+          <template v-if="column.key === 'reviewStatus'">
+            <a-tag 
+              :color="getStatusColor(record.reviewStatus)"
+              :class="getStatusClass(record.reviewStatus)"
+            >
+              {{ getStatusText(record.reviewStatus) }}
+            </a-tag>
+          </template>
+
           <template v-if="column.key === 'action'">
-            <a-space v-if="canReviewRecord(record)">
-              <a-button 
-                type="primary" 
-                size="small" 
-                @click="approve(record)"
-                :loading="processingId === record.reviewId"
-              >
-                ✅ 通过
-              </a-button>
-              <a-button 
-                type="default" 
-                size="small" 
-                danger
-                @click="reject(record)"
-                :loading="processingId === record.reviewId"
-              >
-                ❌ 拒绝
-              </a-button>
-            </a-space>
-            <span v-else class="no-permission">
-              <a-tag color="orange">无审核权限</a-tag>
-            </span>
+            <!-- 根据审核状态显示不同的内容 -->
+            <template v-if="record.reviewStatus === '待审核'">
+              <a-space v-if="canReviewRecord(record)">
+                <a-button 
+                  type="primary" 
+                  size="small" 
+                  @click="approve(record)"
+                  :loading="processingId === record.reviewId"
+                >
+                  ✅ 通过
+                </a-button>
+                <a-button 
+                  type="default" 
+                  size="small" 
+                  danger
+                  @click="reject(record)"
+                  :loading="processingId === record.reviewId"
+                >
+                  ❌ 拒绝
+                </a-button>
+              </a-space>
+              <span v-else class="no-permission">
+                <a-tag color="orange">无审核权限</a-tag>
+              </span>
+            </template>
+            
+            <!-- 已通过的申请 -->
+            <template v-else-if="record.reviewStatus === '已通过'">
+              <a-tag color="green">✅ 已通过</a-tag>
+            </template>
+            
+            <!-- 已拒绝的申请 -->
+            <template v-else-if="record.reviewStatus === '已拒绝'">
+              <a-tag color="red">❌ 已拒绝</a-tag>
+            </template>
+            
+            <!-- 其他状态 -->
+            <template v-else>
+              <a-tag color="default">{{ record.reviewStatus || '未知状态' }}</a-tag>
+            </template>
           </template>
         </template>
       </a-table>
@@ -134,6 +166,13 @@ export default {
         dataIndex: 'applyTime', 
         key: 'applyTime',
         width: 180
+      },
+      { 
+        title: '审核状态', 
+        dataIndex: 'reviewStatus', 
+        key: 'reviewStatus',
+        width: 120,
+        align: 'center'
       },
       { 
         title: '操作', 
@@ -337,6 +376,53 @@ export default {
       }
     };
 
+    // 获取状态颜色
+    const getStatusColor = (status) => {
+      switch (status) {
+        case '待审核':
+          return 'orange';
+        case '已通过':
+          return 'green';
+        case '已拒绝':
+          return 'red';
+        default:
+          return 'default';
+      }
+    };
+
+    // 获取状态样式类
+    const getStatusClass = (status) => {
+      switch (status) {
+        case '待审核':
+          return 'status-pending';
+        case '已通过':
+          return 'status-approved';
+        case '已拒绝':
+          return 'status-rejected';
+        default:
+          return 'status-unknown';
+      }
+    };
+
+    // 获取状态文本
+    const getStatusText = (status) => {
+      switch (status) {
+        case '待审核':
+          return '⏳ 待审核';
+        case '已通过':
+          return '✅ 已通过';
+        case '已拒绝':
+          return '❌ 已拒绝';
+        default:
+          return status || '未知状态';
+      }
+    };
+
+    // 获取待审核数量
+    const getPendingCount = () => {
+      return reviewList.value.filter(item => item.reviewStatus === '待审核').length;
+    };
+
     // 检查当前用户是否有审核权限
     const hasReviewPermission = computed(() => {
       const currentUser = authStore.volunteer;
@@ -401,7 +487,11 @@ export default {
       loadReviewList,
       approve,
       reject,
-      formatTime
+      formatTime,
+      getStatusColor,
+      getStatusClass,
+      getStatusText,
+      getPendingCount
     };
   }
 };
@@ -458,6 +548,11 @@ export default {
   font-weight: 500;
 }
 
+.pending-count {
+  color: #ff6b35;
+  font-weight: 600;
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -511,5 +606,23 @@ export default {
 
 :deep(.ant-table-tbody > tr:hover > td) {
   background: #f0f9ff;
+}
+
+/* 状态标签样式 */
+.status-pending {
+  font-weight: 500;
+}
+
+.status-approved {
+  font-weight: 500;
+}
+
+.status-rejected {
+  font-weight: 500;
+}
+
+.status-unknown {
+  font-weight: 400;
+  opacity: 0.7;
 }
 </style> 

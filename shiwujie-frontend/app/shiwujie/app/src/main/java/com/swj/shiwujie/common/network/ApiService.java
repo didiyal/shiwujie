@@ -7,6 +7,7 @@ import com.swj.shiwujie.data.model.FamilyVO;
 import com.swj.shiwujie.data.model.VolunteerVO;
 import com.swj.shiwujie.data.model.CommunityJoinRequest;
 import com.swj.shiwujie.data.model.CommunityVO;
+import com.swj.shiwujie.data.model.BlindCommunityJoinRequest;
 
 import java.util.List;
 
@@ -427,6 +428,18 @@ public interface ApiService {
     Call<BaseResponse<CommunityVO>> getCommunityById(
             @Header("Authorization") String token,
             @Query("communityId") Long communityId
+    );
+
+    /**
+     * 盲人加入社区
+     * @param token JWT令牌
+     * @param request 加入社区请求
+     * @return 加入结果
+     */
+    @POST("/api/user/blind/community/join")
+    Call<BaseResponse<Boolean>> blindJoinCommunity(
+            @Header("Authorization") String token,
+            @Body BlindCommunityJoinRequest request
     );
 
 }
