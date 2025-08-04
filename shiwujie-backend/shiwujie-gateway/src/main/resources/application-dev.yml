@@ -23,10 +23,15 @@ spring:
           predicates:
             - Path=/api/ws/call
     # 社区转发配置
-        - id: route_call
+        - id: route_community
           uri: http://localhost:8400
           predicates:
             - Path=/api/community/**
+    # 社区转发配置
+        - id: route_ai
+          uri: http://localhost:8500
+          predicates:
+            - Path=/api/ai/**
 logging:
   level:
     org:

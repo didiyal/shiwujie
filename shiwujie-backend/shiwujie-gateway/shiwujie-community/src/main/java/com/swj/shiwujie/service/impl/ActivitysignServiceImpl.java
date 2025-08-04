@@ -1,5 +1,6 @@
 package com.swj.shiwujie.service.impl;
 
+import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -81,6 +82,8 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
         // 参数校验
         ThrowUtils.throwIf(activitySignQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Long activityId = activitySignQueryRequest.getActivityId();
+        Long blindId = activitySignQueryRequest.getBlindId();
+        Long volunteerId = activitySignQueryRequest.getVolunteerId();
         Integer current = activitySignQueryRequest.getCurrent();
         Integer pageSize = activitySignQueryRequest.getPageSize();
 
@@ -90,7 +93,18 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
         // 分页查询
         Page<Activitysign> page = new Page<>(current, pageSize);
         QueryWrapper<Activitysign> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("activity_id", activityId);
+
+        if(ObjUtil.isNotNull(activityId)){
+            queryWrapper.eq("activity_id", activityId);
+        }
+        if(ObjUtil.isNotNull(blindId)){
+            queryWrapper.eq("blind_id", blindId);
+        }
+        if(ObjUtil.isNotNull(volunteerId)){
+            queryWrapper.eq("volunteer_id", volunteerId);
+        }
+
+
         Page<Activitysign> activitysignPage = this.page(page, queryWrapper);
 
         // 转换为VO分页

@@ -148,6 +148,19 @@ public class CommunitymanagerServiceImpl extends ServiceImpl<CommunitymanagerMap
         return communitymanagerMapper.updateById(communitymanager) > 0;
     }
 
+    /**
+     * 通过志愿者id,社区id查询信息数量
+     *
+     * @param volunteerId
+     * @param communityId
+     */
+    @Override
+    public long getCountByVolunteerIdAndCommunityId(Long volunteerId, Long communityId) {
+        QueryWrapper<Communitymanager> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("volunteer_id", volunteerId)
+                .eq("community_id", communityId);
+        return communitymanagerMapper.selectCount(queryWrapper);
+    }
 
 
     //region 工具方法

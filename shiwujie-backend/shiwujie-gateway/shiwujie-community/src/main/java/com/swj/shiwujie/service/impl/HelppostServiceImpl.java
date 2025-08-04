@@ -93,6 +93,8 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
     public Page<HelppostVO> listHelppostsByCommunity(HelppostQueryRequest helppostQueryRequest) {
         ThrowUtils.throwIf(helppostQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         Long communityId = helppostQueryRequest.getCommunityId();
+        Long blindId = helppostQueryRequest.getBlindId();
+        Long volunteerId = helppostQueryRequest.getVolunteerId();
         String postStatus = helppostQueryRequest.getPostStatus();
         long current = helppostQueryRequest.getCurrent();
         long size = helppostQueryRequest.getPageSize();
@@ -102,7 +104,16 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
 
         // 构建查询条件
         QueryWrapper<Helppost> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("community_id", communityId);
+        if(ObjUtil.isNotNull(communityId)){
+            queryWrapper.eq("community_id", communityId);
+        }
+        if(ObjUtil.isNotNull(blindId)){
+            queryWrapper.eq("blind_id", blindId);
+        }
+        if(ObjUtil.isNotNull(volunteerId)){
+            queryWrapper.eq("volunteer_id", volunteerId);
+        }
+
 
         // 状态转换：字符串转枚举
         if (postStatus != null && !postStatus.isEmpty()) {

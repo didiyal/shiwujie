@@ -21,6 +21,19 @@ public class InnerCommunitymanagerServiceImpl implements InnerCommunitymanagerSe
     @Resource
     private CommunitymanagerService communitymanagerService;
 
+
+
+    /**
+     * 通过志愿者id,社区id查询信息数量
+     */
+    @Override
+    public Long getCountByVolunteerIdAndCommunityId(Long volunteerId, Long communityId) {
+        return communitymanagerService.getCountByVolunteerIdAndCommunityId(volunteerId,communityId);
+    }
+
+
+
+
     /**
      * 通过志愿者id,社区id查询信息
      */

@@ -6,14 +6,17 @@ import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
+import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.community.communitymanager.CommunityEmployeeQueryRequest;
 import com.swj.shiwujie.model.request.community.communitymanager.CommunityManagerRequest;
 import com.swj.shiwujie.service.CommunitymanagerService;
+import com.swj.shiwujie.service.user.InnerVolunteerService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -31,6 +34,9 @@ public class CommunitymanagerController {
 
     @Resource
     private CommunitymanagerService communitymanagerService;
+
+    @DubboReference
+    private InnerVolunteerService innerVolunteerService;
 
     /**
      * 查询社区下的员工(志愿者)
@@ -66,5 +72,20 @@ public class CommunitymanagerController {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
         boolean result = communitymanagerService.updateCommunityManager(request, loginVolunteerId);
         return ResultUtils.success(result);
+    }
+
+
+    /**
+     * 修改社区管理成员信息(志愿者)
+     */
+    @DeleteMapping("/manager/delete")
+    @ApiOperation("删除社区管理成员信息(志愿者)")
+    public BaseResponse<Boolean> deleteCommunityManager(@RequestBody CommunityManagerRequest request, HttpServletRequest httpRequest) {
+        ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR);
+        Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
+        Volunteer volunteer = innerVolunteerService.getById(loginVolunteerId);
+        int i = communitymanagerService.removeByVolunteerIdAndCommunityId(loginVolunteerId, volunteer.getCommunityId());
+        ThrowUtils.throwIf(i<=0,ErrorCode.SYSTEM_ERROR);
+        return ResultUtils.success(true);
     }
 }

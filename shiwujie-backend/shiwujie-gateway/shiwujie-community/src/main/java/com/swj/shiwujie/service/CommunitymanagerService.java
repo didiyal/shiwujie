@@ -43,6 +43,11 @@ public interface CommunitymanagerService extends IService<Communitymanager> {
     //region 工具方法
 
     /**
+     * 通过志愿者id,社区id查询信息数量
+     */
+    long getCountByVolunteerIdAndCommunityId(Long volunteerId, Long communityId);
+
+    /**
      * 通过志愿者id,社区id查询信息
      */
     Communitymanager getByVolunteerIdAndCommunityId(Long volunteerId, Long communityId);

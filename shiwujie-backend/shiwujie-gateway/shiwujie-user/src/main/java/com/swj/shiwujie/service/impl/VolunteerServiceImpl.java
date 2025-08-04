@@ -495,11 +495,15 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
 
         //设置社区职位
         if(ObjUtil.isNotNull(newVolunteer.getCommunityId())){
-            Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(
-                    newVolunteer.getVolunteerId(),newVolunteer.getCommunityId());
-            Long role = communitymanager.getRolePermissionId();
-            if(ObjUtil.isNotNull(role)){
-                res.setCommunityManager(CommunityRolePermissionEnum.getById(role).getName());
+            Long count = innerCommunitymanagerService.getCountByVolunteerIdAndCommunityId(
+                    newVolunteer.getVolunteerId(), newVolunteer.getCommunityId());
+            if(ObjUtil.isNotNull(count) && count == 1){
+                Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(
+                        newVolunteer.getVolunteerId(),newVolunteer.getCommunityId());
+                Long role = communitymanager.getRolePermissionId();
+                if(ObjUtil.isNotNull(role)){
+                    res.setCommunityManager(CommunityRolePermissionEnum.getById(role).getName());
+                }
             }
         }
 
@@ -525,11 +529,13 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         Long communityId = volunteer.getCommunityId();
         jwtMap.put("role", null);
         if(ObjUtil.isNotNull(communityId)){
-            Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(
-                    volunteer.getVolunteerId(),communityId);
-            ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无社区管理权限");
-            Long role = communitymanager.getRolePermissionId();
-            jwtMap.put("role", role);
+            Long count = innerCommunitymanagerService.getCountByVolunteerIdAndCommunityId(volunteer.getVolunteerId(), communityId);
+            if(ObjUtil.isNotNull(count) && count == 1){
+                Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(
+                        volunteer.getVolunteerId(),communityId);
+                Long role = communitymanager.getRolePermissionId();
+                jwtMap.put("role", role);
+            }
         }
 
         String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
