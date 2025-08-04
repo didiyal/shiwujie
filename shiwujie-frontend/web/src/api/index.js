@@ -10,6 +10,7 @@ export { default as BaseApiService } from './base'
 export * from '../models/base'
 export * from '../models/volunteer'
 export * from '../models/community'
+export * from '../models/blind'
 
 // 导出请求工具
 export { default as http } from '../utils/request' 

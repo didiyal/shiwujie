@@ -13,6 +13,26 @@ export function toSafeId(id) {
   if (id === null || id === undefined || id === '') {
     return null;
   }
+  
+  // 如果已经是字符串，直接返回
+  if (typeof id === 'string') {
+    return id;
+  }
+  
+  // 如果是数字，检查是否是大数字
+  if (typeof id === 'number') {
+    // 检查是否超出JavaScript安全整数范围
+    if (id > Number.MAX_SAFE_INTEGER || id < Number.MIN_SAFE_INTEGER) {
+      console.log('🔍 toSafeId: 检测到超出安全范围的大数字，转换为字符串:', id, '->', String(id));
+      return String(id);
+    }
+    // 检查是否是大数字 (19位数字的阈值)
+    if (id > 999999999999999999 || id < -999999999999999999) {
+      console.log('🔍 toSafeId: 检测到大数字，转换为字符串:', id, '->', String(id));
+      return String(id);
+    }
+  }
+  
   return String(id);
 }
 

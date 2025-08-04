@@ -130,6 +130,23 @@ class UserApiService extends BaseApiService {
       newPassword
     })
   }
+
+  /**
+   * 分页查询社区视障人士
+   * @param {Object} params 查询参数
+   * @param {number|string} params.communityId 社区ID
+   * @param {number} params.current 当前页
+   * @param {number} params.pageSize 每页大小
+   * @returns {Promise<Page<BlindVO>>}
+   */
+  getBlindList(params) {
+    const { communityId, current = 1, pageSize = 10 } = params
+    return this.get('/blind/community/blinds/vo', {
+      communityId: communityId ? String(communityId) : undefined,
+      current,
+      pageSize
+    })
+  }
 }
 
 // 创建单例实例

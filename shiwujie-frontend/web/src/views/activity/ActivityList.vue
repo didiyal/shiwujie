@@ -877,7 +877,7 @@ export default {
         
         // 构建请求数据
         const requestData = {
-          activityId: editForm.activityId,
+          activityId: String(editForm.activityId), // 确保activityId是字符串格式
           activityName: editForm.activityName.trim(),
           communityId: editForm.communityId,
           activityContent: editForm.activityContent.trim(),
@@ -889,6 +889,7 @@ export default {
         }
         
         console.log('更新活动请求数据:', requestData)
+        console.log('activityId类型:', typeof requestData.activityId, '值:', requestData.activityId)
         const response = await activityApi.updateActivity(requestData)
         console.log('更新活动响应:', response)
         
@@ -898,6 +899,12 @@ export default {
         fetchActivityList()
       } catch (error) {
         console.error('更新活动失败:', error)
+        console.error('错误详情:', {
+          message: error.message,
+          response: error.response,
+          activityId: requestData.activityId,
+          requestData: requestData
+        })
         
         // 这是API请求错误
         if (error.message) {
@@ -925,7 +932,7 @@ export default {
       console.log('编辑活动:', record)
       
       // 填充编辑表单数据
-      editForm.activityId = record.activityId
+      editForm.activityId = String(record.activityId) // 确保activityId是字符串格式
       editForm.activityName = record.activityName
       editForm.communityId = record.communityId
       editForm.activityContent = record.activityContent
@@ -934,6 +941,8 @@ export default {
       editForm.startTime = record.startTime ? formatDateTimeForInput(record.startTime) : ''
       editForm.endTime = record.endTime ? formatDateTimeForInput(record.endTime) : ''
       editForm.activityStatus = record.activityStatus
+      
+      console.log('编辑表单activityId:', editForm.activityId, '类型:', typeof editForm.activityId)
       
       // 清除编辑表单错误
       clearEditFormErrors()

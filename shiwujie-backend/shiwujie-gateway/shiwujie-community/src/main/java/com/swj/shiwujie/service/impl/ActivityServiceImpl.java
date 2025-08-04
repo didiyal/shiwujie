@@ -7,11 +7,9 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.ActivityMapper;
-import com.swj.shiwujie.model.VO.community.activity.ActivityVO;
 import com.swj.shiwujie.model.domain.community.Activity;
-import com.swj.shiwujie.model.domain.community.Communitymanager;
+import com.swj.shiwujie.model.VO.community.activity.ActivityVO;
 import com.swj.shiwujie.model.enums.community.ActivityStatusEnum;
-import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.model.request.community.activity.ActivityAddRequest;
 import com.swj.shiwujie.model.request.community.activity.ActivityQueryRequest;
 import com.swj.shiwujie.model.request.community.activity.ActivityUpdateRequest;
@@ -21,6 +19,7 @@ import com.swj.shiwujie.utils.LoginUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
@@ -35,33 +34,17 @@ import java.util.stream.Collectors;
 @Service
 public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements ActivityService {
 
-
     @Resource
     private CommunitymanagerService communitymanagerService;
 
     @Override
     public ActivityVO addActivity(ActivityAddRequest activityAddRequest, HttpServletRequest request) {
-        // 参数校验
-        String activityName = activityAddRequest.getActivityName();
-        String activityContent = activityAddRequest.getActivityContent();
-        String activityLocation = activityAddRequest.getActivityLocation();
-        Long maxParticipants = activityAddRequest.getMaxParticipants();
-        Date startTime = activityAddRequest.getStartTime();
-        Date endTime = activityAddRequest.getEndTime();
-        Long communityId = activityAddRequest.getCommunityId();
+        ThrowUtils.throwIf(activityAddRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
 
-        ThrowUtils.throwIf(StringUtils.isBlank(activityName), ErrorCode.PARAMS_ERROR, "活动名称不能为空");
-        ThrowUtils.throwIf(StringUtils.isBlank(activityContent), ErrorCode.PARAMS_ERROR, "活动内容不能为空");
-        ThrowUtils.throwIf(StringUtils.isBlank(activityLocation), ErrorCode.PARAMS_ERROR, "活动地点不能为空");
-        ThrowUtils.throwIf(maxParticipants == null || maxParticipants <= 0, ErrorCode.PARAMS_ERROR, "活动限定人数必须大于0");
-        ThrowUtils.throwIf(startTime == null, ErrorCode.PARAMS_ERROR, "活动开始时间不能为空");
-        ThrowUtils.throwIf(endTime == null, ErrorCode.PARAMS_ERROR, "活动结束时间不能为空");
-        ThrowUtils.throwIf(startTime.after(endTime), ErrorCode.PARAMS_ERROR, "活动开始时间不能晚于结束时间");
-        ThrowUtils.throwIf(communityId == null || communityId <= 0, ErrorCode.PARAMS_ERROR, "社区ID无效");
-
-        // 新建活动
         Activity activity = new Activity();
         BeanUtils.copyProperties(activityAddRequest, activity);
+        activity.setCreateTime(new Date());
+        activity.setUpdateTime(new Date());
         activity.setManagerId(LoginUtils.getLoginVolunteerId(request));
         activity.setActivityStatus(ActivityStatusEnum.WAITING.getPostStatus()); // 初始状态设为未开始
         boolean saveResult = this.save(activity);
