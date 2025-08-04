@@ -21,12 +21,12 @@ public class VolunteerVO  implements Serializable {
     /**
      * 志愿者ID
      */
-    private Long volunteerId;
+    private String volunteerId;
 
     /**
      * 社区ID
      */
-    private Long communityId;
+    private String communityId;
 
     /**
      * 是否主动加入社区
@@ -36,7 +36,7 @@ public class VolunteerVO  implements Serializable {
     /**
      * 家庭ID
      */
-    private Long familyId;
+    private String familyId;
 
     /**
      * 名字
@@ -86,7 +86,7 @@ public class VolunteerVO  implements Serializable {
     /**
      * 帮助次数
      */
-    private Long helpCount;
+    private String helpCount;
 
     /**
      * 志愿者评分

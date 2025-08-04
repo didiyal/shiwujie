@@ -36,6 +36,19 @@ public class CommunityAdapter extends RecyclerView.Adapter<CommunityAdapter.View
         holder.dateText.setText(activity.getDate());
         holder.titleText.setText(activity.getTitle());
         holder.typeLabel.setText(activity.getType());
+        
+        // 根据状态设置不同的颜色
+        switch (activity.getStatus()) {
+            case "报名中":
+                holder.statusLabel.setBackgroundResource(R.drawable.status_enrolling_background);
+                break;
+            case "进行中":
+                holder.statusLabel.setBackgroundResource(R.drawable.status_ongoing_background);
+                break;
+            case "已结束":
+                holder.statusLabel.setBackgroundResource(R.drawable.status_ended_background);
+                break;
+        }
     }
 
     @Override

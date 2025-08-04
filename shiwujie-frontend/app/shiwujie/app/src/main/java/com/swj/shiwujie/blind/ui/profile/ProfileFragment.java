@@ -100,7 +100,8 @@ public class ProfileFragment extends Fragment {
 
             @Override
             public void onError(String message) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                // 对于用户信息获取失败，不自动跳转，只显示错误信息
+                Toast.makeText(requireContext(), "获取用户信息失败: " + message, Toast.LENGTH_SHORT).show();
             }
         });
     }

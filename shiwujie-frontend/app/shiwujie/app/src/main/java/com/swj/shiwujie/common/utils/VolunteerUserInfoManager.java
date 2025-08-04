@@ -16,6 +16,16 @@ public class VolunteerUserInfoManager {
     private static VolunteerVO currentUserInfo;
     private static ApiService apiService;
 
+    /**
+     * 确保ApiService已初始化
+     */
+    private static ApiService getApiService() {
+        if (apiService == null) {
+            apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        }
+        return apiService;
+    }
+
     public static void init() {
         apiService = RetrofitClient.getInstance().createService(ApiService.class);
     }
@@ -26,6 +36,9 @@ public class VolunteerUserInfoManager {
      * @param callback 回调接口，用于处理获取结果
      */
     public static void fetchUserInfo(Context context, UserInfoCallback callback) {
+        // 确保SharedPrefsUtil已初始化
+        SharedPrefsUtil.init(context);
+        
         String token = SharedPrefsUtil.getToken();
         Long userId = SharedPrefsUtil.getUserId();
 
@@ -36,7 +49,16 @@ public class VolunteerUserInfoManager {
             return;
         }
 
-        apiService.getVolunteerVOById("Bearer " + token, userId).enqueue(new ApiCallback<VolunteerVO>(context) {
+        // 确保ApiService已初始化
+        ApiService service = getApiService();
+        if (service == null) {
+            if (callback != null) {
+                callback.onError("网络服务初始化失败");
+            }
+            return;
+        }
+
+        service.getVolunteerVOById("Bearer " + token, userId).enqueue(new ApiCallback<VolunteerVO>(context) {
             @Override
             public void onSuccess(VolunteerVO data) {
                 currentUserInfo = data; // 缓存用户信息

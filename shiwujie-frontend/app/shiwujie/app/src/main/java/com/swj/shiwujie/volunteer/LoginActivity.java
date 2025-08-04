@@ -28,6 +28,7 @@ import com.swj.shiwujie.common.network.ApiCallback;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.PermissionManager;
+import com.swj.shiwujie.common.utils.VolunteerUserInfoManager;
 import com.swj.shiwujie.data.model.VolunteerVO;
 
 public class LoginActivity extends AppCompatActivity {
@@ -108,9 +109,23 @@ public class LoginActivity extends AppCompatActivity {
                 // 建立WebSocket连接
                 WebSocketManager.connectWebSocket(LoginActivity.this, data.getPhone(), true);
 
-                // 登录成功后请求权限
-                loginData = data;
-                requestAllPermissions();
+                // 刷新用户信息
+                VolunteerUserInfoManager.fetchUserInfo(LoginActivity.this, new VolunteerUserInfoManager.UserInfoCallback() {
+                    @Override
+                    public void onSuccess(VolunteerVO userInfo) {
+                        // 登录成功后请求权限
+                        loginData = data;
+                        requestAllPermissions();
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(LoginActivity.this, "获取用户信息失败: " + message, Toast.LENGTH_SHORT).show();
+                        // 即使获取用户信息失败，也继续进入主页
+                        loginData = data;
+                        requestAllPermissions();
+                    }
+                });
             }
 
             @Override
