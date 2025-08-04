@@ -10,8 +10,6 @@ import com.swj.shiwujie.data.model.CommunityVO;
 import com.swj.shiwujie.data.model.BlindCommunityJoinRequest;
 import com.swj.shiwujie.data.model.HelppostAddRequest;
 import com.swj.shiwujie.data.model.HelppostVO;
-import com.swj.shiwujie.data.model.HelppostUpdateRequest;
-import com.swj.shiwujie.data.model.Page;
 
 import java.util.List;
 
@@ -482,48 +480,6 @@ public interface ApiService {
     Call<BaseResponse<HelppostVO>> getBlindHelppostInfo(
             @Header("Authorization") String token,
             @Query("helppostId") Long helppostId
-    );
-
-    /**
-     * 删除求助帖
-     * @param token JWT令牌
-     * @param helppostId 求助帖ID
-     * @return 删除结果
-     */
-    @DELETE("/api/community/helppost/delete")
-    Call<BaseResponse<Boolean>> deleteHelppost(
-            @Header("Authorization") String token,
-            @Query("helppostId") Long helppostId
-    );
-
-    /**
-     * 修改求助帖信息
-     * @param token JWT令牌
-     * @param request 求助帖更新请求
-     * @return 修改结果
-     */
-    @POST("/api/community/helppost/update")
-    Call<BaseResponse<Boolean>> updateHelppost(
-            @Header("Authorization") String token,
-            @Body HelppostUpdateRequest request
-    );
-
-    /**
-     * 分页查询社区下的求助帖
-     * @param token JWT令牌
-     * @param communityId 社区ID
-     * @param current 当前页码
-     * @param pageSize 每页大小
-     * @param postStatus 求助帖状态
-     * @return 分页求助帖列表
-     */
-    @GET("/api/community/helppost/list")
-    Call<BaseResponse<Page<HelppostVO>>> getCommunityHelppostList(
-            @Header("Authorization") String token,
-            @Query("communityId") Long communityId,
-            @Query("current") Integer current,
-            @Query("pageSize") Integer pageSize,
-            @Query("postStatus") String postStatus
     );
 
 }
