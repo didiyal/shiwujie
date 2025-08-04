@@ -9,9 +9,9 @@ import java.util.Date;
 @Data
 public class ActivityUpdateRequest {
     /**
-     * 活动ID (支持字符串格式，用于处理大数字)
+     * 活动ID
      */
-    private String activityId;
+    private Long activityId;
 
     /**
      * 活动名字

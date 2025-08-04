@@ -12,21 +12,21 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="16dp">
 
         <!-- 求助帖头部信息 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="12dp">
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:src="@drawable/ic_help"
                 android:tint="@color/primary_blue"
-                android:layout_marginEnd="6dp" />
+                android:layout_marginEnd="8dp" />
 
             <TextView
                 android:id="@+id/helppostIdText"
@@ -34,7 +34,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="求助帖 #12345"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textColor="@color/text_primary"
                 android:textStyle="bold" />
 
@@ -43,37 +43,52 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="待响应"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 android:textColor="@color/white"
                 android:background="@drawable/status_pending_background"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp" />
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp" />
         </LinearLayout>
 
         <!-- 求助内容 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="求助内容"
+            android:textSize="14sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp" />
+
         <TextView
             android:id="@+id/helpContentText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="请详细描述您需要帮助的内容..."
-            android:textSize="13sp"
+            android:textSize="14sp"
             android:textColor="@color/text_primary"
-            android:layout_marginBottom="8dp"
-            android:lineSpacingExtra="1dp" />
+            android:layout_marginBottom="12dp"
+            android:lineSpacingExtra="2dp" />
 
         <!-- 求助地点 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="12dp">
 
             <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
                 android:src="@drawable/ic_location"
                 android:tint="@color/text_secondary"
                 android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="地点："
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary" />
 
             <TextView
                 android:id="@+id/helpLocationText"
@@ -81,74 +96,48 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="请输入您的具体位置"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:textColor="@color/text_primary" />
         </LinearLayout>
 
-        <!-- 底部信息行 -->
+        <!-- 求助帖信息 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:orientation="horizontal">
 
-            <!-- 左侧信息 -->
-            <LinearLayout
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="发布时间："
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/postTimeText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:text="2024-01-01 12:00:00"
+                android:textSize="12sp"
+                android:textColor="@color/text_primary" />
 
-                <TextView
-                    android:id="@+id/postTimeText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="2024-01-01 12:00"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_secondary" />
-
-                <TextView
-                    android:id="@+id/communityNameText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="社区ID: 123"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_secondary"
-                    android:layout_marginTop="2dp" />
-            </LinearLayout>
-
-            <!-- 右侧按钮 -->
-            <LinearLayout
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:text="社区："
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary" />
 
-                <Button
-                    android:id="@+id/editHelppostButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="35dp"
-                    android:text="修改"
-                    android:textSize="10sp"
-                    android:textColor="@color/white"
-                    android:background="@drawable/button_secondary"
-                    android:layout_marginEnd="6dp"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:minWidth="0dp" />
-
-                <Button
-                    android:id="@+id/deleteHelppostButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="35dp"
-                    android:text="删除"
-                    android:textSize="10sp"
-                    android:textColor="@color/white"
-                    android:background="@drawable/button_danger"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:minWidth="0dp" />
-
-            </LinearLayout>
+            <TextView
+                android:id="@+id/communityNameText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="社区名称"
+                android:textSize="12sp"
+                android:textColor="@color/text_primary" />
         </LinearLayout>
+
     </LinearLayout>
+
 </androidx.cardview.widget.CardView> 

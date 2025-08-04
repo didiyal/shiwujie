@@ -27,7 +27,6 @@ import com.swj.shiwujie.data.model.BlindVO;
 import com.swj.shiwujie.data.model.CommunityVO;
 import com.swj.shiwujie.data.model.HelppostAddRequest;
 import com.swj.shiwujie.data.model.HelppostVO;
-import com.swj.shiwujie.data.model.HelppostUpdateRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,10 +115,10 @@ public class CommunityFragment extends Fragment {
             
             // 设置标签点击监听器
             setupTabClickListeners();
-        
-        // 加载用户信息
-        loadUserInfo();
-        
+            
+            // 加载用户信息
+            loadUserInfo();
+            
             return mainView;
         } catch (Exception e) {
             e.printStackTrace();
@@ -584,16 +583,6 @@ public class CommunityFragment extends Fragment {
                                     Toast.makeText(getContext(), "查看求助帖详情: " + helppostItem.getHelppostId(), Toast.LENGTH_SHORT).show();
                                 });
                                 
-                                // 设置修改按钮点击监听器
-                                helppostAdapter.setOnHelppostEditClickListener(helppostItem -> {
-                                    showEditHelppostDialog(helppostItem);
-                                });
-                                
-                                // 设置删除按钮点击监听器
-                                helppostAdapter.setOnHelppostDeleteClickListener(helppostItem -> {
-                                    showDeleteHelppostDialog(helppostItem);
-                                });
-                                
                                 Toast.makeText(getContext(), "成功加载 " + allHelpposts.size() + " 条求助帖信息", Toast.LENGTH_SHORT).show();
                             }
                         }
@@ -710,7 +699,7 @@ public class CommunityFragment extends Fragment {
             }
         });
     }
-    
+
     /**
      * 加载已保存的求助帖ID
      */
@@ -747,115 +736,5 @@ public class CommunityFragment extends Fragment {
         } catch (Exception e) {
             Log.e("CommunityFragment", "保存求助帖ID失败", e);
         }
-    }
-    
-    /**
-     * 显示修改求助帖对话框
-     */
-    private void showEditHelppostDialog(HelppostVO helppost) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("修改求助帖");
-        
-        // 创建对话框视图
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_helppost, null);
-        EditText helpContentEdit = dialogView.findViewById(R.id.helpContentEdit);
-        EditText helpLocationEdit = dialogView.findViewById(R.id.helpLocationEdit);
-        
-        // 设置当前值
-        helpContentEdit.setText(helppost.getHelpContent());
-        helpLocationEdit.setText(helppost.getHelpLocation());
-        
-        builder.setView(dialogView);
-        
-        builder.setPositiveButton("确认修改", (dialog, which) -> {
-            String newContent = helpContentEdit.getText().toString().trim();
-            String newLocation = helpLocationEdit.getText().toString().trim();
-            
-            if (newContent.isEmpty()) {
-                Toast.makeText(getContext(), "请输入求助内容", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            
-            if (newLocation.isEmpty()) {
-                Toast.makeText(getContext(), "请输入求助地点", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            
-            updateHelppost(helppost.getHelppostId(), newContent, newLocation, helppost.getPostStatus());
-        });
-        
-        builder.setNegativeButton("取消", null);
-        builder.show();
-    }
-    
-    /**
-     * 显示删除求助帖确认对话框
-     */
-    private void showDeleteHelppostDialog(HelppostVO helppost) {
-        new AlertDialog.Builder(getContext())
-                .setTitle("确认删除")
-                .setMessage("确定要删除这个求助帖吗？删除后无法恢复。")
-                .setPositiveButton("确认删除", (dialog, which) -> {
-                    deleteHelppost(helppost.getHelppostId());
-                })
-                .setNegativeButton("取消", null)
-                .show();
-    }
-    
-    /**
-     * 修改求助帖
-     */
-    private void updateHelppost(Long helppostId, String helpContent, String helpLocation, String postStatus) {
-        String token = SharedPrefsUtil.getToken();
-        if (token == null) {
-            Toast.makeText(getContext(), "请先登录", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        HelppostUpdateRequest request = new HelppostUpdateRequest(helpContent, helpLocation, helppostId, postStatus);
-        
-        apiService.updateHelppost("Bearer " + token, request).enqueue(new ApiCallback<Boolean>(getContext()) {
-            @Override
-            public void onSuccess(Boolean result) {
-                Toast.makeText(getContext(), "求助帖修改成功", Toast.LENGTH_SHORT).show();
-                // 重新加载求助帖列表
-                loadHelppostList();
-            }
-            
-            @Override
-            public void onError(String message) {
-                Toast.makeText(getContext(), "修改求助帖失败: " + message, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-    
-    /**
-     * 删除求助帖
-     */
-    private void deleteHelppost(Long helppostId) {
-        String token = SharedPrefsUtil.getToken();
-        if (token == null) {
-            Toast.makeText(getContext(), "请先登录", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        apiService.deleteHelppost("Bearer " + token, helppostId).enqueue(new ApiCallback<Boolean>(getContext()) {
-            @Override
-            public void onSuccess(Boolean result) {
-                Toast.makeText(getContext(), "求助帖删除成功", Toast.LENGTH_SHORT).show();
-                
-                // 从本地列表中移除该ID
-                helppostIds.remove(helppostId);
-                saveHelppostIds();
-                
-                // 重新加载求助帖列表
-                loadHelppostList();
-            }
-            
-            @Override
-            public void onError(String message) {
-                Toast.makeText(getContext(), "删除求助帖失败: " + message, Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 }
