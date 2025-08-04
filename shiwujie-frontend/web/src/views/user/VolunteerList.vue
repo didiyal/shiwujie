@@ -1,368 +1,428 @@
 <template>
   <div class="volunteer-list">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h2>志愿者管理</h2>
-      <p>管理社区内的所有志愿者成员</p>
-      <div class="info-alert">
-        <a-alert
-          message="信息提示"
-          description="显示所有加入社区的志愿者，包括普通成员和管理员。"
-          type="info"
-          show-icon
-        />
-      </div>
-    </div>
-
-    <!-- 操作栏 -->
-      <div class="action-bar">
-      <div class="action-left">
-        <a-button type="primary" @click="handleRefresh">
-          🔄 刷新
+    <a-card title="志愿者管理" class="management-card">
+      <!-- 搜索和操作栏 -->
+      <div class="search-section">
+        <a-row :gutter="16" align="middle">
+          <a-col :span="8">
+            <a-input-search
+              v-model="searchForm.keyword"
+              placeholder="搜索姓名或手机号"
+              @search="handleSearch"
+              allow-clear
+              size="large"
+            >
+              <template #prefix>
+                <SearchOutlined />
+              </template>
+            </a-input-search>
+          </a-col>
+          <a-col :span="4">
+            <a-select
+              v-model="searchForm.gender"
+              placeholder="性别"
+              allow-clear
+              @change="handleSearch"
+              size="large"
+            >
+              <a-select-option value="">全部性别</a-select-option>
+              <a-select-option :value="1">男</a-select-option>
+              <a-select-option :value="2">女</a-select-option>
+            </a-select>
+          </a-col>
+          <a-col :span="4">
+            <a-select
+              v-model="searchForm.onlineStatus"
+              placeholder="在线状态"
+              allow-clear
+              @change="handleSearch"
+              size="large"
+            >
+              <a-select-option value="">全部状态</a-select-option>
+              <a-select-option :value="1">在线</a-select-option>
+              <a-select-option :value="0">离线</a-select-option>
+              <a-select-option :value="2">忙碌</a-select-option>
+            </a-select>
+          </a-col>
+          <a-col :span="4">
+            <a-select
+              v-model="searchForm.joinStatus"
+              placeholder="加入状态"
+              allow-clear
+              @change="handleSearch"
+              size="large"
+            >
+              <a-select-option value="">全部状态</a-select-option>
+              <a-select-option :value="1">已加入</a-select-option>
+              <a-select-option :value="0">未加入</a-select-option>
+            </a-select>
+          </a-col>
+          <a-col :span="4" style="text-align: right">
+            <a-button type="primary" @click="handleRefresh" size="large">
+              <template #icon>
+                <ReloadOutlined />
+              </template>
+              刷新
             </a-button>
-      </div>
-      <div class="action-right">
-        <span class="volunteer-count">共 {{ total }} 个志愿者</span>
-      </div>
+          </a-col>
+        </a-row>
       </div>
 
-    <!-- 志愿者列表 -->
-    <div class="volunteer-grid" v-if="volunteerList.length > 0">
-      <div 
-        v-for="volunteer in volunteerList" 
-        :key="volunteer.volunteerId" 
-        class="volunteer-card"
+      <!-- 统计信息 -->
+      <div class="stats-section">
+        <a-row :gutter="16">
+          <a-col :span="6">
+            <a-statistic title="总人数" :value="totalCount" />
+          </a-col>
+          <a-col :span="6">
+            <a-statistic title="在线" :value="onlineCount" :value-style="{ color: '#52c41a' }" />
+          </a-col>
+          <a-col :span="6">
+            <a-statistic title="已加入" :value="joinedCount" :value-style="{ color: '#1890ff' }" />
+          </a-col>
+          <a-col :span="6">
+            <a-statistic title="平均评分" :value="averageRating" :precision="1" :value-style="{ color: '#faad14' }" />
+          </a-col>
+        </a-row>
+      </div>
+
+      <!-- 志愿者列表 -->
+      <a-table
+        :columns="columns"
+        :data-source="volunteerList"
+        :loading="loading"
+        :pagination="pagination"
+        @change="handleTableChange"
+        row-key="volunteerId"
+        class="management-table"
       >
-        <div class="card-header">
-          <div class="volunteer-info">
-            <h3 class="volunteer-name">{{ volunteer.name }}</h3>
-            <div class="volunteer-status" :class="getOnlineStatusClass(volunteer.onlineStatus)">
-              {{ getOnlineStatusText(volunteer.onlineStatus) }}
-            </div>
-          </div>
-          <div class="volunteer-rating">
-            <span class="rating-label">评分:</span>
-            <span class="rating-value">{{ volunteer.rating || 0 }}</span>
-          </div>
-        </div>
-        
-        <div class="card-content">
-          <!-- 基本信息 -->
-          <div class="info-section">
-            <h4 class="section-title">基本信息</h4>
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="label">志愿者ID：</span>
-                <span class="value">{{ volunteer.volunteerId }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">手机号：</span>
-                <span class="value">{{ volunteer.phone || '未设置' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">性别：</span>
-                <span class="value">{{ getGenderText(volunteer.gender) }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">社区ID：</span>
-                <span class="value">{{ volunteer.communityId || '未设置' }}</span>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 位置信息 -->
-          <div class="info-section" v-if="volunteer.locationAddress">
-            <h4 class="section-title">位置信息</h4>
-            <div class="location-info">
-              <div class="location-item">
-                <i class="location-icon">📍</i>
-                <span class="location-text">{{ volunteer.locationAddress }}</span>
-              </div>
-              <div class="location-time" v-if="volunteer.locationUpdateTime">
-                <span class="time-label">更新时间：</span>
-                <span class="time-value">{{ formatTime(volunteer.locationUpdateTime) }}</span>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 帮助统计 -->
-          <div class="info-section">
-            <h4 class="section-title">帮助统计</h4>
-            <div class="stats-grid">
-              <div class="stats-item">
-                <span class="stats-label">帮助次数：</span>
-                <span class="stats-value">{{ volunteer.helpCount || 0 }}</span>
-              </div>
-              <div class="stats-item">
-                <span class="stats-label">活跃状态：</span>
-                <span class="stats-value" :class="getActiveStatusClass(volunteer.isActivelyJoined)">
-                  {{ getActiveStatusText(volunteer.isActivelyJoined) }}
-                </span>
-              </div>
-            </div>
-          </div>
+        <template #bodyCell="{ column, record }">
+          <!-- 性别列 -->
+          <template v-if="column.key === 'gender'">
+            <a-tag :color="record.gender === 1 ? 'blue' : 'pink'">
+              {{ getGenderText(record.gender) }}
+            </a-tag>
+          </template>
 
-          <!-- 其他信息 -->
-          <div class="info-section" v-if="volunteer.otherInfo">
-            <h4 class="section-title">其他信息</h4>
-            <div class="other-info">
-              <p class="other-text">{{ volunteer.otherInfo }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="card-actions">
-          <a-button type="primary" size="small" @click="viewDetail(volunteer)">
-            查看详情
+          <!-- 在线状态列 -->
+          <template v-if="column.key === 'onlineStatus'">
+            <a-tag :color="getOnlineStatusColor(record.onlineStatus)">
+              {{ getOnlineStatusText(record.onlineStatus) }}
+            </a-tag>
+          </template>
+
+          <!-- 加入状态列 -->
+          <template v-if="column.key === 'joinStatus'">
+            <a-tag :color="record.isActivelyJoined === 1 ? 'green' : 'orange'">
+              {{ getJoinStatusText(record.isActivelyJoined) }}
+            </a-tag>
+          </template>
+
+          <!-- 评分列 -->
+          <template v-if="column.key === 'rating'">
+            <a-rate :value="record.rating || 0" disabled :count="5" />
+            <span style="margin-left: 8px; color: #666;">{{ record.rating || 0 }}</span>
+          </template>
+
+          <!-- 操作列 -->
+          <template v-if="column.key === 'action'">
+            <a-space>
+              <a-button type="link" size="small" @click="viewDetail(record)">
+                <template #icon>
+                  <EyeOutlined />
+                </template>
+                查看
               </a-button>
-          <a-button type="default" size="small" @click="editVolunteer(volunteer)">
+              <a-button type="link" size="small" @click="editVolunteer(record)">
+                <template #icon>
+                  <EditOutlined />
+                </template>
                 编辑
               </a-button>
-          <!-- 只有注册人才能看到设为管理员按钮 -->
-          <a-button 
-            v-if="isRegistrant && volunteer.communityManager !== '注册人'"
-            type="primary" 
-            size="small" 
-            danger
-            @click="confirmSetAsManager(volunteer)"
-            :loading="settingManagerId === volunteer.volunteerId"
-          >
-            设为管理员
+              <!-- 每个志愿者都显示设为管理员按钮 -->
+              <a-button 
+                type="link" 
+                size="small" 
+                danger
+                @click="confirmSetAsManager(record)"
+                :loading="settingManagerId === record.volunteerId"
+              >
+                <template #icon>
+                  <CrownOutlined />
+                </template>
+                设为管理员
               </a-button>
-        </div>
+            </a-space>
+          </template>
+        </template>
+      </a-table>
+    </a-card>
+
+    <!-- 详情模态框 -->
+    <a-modal
+      :open="detailModalVisible"
+      @update:open="detailModalVisible = $event"
+      title="志愿者详情"
+      width="600px"
+      :footer="null"
+    >
+      <div v-if="selectedVolunteer" class="detail-content">
+        <a-descriptions :column="2" bordered>
+          <a-descriptions-item label="姓名">{{ selectedVolunteer.name }}</a-descriptions-item>
+          <a-descriptions-item label="手机号">{{ selectedVolunteer.phone }}</a-descriptions-item>
+          <a-descriptions-item label="性别">{{ getGenderText(selectedVolunteer.gender) }}</a-descriptions-item>
+          <a-descriptions-item label="微信">{{ selectedVolunteer.wechatId || '未设置' }}</a-descriptions-item>
+          <a-descriptions-item label="QQ">{{ selectedVolunteer.qqId || '未设置' }}</a-descriptions-item>
+          <a-descriptions-item label="在线状态">{{ getOnlineStatusText(selectedVolunteer.onlineStatus) }}</a-descriptions-item>
+          <a-descriptions-item label="加入状态">{{ getJoinStatusText(selectedVolunteer.isActivelyJoined) }}</a-descriptions-item>
+          <a-descriptions-item label="帮助次数">{{ selectedVolunteer.helpCount || 0 }}</a-descriptions-item>
+          <a-descriptions-item label="评分">{{ selectedVolunteer.rating || 0 }}</a-descriptions-item>
+          <a-descriptions-item label="地址" :span="2">{{ selectedVolunteer.locationAddress || '未设置位置' }}</a-descriptions-item>
+          <a-descriptions-item label="其他信息" :span="2">{{ selectedVolunteer.otherInfo || '无' }}</a-descriptions-item>
+        </a-descriptions>
       </div>
-    </div>
-
-    <!-- 分页 -->
-    <div class="pagination-container" v-if="total > 0">
-      <a-pagination
-        :current="currentPage"
-        :pageSize="pageSize"
-        :total="total"
-        :show-size-changer="true"
-        :show-quick-jumper="true"
-        :show-total="(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`"
-        @change="handlePageChange"
-        @showSizeChange="handlePageSizeChange"
-      />
-    </div>
-
-    <!-- 空状态 -->
-    <div v-else-if="!loading && volunteerList.length === 0" class="empty-state">
-      <div class="empty-icon">👥</div>
-      <h3>暂无志愿者</h3>
-      <p>当前社区下还没有志愿者信息</p>
-    </div>
-
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading-state">
-      <a-spin size="large" />
-      <p>加载中...</p>
-    </div>
+    </a-modal>
   </div>
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { communityApi } from '@/api';
-import { message, Modal } from 'ant-design-vue';
+import { ref, reactive, onMounted, computed } from 'vue'
+import { message, Modal } from 'ant-design-vue'
+import { 
+  SearchOutlined, 
+  ReloadOutlined,
+  EyeOutlined,
+  EditOutlined,
+  CrownOutlined
+} from '@ant-design/icons-vue'
+import { communityApi } from '@/api/community'
+import { useAuthStore } from '@/stores/auth'
 
 export default {
   name: 'VolunteerList',
+  components: {
+    SearchOutlined,
+    ReloadOutlined,
+    EyeOutlined,
+    EditOutlined,
+    CrownOutlined
+  },
   setup() {
-    const router = useRouter();
-    const authStore = useAuthStore();
-    const loading = ref(false);
-    const volunteerList = ref([]);
-    const currentPage = ref(1);
-    const pageSize = ref(10);
-    const total = ref(0);
-    const settingManagerId = ref(null);
+    const authStore = useAuthStore()
+    const loading = ref(false)
+    const volunteerList = ref([])
+    const detailModalVisible = ref(false)
+    const selectedVolunteer = ref(null)
+    const settingManagerId = ref(null)
 
-    // 检查当前用户是否是注册人
+    const searchForm = reactive({
+      keyword: '',
+      gender: '',
+      onlineStatus: '',
+      joinStatus: ''
+    })
+
+    const pagination = reactive({
+      current: 1,
+      pageSize: 10,
+      total: 0,
+      showSizeChanger: true,
+      showQuickJumper: true,
+      showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+    })
+
+    const columns = [
+      {
+        title: '姓名',
+        dataIndex: 'name',
+        key: 'name',
+        width: 120
+      },
+      {
+        title: '手机号',
+        dataIndex: 'phone',
+        key: 'phone',
+        width: 130
+      },
+      {
+        title: '性别',
+        dataIndex: 'gender',
+        key: 'gender',
+        width: 80
+      },
+      {
+        title: '在线状态',
+        dataIndex: 'onlineStatus',
+        key: 'onlineStatus',
+        width: 100
+      },
+      {
+        title: '加入状态',
+        key: 'joinStatus',
+        width: 100
+      },
+      {
+        title: '评分',
+        key: 'rating',
+        width: 120
+      },
+      {
+        title: '帮助次数',
+        dataIndex: 'helpCount',
+        key: 'helpCount',
+        width: 100
+      },
+      {
+        title: '地址',
+        dataIndex: 'locationAddress',
+        key: 'locationAddress',
+        width: 200,
+        ellipsis: true
+      },
+      {
+        title: '操作',
+        key: 'action',
+        width: 320,
+        fixed: 'right'
+      }
+    ]
+
+    // 计算统计信息
+    const totalCount = computed(() => pagination.total)
+    const onlineCount = computed(() => 
+      volunteerList.value.filter(item => item.onlineStatus === 1).length
+    )
+    const joinedCount = computed(() => 
+      volunteerList.value.filter(item => item.isActivelyJoined === 1).length
+    )
+    const averageRating = computed(() => {
+      const ratings = volunteerList.value.map(item => item.rating || 0)
+      if (ratings.length === 0) return 0
+      return (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1)
+    })
+
+    // 检查当前用户是否是注册人（保留用于其他功能）
     const isRegistrant = computed(() => {
-      return authStore.volunteer?.communityManager === '注册人';
-    });
+      return authStore.volunteerInfo?.communityManager === '注册人'
+    })
 
     // 获取志愿者列表
-    const loadVolunteerList = async () => {
-      console.log('🔍 开始加载志愿者列表');
-      
-      if (!authStore.volunteer) {
-        console.log('❌ authStore.volunteer 为空，重定向到登录页');
-        message.error('请先登录');
-        router.push('/login');
-        return;
-      }
-
-      // 调试当前用户身份信息
-      console.log('🔍 当前用户身份信息:', {
-        volunteerId: authStore.volunteer.volunteerId,
-        communityManager: authStore.volunteer.communityManager,
-        isRegistrant: authStore.volunteer?.communityManager === '注册人'
-      });
-
-      loading.value = true;
+    const fetchVolunteerList = async () => {
       try {
+        loading.value = true
+        
         // 获取用户注册的社区ID列表
-        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]');
-        console.log('🔍 用户社区ID列表:', userCommunities);
+        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]')
+        console.log('🔍 用户社区ID列表:', userCommunities)
         
         if (userCommunities.length === 0) {
-          console.log('❌ 用户没有管理的社区');
-          message.error('您没有管理的社区');
-          volunteerList.value = [];
-          total.value = 0;
-          return;
+          console.log('❌ 用户没有管理的社区')
+          message.error('您没有管理的社区')
+          volunteerList.value = []
+          pagination.total = 0
+          return
         }
 
         // 使用第一个社区ID查询志愿者
-        const communityId = userCommunities[0];
-        console.log('🔍 使用社区ID查询志愿者:', communityId);
+        const communityId = userCommunities[0]
+        console.log('🔍 使用社区ID查询志愿者:', communityId)
         console.log('🔍 请求参数:', {
           communityId: String(communityId),
-          current: currentPage.value,
-          pageSize: pageSize.value
-        });
+          current: pagination.current,
+          pageSize: pagination.pageSize
+        })
         
-        try {
-          const response = await communityApi.getCommunityVolunteers(communityId, currentPage.value, pageSize.value);
-          console.log('✅ 志愿者列表获取成功:', response);
-          console.log('🔍 响应数据详情:', {
-            records: response.records,
-            total: response.total,
-            recordsLength: response.records?.length || 0
-          });
-          
-          volunteerList.value = response.records || [];
-          total.value = response.total || 0;
-        } catch (error) {
-          console.error('❌ 志愿者列表获取失败:', error);
-          console.error('❌ 错误详情:', {
-            message: error.message,
-            response: error.response?.data,
-            status: error.response?.status
-          });
-          message.error('获取志愿者列表失败，请稍后重试');
-          volunteerList.value = [];
-          total.value = 0;
+        const response = await communityApi.getCommunityVolunteers(communityId, pagination.current, pagination.pageSize)
+        console.log('✅ 志愿者列表获取成功:', response)
+        
+        if (response && response.records) {
+          // 处理大数字ID问题
+          volunteerList.value = response.records.map(volunteer => {
+            // 确保volunteerId是字符串格式
+            if (volunteer.volunteerId && typeof volunteer.volunteerId === 'number') {
+              volunteer.volunteerId = String(volunteer.volunteerId)
+            }
+            return volunteer
+          })
+          pagination.total = response.total
+          pagination.current = response.current
+          pagination.pageSize = response.size
         }
-        
-        // 调试每个志愿者的身份信息
-        if (volunteerList.value.length > 0) {
-          console.log('🔍 志愿者身份信息:');
-          volunteerList.value.forEach((volunteer, index) => {
-            console.log(`  志愿者${index + 1}:`, {
-              volunteerId: volunteer.volunteerId,
-              name: volunteer.name,
-              communityManager: volunteer.communityManager,
-              isCurrentUser: volunteer.volunteerId === authStore.volunteer?.volunteerId
-            });
-          });
-        }
-        
       } catch (error) {
-        console.error('获取志愿者列表失败:', error);
-        message.error('获取志愿者列表失败');
-        volunteerList.value = [];
-        total.value = 0;
+        console.error('获取志愿者列表失败:', error)
+        console.error('错误详情:', {
+          message: error.message,
+          response: error.response,
+          stack: error.stack
+        })
+        message.error(error.message || '获取志愿者列表失败')
       } finally {
-        loading.value = false;
+        loading.value = false
       }
-    };
+    }
+
+    // 搜索处理
+    const handleSearch = () => {
+      pagination.current = 1
+      fetchVolunteerList()
+    }
+
+    // 表格变化处理
+    const handleTableChange = (pag) => {
+      pagination.current = pag.current
+      pagination.pageSize = pag.pageSize
+      fetchVolunteerList()
+    }
 
     // 刷新数据
     const handleRefresh = () => {
-      loadVolunteerList();
-    };
-
-    // 分页变化
-    const handlePageChange = (page, pageSize) => {
-      currentPage.value = page;
-      loadVolunteerList();
-    };
-
-    // 页面大小变化
-    const handlePageSizeChange = (current, size) => {
-      currentPage.value = 1;
-      pageSize.value = size;
-      loadVolunteerList();
-    };
+      fetchVolunteerList()
+    }
 
     // 查看详情
-    const viewDetail = (volunteer) => {
-      console.log('查看志愿者详情:', volunteer);
-      // TODO: 实现查看详情功能
-      message.info('查看详情功能待实现');
-    };
+    const viewDetail = (record) => {
+      selectedVolunteer.value = record
+      detailModalVisible.value = true
+    }
 
     // 编辑志愿者
-    const editVolunteer = (volunteer) => {
-      console.log('编辑志愿者:', volunteer);
-      // TODO: 实现编辑功能
-      message.info('编辑功能待实现');
-    };
-
-    // 获取在线状态文本
-    const getOnlineStatusText = (status) => {
-      switch (status) {
-        case 0: return '离线';
-        case 1: return '在线';
-        case 2: return '忙碌';
-        default: return '未知';
-      }
-    };
-
-    // 获取在线状态样式类
-    const getOnlineStatusClass = (status) => {
-      switch (status) {
-        case 0: return 'status-offline';
-        case 1: return 'status-online';
-        case 2: return 'status-busy';
-        default: return 'status-unknown';
-      }
-    };
+    const editVolunteer = (record) => {
+      message.info('编辑志愿者功能开发中...')
+    }
 
     // 获取性别文本
     const getGenderText = (gender) => {
       switch (gender) {
-        case 0: return '未知';
-        case 1: return '男';
-        case 2: return '女';
-        default: return '未知';
+        case 1: return '男'
+        case 2: return '女'
+        default: return '未知'
       }
-    };
+    }
 
-    // 获取活跃状态文本
-    const getActiveStatusText = (status) => {
+    // 获取在线状态文本
+    const getOnlineStatusText = (status) => {
       switch (status) {
-        case 0: return '非活跃';
-        case 1: return '活跃';
-        default: return '未知';
+        case 0: return '离线'
+        case 1: return '在线'
+        case 2: return '忙碌'
+        default: return '未知'
       }
-    };
+    }
 
-    // 获取活跃状态样式类
-    const getActiveStatusClass = (status) => {
+    // 获取在线状态颜色
+    const getOnlineStatusColor = (status) => {
       switch (status) {
-        case 0: return 'status-inactive';
-        case 1: return 'status-active';
-        default: return 'status-unknown';
+        case 0: return 'red'
+        case 1: return 'green'
+        case 2: return 'orange'
+        default: return 'default'
       }
-    };
+    }
 
-    // 格式化时间
-    const formatTime = (timeStr) => {
-      if (!timeStr) return '';
-      try {
-        const date = new Date(timeStr);
-        return date.toLocaleString('zh-CN');
-      } catch (error) {
-        return timeStr;
-      }
-    };
+    // 获取加入状态文本
+    const getJoinStatusText = (status) => {
+      return status === 1 ? '已加入' : '未加入'
+    }
 
     // 确认设为管理员
     const confirmSetAsManager = (volunteer) => {
@@ -373,449 +433,130 @@ export default {
         okType: 'danger',
         cancelText: '取消',
         onOk: () => setAsManager(volunteer)
-      });
-    };
+      })
+    }
 
     // 设为管理员
     const setAsManager = async (volunteer) => {
-      settingManagerId.value = volunteer.volunteerId;
+      settingManagerId.value = volunteer.volunteerId
       try {
-        console.log('🔍 开始设置管理员:', volunteer);
+        console.log('🔍 开始设置管理员:', volunteer)
         
         // 获取用户注册的社区ID列表
-        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]');
+        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]')
         if (userCommunities.length === 0) {
-          message.error('您没有管理的社区');
-          return;
+          message.error('您没有管理的社区')
+          return
         }
 
-        const communityId = userCommunities[0];
-        console.log('🔍 使用社区ID设置管理员:', communityId);
+        const communityId = userCommunities[0]
+        console.log('🔍 使用社区ID设置管理员:', communityId)
         
         const response = await communityApi.addCommunityManager(
           communityId, 
           volunteer.volunteerId, 
           '管理员' // 角色名称
-        );
+        )
         
-        console.log('✅ 设置管理员成功:', response);
-        message.success('设置管理员成功');
+        console.log('✅ 设置管理员成功:', response)
+        message.success('设置管理员成功')
         
         // 刷新志愿者列表
-        await loadVolunteerList();
+        await fetchVolunteerList()
         
       } catch (error) {
-        console.error('设置管理员失败:', error);
-        message.error('设置管理员失败');
+        console.error('设置管理员失败:', error)
+        message.error('设置管理员失败')
       } finally {
-        settingManagerId.value = null;
+        settingManagerId.value = null
       }
-    };
+    }
 
-    // 组件挂载时加载数据
+    // 组件挂载时获取数据
     onMounted(() => {
-      loadVolunteerList();
-    });
+      fetchVolunteerList()
+    })
 
     return {
       loading,
       volunteerList,
-      currentPage,
-      pageSize,
-      total,
+      searchForm,
+      detailModalVisible,
+      selectedVolunteer,
       settingManagerId,
-      isRegistrant,
+      pagination,
+      columns,
+      totalCount,
+      onlineCount,
+      joinedCount,
+      averageRating,
+      handleSearch,
+      handleTableChange,
       handleRefresh,
-      handlePageChange,
-      handlePageSizeChange,
       viewDetail,
       editVolunteer,
       confirmSetAsManager,
       setAsManager,
-      getOnlineStatusText,
-      getOnlineStatusClass,
       getGenderText,
-      getActiveStatusText,
-      getActiveStatusClass,
-      formatTime
-    };
+      getOnlineStatusText,
+      getOnlineStatusColor,
+      getJoinStatusText
+    }
   }
-};
+}
 </script>
 
 <style scoped>
 .volunteer-list {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-header {
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.page-header h2 {
-  color: #1890ff;
-  margin-bottom: 8px;
-  font-size: 28px;
-}
-
-.page-header p {
-  color: #666;
-  margin: 0;
-  font-size: 16px;
-}
-
-.info-alert {
-  margin-top: 16px;
-}
-
-.action-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.volunteer-count {
-  color: #666;
-  font-size: 14px;
-}
-
-.volunteer-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.volunteer-card {
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  background: #f5f5f5;
+  min-height: 100vh;
 }
 
-.volunteer-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #1890ff, #52c41a);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+.management-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.volunteer-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transform: translateY(-4px);
-  border-color: #1890ff;
+.search-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
 }
 
-.volunteer-card:hover::before {
-  opacity: 1;
+.search-section :deep(.ant-input),
+.search-section :deep(.ant-select-selector) {
+  border-radius: 6px;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.volunteer-info {
-  flex: 1;
-}
-
-.volunteer-name {
-  margin: 0 0 8px 0;
-  color: #1890ff;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.volunteer-status {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-online {
-  background: linear-gradient(135deg, #f6ffed, #d9f7be);
-  color: #389e0d;
-  border: 1px solid #b7eb8f;
-}
-
-.status-offline {
-  background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
-  color: #595959;
-  border: 1px solid #d9d9d9;
-}
-
-.status-busy {
-  background: linear-gradient(135deg, #fff7e6, #ffe7ba);
-  color: #d46b08;
-  border: 1px solid #ffd591;
-}
-
-.status-unknown {
-  background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
-  color: #595959;
-  border: 1px solid #d9d9d9;
-}
-
-.volunteer-rating {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.rating-label {
-  font-size: 12px;
-  color: #666;
-}
-
-.rating-value {
-  font-weight: 600;
-  color: #1890ff;
-  font-size: 14px;
-}
-
-.card-content {
-  margin-bottom: 20px;
-}
-
-.info-section {
-  margin-bottom: 20px;
-  padding: 16px;
+.stats-section {
+  margin-bottom: 24px;
+  padding: 20px;
   background: #fafafa;
   border-radius: 8px;
-  border-left: 4px solid #1890ff;
-}
-
-.info-section:last-child {
-  margin-bottom: 0;
-}
-
-.section-title {
-  margin: 0 0 12px 0;
-  color: #1890ff;
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.info-item .label {
-  color: #666;
-  min-width: 80px;
-  font-weight: 500;
-  margin-right: 8px;
-}
-
-.info-item .value {
-  color: #333;
-  flex: 1;
-  font-weight: 500;
-}
-
-.location-info {
-  margin-top: 8px;
-}
-
-.location-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.location-icon {
-  font-style: normal;
-  font-size: 16px;
-  margin-top: 2px;
-}
-
-.location-text {
-  color: #333;
-  font-size: 13px;
-  line-height: 1.4;
-  flex: 1;
-}
-
-.location-time {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: #999;
-}
-
-.time-label {
-  color: #999;
-}
-
-.time-value {
-  color: #666;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
-.stats-item {
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.stats-label {
-  color: #666;
-  min-width: 80px;
-  font-weight: 500;
-  margin-right: 8px;
-}
-
-.stats-value {
-  color: #333;
-  flex: 1;
-  font-weight: 500;
-}
-
-.status-active {
-  color: #389e0d;
-  font-weight: 600;
-}
-
-.status-inactive {
-  color: #999;
-}
-
-.other-info {
-  margin-top: 8px;
-}
-
-.other-text {
-  margin: 0;
-  color: #333;
-  font-size: 13px;
-  line-height: 1.5;
-  background: white;
-  padding: 8px 12px;
-  border-radius: 4px;
   border: 1px solid #e8e8e8;
 }
 
-.card-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
-  margin-top: 20px;
-}
-
-.card-actions .ant-btn {
+.management-table {
   border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  overflow: hidden;
 }
 
-.card-actions .ant-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* 设为管理员按钮特殊样式 */
-.card-actions .ant-btn-danger {
-  background: linear-gradient(135deg, #ff4d4f, #cf1322);
-  border: none;
-  color: white;
+.management-table :deep(.ant-table-thead > tr > th) {
+  background: #fafafa;
   font-weight: 600;
+  color: #262626;
 }
 
-.card-actions .ant-btn-danger:hover {
-  background: linear-gradient(135deg, #ff7875, #ff4d4f);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+.management-table :deep(.ant-table-tbody > tr:hover > td) {
+  background: #f0f8ff;
 }
 
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  background: white;
-  border-radius: 12px;
-  border: 2px dashed #d9d9d9;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.empty-state h3 {
-  color: #333;
-  margin-bottom: 8px;
-  font-size: 20px;
-}
-
-.empty-state p {
-  color: #666;
-  margin-bottom: 24px;
-  font-size: 14px;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.loading-state p {
-  margin-top: 16px;
-  color: #666;
+.detail-content {
+  padding: 16px 0;
 }
 
 /* 响应式设计 */
@@ -824,16 +565,30 @@ export default {
     padding: 16px;
   }
   
-  .volunteer-grid {
-    grid-template-columns: 1fr;
+  .search-section {
+    padding: 16px;
   }
   
-  .card-actions {
-    flex-direction: column;
+  .stats-section {
+    padding: 16px;
   }
-  
-  .card-actions .ant-btn {
-    width: 100%;
-  }
+}
+
+/* 动画效果 */
+.management-card {
+  transition: all 0.3s ease;
+}
+
+.management-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.search-section {
+  transition: all 0.3s ease;
+}
+
+.search-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 </style> 

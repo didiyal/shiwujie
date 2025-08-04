@@ -66,25 +66,16 @@
             </div>
           </div>
           
-          <div class="employee-actions">
-            <a-space>
-              <a-button size="small" @click="viewDetail(employee)">
-                👁️ 查看详情
-              </a-button>
-              <a-button size="small" type="primary" @click="editEmployee(employee)">
-                ✏️ 编辑
-              </a-button>
-              <a-button 
-                v-if="isRegistrant && employee.communityManager !== '注册人'"
-                size="small" 
-                type="primary" 
-                danger
-                @click="confirmSetAsManager(employee)"
-              >
-                🔴 设为管理员
-              </a-button>
-            </a-space>
-          </div>
+                     <div class="employee-actions">
+             <a-space>
+               <a-button size="small" @click="viewDetail(employee)">
+                 👁️ 查看详情
+               </a-button>
+               <a-button size="small" type="primary" @click="editEmployee(employee)">
+                 ✏️ 编辑
+               </a-button>
+             </a-space>
+           </div>
         </div>
       </div>
 
@@ -122,7 +113,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, h } from 'vue';
 import { communityApi } from '@/api';
 import { message, Modal } from 'ant-design-vue';
 import { useAuthStore } from '@/stores/auth';
@@ -225,8 +216,68 @@ export default {
     // 编辑员工
     const editEmployee = (employee) => {
       console.log('编辑员工:', employee);
-      // TODO: 实现编辑功能
-      message.info('编辑功能待实现');
+      
+      // 创建编辑表单
+      const editForm = {
+        volunteerId: employee.volunteerId,
+        name: employee.name,
+        phone: employee.phone,
+        gender: employee.gender,
+        communityManager: employee.communityManager,
+        roleName: employee.communityManager === '注册人' ? '注册人' : 
+                  employee.communityManager === '管理员' ? '管理员' : '员工'
+      };
+      
+      // 显示编辑对话框
+      Modal.confirm({
+        title: '编辑员工信息',
+        width: 600,
+        content: h('div', [
+          h('div', { style: 'margin-bottom: 16px;' }, [
+            h('label', { style: 'display: block; margin-bottom: 8px; font-weight: bold;' }, '姓名:'),
+            h('input', {
+              value: editForm.name,
+              onInput: (e) => editForm.name = e.target.value,
+              style: 'width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px;'
+            })
+          ]),
+          h('div', { style: 'margin-bottom: 16px;' }, [
+            h('label', { style: 'display: block; margin-bottom: 8px; font-weight: bold;' }, '手机号:'),
+            h('input', {
+              value: editForm.phone,
+              onInput: (e) => editForm.phone = e.target.value,
+              style: 'width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px;'
+            })
+          ]),
+          h('div', { style: 'margin-bottom: 16px;' }, [
+            h('label', { style: 'display: block; margin-bottom: 8px; font-weight: bold;' }, '性别:'),
+            h('select', {
+              value: editForm.gender,
+              onChange: (e) => editForm.gender = parseInt(e.target.value),
+              style: 'width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px;'
+            }, [
+              h('option', { value: 0 }, '未知'),
+              h('option', { value: 1 }, '男'),
+              h('option', { value: 2 }, '女')
+            ])
+          ]),
+          h('div', { style: 'margin-bottom: 16px;' }, [
+            h('label', { style: 'display: block; margin-bottom: 8px; font-weight: bold;' }, '角色:'),
+            h('select', {
+              value: editForm.roleName,
+              onChange: (e) => editForm.roleName = e.target.value,
+              style: 'width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px;'
+            }, [
+              h('option', { value: '员工' }, '员工'),
+              h('option', { value: '管理员' }, '管理员'),
+              h('option', { value: '注册人' }, '注册人')
+            ])
+          ])
+        ]),
+        okText: '保存',
+        cancelText: '取消',
+        onOk: () => updateEmployee(editForm)
+      });
     };
 
     // 获取在线状态文本
@@ -259,39 +310,38 @@ export default {
       }
     };
 
-    // 确认设为管理员
-    const confirmSetAsManager = (employee) => {
-      Modal.confirm({
-        title: '确认设为管理员',
-        content: `确定要将"${employee.name}"设为社区管理员吗？`,
-        okText: '确认',
-        okType: 'primary',
-        cancelText: '取消',
-        onOk: () => setAsManager(employee)
-      });
-    };
 
-    // 设为管理员
-    const setAsManager = async (employee) => {
+
+    // 更新员工信息
+    const updateEmployee = async (editForm) => {
       try {
-        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]');
-        const communityId = userCommunities[0];
+        console.log('🔍 开始更新员工信息:', editForm);
         
-        const response = await communityApi.addCommunityManager(
+        // 获取用户注册的社区ID列表
+        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]');
+        if (userCommunities.length === 0) {
+          message.error('您没有管理的社区');
+          return;
+        }
+
+        const communityId = userCommunities[0];
+        console.log('🔍 使用社区ID更新员工:', communityId);
+        
+        const response = await communityApi.updateCommunityManager(
           communityId,
-          employee.volunteerId,
-          '管理员'
+          editForm.volunteerId,
+          editForm.roleName
         );
         
-        if (response) {
-          message.success('设置管理员成功');
-          loadEmployeeList(); // 刷新列表
-        } else {
-          message.error('设置管理员失败');
-        }
+        console.log('✅ 更新员工信息成功:', response);
+        message.success('更新员工信息成功');
+        
+        // 刷新员工列表
+        await loadEmployeeList();
+        
       } catch (error) {
-        console.error('设置管理员失败:', error);
-        message.error('设置管理员失败: ' + (error.message || '未知错误'));
+        console.error('更新员工信息失败:', error);
+        message.error('更新员工信息失败: ' + (error.message || '未知错误'));
       }
     };
 
@@ -312,11 +362,10 @@ export default {
       handlePageSizeChange,
       viewDetail,
       editEmployee,
+      updateEmployee,
       getOnlineStatusText,
       getOnlineStatusClass,
-      getGenderText,
-      confirmSetAsManager,
-      setAsManager
+      getGenderText
     };
   }
 };

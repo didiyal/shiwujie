@@ -97,7 +97,27 @@ class CommunityApiService extends BaseApiService {
     console.log('🔍 addCommunityManager - 原始参数:', { communityId, volunteerId, roleName })
     console.log('🔍 addCommunityManager - 安全参数:', { safeCommunityId, safeVolunteerId, roleName })
     
-    return this.post('/community/communitymanager/manager/add', {
+    return http.post('/community/communitymanager/manager/add', {
+      communityId: safeCommunityId,
+      volunteerId: safeVolunteerId,
+      roleName
+    })
+  }
+
+  /**
+   * 更新社区管理成员信息
+   * @param {number|string} communityId 社区ID
+   * @param {number|string} volunteerId 志愿者ID
+   * @param {string} roleName 角色名称
+   * @returns {Promise<boolean>}
+   */
+  updateCommunityManager(communityId, volunteerId, roleName) {
+    const safeCommunityId = String(communityId)
+    const safeVolunteerId = String(volunteerId)
+    console.log('🔍 updateCommunityManager - 原始参数:', { communityId, volunteerId, roleName })
+    console.log('🔍 updateCommunityManager - 安全参数:', { safeCommunityId, safeVolunteerId, roleName })
+    
+    return http.put('/community/communitymanager/manager/update', {
       communityId: safeCommunityId,
       volunteerId: safeVolunteerId,
       roleName
