@@ -54,7 +54,7 @@
             </div>
             <div class="detail-item">
               <span class="label">角色:</span>
-              <span class="value">{{ employee.communityManager || '普通成员' }}</span>
+              <span class="value">{{ employee.communityManager || '员工' }}</span>
             </div>
             <div class="detail-item">
               <span class="label">性别:</span>
@@ -71,7 +71,12 @@
                <a-button size="small" @click="viewDetail(employee)">
                  👁️ 查看详情
                </a-button>
-               <a-button size="small" type="primary" @click="editEmployee(employee)">
+               <a-button 
+                 v-if="isRegistrant" 
+                 size="small" 
+                 type="primary" 
+                 @click="editEmployee(employee)"
+               >
                  ✏️ 编辑
                </a-button>
              </a-space>

@@ -688,7 +688,7 @@ public class CommunityFragment extends Fragment {
         apiService.blindJoinCommunity("Bearer " + token, request).enqueue(new ApiCallback<Boolean>(getContext()) {
             @Override
             public void onSuccess(Boolean result) {
-                Toast.makeText(getContext(), "加入社区成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "已发送加入申请等待审核", Toast.LENGTH_SHORT).show();
                 // 刷新用户信息
                 loadUserInfo();
             }

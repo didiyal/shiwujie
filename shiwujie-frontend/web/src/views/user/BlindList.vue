@@ -130,12 +130,21 @@
                 </template>
                 求助记录
               </a-button>
-              <a-button type="link" size="small" danger @click="deleteBlind(record)">
-                <template #icon>
-                  <DeleteOutlined />
-                </template>
-                删除
-              </a-button>
+              <!-- 踢出按钮：只有注册人和管理员可以看到 -->
+              <template v-if="isRegistrant || isAdmin">
+                <a-button 
+                  type="link" 
+                  size="small" 
+                  danger
+                  @click="confirmRemoveBlind(record)"
+                  :loading="removingBlindId === record.blindId"
+                >
+                  <template #icon>
+                    <DeleteOutlined />
+                  </template>
+                  踢出
+                </a-button>
+              </template>
             </a-space>
           </template>
         </template>
@@ -144,7 +153,8 @@
 
     <!-- 详情模态框 -->
     <a-modal
-      v-model:open="detailModalVisible"
+      :open="detailModalVisible"
+      @update:open="detailModalVisible = $event"
       title="视障人士详情"
       width="600px"
       :footer="null"
@@ -199,6 +209,7 @@ export default {
     const blindList = ref([])
     const detailModalVisible = ref(false)
     const selectedBlind = ref(null)
+    const removingBlindId = ref(null)
 
     const searchForm = reactive({
       keyword: '',
@@ -213,6 +224,16 @@ export default {
       showSizeChanger: true,
       showQuickJumper: true,
       showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+    })
+
+    // 检查当前用户是否是注册人
+    const isRegistrant = computed(() => {
+      return authStore.volunteer?.communityManager === '注册人'
+    })
+
+    // 检查当前用户是否是管理员
+    const isAdmin = computed(() => {
+      return authStore.volunteer?.communityManager === '管理员'
     })
 
     const columns = [
@@ -365,6 +386,53 @@ export default {
       })
     }
 
+    // 踢出视障人士
+    const confirmRemoveBlind = (blind) => {
+      Modal.confirm({
+        title: '确认踢出视障人士',
+        content: `确定要将视障人士"${blind.name}"从社区中移除吗？`,
+        okText: '确认',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: () => removeBlind(blind)
+      })
+    }
+
+    // 踢出视障人士
+    const removeBlind = async (blind) => {
+      removingBlindId.value = blind.blindId
+      try {
+        console.log('🔍 开始踢出视障人士:', blind)
+        
+        // 获取用户注册的社区ID列表
+        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]')
+        if (userCommunities.length === 0) {
+          message.error('您没有管理的社区')
+          return
+        }
+
+        const communityId = userCommunities[0]
+        console.log('🔍 使用社区ID踢出视障人士:', communityId)
+        
+        const response = await userApi.removeBlindFromCommunity(
+          blind.blindId,
+          communityId
+        )
+        
+        console.log('✅ 踢出视障人士成功:', response)
+        message.success('踢出视障人士成功')
+        
+        // 刷新视障人士列表
+        await fetchBlindList()
+        
+      } catch (error) {
+        console.error('踢出视障人士失败:', error)
+        message.error('踢出视障人士失败')
+      } finally {
+        removingBlindId.value = null
+      }
+    }
+
     // 组件挂载时获取数据
     onMounted(() => {
       fetchBlindList()
@@ -376,6 +444,7 @@ export default {
       searchForm,
       detailModalVisible,
       selectedBlind,
+      removingBlindId,
       pagination,
       columns,
       totalCount,
@@ -388,7 +457,11 @@ export default {
       viewDetail,
       editBlind,
       viewHelpHistory,
-      deleteBlind
+      deleteBlind,
+      confirmRemoveBlind,
+      removeBlind,
+      isRegistrant,
+      isAdmin
     }
   }
 }

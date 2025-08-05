@@ -26,6 +26,17 @@
       
       <!-- 管理员登录表单 -->
       <form v-if="!isRegister" class="login-form-native" @submit.prevent="handleLogin">
+        <!-- 密码设置提示 -->
+        <div class="password-tip">
+          <a-alert
+            message="账户安全提示"
+            description="管理员账户安全必须设置密码，可在APP志愿者端设置修改密码。"
+            type="warning"
+            show-icon
+            style="margin-bottom: 20px;"
+          />
+        </div>
+        
         <div class="form-group">
           <label>手机号 *</label>
           <input
