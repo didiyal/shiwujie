@@ -168,6 +168,7 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
     public boolean updateHelppost(HelppostUpdateRequest helppostUpdateRequest, Long loginBlindId,Long loginVolunteerId) {
         ThrowUtils.throwIf(helppostUpdateRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         Long helppostId = helppostUpdateRequest.getHelppostId();
+        Long volunteerId = helppostUpdateRequest.getVolunteerId();
         String postStatus = helppostUpdateRequest.getPostStatus();
         String helpContent = helppostUpdateRequest.getHelpContent();
         String helpLocation = helppostUpdateRequest.getHelpLocation();
@@ -195,6 +196,9 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
         }
         if (helpLocation != null && !helpLocation.isEmpty()) {
             helppost.setHelpLocation(helpLocation);
+        }
+        if (volunteerId != null && ObjUtil.isNotNull(volunteerId)) {
+            helppost.setVolunteerId(volunteerId);
         }
         if (postStatus != null && !postStatus.isEmpty()) {
             PostStatusEnum statusEnum = PostStatusEnum.getByName(postStatus);

@@ -15,6 +15,11 @@ public class HelppostUpdateRequest{
 
     private Long helppostId;
 
+    /**
+     * 响应志愿者
+     */
+    private Long volunteerId;
+
 
     private String helpContent;
 
