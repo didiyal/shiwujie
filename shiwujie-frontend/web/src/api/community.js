@@ -170,6 +170,75 @@ class CommunityApiService extends BaseApiService {
       pageSize
     })
   }
+
+  /**
+   * 将志愿者踢出社区
+   * @param {number|string} communityId 社区ID
+   * @param {number|string} volunteerId 志愿者ID
+   * @returns {Promise<boolean>}
+   */
+  removeVolunteerFromCommunity(communityId, volunteerId) {
+    const safeCommunityId = String(communityId)
+    const safeVolunteerId = String(volunteerId)
+    console.log('🔍 removeVolunteerFromCommunity - 原始参数:', { communityId, volunteerId })
+    console.log('🔍 removeVolunteerFromCommunity - 安全参数:', { safeCommunityId, safeVolunteerId })
+    
+    return http.post('/user/volunteer/removeFromCommunity', {
+      communityId: safeCommunityId,
+      volunteerId: safeVolunteerId
+    })
+  }
+
+  /**
+   * 获取求助帖列表
+   * @param {number} current 当前页
+   * @param {number} pageSize 每页大小
+   * @param {object} filters 筛选条件
+   * @returns {Promise<Page<HelppostVO>>}
+   */
+  getHelppostList(current = 1, pageSize = 10, filters = {}) {
+    return http.get('/community/helppost/list', {
+      current,
+      pageSize,
+      ...filters
+    })
+  }
+
+  /**
+   * 获取求助帖详情
+   * @param {string|number} helppostId 求助帖ID
+   * @returns {Promise<HelppostVO>}
+   */
+  getHelppostById(helppostId) {
+    const safeHelppostId = String(helppostId)
+    console.log('🔍 getHelppostById - 原始参数:', { helppostId })
+    console.log('🔍 getHelppostById - 安全参数:', { safeHelppostId })
+    
+    return http.get('/community/helppost/get', { helppostId: safeHelppostId })
+  }
+
+  /**
+   * 删除求助帖
+   * @param {string|number} helppostId 求助帖ID
+   * @returns {Promise}
+   */
+  deleteHelppost(helppostId) {
+    const safeHelppostId = String(helppostId)
+    console.log('🔍 deleteHelppost - 原始参数:', { helppostId })
+    console.log('🔍 deleteHelppost - 安全参数:', { safeHelppostId })
+    console.log('🔍 deleteHelppost - 当前token:', localStorage.getItem('token') ? '存在' : '不存在')
+    
+    return http.delete('/community/helppost/delete', { helppostId: safeHelppostId })
+  }
+
+  /**
+   * 更新求助帖状态
+   * @param {HelppostUpdateRequest} updateData 更新数据
+   * @returns {Promise<boolean>}
+   */
+  updateHelppost(updateData) {
+    return http.post('/community/helppost/update', updateData)
+  }
 }
 
 // 创建单例实例

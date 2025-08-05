@@ -557,11 +557,6 @@ export default {
           activityStatus: searchForm.status || undefined
         }
         
-        // 确保状态参数是中文值
-        if (params.activityStatus) {
-          console.log('发送的活动状态参数:', params.activityStatus)
-        }
-        
         // 如果有选择特定社区，使用选择的社区ID
         // 否则使用当前登录用户的社区ID
         if (searchForm.communityId) {
@@ -570,9 +565,10 @@ export default {
           params.communityId = authStore.volunteerInfo.communityId
         }
         
-        console.log('请求参数:', params)
-        const response = await activityApi.getActivityList(params)
-        console.log('活动列表响应:', response)
+        const response = await activityApi.getActivityList(params.current, params.pageSize, {
+          activityStatus: params.activityStatus,
+          communityId: params.communityId
+        })
         
         if (response && response.records) {
           // 处理大数字ID问题
@@ -589,11 +585,6 @@ export default {
         }
       } catch (error) {
         console.error('获取活动列表失败:', error)
-        console.error('错误详情:', {
-          message: error.message,
-          response: error.response,
-          stack: error.stack
-        })
         message.error(error.message || '获取活动列表失败')
       } finally {
         loading.value = false
@@ -815,11 +806,8 @@ export default {
     // 创建活动
     const handleCreate = async () => {
       try {
-        console.log('开始创建活动，当前表单数据:', createForm)
-        
         // 先进行表单验证
         if (!validateForm()) {
-          console.log('表单验证失败')
           return
         }
         
@@ -836,9 +824,7 @@ export default {
           endTime: createForm.endTime
         }
         
-        console.log('创建活动请求数据:', requestData)
         const response = await activityApi.createActivity(requestData)
-        console.log('创建活动响应:', response)
         
         message.success('活动创建成功')
         createModalVisible.value = false
@@ -867,11 +853,8 @@ export default {
     // 更新活动
     const handleUpdate = async () => {
       try {
-        console.log('开始更新活动，当前表单数据:', editForm)
-        
         // 先进行表单验证
         if (!validateEditForm()) {
-          console.log('编辑表单验证失败')
           return
         }
         
@@ -888,10 +871,7 @@ export default {
           activityStatus: editForm.activityStatus
         }
         
-        console.log('更新活动请求数据:', requestData)
-        console.log('activityId类型:', typeof requestData.activityId, '值:', requestData.activityId)
         const response = await activityApi.updateActivity(requestData)
-        console.log('更新活动响应:', response)
         
         message.success('活动更新成功')
         editModalVisible.value = false
@@ -899,12 +879,6 @@ export default {
         fetchActivityList()
       } catch (error) {
         console.error('更新活动失败:', error)
-        console.error('错误详情:', {
-          message: error.message,
-          response: error.response,
-          activityId: requestData.activityId,
-          requestData: requestData
-        })
         
         // 这是API请求错误
         if (error.message) {
@@ -942,8 +916,6 @@ export default {
       editForm.endTime = record.endTime ? formatDateTimeForInput(record.endTime) : ''
       editForm.activityStatus = record.activityStatus
       
-      console.log('编辑表单activityId:', editForm.activityId, '类型:', typeof editForm.activityId)
-      
       // 清除编辑表单错误
       clearEditFormErrors()
       
@@ -953,7 +925,6 @@ export default {
 
     // 查看报名列表
     const viewSignList = (record) => {
-      console.log('查看报名列表:', record)
       // 这里可以跳转到报名管理页面
     }
 
@@ -965,18 +936,11 @@ export default {
         okType: 'danger',
         onOk: async () => {
           try {
-            console.log('删除活动ID:', record.activityId, '类型:', typeof record.activityId)
             const response = await activityApi.deleteActivity(record.activityId)
-            console.log('删除活动响应:', response)
             message.success('删除成功')
             fetchActivityList()
           } catch (error) {
             console.error('删除活动失败:', error)
-            console.error('删除活动错误详情:', {
-              message: error.message,
-              response: error.response,
-              activityId: record.activityId
-            })
             message.error(error.message || '删除失败')
           }
         }

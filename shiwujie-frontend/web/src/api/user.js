@@ -147,6 +147,24 @@ class UserApiService extends BaseApiService {
       pageSize
     })
   }
+
+  /**
+   * 将盲人踢出社区
+   * @param {number|string} blindId 盲人ID
+   * @param {number|string} communityId 社区ID
+   * @returns {Promise<boolean>}
+   */
+  removeBlindFromCommunity(blindId, communityId) {
+    const safeBlindId = String(blindId)
+    const safeCommunityId = String(communityId)
+    console.log('🔍 removeBlindFromCommunity - 原始参数:', { blindId, communityId })
+    console.log('🔍 removeBlindFromCommunity - 安全参数:', { safeBlindId, safeCommunityId })
+    
+    return this.post('/blind/removeFromCommunity', {
+      blindId: safeBlindId,
+      communityId: safeCommunityId
+    })
+  }
 }
 
 // 创建单例实例

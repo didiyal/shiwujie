@@ -1,21 +1,17 @@
-import BaseApiService from './base'
+import http from '@/utils/request'
 
 /**
  * 活动管理API服务类
- * 继承自BaseApiService，提供活动相关的API调用
+ * 使用完整的URL路径，不进行拼接
  */
-class ActivityApiService extends BaseApiService {
-  constructor() {
-    super('/activity')
-  }
-
+class ActivityApiService {
   /**
    * 创建活动
    * @param {ActivityCreateRequest} activityData 活动数据
    * @returns {Promise<ActivityVO>}
    */
   createActivity(activityData) {
-    return this.post('/create', activityData)
+    return http.post('/community/activity/add', activityData)
   }
 
   /**
@@ -24,25 +20,25 @@ class ActivityApiService extends BaseApiService {
    * @returns {Promise<ActivityVO>}
    */
   updateActivity(activityData) {
-    return this.post('/update', activityData)
+    return http.post('/community/activity/update', activityData)
   }
 
   /**
    * 删除活动
-   * @param {number} activityId 活动ID
+   * @param {number|string} activityId 活动ID
    * @returns {Promise<boolean>}
    */
   deleteActivity(activityId) {
-    return this.delete('/delete', { activityId })
+    return http.post('/community/activity/delete', null, { params: { activityId } })
   }
 
   /**
    * 获取活动详情
-   * @param {number} activityId 活动ID
+   * @param {number|string} activityId 活动ID
    * @returns {Promise<ActivityVO>}
    */
   getActivityById(activityId) {
-    return this.get('/get/id/vo', { activityId })
+    return http.get('/community/activity/get/vo', { activityId })
   }
 
   /**
@@ -53,7 +49,7 @@ class ActivityApiService extends BaseApiService {
    * @returns {Promise<Page<ActivityVO>>}
    */
   getActivityList(current = 1, size = 10, filters = {}) {
-    return this.get('/list', {
+    return http.get('/community/activity/list/vo', {
       current,
       size,
       ...filters
@@ -66,28 +62,31 @@ class ActivityApiService extends BaseApiService {
    * @returns {Promise<ActivitySignVO>}
    */
   signActivity(signData) {
-    return this.post('/sign', signData)
+    return http.post('/community/activity/sign', signData)
   }
 
   /**
    * 取消活动报名
-   * @param {number} activityId 活动ID
-   * @param {number} volunteerId 志愿者ID
+   * @param {number|string} activityId 活动ID
+   * @param {number|string} volunteerId 志愿者ID
    * @returns {Promise<boolean>}
    */
   cancelActivitySign(activityId, volunteerId) {
-    return this.delete('/sign/cancel', { activityId, volunteerId })
+    return http.delete('/community/activity/sign/cancel', { 
+      activityId, 
+      volunteerId
+    })
   }
 
   /**
    * 获取活动报名列表
-   * @param {number} activityId 活动ID
+   * @param {number|string} activityId 活动ID
    * @param {number} current 当前页
    * @param {number} size 每页大小
    * @returns {Promise<Page<ActivitySignVO>>}
    */
   getActivitySignList(activityId, current = 1, size = 10) {
-    return this.get('/sign/list', {
+    return http.get('/community/activity/sign/list', {
       activityId,
       current,
       size
@@ -100,16 +99,16 @@ class ActivityApiService extends BaseApiService {
    * @returns {Promise<boolean>}
    */
   reviewActivitySign(reviewData) {
-    return this.post('/sign/review', reviewData)
+    return http.post('/community/activity/sign/review', reviewData)
   }
 
   /**
    * 获取活动统计信息
-   * @param {number} activityId 活动ID
+   * @param {number|string} activityId 活动ID
    * @returns {Promise<ActivityStatsVO>}
    */
   getActivityStats(activityId) {
-    return this.get('/stats', { activityId })
+    return http.get('/community/activity/stats', { activityId })
   }
 }
 

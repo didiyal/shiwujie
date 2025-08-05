@@ -62,6 +62,7 @@ request.interceptors.response.use(
       { pattern: /"communityId":\s*(\d{19})/g, replacement: '"communityId":"$1"' },
       { pattern: /"activityId":\s*(\d{19})/g, replacement: '"activityId":"$1"' },
       { pattern: /"blindId":\s*(\d{19})/g, replacement: '"blindId":"$1"' },
+      { pattern: /"helppostId":\s*(\d{19})/g, replacement: '"helppostId":"$1"' },
       { pattern: /"id":\s*(\d{19})/g, replacement: '"id":"$1"' },
       { pattern: /"reviewId":\s*(\d{19})/g, replacement: '"reviewId":"$1"' },
       { pattern: /"familyId":\s*(\d{19})/g, replacement: '"familyId":"$1"' }

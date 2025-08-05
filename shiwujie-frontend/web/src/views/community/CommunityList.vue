@@ -222,12 +222,10 @@ export default {
         return;
       }
       
-      console.log('🔍 搜索社区ID:', searchForm.communityId);
       loading.value = true;
       
       try {
         const response = await communityApi.getCommunityById(searchForm.communityId);
-        console.log('✅ 搜索社区成功:', response);
         
         // 清空原有列表，只显示搜索到的社区
         communityList.value = [response];
@@ -251,12 +249,7 @@ export default {
 
     // 获取用户创建的社区列表
     const loadUserCommunities = async () => {
-      console.log('🔍 开始加载用户社区列表');
-      console.log('🔍 authStore.volunteer:', authStore.volunteer);
-      console.log('🔍 authStore.isLoggedIn:', authStore.isLoggedIn);
-      
       if (!authStore.volunteer) {
-        console.log('❌ authStore.volunteer 为空，重定向到登录页');
         message.error('请先登录');
         router.push('/login');
         return;
@@ -266,10 +259,8 @@ export default {
       try {
         // 获取用户注册的社区ID
         const volunteerId = authStore.volunteer.volunteerId;
-        console.log('🔍 volunteerId:', volunteerId);
         
         if (!volunteerId) {
-          console.log('❌ volunteerId 为空，用户信息不完整');
           message.error('用户信息不完整，请重新登录');
           router.push('/login');
           return;
@@ -277,18 +268,13 @@ export default {
 
         // 从localStorage安全地获取用户创建的社区ID
         const userCommunities = getSafeIdList('userCommunities');
-        console.log('🔍 从localStorage安全获取的社区ID列表:', userCommunities);
-        console.log('🔍 localStorage.getItem("userCommunities"):', localStorage.getItem('userCommunities'));
-        console.log('🔍 localStorage.getItem("token"):', localStorage.getItem('token'));
         
         if (userCommunities.length > 0) {
           // 获取所有用户创建的社区信息
           const communities = [];
           for (const communityId of userCommunities) {
             try {
-              console.log(`🔍 正在获取社区ID ${communityId} 的信息... (类型: ${typeof communityId})`);
               const response = await communityApi.getCommunityById(communityId);
-              console.log(`✅ 社区ID ${communityId} 信息获取成功:`, response);
               // 由于request.js的拦截器已经处理了业务逻辑，这里直接使用返回的数据
               // 添加子社区相关属性
               response.subCommunities = [];
@@ -298,10 +284,9 @@ export default {
               response.subCommunitiesPageSize = 10;
               communities.push(response);
             } catch (error) {
-              console.error(`❌ 获取社区 ${communityId} 信息失败:`, error);
+              console.error(`获取社区 ${communityId} 信息失败:`, error);
               // 如果某个社区获取失败，从localStorage中移除该社区ID
               removeSafeIdFromList('userCommunities', communityId);
-              console.log(`🗑️ 已从localStorage中移除无效的社区ID: ${communityId}`);
             }
           }
           communityList.value = communities;
@@ -325,7 +310,6 @@ export default {
       
       try {
         const response = await communityApi.getSubCommunityList(communityId, page, pageSize);
-        console.log(`✅ 社区 ${communityId} 子社区列表获取成功:`, response);
         
         // 找到对应的社区并更新子社区信息
         const communityIndex = communityList.value.findIndex(c => c.communityId === communityId);
@@ -335,10 +319,9 @@ export default {
           communityList.value[communityIndex].subCommunitiesTotal = response.total || 0;
           communityList.value[communityIndex].subCommunitiesCurrent = page;
           communityList.value[communityIndex].subCommunitiesPageSize = pageSize;
-          console.log(`✅ 已更新社区 ${communityId} 的子社区信息 - 总数: ${response.total}`);
         }
       } catch (error) {
-        console.error(`❌ 获取社区 ${communityId} 子社区列表失败:`, error);
+        console.error(`获取社区 ${communityId} 子社区列表失败:`, error);
         message.error('获取子社区列表失败');
         
         // 找到对应的社区并标记加载失败
@@ -357,7 +340,6 @@ export default {
 
     // 子社区分页处理
     const handleSubCommunityPageChange = async (communityId, page, pageSize) => {
-      console.log(`🔄 子社区分页变化 - 社区ID: ${communityId}, 页码: ${page}, 每页大小: ${pageSize}`);
       await loadSubCommunities(communityId, page, pageSize);
     };
 
@@ -376,7 +358,6 @@ export default {
     const deleteCommunity = async (community) => {
       deletingCommunityId.value = community.communityId;
       try {
-        console.log(`🗑️ 删除社区ID: ${community.communityId}, 类型: ${typeof community.communityId}`);
         const response = await communityApi.deleteCommunity(community.communityId);
         // 由于request.js的拦截器已经处理了业务逻辑，这里直接使用返回的数据
         message.success('社区删除成功');

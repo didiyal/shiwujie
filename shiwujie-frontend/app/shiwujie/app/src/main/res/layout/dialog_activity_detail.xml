@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/white">
+
+    <!-- 标题 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="活动详情"
+        android:textSize="20sp"
+        android:textColor="@color/text_primary"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- 活动名称 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="活动名称："
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/dialog_activity_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textColor="@color/text_primary"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 活动内容 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="活动内容："
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/dialog_activity_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 活动地点 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="活动地点："
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/dialog_activity_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 活动时间 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="活动时间："
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/dialog_activity_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 活动状态 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="活动状态："
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/dialog_activity_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 人数限制 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="人数限制："
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/dialog_max_participants"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- 按钮区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/dialog_btn_close"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginEnd="12dp"
+            android:text="关闭"
+            android:textSize="14sp"
+            android:background="@drawable/button_outline"
+            android:textColor="@color/text_primary"
+            android:minWidth="80dp"
+            android:paddingHorizontal="16dp"/>
+
+        <Button
+            android:id="@+id/dialog_btn_sign_up"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="立即报名"
+            android:textSize="14sp"
+            android:background="@drawable/button_primary"
+            android:textColor="@color/white"
+            android:minWidth="80dp"
+            android:paddingHorizontal="16dp"/>
+
+    </LinearLayout>
+
+</LinearLayout> 

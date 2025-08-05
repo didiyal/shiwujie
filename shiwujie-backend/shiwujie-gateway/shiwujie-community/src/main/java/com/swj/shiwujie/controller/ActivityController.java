@@ -5,6 +5,7 @@ import io.swagger.annotations.Api;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
+import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.community.activity.ActivityVO;
 import com.swj.shiwujie.model.request.community.activity.ActivityAddRequest;
@@ -48,10 +49,16 @@ public class ActivityController {
      */
     @GetMapping("/get/vo")
     @ApiOperation("通过ID查询活动")
-    public BaseResponse<ActivityVO> getActivityVOById(Long id, HttpServletRequest request) {
-        ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
-        ActivityVO activityVO = activityService.getActivityVOById(id, request);
-        return ResultUtils.success(activityVO);
+    public BaseResponse<ActivityVO> getActivityVOById(String id, HttpServletRequest request) {
+        ThrowUtils.throwIf(id == null || id.trim().isEmpty(), ErrorCode.PARAMS_ERROR, "活动ID无效");
+        try {
+            Long activityId = Long.parseLong(id);
+            ThrowUtils.throwIf(activityId <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
+            ActivityVO activityVO = activityService.getActivityVOById(activityId, request);
+            return ResultUtils.success(activityVO);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "活动ID格式错误");
+        }
     }
 
     /**
@@ -70,10 +77,16 @@ public class ActivityController {
      */
     @PostMapping("/delete")
     @ApiOperation("删除活动")
-    public BaseResponse<Boolean> deleteActivity(Long activityId, HttpServletRequest request) {
-        ThrowUtils.throwIf(activityId == null || activityId <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
-        boolean result = activityService.deleteActivity(activityId, request);
-        return ResultUtils.success(result);
+    public BaseResponse<Boolean> deleteActivity(String activityId, HttpServletRequest request) {
+        ThrowUtils.throwIf(activityId == null || activityId.trim().isEmpty(), ErrorCode.PARAMS_ERROR, "活动ID无效");
+        try {
+            Long id = Long.parseLong(activityId);
+            ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
+            boolean result = activityService.deleteActivity(id, request);
+            return ResultUtils.success(result);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "活动ID格式错误");
+        }
     }
 
     /**

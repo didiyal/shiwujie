@@ -10,6 +10,9 @@ import com.swj.shiwujie.data.model.CommunityVO;
 import com.swj.shiwujie.data.model.BlindCommunityJoinRequest;
 import com.swj.shiwujie.data.model.HelppostAddRequest;
 import com.swj.shiwujie.data.model.HelppostVO;
+import com.swj.shiwujie.data.model.ActivityVO;
+import com.swj.shiwujie.data.model.ActivitySignAddRequest;
+import com.swj.shiwujie.data.model.Page;
 
 import java.util.List;
 
@@ -480,6 +483,50 @@ public interface ApiService {
     Call<BaseResponse<HelppostVO>> getBlindHelppostInfo(
             @Header("Authorization") String token,
             @Query("helppostId") Long helppostId
+    );
+
+    // ==================== 活动相关接口 ====================
+
+    /**
+     * 分页查询社区下的活动列表
+     * @param token JWT令牌
+     * @param communityId 社区ID
+     * @param current 当前页码
+     * @param pageSize 每页大小
+     * @param activityStatus 活动状态（可选）
+     * @return 活动列表
+     */
+    @GET("/api/community/activity/list/vo")
+    Call<BaseResponse<Page<ActivityVO>>> getActivityList(
+            @Header("Authorization") String token,
+            @Query("communityId") Long communityId,
+            @Query("current") Long current,
+            @Query("pageSize") Long pageSize,
+            @Query("activityStatus") String activityStatus
+    );
+
+    /**
+     * 根据ID查询活动详情
+     * @param token JWT令牌
+     * @param activityId 活动ID
+     * @return 活动详情
+     */
+    @GET("/api/activity/get")
+    Call<BaseResponse<ActivityVO>> getActivityById(
+            @Header("Authorization") String token,
+            @Query("activityId") Long activityId
+    );
+
+    /**
+     * 活动报名
+     * @param token JWT令牌
+     * @param request 活动报名请求
+     * @return 报名结果
+     */
+    @POST("/api/community/activitysign/add")
+    Call<BaseResponse<Boolean>> addActivitySign(
+            @Header("Authorization") String token,
+            @Body ActivitySignAddRequest request
     );
 
 }

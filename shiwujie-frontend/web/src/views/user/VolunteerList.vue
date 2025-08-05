@@ -118,6 +118,13 @@
             </a-tag>
           </template>
 
+          <!-- 管理员状态列 -->
+          <template v-if="column.key === 'managerStatus'">
+            <a-tag :color="(record.communityManager === '管理员' || record.communityManager === '注册人') ? 'gold' : 'default'">
+              {{ (record.communityManager === '管理员' || record.communityManager === '注册人') ? record.communityManager : '员工' }}
+            </a-tag>
+          </template>
+
           <!-- 评分列 -->
           <template v-if="column.key === 'rating'">
             <a-rate :value="record.rating || 0" disabled :count="5" />
@@ -139,19 +146,47 @@
                 </template>
                 编辑
               </a-button>
-              <!-- 每个志愿者都显示设为管理员按钮 -->
-              <a-button 
-                type="link" 
-                size="small" 
-                danger
-                @click="confirmSetAsManager(record)"
-                :loading="settingManagerId === record.volunteerId"
-              >
-                <template #icon>
-                  <CrownOutlined />
-                </template>
-                设为管理员
-              </a-button>
+              <!-- 根据管理员状态显示不同操作 -->
+              <template v-if="record.communityManager === '管理员' || record.communityManager === '注册人'">
+                <!-- 已经是管理员或注册人，显示管理员标识 -->
+                <a-tag color="gold" style="margin-left: 8px;">
+                  <template #icon>
+                    <CrownOutlined />
+                  </template>
+                  {{ record.communityManager }}
+                </a-tag>
+              </template>
+              <template v-else-if="isRegistrant">
+                <!-- 只有注册人才能看到设为管理员按钮 -->
+                <a-button 
+                  type="link" 
+                  size="small" 
+                  danger
+                  @click="confirmSetAsManager(record)"
+                  :loading="settingManagerId === record.volunteerId"
+                >
+                  <template #icon>
+                    <CrownOutlined />
+                  </template>
+                  设为管理员
+                </a-button>
+              </template>
+              
+              <!-- 删除按钮：只有注册人和管理员可以看到，但注册人不能删除自己 -->
+              <template v-if="(isRegistrant || isAdmin) && record.communityManager !== '注册人'">
+                <a-button 
+                  type="link" 
+                  size="small" 
+                  danger
+                  @click="confirmRemoveVolunteer(record)"
+                  :loading="removingVolunteerId === record.volunteerId"
+                >
+                  <template #icon>
+                    <DeleteOutlined />
+                  </template>
+                  踢出
+                </a-button>
+              </template>
             </a-space>
           </template>
         </template>
@@ -175,6 +210,15 @@
           <a-descriptions-item label="QQ">{{ selectedVolunteer.qqId || '未设置' }}</a-descriptions-item>
           <a-descriptions-item label="在线状态">{{ getOnlineStatusText(selectedVolunteer.onlineStatus) }}</a-descriptions-item>
           <a-descriptions-item label="加入状态">{{ getJoinStatusText(selectedVolunteer.isActivelyJoined) }}</a-descriptions-item>
+          <a-descriptions-item label="社区身份">
+            <a-tag v-if="selectedVolunteer.communityManager === '管理员' || selectedVolunteer.communityManager === '注册人'" color="gold">
+              <template #icon>
+                <CrownOutlined />
+              </template>
+              {{ selectedVolunteer.communityManager }}
+            </a-tag>
+            <span v-else style="color: #999;">员工</span>
+          </a-descriptions-item>
           <a-descriptions-item label="帮助次数">{{ selectedVolunteer.helpCount || 0 }}</a-descriptions-item>
           <a-descriptions-item label="评分">{{ selectedVolunteer.rating || 0 }}</a-descriptions-item>
           <a-descriptions-item label="地址" :span="2">{{ selectedVolunteer.locationAddress || '未设置位置' }}</a-descriptions-item>
@@ -193,7 +237,8 @@ import {
   ReloadOutlined,
   EyeOutlined,
   EditOutlined,
-  CrownOutlined
+  CrownOutlined,
+  DeleteOutlined
 } from '@ant-design/icons-vue'
 import { communityApi } from '@/api/community'
 import { useAuthStore } from '@/stores/auth'
@@ -205,7 +250,8 @@ export default {
     ReloadOutlined,
     EyeOutlined,
     EditOutlined,
-    CrownOutlined
+    CrownOutlined,
+    DeleteOutlined
   },
   setup() {
     const authStore = useAuthStore()
@@ -214,6 +260,7 @@ export default {
     const detailModalVisible = ref(false)
     const selectedVolunteer = ref(null)
     const settingManagerId = ref(null)
+    const removingVolunteerId = ref(null)
 
     const searchForm = reactive({
       keyword: '',
@@ -262,6 +309,11 @@ export default {
         width: 100
       },
       {
+        title: '管理员状态',
+        key: 'managerStatus',
+        width: 120
+      },
+      {
         title: '评分',
         key: 'rating',
         width: 120
@@ -282,7 +334,7 @@ export default {
       {
         title: '操作',
         key: 'action',
-        width: 320,
+        width: 380,
         fixed: 'right'
       }
     ]
@@ -303,7 +355,12 @@ export default {
 
     // 检查当前用户是否是注册人（保留用于其他功能）
     const isRegistrant = computed(() => {
-      return authStore.volunteerInfo?.communityManager === '注册人'
+      return authStore.volunteer?.communityManager === '注册人'
+    })
+
+    // 检查当前用户是否是管理员
+    const isAdmin = computed(() => {
+      return authStore.volunteer?.communityManager === '管理员'
     })
 
     // 获取志愿者列表
@@ -472,6 +529,53 @@ export default {
       }
     }
 
+    // 确认踢出志愿者
+    const confirmRemoveVolunteer = (volunteer) => {
+      Modal.confirm({
+        title: '确认踢出志愿者',
+        content: `确定要将志愿者"${volunteer.name}"从社区中移除吗？`,
+        okText: '确认',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: () => removeVolunteer(volunteer)
+      })
+    }
+
+    // 踢出志愿者
+    const removeVolunteer = async (volunteer) => {
+      removingVolunteerId.value = volunteer.volunteerId
+      try {
+        console.log('🔍 开始踢出志愿者:', volunteer)
+        
+        // 获取用户注册的社区ID列表
+        const userCommunities = JSON.parse(localStorage.getItem('userCommunities') || '[]')
+        if (userCommunities.length === 0) {
+          message.error('您没有管理的社区')
+          return
+        }
+
+        const communityId = userCommunities[0]
+        console.log('🔍 使用社区ID踢出志愿者:', communityId)
+        
+        const response = await communityApi.removeVolunteerFromCommunity(
+          communityId, 
+          volunteer.volunteerId
+        )
+        
+        console.log('✅ 踢出志愿者成功:', response)
+        message.success('踢出志愿者成功')
+        
+        // 刷新志愿者列表
+        await fetchVolunteerList()
+        
+      } catch (error) {
+        console.error('踢出志愿者失败:', error)
+        message.error('踢出志愿者失败')
+      } finally {
+        removingVolunteerId.value = null
+      }
+    }
+
     // 组件挂载时获取数据
     onMounted(() => {
       fetchVolunteerList()
@@ -484,6 +588,7 @@ export default {
       detailModalVisible,
       selectedVolunteer,
       settingManagerId,
+      removingVolunteerId,
       pagination,
       columns,
       totalCount,
@@ -497,10 +602,14 @@ export default {
       editVolunteer,
       confirmSetAsManager,
       setAsManager,
+      confirmRemoveVolunteer,
+      removeVolunteer,
       getGenderText,
       getOnlineStatusText,
       getOnlineStatusColor,
-      getJoinStatusText
+      getJoinStatusText,
+      isRegistrant,
+      isAdmin
     }
   }
 }
