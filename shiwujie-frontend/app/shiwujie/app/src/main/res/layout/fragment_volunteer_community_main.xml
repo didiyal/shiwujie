@@ -90,39 +90,67 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:padding="16dp"
                 android:background="@color/white">
 
-                <EditText
-                    android:id="@+id/activitySearchEditText"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/edit_text_background"
-                    android:hint="Search"
-                    android:paddingHorizontal="16dp"
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="发现精彩活动"
+                    android:textSize="20sp"
                     android:textColor="@color/text_primary"
-                    android:textColorHint="@color/text_hint"
-                    android:textSize="14sp" />
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"/>
 
-                <Button
-                    android:id="@+id/activitySearchButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/button_primary"
-                    android:text="搜索"
-                    android:textColor="@color/white"
-                    android:textSize="14sp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <EditText
+                        android:id="@+id/activitySearchEditText"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/edit_text_background"
+                        android:hint="搜索活动名称、地点或内容"
+                        android:paddingHorizontal="16dp"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_hint"
+                        android:textSize="14sp"
+                        android:inputType="text"
+                        android:imeOptions="actionSearch" />
+
+                    <Button
+                        android:id="@+id/activitySearchButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/button_primary"
+                        android:text="搜索"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:minWidth="60dp"
+                        android:paddingHorizontal="16dp"/>
+
+                </LinearLayout>
             </LinearLayout>
 
             <!-- 活动列表 -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/activityRecyclerView"
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/activitySwipeRefreshLayout"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="8dp" />
+                android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/activityRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp" />
+
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         </LinearLayout>
 

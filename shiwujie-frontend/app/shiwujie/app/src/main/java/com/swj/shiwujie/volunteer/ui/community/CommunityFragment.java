@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.network.ApiCallback;
@@ -28,6 +29,9 @@ import com.swj.shiwujie.data.model.CommunityVO;
 import com.swj.shiwujie.data.model.VolunteerVO;
 import com.swj.shiwujie.data.model.HelppostAddRequest;
 import com.swj.shiwujie.data.model.HelppostVO;
+import com.swj.shiwujie.data.model.ActivityVO;
+import com.swj.shiwujie.data.model.ActivitySignAddRequest;
+import com.swj.shiwujie.data.model.Page;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +56,8 @@ public class CommunityFragment extends Fragment {
     private EditText activitySearchEditText;
     private Button activitySearchButton;
     private RecyclerView activityRecyclerView;
+    private SwipeRefreshLayout activitySwipeRefreshLayout;
+    private ActivityAdapter activityAdapter;
     
     // 社区求助页面组件
     private EditText helpSearchEditText;
@@ -84,6 +90,13 @@ public class CommunityFragment extends Fragment {
     private ApiService apiService;
     private VolunteerVO currentUserInfo;
     private CommunityVO currentCommunity;
+    
+    // 活动相关变量
+    private List<ActivityVO> activityList = new ArrayList<>();
+    private Long currentPage = 1L;
+    private Long pageSize = 10L;
+    private boolean isLoading = false;
+    private boolean hasMoreData = true;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                            ViewGroup container, Bundle savedInstanceState) {
@@ -249,6 +262,9 @@ public class CommunityFragment extends Fragment {
         if (myCommunityLayout != null) {
             myCommunityLayout.setVisibility(View.GONE);
         }
+        
+        // 加载活动列表
+        loadActivityList();
     }
     
     private void showCommunityHelpTab() {
@@ -363,10 +379,37 @@ public class CommunityFragment extends Fragment {
             activitySearchEditText = view.findViewById(R.id.activitySearchEditText);
             activitySearchButton = view.findViewById(R.id.activitySearchButton);
             activityRecyclerView = view.findViewById(R.id.activityRecyclerView);
+            activitySwipeRefreshLayout = view.findViewById(R.id.activitySwipeRefreshLayout);
             
             if (activitySearchButton != null) {
-                activitySearchButton.setOnClickListener(v -> {
-                    Toast.makeText(getContext(), "搜索活动", Toast.LENGTH_SHORT).show();
+                activitySearchButton.setOnClickListener(v -> searchActivity());
+            }
+            
+            // 初始化活动列表
+            if (activityRecyclerView != null) {
+                activityRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+                activityAdapter = new ActivityAdapter(getContext(), activityList);
+                activityRecyclerView.setAdapter(activityAdapter);
+                
+                // 设置活动点击事件
+                activityAdapter.setOnActivityClickListener(new ActivityAdapter.OnActivityClickListener() {
+                    @Override
+                    public void onActivityDetailClick(ActivityVO activity) {
+                        showActivityDetailDialog(activity);
+                    }
+
+                    @Override
+                    public void onActivitySignUpClick(ActivityVO activity) {
+                        signUpForActivity(activity);
+                    }
+                });
+            }
+            
+            // 初始化下拉刷新
+            if (activitySwipeRefreshLayout != null) {
+                activitySwipeRefreshLayout.setOnRefreshListener(() -> {
+                    resetActivityList();
+                    loadActivityList();
                 });
             }
             
@@ -636,5 +679,221 @@ public class CommunityFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+    }
+    
+    // 活动相关方法
+    private void searchActivity() {
+        String keyword = activitySearchEditText.getText().toString().trim();
+        if (keyword.isEmpty()) {
+            // 如果搜索关键词为空，重新加载所有活动
+            resetActivityList();
+            loadActivityList();
+        } else {
+            // 根据关键词过滤活动
+            filterActivitiesByKeyword(keyword);
+        }
+    }
+    
+    private void loadActivityList() {
+        if (isLoading || !hasMoreData) {
+            return;
+        }
+        
+        String token = SharedPrefsUtil.getToken();
+        if (token == null) {
+            Toast.makeText(getContext(), "请先登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 检查用户是否已加入社区
+        if (currentUserInfo == null || currentUserInfo.getCommunityId() == null || currentUserInfo.getCommunityId() <= 0) {
+            Toast.makeText(getContext(), "请先加入社区", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        isLoading = true;
+        
+        apiService.getActivityList("Bearer " + token, currentUserInfo.getCommunityId(), currentPage, pageSize, null)
+                .enqueue(new ApiCallback<Page<ActivityVO>>(getContext()) {
+                    @Override
+                    public void onSuccess(Page<ActivityVO> page) {
+                        isLoading = false;
+                        
+                        if (page != null && page.getRecords() != null) {
+                            if (currentPage == 1) {
+                                // 第一页，直接替换数据
+                                activityList.clear();
+                                activityList.addAll(page.getRecords());
+                            } else {
+                                // 后续页面，追加数据
+                                activityList.addAll(page.getRecords());
+                            }
+                            
+                            // 更新适配器
+                            if (activityAdapter != null) {
+                                activityAdapter.updateData(activityList);
+                            }
+                            
+                            // 更新分页状态
+                            if (page.getRecords().size() < pageSize) {
+                                hasMoreData = false;
+                            } else {
+                                currentPage++;
+                            }
+                        }
+                        
+                        // 停止下拉刷新
+                        if (activitySwipeRefreshLayout != null) {
+                            activitySwipeRefreshLayout.setRefreshing(false);
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        isLoading = false;
+                        Toast.makeText(getContext(), "加载活动列表失败: " + message, Toast.LENGTH_SHORT).show();
+                        
+                        // 停止下拉刷新
+                        if (activitySwipeRefreshLayout != null) {
+                            activitySwipeRefreshLayout.setRefreshing(false);
+                        }
+                    }
+                });
+    }
+    
+    private void resetActivityList() {
+        activityList.clear();
+        currentPage = 1L;
+        hasMoreData = true;
+        if (activityAdapter != null) {
+            activityAdapter.updateData(activityList);
+        }
+    }
+    
+    private void filterActivitiesByKeyword(String keyword) {
+        List<ActivityVO> filteredList = new ArrayList<>();
+        for (ActivityVO activity : activityList) {
+            if (activity.getActivityName() != null && activity.getActivityName().contains(keyword) ||
+                activity.getActivityContent() != null && activity.getActivityContent().contains(keyword) ||
+                activity.getActivityLocation() != null && activity.getActivityLocation().contains(keyword)) {
+                filteredList.add(activity);
+            }
+        }
+        
+        if (activityAdapter != null) {
+            activityAdapter.updateData(filteredList);
+        }
+    }
+    
+    private void showActivityDetailDialog(ActivityVO activity) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_activity_detail, null);
+        builder.setView(dialogView);
+        
+        AlertDialog dialog = builder.create();
+        
+        // 获取对话框中的组件
+        TextView activityNameText = dialogView.findViewById(R.id.dialog_activity_name);
+        TextView activityContentText = dialogView.findViewById(R.id.dialog_activity_content);
+        TextView activityLocationText = dialogView.findViewById(R.id.dialog_activity_location);
+        TextView activityTimeText = dialogView.findViewById(R.id.dialog_activity_time);
+        TextView activityStatusText = dialogView.findViewById(R.id.dialog_activity_status);
+        TextView maxParticipantsText = dialogView.findViewById(R.id.dialog_max_participants);
+        Button closeButton = dialogView.findViewById(R.id.dialog_btn_close);
+        Button signUpButton = dialogView.findViewById(R.id.dialog_btn_sign_up);
+        
+        // 设置活动信息
+        activityNameText.setText(activity.getActivityName());
+        activityContentText.setText(activity.getActivityContent());
+        activityLocationText.setText(activity.getActivityLocation());
+        
+        // 格式化时间
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault());
+        String timeText = "";
+        if (activity.getStartTime() != null) {
+            timeText += "开始: " + sdf.format(activity.getStartTime());
+        }
+        if (activity.getEndTime() != null) {
+            timeText += "\n结束: " + sdf.format(activity.getEndTime());
+        }
+        activityTimeText.setText(timeText);
+        
+        // 设置状态
+        activityStatusText.setText(getActivityStatusText(activity.getActivityStatus()));
+        
+        // 设置人数限制
+        if (activity.getMaxParticipants() != null) {
+            maxParticipantsText.setText("人数限制: " + activity.getMaxParticipants() + "人");
+        } else {
+            maxParticipantsText.setText("人数限制: 不限");
+        }
+        
+        // 设置按钮点击事件
+        closeButton.setOnClickListener(v -> dialog.dismiss());
+        signUpButton.setOnClickListener(v -> {
+            dialog.dismiss();
+            signUpForActivity(activity);
+        });
+        
+        dialog.show();
+    }
+    
+    private void signUpForActivity(ActivityVO activity) {
+        // 检查活动状态
+        if ("2".equals(activity.getActivityStatus()) || "3".equals(activity.getActivityStatus())) {
+            Toast.makeText(getContext(), "活动已结束或已取消，无法报名", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 显示确认对话框
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("确认报名")
+                .setMessage("确定要报名参加活动 \"" + activity.getActivityName() + "\" 吗？")
+                .setPositiveButton("确定", (dialog, which) -> {
+                    submitActivitySignUp(activity);
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+    
+    private void submitActivitySignUp(ActivityVO activity) {
+        String token = SharedPrefsUtil.getToken();
+        if (token == null) {
+            Toast.makeText(getContext(), "请先登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (currentUserInfo == null) {
+            Toast.makeText(getContext(), "用户信息获取失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        ActivitySignAddRequest request = new ActivitySignAddRequest();
+        request.setActivityId(activity.getActivityId());
+        request.setSignUserId(currentUserInfo.getVolunteerId());
+        request.setSignUserType("volunteer"); // 志愿者用户类型
+        request.setCommunityId(currentUserInfo.getCommunityId());
+        
+        apiService.addActivitySign("Bearer " + token, request).enqueue(new ApiCallback<Boolean>(getContext()) {
+            @Override
+            public void onSuccess(Boolean result) {
+                Toast.makeText(getContext(), "活动报名成功", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(String message) {
+                Toast.makeText(getContext(), "活动报名失败: " + message, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    
+    private String getActivityStatusText(String status) {
+        switch (status) {
+            case "0": return "未开始";
+            case "1": return "进行中";
+            case "2": return "已结束";
+            case "3": return "已取消";
+            default: return "未知";
+        }
     }
 } 
