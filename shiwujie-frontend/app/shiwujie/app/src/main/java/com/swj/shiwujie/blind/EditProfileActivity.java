@@ -187,8 +187,10 @@ public class EditProfileActivity extends AppCompatActivity {
         blind.setOtherInfo(otherInfo);
 
         // 只有未完成身份校验时才校验和提交残疾证号
-        String disabilityCard = etDisabilityCard.getText().toString().trim();
+        String disabilityCard = null; // 默认为null
         if (etDisabilityCard.isEnabled()) {
+            // 用户可以编辑残疾证，说明还未验证，需要传递新的残疾证号
+            disabilityCard = etDisabilityCard.getText().toString().trim();
             if (TextUtils.isEmpty(disabilityCard)) {
                 Toast.makeText(this, "残疾证号不能为空", Toast.LENGTH_SHORT).show();
                 return;
@@ -198,6 +200,7 @@ public class EditProfileActivity extends AppCompatActivity {
                 return;
             }
         }
+        // 如果已验证，disabilityCard保持为null，后端就不会进行验证
         blind.setDisabilityCard(disabilityCard);
 
         // 调用更新用户信息的API

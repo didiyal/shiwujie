@@ -1,203 +1,232 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
-    <!-- 顶部蓝色背景区域 -->
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/layoutUserInfo"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:background="#1677FF"
-        app:layout_constraintHeight_percent="0.3"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_height="wrap_content">
 
-        <!-- 标题 -->
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
+        <!-- 顶部状态栏占位 -->
+        <View
+            android:id="@+id/statusBarSpacer"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+             android:background="#1677FF"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 顶部蓝色背景区域 -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layoutUserInfo"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:background="#1677FF"
+            android:minHeight="200dp"
+            app:layout_constraintHeight_percent="0.25"
+            app:layout_constraintTop_toBottomOf="@id/statusBarSpacer">
+
+            <!-- 标题 -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="个人中心"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- 用户头像 -->
+            <ImageView
+                android:id="@+id/ivAvatar"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="@android:color/white"
+                android:padding="2dp"
+                android:src="@mipmap/ic_launcher"
+                app:layout_constraintDimensionRatio="1:1"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toLeftOf="@id/userInfoContainer"
+                app:layout_constraintTop_toBottomOf="@id/tvTitle"
+                app:layout_constraintWidth_percent="0.2" />
+
+            <!-- 用户信息容器 -->
+            <LinearLayout
+                android:id="@+id/userInfoContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical"
+                app:layout_constraintLeft_toRightOf="@id/ivAvatar"
+                app:layout_constraintRight_toLeftOf="@id/ivBrainIcon"
+                app:layout_constraintTop_toTopOf="@id/ivAvatar">
+
+                <!-- 用户名 -->
+                <TextView
+                    android:id="@+id/tvUsername"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="用户名：未设置"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp" />
+
+                <!-- 社区状态 -->
+                <TextView
+                    android:id="@+id/tvCommunityStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="未加入社区"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+            <!-- 右上角图标 -->
+            <ImageView
+                android:id="@+id/ivBrainIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="16dp"
+                android:src="@drawable/ic_notifications_black_24dp"
+                android:tint="@android:color/white"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- 白色卡片区域 -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardInfo"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="-20dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toBottomOf="@id/layoutUserInfo">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- 账号 -->
+                <TextView
+                    android:id="@+id/tvAccount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="账号：19979638"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
+
+                <!-- 创建/加入家庭按钮 -->
+                <TextView
+                    android:id="@+id/btnFamily"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="#1677FF"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="创建/加入家庭"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+
+                <!-- 身份认证状态 -->
+                <TextView
+                    android:id="@+id/tvAuthStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="身份已认证"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
+
+                <!-- 身份证号显示（脱敏） -->
+                <TextView
+                    android:id="@+id/tvIdCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text=""
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
+                <!-- 修改个人信息按钮 -->
+                <TextView
+                    android:id="@+id/btnEditInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="#F5F5F5"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:text="修改个人信息"
+                    android:textColor="#2196F3"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- 功能按钮区域 -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
-            android:text="个人中心"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toBottomOf="@id/cardInfo">
 
-        <!-- 用户头像 -->
-        <ImageView
-            android:id="@+id/ivAvatar"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="24dp"
-            android:background="@android:color/white"
-            android:padding="2dp"
-            android:src="@mipmap/ic_launcher"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-        <!-- 用户名 -->
-        <TextView
-            android:id="@+id/tvUsername"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="用户名：未设置"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            app:layout_constraintLeft_toRightOf="@id/ivAvatar"
-            app:layout_constraintTop_toTopOf="@id/ivAvatar" />
+                <!-- 退出登录按钮 -->
+                <TextView
+                    android:id="@+id/btnLogout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:padding="16dp"
+                    android:text="退出登录"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
 
-        <!-- 社区状态 -->
-        <TextView
-            android:id="@+id/tvCommunityStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
-            android:text="未加入社区"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            app:layout_constraintLeft_toRightOf="@id/ivAvatar"
-            app:layout_constraintTop_toBottomOf="@id/tvUsername" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE" />
 
-        <!-- 右上角图标 -->
-        <ImageView
-            android:id="@+id/ivBrainIcon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_margin="16dp"
-            android:src="@drawable/ic_notifications_black_24dp"
-            android:tint="@android:color/white"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+                <!-- 注销账户按钮 -->
+                <TextView
+                    android:id="@+id/btnDeleteAccount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:padding="16dp"
+                    android:text="注销账户"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 白色卡片区域 -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cardInfo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="-40dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutUserInfo">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <!-- 账号 -->
-            <TextView
-                android:id="@+id/tvAccount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="账号：19979638"
-                android:textColor="@android:color/black"
-                android:textSize="18sp" />
-
-            <!-- 创建/加入家庭按钮 -->
-            <TextView
-                android:id="@+id/btnFamily"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="#1677FF"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="6dp"
-                android:text="创建/加入家庭"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-
-            <!-- 身份认证状态 -->
-            <TextView
-                android:id="@+id/tvAuthStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="身份已认证"
-                android:textColor="@android:color/black"
-                android:textSize="18sp" />
-
-            <!-- 身份证号显示（脱敏） -->
-            <TextView
-                android:id="@+id/tvIdCard"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text=""
-                android:textColor="@android:color/black"
-                android:textSize="16sp"
-                android:visibility="gone"/>
-
-            <!-- 修改个人信息按钮 -->
-            <TextView
-                android:id="@+id/btnEditInfo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="#F5F5F5"
-                android:gravity="center"
-                android:padding="12dp"
-                android:text="修改个人信息"
-                android:textColor="#2196F3"
-                android:textSize="16sp" />
-
-        </LinearLayout>
-
-    </androidx.cardview.widget.CardView>
-
-    <!-- 功能按钮区域 -->
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        app:layout_constraintTop_toBottomOf="@id/cardInfo">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- 退出登录按钮 -->
-            <TextView
-                android:id="@+id/btnLogout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?android:attr/selectableItemBackground"
-                android:padding="16dp"
-                android:text="退出登录"
-                android:textColor="@android:color/black"
-                android:textSize="16sp" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#EEEEEE" />
-
-            <!-- 注销账户按钮 -->
-            <TextView
-                android:id="@+id/btnDeleteAccount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?android:attr/selectableItemBackground"
-                android:padding="16dp"
-                android:text="注销账户"
-                android:textColor="@android:color/black"
-                android:textSize="16sp" />
-
-        </LinearLayout>
-
-    </androidx.cardview.widget.CardView>
-
-</androidx.constraintlayout.widget.ConstraintLayout> 
+</ScrollView>

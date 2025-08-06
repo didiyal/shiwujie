@@ -72,11 +72,15 @@ public class ProfileFragment extends Fragment {
     }
 
     private void initListeners() {
-        btnFamily.setOnClickListener(v -> handleFamilyClick());
+        btnFamily.setOnClickListener(v -> {
+            android.util.Log.d("ProfileFragment", "家庭按钮被点击");
+            handleFamilyClick();
+        });
         btnEditInfo.setOnClickListener(v -> handleEditInfoClick());
         btnLogout.setOnClickListener(v -> handleLogoutClick());
         btnDeleteAccount.setOnClickListener(v -> handleDeleteAccountClick());
         tvCommunityStatus.setOnClickListener(v -> handleCommunityClick()); // 修改为新的控件
+        android.util.Log.d("ProfileFragment", "所有监听器设置完成");
     }
 
     private void fetchUserInfo() {
@@ -125,9 +129,8 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateUI(BlindVO data) {
-        // 更新账号信息（使用blindId）
-        tvAccount.setText("账号：" + data.getBlindId());
-
+        // 显示手机号
+        tvAccount.setText("手机号：" + data.getPhone());
         // 更新用户名
         String name = data.getName();
         tvUsername.setText("用户名：" + (name != null && !name.isEmpty() ? name : "未设置"));
@@ -200,11 +203,35 @@ public class ProfileFragment extends Fragment {
     }
 
     private void handleFamilyClick() {
+        android.util.Log.d("ProfileFragment", "handleFamilyClick被调用");
         BlindVO userInfo = UserInfoManager.getCurrentUserInfo();
         if (userInfo != null) {
-            // 无论是否已加入家庭，都可以点击跳转
-            // TODO: 跳转到家庭页面
-            Toast.makeText(requireContext(), "即将跳转到家庭页面", Toast.LENGTH_SHORT).show();
+            android.util.Log.d("ProfileFragment", "用户信息获取成功，准备跳转到家庭页面");
+            // 跳转到盲人家庭页面
+            if (getActivity() != null) {
+                android.util.Log.d("ProfileFragment", "Activity存在，开始导航");
+                try {
+                    // 使用NavController导航到家庭页面
+                    androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                    android.util.Log.d("ProfileFragment", "NavController获取成功，开始导航到家庭页面");
+                    
+                    // 尝试使用popBackStack先清除当前页面，然后导航
+                    navController.popBackStack();
+                    navController.navigate(R.id.navigation_family);
+                    
+                    android.util.Log.d("ProfileFragment", "导航命令已发送");
+                    Toast.makeText(requireContext(), "正在跳转到家庭页面", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    android.util.Log.e("ProfileFragment", "导航失败", e);
+                    Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                android.util.Log.e("ProfileFragment", "Activity为null");
+                Toast.makeText(requireContext(), "页面跳转失败", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            android.util.Log.e("ProfileFragment", "用户信息为null");
+            Toast.makeText(requireContext(), "用户信息无效", Toast.LENGTH_SHORT).show();
         }
     }
 
