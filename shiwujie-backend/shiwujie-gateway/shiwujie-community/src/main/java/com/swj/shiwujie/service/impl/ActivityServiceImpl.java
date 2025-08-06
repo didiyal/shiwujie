@@ -27,10 +27,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
-* @author Administrator
-* @description 针对表【Activity(活动信息表)】的数据库操作Service实现
-* @createDate 2025-07-26 22:31:08
-*/
+ * @author Administrator
+ * @description 针对表【Activity(活动信息表)】的数据库操作Service实现
+ * @createDate 2025-07-26 22:31:08
+ */
 @Service
 public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements ActivityService {
 
@@ -110,15 +110,12 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
 
     @Override
     public boolean updateActivity(ActivityUpdateRequest activityUpdateRequest, HttpServletRequest request) {
-        String idStr = activityUpdateRequest.getActivityId();
-        ThrowUtils.throwIf(idStr == null || idStr.trim().isEmpty(), ErrorCode.PARAMS_ERROR, "活动ID无效");
-        
-        try {
-            Long id = Long.parseLong(idStr);
-            ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
-            
-            Activity activity = this.getById(id);
-            ThrowUtils.throwIf(activity == null, ErrorCode.SYSTEM_ERROR, "活动不存在");
+        Long activityId = activityUpdateRequest.getActivityId();
+        ThrowUtils.throwIf(activityId == null, ErrorCode.PARAMS_ERROR, "活动ID无效");
+
+
+        Activity activity = this.getById(activityId);
+        ThrowUtils.throwIf(activity == null, ErrorCode.SYSTEM_ERROR, "活动不存在");
 
         // 更新活动信息
         if (StringUtils.isNotBlank(activityUpdateRequest.getActivityName())) {
@@ -149,9 +146,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         }
 
         return this.updateById(activity);
-        } catch (NumberFormatException e) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "活动ID格式错误");
-        }
+
     }
 
     /**

@@ -53,7 +53,21 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
 
         // 查询活动是否存在
         Activity activity = activityService.getById(activityId);
-        ThrowUtils.throwIf(activity == null, ErrorCode.SYSTEM_ERROR, "活动不存在");
+        ThrowUtils.throwIf(ObjUtil.isNull(activity), ErrorCode.PARAMS_ERROR,"活动不存在");
+
+        // 查询用户是否报名
+        QueryWrapper<Activitysign> queryWrapper = new QueryWrapper<>();
+        if(ObjUtil.isNotNull(activityId)){
+            queryWrapper.eq("activity_id", activityId);
+        }
+        if(ObjUtil.isNotNull(blindId)){
+            queryWrapper.eq("blind_id", blindId);
+        }
+        if(ObjUtil.isNotNull(volunteerId)){
+            queryWrapper.eq("volunteer_id", volunteerId);
+        }
+        long count = this.count(queryWrapper);
+        ThrowUtils.throwIf(count == 1, ErrorCode.SYSTEM_ERROR, "活动已报名");
 
         // 创建活动报名签到记录
         Activitysign activitysign = new Activitysign();
@@ -87,8 +101,6 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
         Integer current = activitySignQueryRequest.getCurrent();
         Integer pageSize = activitySignQueryRequest.getPageSize();
 
-        // 活动ID和社区ID校验
-        ThrowUtils.throwIf(activityId == null || activityId <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
 
         // 分页查询
         Page<Activitysign> page = new Page<>(current, pageSize);
