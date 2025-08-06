@@ -3,9 +3,12 @@ package com.swj.shiwujie.volunteer.ui.profile;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,6 +38,7 @@ public class ProfileFragment extends Fragment {
     private TextView tvCommunityStatus;
     private TextView btnFamily;
     private TextView btnEditInfo;
+    private TextView btnChangePassword;
     private TextView btnLogout;
     private TextView btnDeleteAccount;
     private ApiService apiService;
@@ -56,6 +60,7 @@ public class ProfileFragment extends Fragment {
         tvCommunityStatus = root.findViewById(R.id.tvCommunityStatus);
         btnFamily = root.findViewById(R.id.btnFamily);
         btnEditInfo = root.findViewById(R.id.btnEditInfo);
+        btnChangePassword = root.findViewById(R.id.btnChangePassword);
         btnLogout = root.findViewById(R.id.btnLogout);
         btnDeleteAccount = root.findViewById(R.id.btnDeleteAccount);
     }
@@ -73,6 +78,7 @@ public class ProfileFragment extends Fragment {
             handleFamilyClick();
         });
         btnEditInfo.setOnClickListener(v -> handleEditInfoClick());
+        btnChangePassword.setOnClickListener(v -> handleChangePasswordClick());
         btnLogout.setOnClickListener(v -> handleLogoutClick());
         btnDeleteAccount.setOnClickListener(v -> handleDeleteAccountClick());
         tvCommunityStatus.setOnClickListener(v -> handleCommunityClick());
@@ -89,14 +95,14 @@ public class ProfileFragment extends Fragment {
         }
 
         apiService.getVolunteerVOById("Bearer " + token, userId).enqueue(new ApiCallback<VolunteerVO>(requireContext()) {
-            @Override
-            public void onSuccess(VolunteerVO data) {
-                updateUI(data);
-                // 取消未实名弹窗
-                // if (data.getIdCard() == null || data.getIdCard().isEmpty()) {
-                //     showIdCardVerificationDialog();
-                // }
-            }
+                         @Override
+             public void onSuccess(VolunteerVO data) {
+                 updateUI(data);
+                 // 全局实名认证检查由VolunteerHomeActivity处理，这里不再重复检查
+                 // if (data.getIdCard() == null || data.getIdCard().isEmpty()) {
+                 //     showIdCardVerificationDialog();
+                 // }
+             }
 
             @Override
             public void onError(String message) {
@@ -158,9 +164,80 @@ public class ProfileFragment extends Fragment {
                 .setTitle("身份验证提醒")
                 .setMessage("您还未进行实名认证，是否现在进行认证？")
                 .setPositiveButton("立即认证", (dialog, which) -> {
-                    // TODO: 跳转到身份验证页面
+                    showIdCardInputDialog();
                 })
+                .setNegativeButton("取消", null)
                 .show();
+    }
+
+    private void showIdCardInputDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_id_card_verification, null);
+        builder.setView(dialogView);
+
+        EditText etIdCard = dialogView.findViewById(R.id.etIdCard);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(true); // 允许点击外部取消
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirm.setOnClickListener(v -> {
+            String idCard = etIdCard.getText().toString().trim();
+
+            // 验证身份证号
+            if (TextUtils.isEmpty(idCard)) {
+                Toast.makeText(requireContext(), "身份证号不能为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!idCard.matches("^[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[0-9Xx]$")) {
+                Toast.makeText(requireContext(), "身份证号格式不正确", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 调用实名认证API
+            performIdCardVerification(idCard, dialog);
+        });
+
+        dialog.show();
+    }
+
+    private void performIdCardVerification(String idCard, AlertDialog dialog) {
+        String token = SharedPrefsUtil.getToken();
+        Long userId = SharedPrefsUtil.getUserId();
+
+        if (token == null || userId == null) {
+            Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        
+        VolunteerVO volunteer = new VolunteerVO();
+        volunteer.setVolunteerId(userId);
+        volunteer.setIdCard(idCard);
+        volunteer.setGender(0); 
+
+        // 调用更新用户信息的API
+        apiService.updateVolunteerInfo(
+                "Bearer " + token,
+                volunteer
+        ).enqueue(new ApiCallback<Boolean>(requireContext()) {
+            @Override
+            public void onSuccess(Boolean response) {
+                Toast.makeText(requireContext(), "实名认证成功", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+                // 重新获取用户信息以更新UI
+                fetchUserInfo();
+            }
+
+            @Override
+            public void onError(String message) {
+                Toast.makeText(requireContext(), "实名认证失败：" + message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void handleFamilyClick() {
@@ -198,6 +275,72 @@ public class ProfileFragment extends Fragment {
 
     private void handleEditInfoClick() {
         NavigationHelper.toVolunteerEditProfile(requireContext());
+    }
+
+    private void handleChangePasswordClick() {
+        showChangePasswordDialog();
+    }
+
+    private void showChangePasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_change_password, null);
+        builder.setView(dialogView);
+
+        EditText etOriginPassword = dialogView.findViewById(R.id.etOriginPassword);
+        EditText etNewPassword = dialogView.findViewById(R.id.etNewPassword);
+        EditText etConfirmPassword = dialogView.findViewById(R.id.etConfirmPassword);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+
+        AlertDialog dialog = builder.create();
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirm.setOnClickListener(v -> {
+            String originPassword = etOriginPassword.getText().toString().trim();
+            String newPassword = etNewPassword.getText().toString().trim();
+            String confirmPassword = etConfirmPassword.getText().toString().trim();
+
+            // 验证新密码
+            if (TextUtils.isEmpty(newPassword)) {
+                Toast.makeText(requireContext(), "新密码不能为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                Toast.makeText(requireContext(), "两次输入的密码不一致", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 调用修改密码API
+            String token = SharedPrefsUtil.getToken();
+            Long userId = SharedPrefsUtil.getUserId();
+
+            if (token == null || userId == null) {
+                Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            apiService.updateVolunteerPassword(
+                    "Bearer " + token,
+                    userId,
+                    originPassword,
+                    newPassword
+            ).enqueue(new ApiCallback<Boolean>(requireContext()) {
+                @Override
+                public void onSuccess(Boolean response) {
+                    Toast.makeText(requireContext(), "密码修改成功", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                }
+
+                @Override
+                public void onError(String message) {
+                    Toast.makeText(requireContext(), "修改失败：" + message, Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        dialog.show();
     }
 
     private void handleLogoutClick() {
