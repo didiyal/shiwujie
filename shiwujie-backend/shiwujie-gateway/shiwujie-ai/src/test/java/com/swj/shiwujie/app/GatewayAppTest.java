@@ -12,19 +12,11 @@ class GatewayAppTest {
     @Resource
     private GatewayApp gatewayApp;
 
-
     @Test
-    void doChatWithText() {
-        gatewayApp.doChatWithText("你好,我叫李四",10000L);
-        gatewayApp.doChatWithText("我想要买锅,一个菜刀",10000L);
-        gatewayApp.doChatWithText("我想干什么来着",10000L);
-    }
-
-    @Test
-    void doChatWithImage() {
-        gatewayApp.doChatWithText("你好,我叫李四",10000L);
-        gatewayApp.doChatWithText("我想要买锅,一个菜刀",10000L);
-        gatewayApp.doChatWithText("我想干什么来着",10000L);
-        gatewayApp.doChatWithImage("我叫什么来着,我想识别图片","https://java2ai.com/img/user/ai/tutorials/multimodality/multimodal.test.png",10000L);
+    void analysisText() {
+        gatewayApp.analysisText("这是复杂的问题",10000L);
+        gatewayApp.analysisText("这是简单的问题",10000L);
+        gatewayApp.analysisImage("https://img1.baidu.com/it/u=2114716004,220994554&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=666",10000L);
+        gatewayApp.analysisText("我刚刚问了几个问题,现在调用工具,并给出结果",10000L);
     }
 }

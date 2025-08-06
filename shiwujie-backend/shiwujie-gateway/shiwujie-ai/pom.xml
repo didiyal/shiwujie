@@ -8,7 +8,7 @@
         <version>3.4.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.swj.shiwujie</groupId>
+    <groupId>com.swj</groupId>
     <artifactId>shiwujieAi</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>shiwujieAi</name>
@@ -58,21 +58,29 @@
             </exclusions>
         </dependency>
         <!-- 质谱AI大模型 -->
+<!--        <dependency>-->
+<!--            <groupId>ai.z.openapi</groupId>-->
+<!--            <artifactId>zai-sdk</artifactId>-->
+<!--            <version>0.0.2</version>-->
+<!--        </dependency>-->
+        <!--springAI 读取mackdown格式文件 -->
         <dependency>
-            <groupId>ai.z.openapi</groupId>
-            <artifactId>zai-sdk</artifactId>
-            <version>0.0.2</version>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-markdown-document-reader</artifactId>
+            <version>1.0.0-M6</version>
         </dependency>
+
+
+
+
+
+
         <!--knife4j接口文档-->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
             <version>4.3.0</version>
         </dependency>
-
-
-
-
         <!-- 自定义持久化的序列化库-->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
@@ -110,10 +118,6 @@
             <groupId>org.springframework.session</groupId>
             <artifactId>spring-session-data-redis</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-webflux</artifactId>-->
-<!--        </dependency>-->
         <!-- Junit测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

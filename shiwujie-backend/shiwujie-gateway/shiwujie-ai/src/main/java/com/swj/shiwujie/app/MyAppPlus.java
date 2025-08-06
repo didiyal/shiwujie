@@ -18,11 +18,11 @@ import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvis
 
 
 /**
- * 决策APP
+ * 任务处理app(复杂任务)
  */
 @Slf4j
 @Component
-public class GatewayApp {
+public class MyAppPlus {
 
 
     /**
@@ -35,17 +35,8 @@ public class GatewayApp {
      * 系统提示词
      */
     private final String systemPrompt =
-            "你是视无界APP的问题评估助手（视无界是服务视障人士的安卓软件），核心任务是根据用户输入选择对应工具处理问题。\n" +
-                    "可用工具：简单问题处理工具、复杂问题处理工具。\n" +
-                    "处理规则：\n" +
-                    "1. 用户输入仅存在以下两种组合之一：\n" +
-                    "   - 组合一：text（文字问题） + blindId（用户唯一标识）\n" +
-                    "   - 组合二：image（图片地址） + blindId（用户唯一标识）\n" +
-                    "2. 若为组合二（含image），直接调用【简单问题处理工具】；\n" +
-                    "3. 若为组合一（含text），需先评估问题复杂程度：\n" +
-                    "   - 简单问题（如基础操作咨询、功能查询等）调用【简单问题处理工具】；\n" +
-                    "   - 复杂问题（如故障排查、个性化需求等）调用【复杂问题处理工具】；\n" +
-                    "输出要求：每次完成工具调用后，必须明确告知所调用的工具名称（如：“已调用简单问题处理工具”）。";
+            "你是视无界APP的AI智能助手Plus（视无界是服务视障人士的安卓软件），核心任务是根据用户的问题处理问题。";
+
 
 
     private final ChatMemory chatMemory;
@@ -53,11 +44,10 @@ public class GatewayApp {
 
     /**
      * 构造
-     *
      * @param dashscopeChatModel 阿里云灵积大模型
-     * @param redisChatMemory    自定义redis对话存储
+     * @param redisChatMemory 自定义redis对话存储
      */
-    public GatewayApp(ChatModel dashscopeChatModel, RedisChatMemory redisChatMemory) {
+    public MyAppPlus(ChatModel dashscopeChatModel, RedisChatMemory redisChatMemory){
 
         // 引入基于redis自定义存储的bean
         this.chatMemory = redisChatMemory;
@@ -75,40 +65,43 @@ public class GatewayApp {
 
 
     /**
-     * 问题分析
-     *
+     * 与大模型文字交流
      * @param text
      * @return
      */
-    public String analysisText(String text,  Long blindId) {
+    public String doChatWithText(String text,Long blindId){
         ChatResponse chatResponse = chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
-                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                .user("text:" + text +";" +"blindId:" + blindId)
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                .user(text)
                 .call()
                 .chatResponse();
-        return chatResponse.getResult().getOutput().getText();
+        String res = chatResponse.getResult().getOutput().getText();
+        return res;
     }
 
 
 
     /**
-     * 问题分析
-     *
+     * 与大模型文字交流
      * @param image
      * @return
      */
-    public String analysisImage(String image, Long blindId) {
+    public String doChatWithImage(String text,String image,Long blindId){
         ChatResponse chatResponse = chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
-                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                .user(u -> u.text("image:" + image)
-                        .media(MimeTypeUtils.IMAGE_PNG, URLUtil.url(image))
-                )
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                .user(u -> u.text("这个图片展示了什么信息")
+                        .media(MimeTypeUtils.IMAGE_PNG, URLUtil.url(image)))
+                .user(text)
                 .call()
                 .chatResponse();
-        return chatResponse.getResult().getOutput().getText();
+        String res = chatResponse.getResult().getOutput().getText();
+        return res;
     }
+
+
+
 
 
 }
