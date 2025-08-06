@@ -2,6 +2,7 @@ package com.swj.shiwujie.app;
 
 
 import cn.hutool.core.util.URLUtil;
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import com.swj.shiwujie.advisor.MyLoggerAdvisor;
 import com.swj.shiwujie.chatmemory.RedisChatMemory;
 import jakarta.annotation.Resource;
@@ -9,7 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -44,21 +47,30 @@ public class MyApp {
     private final ChatMemory chatMemory;
 
 
+    // 自定义基于云知识库的向量存储
     @Resource
-    private VectorStore myVectorStore;
+    private Advisor myRagCloudAdvisor;
 
     /**
      * 构造
      *
-     * @param dashscopeChatModel 阿里云灵积大模型
+     * @param chatModel 阿里云灵积大模型
      * @param redisChatMemory    自定义redis对话存储
      */
-    public MyApp(ChatModel dashscopeChatModel, RedisChatMemory redisChatMemory) {
+    public MyApp(DashScopeChatModel chatModel, RedisChatMemory redisChatMemory) {
 
-        // 引入基于redis自定义存储的bean
-        this.chatMemory = redisChatMemory;
+        // 引入基于redis自定义存储的ChatMemory
+//        this.chatMemory = redisChatMemory;
 
-        this.chatClient = ChatClient.builder(dashscopeChatModel)
+        //基于内存存储的ChatMemory
+        this.chatMemory = new InMemoryChatMemory();
+
+
+        // 模型名
+        String model = chatModel.getDefaultOptions().getModel();
+        log.info(model);
+
+        this.chatClient = ChatClient.builder(chatModel)
                 .defaultSystem(systemPrompt)
                 .defaultAdvisors(
                         // 自定义日志校验
@@ -80,7 +92,7 @@ public class MyApp {
         ChatResponse chatResponse = chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                .advisors(new QuestionAnswerAdvisor(myVectorStore))
+                .advisors(myRagCloudAdvisor)
                 .user(text)
                 .call()
                 .chatResponse();
@@ -90,7 +102,7 @@ public class MyApp {
 
 
     /**
-     * 与大模型文字交流
+     * 与大模型图片识别
      *
      * @param image
      * @return
@@ -99,7 +111,7 @@ public class MyApp {
         ChatResponse chatResponse = chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                .advisors(new QuestionAnswerAdvisor(myVectorStore))
+                .advisors(myRagCloudAdvisor)
                 .user(u -> u.text("这个图片展示了什么信息")
                         .media(MimeTypeUtils.IMAGE_PNG, URLUtil.url(image)))
                 .user(text)

@@ -17,7 +17,7 @@ class MyAppTest {
     @Test
     void doChatWithText() {
 
-        myApp.doChatWithText("给我介绍一下这个app的功能",10000L);
+        myApp.doChatWithText("我是李四,我刚使用这个软件,现在给我介绍一下这个app的功能",10000L);
 
     }
 

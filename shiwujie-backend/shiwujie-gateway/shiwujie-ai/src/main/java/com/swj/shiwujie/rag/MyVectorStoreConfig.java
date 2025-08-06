@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * ETL向量数据库配置
  */
-@Configuration
+//@Configuration
 public class MyVectorStoreConfig {
 
     @Resource
@@ -23,7 +23,7 @@ public class MyVectorStoreConfig {
 
 
     @Bean
-    VectorStore MyVectorStore(EmbeddingModel dashscopeEmbeddingModel) {
+    VectorStore MyRagVectorStore(EmbeddingModel dashscopeEmbeddingModel) {
         // 基于内存的向量数据库
         SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(dashscopeEmbeddingModel)
                 .build();
