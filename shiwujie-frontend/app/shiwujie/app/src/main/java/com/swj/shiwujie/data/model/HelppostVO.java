@@ -11,6 +11,8 @@ public class HelppostVO {
     private String helpContent;
     private String helpLocation;
     private String postStatus;
+    private String helpStatus;
+    private java.util.Date createTime;
 
     public HelppostVO() {
     }
@@ -69,5 +71,21 @@ public class HelppostVO {
 
     public void setPostStatus(String postStatus) {
         this.postStatus = postStatus;
+    }
+
+    public String getHelpStatus() {
+        return helpStatus;
+    }
+
+    public void setHelpStatus(String helpStatus) {
+        this.helpStatus = helpStatus;
+    }
+
+    public java.util.Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(java.util.Date createTime) {
+        this.createTime = createTime;
     }
 } 

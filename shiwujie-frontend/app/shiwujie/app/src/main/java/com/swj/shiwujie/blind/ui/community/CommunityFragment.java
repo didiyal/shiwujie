@@ -28,6 +28,7 @@ import com.swj.shiwujie.data.model.CommunityVO;
 import com.swj.shiwujie.data.model.HelppostAddRequest;
 import com.swj.shiwujie.data.model.HelppostVO;
 import com.swj.shiwujie.data.model.ActivityVO;
+import com.swj.shiwujie.data.model.ActivitysignVO;
 import com.swj.shiwujie.data.model.ActivitySignAddRequest;
 import com.swj.shiwujie.data.model.Page;
 
@@ -81,12 +82,13 @@ public class CommunityFragment extends Fragment {
     private TextView communityDescText;
     private Button helpPostButton;
     private Button activityButton;
-    private TextView myHelpCountText;
-    private TextView myActivityCountText;
-    private Button allHelpPostsButton;
-    private Button allActivitiesButton;
-    private Button myHelpButton;
     private Button myActivitiesButton;
+
+    
+    // 新增的社区信息组件
+    private TextView communityIdText;
+    private TextView joinTimeText;
+    private TextView communityStatusText;
     
     private ApiService apiService;
     private BlindVO currentUserInfo;
@@ -217,18 +219,29 @@ public class CommunityFragment extends Fragment {
             communityDescText.setText(community.getCommunityDescription());
         }
         
+        // 更新社区详细信息
+        if (communityIdText != null && community.getCommunityId() != null) {
+            communityIdText.setText(String.valueOf(community.getCommunityId()));
+        }
+        
+        if (joinTimeText != null) {
+            // 这里可以根据实际需求显示加入时间
+            // 暂时显示当前时间，实际应该从用户信息中获取
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
+            joinTimeText.setText(sdf.format(new java.util.Date()));
+        }
+        
+        if (communityStatusText != null) {
+            communityStatusText.setText("已加入");
+            communityStatusText.setTextColor(getResources().getColor(R.color.success_green));
+        }
+        
         // 加载统计数据
         loadStatistics();
     }
     
     private void loadStatistics() {
         // TODO: 加载用户的求助和活动统计数据
-        if (myHelpCountText != null) {
-            myHelpCountText.setText("0");
-        }
-        if (myActivityCountText != null) {
-            myActivityCountText.setText("0");
-        }
     }
     
     private void setupTabClickListeners() {
@@ -245,14 +258,29 @@ public class CommunityFragment extends Fragment {
         }
     }
     
+    private void showMyCommunityTab() {
+        // 更新标签状态
+        updateTabState(tabCommunityActivity, false);
+        updateTabState(tabCommunityHelp, false);
+        updateTabState(tabMyCommunity, true);
+        
+        // 移动指示器 - 我的社区现在是第一个位置
+        moveTabIndicator(0);
+        
+        // 显示对应内容
+        communityActivityLayout.setVisibility(View.GONE);
+        communityHelpLayout.setVisibility(View.GONE);
+        myCommunityLayout.setVisibility(View.VISIBLE);
+    }
+
     private void showCommunityActivityTab() {
         // 更新标签状态
         updateTabState(tabCommunityActivity, true);
         updateTabState(tabCommunityHelp, false);
         updateTabState(tabMyCommunity, false);
         
-        // 移动指示器
-        moveTabIndicator(0);
+        // 移动指示器 - 社区活动现在是第二个位置
+        moveTabIndicator(1);
         
         // 显示对应内容
         communityActivityLayout.setVisibility(View.VISIBLE);
@@ -262,15 +290,15 @@ public class CommunityFragment extends Fragment {
         // 加载活动列表
         loadActivityList();
     }
-    
+
     private void showCommunityHelpTab() {
         // 更新标签状态
         updateTabState(tabCommunityActivity, false);
         updateTabState(tabCommunityHelp, true);
         updateTabState(tabMyCommunity, false);
         
-        // 移动指示器
-        moveTabIndicator(1);
+        // 移动指示器 - 社区求助现在是第三个位置
+        moveTabIndicator(2);
         
         // 显示对应内容
         communityActivityLayout.setVisibility(View.GONE);
@@ -279,21 +307,6 @@ public class CommunityFragment extends Fragment {
         
         // 加载求助帖列表
         loadHelppostList();
-    }
-    
-    private void showMyCommunityTab() {
-        // 更新标签状态
-        updateTabState(tabCommunityActivity, false);
-        updateTabState(tabCommunityHelp, false);
-        updateTabState(tabMyCommunity, true);
-        
-        // 移动指示器
-        moveTabIndicator(2);
-        
-        // 显示对应内容
-        communityActivityLayout.setVisibility(View.GONE);
-        communityHelpLayout.setVisibility(View.GONE);
-        myCommunityLayout.setVisibility(View.VISIBLE);
     }
     
     private void updateTabState(TextView tab, boolean isSelected) {
@@ -421,12 +434,13 @@ public class CommunityFragment extends Fragment {
         communityDescText = view.findViewById(R.id.communityDescText);
         helpPostButton = view.findViewById(R.id.helpPostButton);
         activityButton = view.findViewById(R.id.activityButton);
-        myHelpCountText = view.findViewById(R.id.myHelpCountText);
-        myActivityCountText = view.findViewById(R.id.myActivityCountText);
-        allHelpPostsButton = view.findViewById(R.id.allHelpPostsButton);
-        allActivitiesButton = view.findViewById(R.id.allActivitiesButton);
-        myHelpButton = view.findViewById(R.id.myHelpButton);
         myActivitiesButton = view.findViewById(R.id.myActivitiesButton);
+
+        
+        // 新增的社区信息组件
+        communityIdText = view.findViewById(R.id.communityIdText);
+        joinTimeText = view.findViewById(R.id.joinTimeText);
+        communityStatusText = view.findViewById(R.id.communityStatusText);
         
         // 设置按钮点击事件
         setupButtonListeners();
@@ -457,39 +471,26 @@ public class CommunityFragment extends Fragment {
         // 已加入社区时的按钮
         if (helpPostButton != null) {
             helpPostButton.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "发起求助功能开发中", Toast.LENGTH_SHORT).show();
+                // 跳转到社区求助页面
+                showCommunityHelpTab();
             });
         }
         
         if (activityButton != null) {
-        activityButton.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "查看活动功能开发中", Toast.LENGTH_SHORT).show();
+            activityButton.setOnClickListener(v -> {
+                // 跳转到社区活动页面
+                showCommunityActivityTab();
             });
         }
-        
-        if (allHelpPostsButton != null) {
-            allHelpPostsButton.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "全部求助帖功能开发中", Toast.LENGTH_SHORT).show();
-            });
-        }
-        
-        if (allActivitiesButton != null) {
-            allActivitiesButton.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "全部活动功能开发中", Toast.LENGTH_SHORT).show();
-            });
-        }
-        
-        if (myHelpButton != null) {
-            myHelpButton.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "我的求助功能开发中", Toast.LENGTH_SHORT).show();
-            });
-        }
-        
+
+        // 参与的活动按钮
         if (myActivitiesButton != null) {
             myActivitiesButton.setOnClickListener(v -> {
-                Toast.makeText(getContext(), "我的活动功能开发中", Toast.LENGTH_SHORT).show();
+                loadMyActivities();
             });
         }
+        
+
     }
     
     private void searchActivity() {
@@ -612,66 +613,54 @@ public class CommunityFragment extends Fragment {
             return;
         }
         
-        // 使用存储的求助帖ID来查询求助帖信息
-        if (!helppostIds.isEmpty()) {
-            // 创建列表存储所有求助帖
-            List<HelppostVO> allHelpposts = new ArrayList<>();
-            final int[] completedRequests = {0};
-            final int totalRequests = helppostIds.size();
-            
-            // 为每个求助帖ID发起请求
-            for (Long helppostId : helppostIds) {
-                apiService.getBlindHelppostInfo("Bearer " + token, helppostId).enqueue(new ApiCallback<HelppostVO>(getContext()) {
+        if (currentUserInfo == null) {
+            Toast.makeText(getContext(), "用户信息获取失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 检查是否有社区信息
+        if (currentCommunity == null) {
+            Toast.makeText(getContext(), "请先加入社区", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 调用API获取盲人发布的求助帖列表
+        // 使用blindId参数查询盲人的求助帖
+        apiService.getBlindHelpposts("Bearer " + token, currentUserInfo.getBlindId(), currentCommunity.getCommunityId(), 1L, 50L)
+                .enqueue(new ApiCallback<Page<HelppostVO>>(getContext()) {
                     @Override
-                    public void onSuccess(HelppostVO helppost) {
-                        allHelpposts.add(helppost);
-                        completedRequests[0]++;
-                        
-                        // 当所有请求都完成时，更新UI
-                        if (completedRequests[0] == totalRequests) {
+                    public void onSuccess(Page<HelppostVO> page) {
+                        if (page != null && page.getRecords() != null) {
+                            List<HelppostVO> helpposts = page.getRecords();
                             if (helppostAdapter != null) {
-                                helppostAdapter.setHelppostList(allHelpposts);
+                                helppostAdapter.setHelppostList(helpposts);
                                 helppostAdapter.setOnHelppostClickListener(helppostItem -> {
                                     // 点击求助帖时的处理
                                     Toast.makeText(getContext(), "查看求助帖详情: " + helppostItem.getHelppostId(), Toast.LENGTH_SHORT).show();
                                 });
                                 
-                                Toast.makeText(getContext(), "成功加载 " + allHelpposts.size() + " 条求助帖信息", Toast.LENGTH_SHORT).show();
+                                if (helpposts.isEmpty()) {
+                                    Toast.makeText(getContext(), "您还没有发布过任何求助", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(getContext(), "成功加载 " + helpposts.size() + " 条求助帖", Toast.LENGTH_SHORT).show();
+                                }
                             }
+                        } else {
+                            if (helppostAdapter != null) {
+                                helppostAdapter.setHelppostList(new ArrayList<>());
+                            }
+                            Toast.makeText(getContext(), "您还没有发布过任何求助", Toast.LENGTH_SHORT).show();
                         }
                     }
                     
                     @Override
                     public void onError(String message) {
-                        completedRequests[0]++;
-                        Log.e("CommunityFragment", "加载求助帖ID " + helppostId + " 失败: " + message);
-                        
-                        // 当所有请求都完成时，更新UI（即使有些失败了）
-                        if (completedRequests[0] == totalRequests) {
-                            if (helppostAdapter != null) {
-                                helppostAdapter.setHelppostList(allHelpposts);
-                                helppostAdapter.setOnHelppostClickListener(helppostItem -> {
-                                    // 点击求助帖时的处理
-                                    Toast.makeText(getContext(), "查看求助帖详情: " + helppostItem.getHelppostId(), Toast.LENGTH_SHORT).show();
-                                });
-                                
-                                if (allHelpposts.isEmpty()) {
-                                    Toast.makeText(getContext(), "暂无有效的求助帖信息", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Toast.makeText(getContext(), "成功加载 " + allHelpposts.size() + " 条求助帖信息", Toast.LENGTH_SHORT).show();
-                                }
-                            }
+                        Toast.makeText(getContext(), "获取求助帖失败: " + message, Toast.LENGTH_SHORT).show();
+                        if (helppostAdapter != null) {
+                            helppostAdapter.setHelppostList(new ArrayList<>());
                         }
                     }
                 });
-            }
-        } else {
-            // 如果没有存储的ID，显示空列表
-            if (helppostAdapter != null) {
-                helppostAdapter.setHelppostList(new ArrayList<>());
-            }
-            Toast.makeText(getContext(), "请先发布求助帖", Toast.LENGTH_SHORT).show();
-        }
     }
     
     private void searchCommunity() {
@@ -808,7 +797,7 @@ public class CommunityFragment extends Fragment {
         
         // 检查是否有当前社区
         if (currentCommunity == null || currentCommunity.getCommunityId() == null) {
-            Toast.makeText(getContext(), "请先加入社区", Toast.LENGTH_SHORT).show();
+
             return;
         }
         
@@ -818,6 +807,7 @@ public class CommunityFragment extends Fragment {
         apiService.getActivityList(
                 "Bearer " + token,
                 currentCommunity.getCommunityId(),
+
                 currentPage,
                 pageSize,
                 null // 不按状态过滤
@@ -1010,9 +1000,7 @@ public class CommunityFragment extends Fragment {
         // 创建活动报名请求
         ActivitySignAddRequest request = new ActivitySignAddRequest();
         request.setActivityId(activity.getActivityId());
-        request.setSignUserId(currentUserInfo.getBlindId());
-        request.setSignUserType("blind");
-        request.setCommunityId(activity.getCommunityId());
+        request.setBlindId(currentUserInfo.getBlindId());
         
         // 调用API
         apiService.addActivitySign("Bearer " + token, request).enqueue(new ApiCallback<Boolean>(getContext()) {
@@ -1044,4 +1032,122 @@ public class CommunityFragment extends Fragment {
             default: return "未知";
         }
     }
+
+    /**
+     * 加载盲人参与的活动列表
+     */
+    private void loadMyActivities() {
+        String token = SharedPrefsUtil.getToken();
+        if (token == null) {
+            Toast.makeText(getContext(), "请先登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (currentUserInfo == null) {
+            Toast.makeText(getContext(), "用户信息获取失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 检查是否有社区信息
+        if (currentCommunity == null) {
+            return;
+        }
+
+        // 调用API获取盲人参与的活动列表
+        // 使用blindId参数查询盲人参与的活动
+        apiService.getActivitySignListByVolunteer("Bearer " + token, 1L, 50L, null)
+                .enqueue(new ApiCallback<Page<ActivitysignVO>>(getContext()) {
+                    @Override
+                    public void onSuccess(Page<ActivitysignVO> page) {
+                        if (page != null && page.getRecords() != null && !page.getRecords().isEmpty()) {
+                            // 过滤出盲人参与的活动
+                            List<ActivitysignVO> blindActivities = new ArrayList<>();
+                            for (ActivitysignVO activitysign : page.getRecords()) {
+                                if (activitysign.getBlindId() != null && 
+                                    activitysign.getBlindId().equals(currentUserInfo.getBlindId())) {
+                                    blindActivities.add(activitysign);
+                                }
+                            }
+                            
+                            if (!blindActivities.isEmpty()) {
+                                // 显示我的活动列表
+                                showMyActivitiesDialogFromSignList(blindActivities);
+                            } else {
+                                Toast.makeText(getContext(), "您还没有参与过任何活动", Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(getContext(), "您还没有参与过任何活动", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(getContext(), "获取我的活动失败: " + message, Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    /**
+     * 显示我的活动对话框
+     */
+    private void showMyActivitiesDialog(List<ActivityVO> activities) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("我的活动");
+
+        // 创建RecyclerView来显示活动列表
+        androidx.recyclerview.widget.RecyclerView recyclerView = new androidx.recyclerview.widget.RecyclerView(getContext());
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        // 创建适配器
+        ActivityAdapter adapter = new ActivityAdapter(getContext(), activities);
+        adapter.setOnActivityClickListener(new ActivityAdapter.OnActivityClickListener() {
+            @Override
+            public void onActivityDetailClick(ActivityVO activity) {
+                showActivityDetailDialog(activity);
+            }
+
+            @Override
+            public void onActivitySignUpClick(ActivityVO activity) {
+                // 在我的活动中，不需要报名功能
+                Toast.makeText(getContext(), "您已参与此活动", Toast.LENGTH_SHORT).show();
+            }
+        });
+        recyclerView.setAdapter(adapter);
+
+        // 设置对话框内容
+        builder.setView(recyclerView);
+        builder.setPositiveButton("关闭", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    /**
+     * 显示我的活动对话框（从活动报名列表）
+     */
+    private void showMyActivitiesDialogFromSignList(List<ActivitysignVO> activitysigns) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("我的活动");
+
+        // 创建简单的文本显示
+        StringBuilder content = new StringBuilder();
+        for (ActivitysignVO activitysign : activitysigns) {
+            content.append("活动ID: ").append(activitysign.getActivityId()).append("\n");
+            content.append("报名时间: ").append(activitysign.getSignUpTime()).append("\n");
+            if (activitysign.getCheckInTime() != null) {
+                content.append("签到时间: ").append(activitysign.getCheckInTime()).append("\n");
+            }
+            if (activitysign.getCheckOutTime() != null) {
+                content.append("签退时间: ").append(activitysign.getCheckOutTime()).append("\n");
+            }
+            content.append("\n");
+        }
+
+        builder.setMessage(content.toString());
+        builder.setPositiveButton("关闭", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
 }

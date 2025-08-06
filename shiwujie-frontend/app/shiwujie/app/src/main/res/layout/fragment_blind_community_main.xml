@@ -9,12 +9,12 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="盲人社区主页"
-        android:textSize="20sp"
+        android:text="我的社区"
+        android:textSize="24sp"
         android:textColor="@color/text_primary"
         android:textStyle="bold"
         android:gravity="center"
-        android:padding="16dp"
+        android:padding="20dp"
         android:background="@color/white" />
 
     <!-- 导航标签 -->
@@ -27,13 +27,25 @@
         android:paddingBottom="8dp">
 
         <TextView
+            android:id="@+id/tabMyCommunity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="我的社区"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:gravity="center"
+            android:padding="12dp"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
             android:id="@+id/tabCommunityActivity"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="社区活动"
             android:textSize="16sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/text_secondary"
             android:gravity="center"
             android:padding="12dp"
             android:background="?android:attr/selectableItemBackground" />
@@ -50,17 +62,7 @@
             android:padding="12dp"
             android:background="?android:attr/selectableItemBackground" />
 
-        <TextView
-            android:id="@+id/tabMyCommunity"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="我的社区"
-            android:textSize="16sp"
-            android:textColor="@color/text_secondary"
-            android:gravity="center"
-            android:padding="12dp"
-            android:background="?android:attr/selectableItemBackground" />
+
     </LinearLayout>
 
     <!-- 选中指示器 -->
@@ -70,6 +72,7 @@
         android:layout_height="3dp"
         android:background="@color/primary_blue"
         android:layout_marginStart="16dp" />
+
 
     <!-- 内容区域 -->
     <FrameLayout
@@ -214,8 +217,6 @@
                     android:src="@drawable/ic_edit"
                     android:layout_marginEnd="4dp" />
 
-
-
                 <Button
                     android:id="@+id/addHelpPostButton"
                     android:layout_width="48dp"
@@ -342,158 +343,20 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:visibility="gone">
-
-                <!-- 社区头部信息 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@color/primary_blue"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/communityTitleText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="社区名称"
-                        android:textSize="20sp"
-                        android:textColor="@color/white"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:id="@+id/communityDescText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="社区描述"
-                        android:textSize="14sp"
-                        android:textColor="@color/white" />
-                </LinearLayout>
+                android:visibility="gone"
+                android:gravity="center"
+                android:padding="20dp">
 
                 <!-- 快捷操作按钮 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:background="@color/white">
-
-                    <Button
-                        android:id="@+id/helpPostButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/button_primary"
-                        android:text="发起求助"
-                        android:textColor="@color/white"
-                        android:textSize="14sp" />
-
-                    <Button
-                        android:id="@+id/activityButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/button_secondary"
-                        android:text="查看活动"
-                        android:textColor="@color/text_primary"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <!-- 状态卡片 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:background="@color/white">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        android:orientation="vertical"
-                        android:background="@drawable/card_background"
-                        android:padding="16dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_help"
-                            android:layout_marginBottom="8dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="我的求助"
-                            android:textSize="12sp"
-                            android:textColor="@color/text_secondary"
-                            android:layout_marginBottom="4dp" />
-
-                        <TextView
-                            android:id="@+id/myHelpCountText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="18sp"
-                            android:textColor="@color/text_primary"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:orientation="vertical"
-                        android:background="@drawable/card_background"
-                        android:padding="16dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/community"
-                            android:layout_marginBottom="8dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="参与活动"
-                            android:textSize="12sp"
-                            android:textColor="@color/text_secondary"
-                            android:layout_marginBottom="4dp" />
-
-                        <TextView
-                            android:id="@+id/myActivityCountText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="18sp"
-                            android:textColor="@color/text_primary"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- 功能入口导航 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp"
-                    android:background="@color/white">
+                    android:padding="20dp"
+                    android:background="@color/white"
+                    android:layout_marginBottom="20dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="功能入口"
-                        android:textSize="16sp"
-                        android:textColor="@color/text_primary"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp" />
-
+                    <!-- 第一行按钮 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -501,60 +364,176 @@
                         android:layout_marginBottom="12dp">
 
                         <Button
-                            android:id="@+id/allHelpPostsButton"
+                            android:id="@+id/helpPostButton"
                             android:layout_width="0dp"
-                            android:layout_height="48dp"
+                            android:layout_height="60dp"
                             android:layout_weight="1"
-                            android:layout_marginEnd="6dp"
-                            android:background="@drawable/button_outline"
-                            android:text="全部求助帖"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/button_primary"
+                            android:text="我的求助"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
 
                         <Button
-                            android:id="@+id/allActivitiesButton"
+                            android:id="@+id/activityButton"
                             android:layout_width="0dp"
-                            android:layout_height="48dp"
+                            android:layout_height="60dp"
                             android:layout_weight="1"
-                            android:layout_marginStart="6dp"
-                            android:background="@drawable/button_outline"
-                            android:text="全部活动"
+                            android:layout_marginStart="10dp"
+                            android:background="@drawable/button_secondary"
+                            android:text="社区活动"
                             android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
+                    <!-- 第二行按钮 -->
+                    <Button
+                        android:id="@+id/myActivitiesButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:background="@drawable/button_secondary"
+                        android:text="参与的活动"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 社区信息卡片 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp"
+                    android:background="@color/white">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="我的社区信息"
+                        android:textSize="18sp"
+                        android:textColor="@color/text_primary"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- 社区名称 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="社区名称："
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary" />
+
+                        <TextView
+                            android:id="@+id/communityTitleText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="社区名称"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- 社区描述 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="社区描述："
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary" />
+
+                        <TextView
+                            android:id="@+id/communityDescText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="社区描述"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary" />
+                    </LinearLayout>
+
+                    <!-- 社区ID -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="社区ID："
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary" />
+
+                        <TextView
+                            android:id="@+id/communityIdText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="123456"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- 加入时间 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="加入时间："
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary" />
+
+                        <TextView
+                            android:id="@+id/joinTimeText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2024-01-01"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary" />
+                    </LinearLayout>
+
+                    <!-- 社区状态 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-                        <Button
-                            android:id="@+id/myHelpButton"
-                            android:layout_width="0dp"
-                            android:layout_height="48dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="6dp"
-                            android:background="@drawable/button_outline"
-                            android:text="我的求助"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="社区状态："
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary" />
 
-                        <Button
-                            android:id="@+id/myActivitiesButton"
-                            android:layout_width="0dp"
-                            android:layout_height="48dp"
-                            android:layout_weight="1"
-                            android:layout_marginStart="6dp"
-                            android:background="@drawable/button_outline"
-                            android:text="我的活动"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
+                        <TextView
+                            android:id="@+id/communityStatusText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="已加入"
+                            android:textSize="14sp"
+                            android:textColor="@color/success_green"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="16dp" />
             </LinearLayout>
         </LinearLayout>
     </FrameLayout>

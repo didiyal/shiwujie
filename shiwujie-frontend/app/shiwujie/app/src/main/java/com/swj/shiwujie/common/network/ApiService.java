@@ -11,8 +11,10 @@ import com.swj.shiwujie.data.model.BlindCommunityJoinRequest;
 import com.swj.shiwujie.data.model.HelppostAddRequest;
 import com.swj.shiwujie.data.model.HelppostVO;
 import com.swj.shiwujie.data.model.ActivityVO;
+import com.swj.shiwujie.data.model.ActivitysignVO;
 import com.swj.shiwujie.data.model.ActivitySignAddRequest;
 import com.swj.shiwujie.data.model.Page;
+import com.swj.shiwujie.data.model.HelppostUpdateRequest;
 
 import java.util.List;
 
@@ -485,6 +487,66 @@ public interface ApiService {
             @Query("helppostId") Long helppostId
     );
 
+    /**
+     * 获取求助帖列表
+     * @param token JWT令牌
+     * @param communityId 社区ID
+     * @return 求助帖列表
+     */
+    @GET("/api/community/helppost/list")
+    Call<BaseResponse<Page<HelppostVO>>> getHelppostList(
+            @Header("Authorization") String token,
+            @Query("communityId") Long communityId
+    );
+
+    /**
+     * 更新求助帖（志愿者接受求助）
+     * @param token JWT令牌
+     * @param request 求助帖更新请求
+     * @return 更新结果
+     */
+    @POST("/api/community/helppost/update")
+    Call<BaseResponse<Boolean>> updateHelppost(
+            @Header("Authorization") String token,
+            @Body HelppostUpdateRequest request
+    );
+
+    /**
+     * 获取志愿者接受的求助帖列表
+     * @param token JWT令牌
+     * @param volunteerId 志愿者ID
+     * @param communityId 社区ID
+     * @param current 当前页码
+     * @param pageSize 每页大小
+     * @return 求助帖列表
+     */
+    @GET("/api/community/helppost/list")
+    Call<BaseResponse<Page<HelppostVO>>> getVolunteerHelpposts(
+            @Header("Authorization") String token,
+            @Query("volunteerId") Long volunteerId,
+            @Query("communityId") Long communityId,
+            @Query("current") Long current,
+            @Query("pageSize") Long pageSize
+    );
+
+    /**
+     * 获取盲人发布的求助帖列表
+     * @param token JWT令牌
+     * @param blindId 盲人ID
+     * @param communityId 社区ID
+     * @param current 当前页码
+     * @param pageSize 每页大小
+     * @return 求助帖列表
+     */
+    @GET("/api/community/helppost/list")
+    Call<BaseResponse<Page<HelppostVO>>> getBlindHelpposts(
+            @Header("Authorization") String token,
+            @Query("blindId") Long blindId,
+            @Query("communityId") Long communityId,
+            @Query("current") Long current,
+            @Query("pageSize") Long pageSize
+    );
+
     // ==================== 活动相关接口 ====================
 
     /**
@@ -505,13 +567,14 @@ public interface ApiService {
             @Query("activityStatus") String activityStatus
     );
 
+
     /**
      * 根据ID查询活动详情
      * @param token JWT令牌
      * @param activityId 活动ID
      * @return 活动详情
      */
-    @GET("/api/activity/get")
+    @GET("/api/community/activity/get")
     Call<BaseResponse<ActivityVO>> getActivityById(
             @Header("Authorization") String token,
             @Query("activityId") Long activityId
@@ -527,6 +590,74 @@ public interface ApiService {
     Call<BaseResponse<Boolean>> addActivitySign(
             @Header("Authorization") String token,
             @Body ActivitySignAddRequest request
+    );
+
+    /**
+     * 查询用户报名的活动列表
+     * @param token JWT令牌
+     * @param activityId 活动ID（可选）
+     * @param blindId 盲人ID（可选）
+     * @param current 当前页码
+     * @param pageSize 每页大小
+     * @param volunteerId 志愿者ID（可选）
+     * @return 活动报名列表
+     */
+    @GET("/api/community/activitysign/list/page/vo")
+    Call<BaseResponse<Page<ActivityVO>>> getActivitySignList(
+            @Header("Authorization") String token,
+            @Query("activityId") Long activityId,
+            @Query("blindId") Long blindId,
+            @Query("current") Long current,
+            @Query("pageSize") Long pageSize,
+            @Query("volunteerId") Long volunteerId
+    );
+
+    /**
+     * 查询志愿者报名的活动列表（只传递volunteerId）
+     * @param token JWT令牌
+     * @param current 当前页码
+     * @param pageSize 每页大小
+     * @param volunteerId 志愿者ID
+     * @return 活动报名列表
+     */
+    @GET("/api/community/activitysign/list/page/vo")
+    Call<BaseResponse<Page<ActivitysignVO>>> getActivitySignListByVolunteer(
+            @Header("Authorization") String token,
+            @Query("current") Long current,
+            @Query("pageSize") Long pageSize,
+            @Query("volunteerId") Long volunteerId
+    );
+
+    /**
+     * 获取志愿者的活动列表
+     * @param token JWT令牌
+     * @param volunteerId 志愿者ID
+     * @param current 当前页码
+     * @param pageSize 每页大小
+     * @return 活动列表
+     */
+    @GET("/api/community/activitysign/list/page/vo")
+    Call<BaseResponse<Page<ActivityVO>>> getVolunteerActivities(
+            @Header("Authorization") String token,
+            @Query("volunteerId") Long volunteerId,
+            @Query("current") Long current,
+            @Query("pageSize") Long pageSize
+    );
+
+    /**
+     * 获取盲人参与的活动列表
+     * @param token JWT令牌
+     * @param blindId 盲人ID
+     * @param current 当前页码
+     * @param pageSize 每页大小
+     * @return 活动列表
+     */
+    @GET("/api/community/activitysign/list/page/vo")
+    Call<BaseResponse<Page<ActivityVO>>> getBlindActivities(
+            @Header("Authorization") String token,
+            @Query("blindId") Long blindId,
+            @Query("current") Long current,
+            @Query("pageSize") Long pageSize
     );
 
 }

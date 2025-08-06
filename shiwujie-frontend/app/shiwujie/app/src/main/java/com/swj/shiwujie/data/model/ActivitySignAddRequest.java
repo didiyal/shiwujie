@@ -10,19 +10,14 @@ public class ActivitySignAddRequest {
     private Long activityId;
 
     /**
-     * 报名人ID（盲人ID或志愿者ID）
+     * 视障人士ID 二选一
      */
-    private Long signUserId;
+    private Long blindId;
 
     /**
-     * 报名人类型（blind或volunteer）
+     * 志愿者ID 二选一
      */
-    private String signUserType;
-
-    /**
-     * 社区ID
-     */
-    private Long communityId;
+    private Long volunteerId;
 
     public Long getActivityId() {
         return activityId;
@@ -32,27 +27,19 @@ public class ActivitySignAddRequest {
         this.activityId = activityId;
     }
 
-    public Long getSignUserId() {
-        return signUserId;
+    public Long getBlindId() {
+        return blindId;
     }
 
-    public void setSignUserId(Long signUserId) {
-        this.signUserId = signUserId;
+    public void setBlindId(Long blindId) {
+        this.blindId = blindId;
     }
 
-    public String getSignUserType() {
-        return signUserType;
+    public Long getVolunteerId() {
+        return volunteerId;
     }
 
-    public void setSignUserType(String signUserType) {
-        this.signUserType = signUserType;
-    }
-
-    public Long getCommunityId() {
-        return communityId;
-    }
-
-    public void setCommunityId(Long communityId) {
-        this.communityId = communityId;
+    public void setVolunteerId(Long volunteerId) {
+        this.volunteerId = volunteerId;
     }
 } 
