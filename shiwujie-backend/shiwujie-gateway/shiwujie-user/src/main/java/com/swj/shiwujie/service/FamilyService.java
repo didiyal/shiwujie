@@ -22,6 +22,14 @@ public interface FamilyService extends IService<Family> {
     FamilyVO createFamily(Long loginVolunteerId,String loginUserPhone);
 
 
+    /**
+     * 获取家庭信息
+     * @param familyId 家庭id
+     * @param loginUserPhone 登录用户手机号
+     * @return 脱敏后的家庭信息
+     */
+    FamilyVO getFamilyVOById(Long familyId, String loginUserPhone);
+
 
     /**
      * 删除家庭
@@ -34,13 +42,13 @@ public interface FamilyService extends IService<Family> {
 
     /**
      * 申请加入家庭
-     * @param familyId 家庭id
+     * @param familyVolunteerPhone 家庭志愿者手机号
      * @param loginBlindId 加入盲人信息
      * @param loginVolunteerId 加入志愿者信息
      * @param loginUserPhone 登录手机号
      * @return 是否申请成功
      */
-    boolean joinFamily(Long familyId, Long loginBlindId, Long loginVolunteerId, String loginUserPhone);
+    boolean joinFamily(String familyVolunteerPhone, Long loginBlindId, Long loginVolunteerId, String loginUserPhone);
 
     // region 工具方法
 

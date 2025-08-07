@@ -5,9 +5,7 @@ import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 
 /**
- * @author Administrator
- * @description 针对表【Volunteer(视障人士信息表)】的数据库操作Service
- * @createDate 2025-07-01 00:21:42
+ * dubbo 服务提供接口
  */
 public interface InnerBlindService  {
 
@@ -27,15 +25,13 @@ public interface InnerBlindService  {
      */
     Blind getByPhone(String phone);
 
-
-
-
     /**
      * 更新信息
      * @param blind 要更新的
      * @return 是否成功
      */
     boolean updateById(Blind blind);
+
 
     /**
      * 删除社区后关联的所有用户信息

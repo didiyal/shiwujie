@@ -45,13 +45,13 @@ class MyAppRagCloudAdvisorConfig {
         List<QueryTransformer> queryTransformers = new ArrayList<>();
 
         // 对话重写
-        RewriteQueryTransformer rewriteQueryTransformer = RewriteQueryTransformer.builder()
-                .chatClientBuilder(chatClient
+//        RewriteQueryTransformer rewriteQueryTransformer = RewriteQueryTransformer.builder()
+//                .chatClientBuilder(chatClient
 //                        .prompt()
 //                        .system("对话重写提示词")
-                        .mutate())
-                .build();
-        queryTransformers.add(rewriteQueryTransformer);
+//                        .mutate())
+//                .build();
+//        queryTransformers.add(rewriteQueryTransformer);
 
         // 上下文感知
         CompressionQueryTransformer compressionQueryTransformer = CompressionQueryTransformer.builder()

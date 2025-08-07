@@ -11,9 +11,7 @@ import com.swj.shiwujie.model.request.user.volunteer.VolunteerUpdatePasswordRequ
 import java.util.List;
 
 /**
- * @author Administrator
- * @description 针对表【Volunteer(视障人士信息表)】的数据库操作Service
- * @createDate 2025-07-01 00:21:42
+ * dubbo 服务提供接口
  */
 public interface InnerVolunteerService  {
 

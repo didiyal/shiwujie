@@ -25,6 +25,11 @@ public class InnerCommunityServiceImpl implements InnerCommunityService {
     public Community getById(Long id) {
         return communityService.getById(id);
     }
+
+    @Override
+    public boolean deleteCommunity(Long communityId, Long volunteerId) {
+        return communityService.deleteCommunity(communityId, volunteerId);
+    }
 }
 
 

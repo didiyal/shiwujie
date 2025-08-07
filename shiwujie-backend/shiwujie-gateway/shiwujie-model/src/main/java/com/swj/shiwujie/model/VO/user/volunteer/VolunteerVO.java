@@ -86,7 +86,7 @@ public class VolunteerVO  implements Serializable {
     /**
      * 帮助次数
      */
-    private String helpCount;
+    private Long helpCount;
 
     /**
      * 志愿者评分

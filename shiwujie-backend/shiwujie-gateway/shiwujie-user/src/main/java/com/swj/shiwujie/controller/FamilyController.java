@@ -149,28 +149,20 @@ public class FamilyController {
     public BaseResponse<FamilyVO> getFamilyVOById(Long familyId, HttpServletRequest request) {
         //1. 获取操作用户的id与手机号
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
-
-
-        synchronized (loginUserPhone.intern()){
-            Family family = familyService.getById(familyId);
-            ThrowUtils.throwIf(ObjUtil.isNull(family),ErrorCode.PARAMS_ERROR,"家庭不存在");
-            FamilyVO result = familyService.getFamilyVO(family);
-
-            return ResultUtils.success(result);
-        }
-
+        FamilyVO result = familyService.getFamilyVOById(familyId,loginUserPhone);
+        return ResultUtils.success(result);
     }
 
     /**
      * 加入家庭(需要验证)登录用户
-     * @param familyId 家庭id
+     * @param familyVolunteerPhone 家庭志愿者手机号
      * @param request 请求
      * @return 脱敏后的家庭信息
      */
     @PostMapping("/join")
     @ApiOperation("加入家庭")
     @Transactional(rollbackFor = Exception.class)
-    public BaseResponse<Boolean> joinFamily(Long familyId, HttpServletRequest request){
+    public BaseResponse<Boolean> joinFamily(String familyVolunteerPhone, HttpServletRequest request){
         //1. 获取操作用户的id与手机号
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
@@ -178,7 +170,7 @@ public class FamilyController {
 
 
         //3.处理
-        Boolean b = familyService.joinFamily(familyId, loginBlindId, loginVolunteerId, loginUserPhone);
+        Boolean b = familyService.joinFamily(familyVolunteerPhone, loginBlindId, loginVolunteerId, loginUserPhone);
 
         return ResultUtils.success(b);
 

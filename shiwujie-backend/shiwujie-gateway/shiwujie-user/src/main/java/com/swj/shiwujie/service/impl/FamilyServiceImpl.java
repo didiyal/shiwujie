@@ -85,6 +85,23 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
     }
 
     /**
+     * 获取家庭信息
+     *
+     * @param familyId       家庭id
+     * @param loginUserPhone 登录用户手机号
+     * @return 脱敏后的家庭信息
+     */
+    @Override
+    public FamilyVO getFamilyVOById(Long familyId, String loginUserPhone) {
+        synchronized (loginUserPhone.intern()){
+            Family family = this.getById(familyId);
+            ThrowUtils.throwIf(ObjUtil.isNull(family),ErrorCode.PARAMS_ERROR,"家庭不存在");
+            return this.getFamilyVO(family);
+        }
+
+    }
+
+    /**
      * 删除家庭
      *
      * @param loginVolunteerId 登录志愿者id
@@ -127,17 +144,19 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
     /**
      * 申请加入家庭
      *
-     * @param familyId         家庭id
+     * @param familyVolunteerPhone 家庭志愿者手机号
      * @param loginBlindId     加入盲人信息
      * @param loginVolunteerId 加入志愿者信息
      * @param loginUserPhone   登录手机号
      * @return 是否申请成功
      */
     @Override
-    public boolean joinFamily(Long familyId, Long loginBlindId, Long loginVolunteerId, String loginUserPhone) {
-        ThrowUtils.throwIf(ObjUtil.isEmpty(familyId),ErrorCode.PARAMS_ERROR,"家庭信息不能为空");
+    public boolean joinFamily(String familyVolunteerPhone, Long loginBlindId, Long loginVolunteerId, String loginUserPhone) {
+        ThrowUtils.throwIf(ObjUtil.isEmpty(familyVolunteerPhone),ErrorCode.PARAMS_ERROR,"家庭信息不能为空");
 
 
+        Volunteer volunteer = volunteerService.getByPhone(familyVolunteerPhone);
+        Long familyId = volunteer.getFamilyId();
 
         // 校验用户
         if(ObjUtil.isNotNull(loginBlindId)){
