@@ -88,15 +88,28 @@ public class BlindHomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // 全局身份校验监听 - 每次页面恢复时都检查
-        checkIdentityVerification();
-    }
-    
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // 应用启动时也检查身份校验状态
-        checkIdentityVerification();
+        // 全局身份校验监听 - 每次都从服务器获取最新状态
+        String token = SharedPrefsUtil.getToken();
+        Long userId = SharedPrefsUtil.getUserId();
+        if (token == null || userId == null) return;
+
+        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        apiService.getBlindById("Bearer " + token, userId).enqueue(new ApiCallback<BlindVO>(this) {
+            @Override
+            public void onSuccess(BlindVO data) {
+                boolean isVerified = data.getIsDisabilityCard() != null && data.getIsDisabilityCard();
+                SharedPrefsUtil.setBoolean("isDisabilityCard", isVerified);
+                if (!isVerified) {
+                    showIdentityVerificationReminder();
+                }
+            }
+            
+            @Override
+            public void onError(String message) {
+                // 如果获取失败，默认显示校验提醒
+                showIdentityVerificationReminder();
+            }
+        });
     }
 
     @Override
@@ -105,38 +118,7 @@ public class BlindHomeActivity extends AppCompatActivity {
         binding = null;
     }
 
-    private void checkIdentityVerification() {
-        // 检查本地存储的身份校验状态
-        Boolean isDisabilityCard = SharedPrefsUtil.getBoolean("isDisabilityCard", false);
-        
-        // 如果本地存储为空，则从服务器获取最新状态
-        if (isDisabilityCard == null) {
-            String token = SharedPrefsUtil.getToken();
-            Long userId = SharedPrefsUtil.getUserId();
-            if (token == null || userId == null) return;
 
-            ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
-            apiService.getBlindById("Bearer " + token, userId).enqueue(new ApiCallback<BlindVO>(this) {
-                @Override
-                public void onSuccess(BlindVO data) {
-                    boolean isVerified = data.getIsDisabilityCard() != null && data.getIsDisabilityCard();
-                    SharedPrefsUtil.setBoolean("isDisabilityCard", isVerified);
-                    if (!isVerified) {
-                        showIdentityVerificationReminder();
-                    }
-                }
-                
-                @Override
-                public void onError(String message) {
-                    // 如果获取失败，默认显示校验提醒
-                    showIdentityVerificationReminder();
-                }
-            });
-        } else if (!isDisabilityCard) {
-            // 本地存储显示未校验，直接显示提醒
-            showIdentityVerificationReminder();
-        }
-    }
     
     private void showIdentityVerificationReminder() {
         new AlertDialog.Builder(BlindHomeActivity.this)
