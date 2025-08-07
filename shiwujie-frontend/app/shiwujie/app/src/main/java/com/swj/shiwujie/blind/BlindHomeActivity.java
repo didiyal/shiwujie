@@ -13,6 +13,11 @@ import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.common.utils.PermissionManager;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ApiCallback;
@@ -83,6 +88,7 @@ public class BlindHomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // 全局身份校验监听 - 每次都从服务器获取最新状态
         String token = SharedPrefsUtil.getToken();
         Long userId = SharedPrefsUtil.getUserId();
         if (token == null || userId == null) return;
@@ -91,34 +97,17 @@ public class BlindHomeActivity extends AppCompatActivity {
         apiService.getBlindById("Bearer " + token, userId).enqueue(new ApiCallback<BlindVO>(this) {
             @Override
             public void onSuccess(BlindVO data) {
-                boolean isDisabilityCard = data.getIsDisabilityCard() != null && data.getIsDisabilityCard();
-                SharedPrefsUtil.setBoolean("isDisabilityCard", isDisabilityCard);
-                if (!isDisabilityCard) {
-                    new AlertDialog.Builder(BlindHomeActivity.this)
-                        .setTitle("残疾证校验提醒")
-                        .setMessage("您还未完成残疾证校验，请先补充残疾证信息")
-                        .setCancelable(false)
-                        .setPositiveButton("去校验", (dialog, which) -> {
-                            startActivity(new Intent(BlindHomeActivity.this, EditProfileActivity.class));
-                        })
-                        .setNegativeButton("退出APP", (dialog, which) -> {
-                            ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
-                            String token = SharedPrefsUtil.getToken();
-                            apiService.logout("Bearer " + token).enqueue(new ApiCallback<Boolean>(BlindHomeActivity.this) {
-                                @Override
-                                public void onSuccess(Boolean data) {
-                                    SharedPrefsUtil.clearAll();
-                                    finishAffinity();
-                                }
-                                @Override
-                                public void onError(String message) {
-                                    SharedPrefsUtil.clearAll();
-                                    finishAffinity();
-                                }
-                            });
-                        })
-                        .show();
+                boolean isVerified = data.getIsDisabilityCard() != null && data.getIsDisabilityCard();
+                SharedPrefsUtil.setBoolean("isDisabilityCard", isVerified);
+                if (!isVerified) {
+                    showIdentityVerificationReminder();
                 }
+            }
+            
+            @Override
+            public void onError(String message) {
+                // 如果获取失败，默认显示校验提醒
+                showIdentityVerificationReminder();
             }
         });
     }
@@ -127,5 +116,97 @@ public class BlindHomeActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         binding = null;
+    }
+
+
+    
+    private void showIdentityVerificationReminder() {
+        new AlertDialog.Builder(BlindHomeActivity.this)
+            .setTitle("身份校验提醒")
+            .setMessage("您还未完成身份校验，请先补全残疾证证件")
+            .setCancelable(false)
+            .setPositiveButton("去校验", (dialog, which) -> {
+                showIdentityVerificationDialog();
+            })
+            .setNegativeButton("退出APP", (dialog, which) -> {
+                // 直接退出APP，不调用logout API
+                SharedPrefsUtil.clearAll();
+                finishAffinity();
+            })
+            .show();
+    }
+
+    private void showIdentityVerificationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_id_card_verification, null);
+        builder.setView(dialogView);
+
+        // 动态修改弹窗内容
+        TextView tvTitle = dialogView.findViewById(R.id.tvTitle);
+        TextView tvMessage = dialogView.findViewById(R.id.tvMessage);
+        EditText etInput = dialogView.findViewById(R.id.etIdCard);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+
+        // 设置盲人端的内容
+        tvTitle.setText("身份校验");
+        tvMessage.setText("请输入您的残疾证号码进行身份校验");
+        btnConfirm.setText("确认校验");
+        
+        // 设置残疾证输入框的位数限制（20位：18位身份证+1位类别+1位等级）
+        //etInput.setMaxLength(20);
+
+        AlertDialog dialog = builder.create();
+
+        btnCancel.setOnClickListener(v -> {
+            // 点击取消直接退出APP
+            SharedPrefsUtil.clearAll();
+            finishAffinity();
+        });
+        
+        btnConfirm.setOnClickListener(v -> {
+            String disabilityCard = etInput.getText().toString().trim();
+            if (disabilityCard.isEmpty()) {
+                Toast.makeText(this, "残疾证号不能为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            performDisabilityCardVerification(disabilityCard, dialog);
+        });
+
+        dialog.show();
+    }
+
+    private void performDisabilityCardVerification(String disabilityCard, AlertDialog dialog) {
+        String token = SharedPrefsUtil.getToken();
+        Long userId = SharedPrefsUtil.getUserId();
+
+        if (token == null || userId == null) {
+            Toast.makeText(this, "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        BlindVO blind = new BlindVO();
+        blind.setBlindId(userId);
+        blind.setDisabilityCard(disabilityCard);
+        blind.setGender(0); // 默认设置为0（男性）
+
+        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        apiService.updateBlindInfo(
+                "Bearer " + token,
+                blind
+        ).enqueue(new ApiCallback<Boolean>(this) {
+            @Override
+            public void onSuccess(Boolean response) {
+                Toast.makeText(BlindHomeActivity.this, "残疾证校验成功", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+                // 更新本地存储的认证状态
+                SharedPrefsUtil.setBoolean("isDisabilityCard", true);
+            }
+
+            @Override
+            public void onError(String message) {
+                Toast.makeText(BlindHomeActivity.this, "残疾证校验失败：" + message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 } 

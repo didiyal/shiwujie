@@ -3,9 +3,12 @@ package com.swj.shiwujie.blind.ui.profile;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +42,7 @@ public class ProfileFragment extends Fragment {
     private TextView tvCommunityStatus;
     private TextView btnFamily;
     private TextView btnEditInfo;
+    private TextView btnChangePassword;
     private TextView btnLogout;
     private TextView btnDeleteAccount;
     private ApiService apiService;
@@ -60,6 +64,7 @@ public class ProfileFragment extends Fragment {
         tvCommunityStatus = root.findViewById(R.id.tvCommunityStatus);
         btnFamily = root.findViewById(R.id.btnFamily);
         btnEditInfo = root.findViewById(R.id.btnEditInfo);
+        btnChangePassword = root.findViewById(R.id.btnChangePassword);
         btnLogout = root.findViewById(R.id.btnLogout);
         btnDeleteAccount = root.findViewById(R.id.btnDeleteAccount);
     }
@@ -72,11 +77,16 @@ public class ProfileFragment extends Fragment {
     }
 
     private void initListeners() {
-        btnFamily.setOnClickListener(v -> handleFamilyClick());
+        btnFamily.setOnClickListener(v -> {
+            android.util.Log.d("ProfileFragment", "家庭按钮被点击");
+            handleFamilyClick();
+        });
         btnEditInfo.setOnClickListener(v -> handleEditInfoClick());
+        btnChangePassword.setOnClickListener(v -> handleChangePasswordClick());
         btnLogout.setOnClickListener(v -> handleLogoutClick());
         btnDeleteAccount.setOnClickListener(v -> handleDeleteAccountClick());
         tvCommunityStatus.setOnClickListener(v -> handleCommunityClick()); // 修改为新的控件
+        android.util.Log.d("ProfileFragment", "所有监听器设置完成");
     }
 
     private void fetchUserInfo() {
@@ -125,9 +135,8 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateUI(BlindVO data) {
-        // 更新账号信息（使用blindId）
-        tvAccount.setText("账号：" + data.getBlindId());
-
+        // 显示手机号
+        tvAccount.setText("手机号：" + data.getPhone());
         // 更新用户名
         String name = data.getName();
         tvUsername.setText("用户名：" + (name != null && !name.isEmpty() ? name : "未设置"));
@@ -200,16 +209,106 @@ public class ProfileFragment extends Fragment {
     }
 
     private void handleFamilyClick() {
+        android.util.Log.d("ProfileFragment", "handleFamilyClick被调用");
         BlindVO userInfo = UserInfoManager.getCurrentUserInfo();
         if (userInfo != null) {
-            // 无论是否已加入家庭，都可以点击跳转
-            // TODO: 跳转到家庭页面
-            Toast.makeText(requireContext(), "即将跳转到家庭页面", Toast.LENGTH_SHORT).show();
+            android.util.Log.d("ProfileFragment", "用户信息获取成功，准备跳转到家庭页面");
+            // 跳转到盲人家庭页面
+            if (getActivity() != null) {
+                android.util.Log.d("ProfileFragment", "Activity存在，开始导航");
+                try {
+                    // 使用NavController导航到家庭页面
+                    androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                    android.util.Log.d("ProfileFragment", "NavController获取成功，开始导航到家庭页面");
+                    
+                    // 尝试使用popBackStack先清除当前页面，然后导航
+                    navController.popBackStack();
+                    navController.navigate(R.id.navigation_family);
+                    
+                    android.util.Log.d("ProfileFragment", "导航命令已发送");
+                    Toast.makeText(requireContext(), "正在跳转到家庭页面", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    android.util.Log.e("ProfileFragment", "导航失败", e);
+                    Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                android.util.Log.e("ProfileFragment", "Activity为null");
+                Toast.makeText(requireContext(), "页面跳转失败", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            android.util.Log.e("ProfileFragment", "用户信息为null");
+            Toast.makeText(requireContext(), "用户信息无效", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void handleEditInfoClick() {
         NavigationHelper.toBlindEditProfile(requireContext());
+    }
+
+    private void handleChangePasswordClick() {
+        showChangePasswordDialog();
+    }
+
+    private void showChangePasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_change_password, null);
+        builder.setView(dialogView);
+
+        EditText etOriginPassword = dialogView.findViewById(R.id.etOriginPassword);
+        EditText etNewPassword = dialogView.findViewById(R.id.etNewPassword);
+        EditText etConfirmPassword = dialogView.findViewById(R.id.etConfirmPassword);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+
+        AlertDialog dialog = builder.create();
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirm.setOnClickListener(v -> {
+            String originPassword = etOriginPassword.getText().toString().trim();
+            String newPassword = etNewPassword.getText().toString().trim();
+            String confirmPassword = etConfirmPassword.getText().toString().trim();
+
+            // 验证新密码
+            if (TextUtils.isEmpty(newPassword)) {
+                Toast.makeText(requireContext(), "新密码不能为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                Toast.makeText(requireContext(), "两次输入的密码不一致", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 调用修改密码API
+            String token = SharedPrefsUtil.getToken();
+            Long userId = SharedPrefsUtil.getUserId();
+
+            if (token == null || userId == null) {
+                Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            apiService.updateBlindPassword(
+                    "Bearer " + token,
+                    userId,
+                    originPassword,
+                    newPassword
+            ).enqueue(new ApiCallback<Boolean>(requireContext()) {
+                @Override
+                public void onSuccess(Boolean response) {
+                    Toast.makeText(requireContext(), "密码修改成功", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                }
+
+                @Override
+                public void onError(String message) {
+                    Toast.makeText(requireContext(), "修改失败：" + message, Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        dialog.show();
     }
 
     private void handleLogoutClick() {

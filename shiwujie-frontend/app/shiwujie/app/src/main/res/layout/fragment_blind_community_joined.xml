@@ -120,6 +120,8 @@
 
             </LinearLayout>
 
+
+
             <!-- 社区成员 -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -149,6 +151,8 @@
                     android:textSize="16sp" />
 
             </LinearLayout>
+
+
 
         </LinearLayout>
 

@@ -60,6 +60,7 @@ public class QuickLoginActivity extends AppCompatActivity {
         }
     }
 
+
     private void initViews() {
         try {
             tvPhone = findViewById(R.id.tv_phone);
@@ -197,14 +198,20 @@ public class QuickLoginActivity extends AppCompatActivity {
                 // 建立WebSocket连接
                 WebSocketManager.connectWebSocket(QuickLoginActivity.this, data.getPhone(), false);
 
-                // 登录成功后请求权限
-                isWaitingForPermissions = true;
-                java.util.List<String> missing = com.swj.shiwujie.common.utils.PermissionManager.getMissingPermissions(QuickLoginActivity.this);
-                if (missing.isEmpty() && com.swj.shiwujie.common.utils.PermissionManager.hasOverlayPermission(QuickLoginActivity.this)) {
-                    isWaitingForPermissions = false;
-                    com.swj.shiwujie.common.navigation.NavigationHelper.toBlindHome(QuickLoginActivity.this);
+                // 检查是否需要设置密码
+                if (data.getPassword() == null) {
+                    // 密码为空，跳转到设置密码页面
+                    com.swj.shiwujie.common.navigation.NavigationHelper.toSetPassword(QuickLoginActivity.this, true);
                 } else {
-                    com.swj.shiwujie.common.utils.PermissionManager.checkAndRequestLoginPermissions(QuickLoginActivity.this);
+                    // 登录成功后请求权限
+                    isWaitingForPermissions = true;
+                    java.util.List<String> missing = com.swj.shiwujie.common.utils.PermissionManager.getMissingPermissions(QuickLoginActivity.this);
+                    if (missing.isEmpty() && com.swj.shiwujie.common.utils.PermissionManager.hasOverlayPermission(QuickLoginActivity.this)) {
+                        isWaitingForPermissions = false;
+                        com.swj.shiwujie.common.navigation.NavigationHelper.toBlindHome(QuickLoginActivity.this);
+                    } else {
+                        com.swj.shiwujie.common.utils.PermissionManager.checkAndRequestLoginPermissions(QuickLoginActivity.this);
+                    }
                 }
             }
 

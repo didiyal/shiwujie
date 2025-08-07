@@ -4,6 +4,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- 顶部状态栏占位 -->
+    <View
+        android:id="@+id/statusBarSpacer"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/white"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+
     <!-- 顶部卡片 -->
     <androidx.cardview.widget.CardView
         android:id="@+id/card_stats"
