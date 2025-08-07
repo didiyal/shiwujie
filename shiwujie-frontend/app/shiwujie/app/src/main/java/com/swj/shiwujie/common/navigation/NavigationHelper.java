@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.swj.shiwujie.ChooseIdentityActivity;
+import com.swj.shiwujie.SetPasswordActivity;
 import com.swj.shiwujie.blind.BlindHomeActivity;
 import com.swj.shiwujie.volunteer.VolunteerHomeActivity;
 
@@ -99,6 +100,20 @@ public class NavigationHelper {
     public static void toUserHome(Context context, boolean isBlind) {
         Intent intent = new Intent(context, 
             isBlind ? BlindHomeActivity.class : VolunteerHomeActivity.class);
+        context.startActivity(intent);
+        if (context instanceof Activity) {
+            ((Activity) context).finish();
+        }
+    }
+
+    /**
+     * 跳转到设置密码页面
+     * @param context 上下文
+     * @param isBlind true表示盲人用户，false表示志愿者
+     */
+    public static void toSetPassword(Context context, boolean isBlind) {
+        Intent intent = new Intent(context, SetPasswordActivity.class);
+        intent.putExtra("isBlind", isBlind);
         context.startActivity(intent);
         if (context instanceof Activity) {
             ((Activity) context).finish();

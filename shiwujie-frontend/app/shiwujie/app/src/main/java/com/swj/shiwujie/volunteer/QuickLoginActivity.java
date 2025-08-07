@@ -187,14 +187,20 @@ public class QuickLoginActivity extends AppCompatActivity {
                 VolunteerUserInfoManager.fetchUserInfo(QuickLoginActivity.this, new VolunteerUserInfoManager.UserInfoCallback() {
                     @Override
                     public void onSuccess(VolunteerVO userInfo) {
-                        // 登录成功后请求权限
-                        isWaitingForPermissions = true;
-                        java.util.List<String> missing = com.swj.shiwujie.common.utils.PermissionManager.getMissingPermissions(QuickLoginActivity.this);
-                        if (missing.isEmpty() && com.swj.shiwujie.common.utils.PermissionManager.hasOverlayPermission(QuickLoginActivity.this)) {
-                            isWaitingForPermissions = false;
-                            com.swj.shiwujie.common.navigation.NavigationHelper.toVolunteerHome(QuickLoginActivity.this);
+                        // 检查是否需要设置密码
+                        if (userInfo.getPassword() == null) {
+                            // 密码为空，跳转到设置密码页面
+                            com.swj.shiwujie.common.navigation.NavigationHelper.toSetPassword(QuickLoginActivity.this, false);
                         } else {
-                            com.swj.shiwujie.common.utils.PermissionManager.checkAndRequestLoginPermissions(QuickLoginActivity.this);
+                            // 登录成功后请求权限
+                            isWaitingForPermissions = true;
+                            java.util.List<String> missing = com.swj.shiwujie.common.utils.PermissionManager.getMissingPermissions(QuickLoginActivity.this);
+                            if (missing.isEmpty() && com.swj.shiwujie.common.utils.PermissionManager.hasOverlayPermission(QuickLoginActivity.this)) {
+                                isWaitingForPermissions = false;
+                                com.swj.shiwujie.common.navigation.NavigationHelper.toVolunteerHome(QuickLoginActivity.this);
+                            } else {
+                                com.swj.shiwujie.common.utils.PermissionManager.checkAndRequestLoginPermissions(QuickLoginActivity.this);
+                            }
                         }
                     }
 

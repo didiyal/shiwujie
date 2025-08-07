@@ -51,6 +51,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".SetPasswordActivity"
+            android:exported="false" />
+
         <activity android:name=".blind.LoginActivity" />
         <activity android:name=".volunteer.LoginActivity" />
         <activity android:name=".blind.BlindHomeActivity" />
