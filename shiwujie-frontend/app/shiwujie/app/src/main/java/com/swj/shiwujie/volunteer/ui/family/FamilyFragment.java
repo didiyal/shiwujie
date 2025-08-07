@@ -315,25 +315,20 @@ public class FamilyFragment extends Fragment {
     private void showJoinFamilyDialog() {
         // 创建输入框
         EditText input = new EditText(requireContext());
-        input.setInputType(InputType.TYPE_CLASS_NUMBER); // 只允许输入数字
-        input.setHint("请输入家庭账号");
+        input.setInputType(InputType.TYPE_CLASS_PHONE); // 允许输入手机号
+        input.setHint("请输入家主手机号");
 
         // 创建对话框
         new AlertDialog.Builder(requireContext())
                 .setTitle("加入家庭")
                 .setView(input)
                 .setPositiveButton("确定", (dialog, which) -> {
-                    String familyIdStr = input.getText().toString().trim();
-                    if (familyIdStr.isEmpty()) {
-                        Toast.makeText(requireContext(), "请输入家庭账号", Toast.LENGTH_SHORT).show();
+                    String familyVolunteerPhone = input.getText().toString().trim();
+                    if (familyVolunteerPhone.isEmpty()) {
+                        Toast.makeText(requireContext(), "请输入家主手机号", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    try {
-                        Long familyId = Long.parseLong(familyIdStr);
-                        sendJoinFamilyRequest(familyId);
-                    } catch (NumberFormatException e) {
-                        Toast.makeText(requireContext(), "请输入有效的家庭账号", Toast.LENGTH_SHORT).show();
-                    }
+                    sendJoinFamilyRequest(familyVolunteerPhone);
                 })
                 .setNegativeButton("取消", null)
                 .show();
@@ -350,14 +345,14 @@ public class FamilyFragment extends Fragment {
                 .show();
     }
 
-    private void sendJoinFamilyRequest(Long familyId) {
+    private void sendJoinFamilyRequest(String familyVolunteerPhone) {
         String token = SharedPrefsUtil.getToken();
         if (token == null) {
             Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        apiService.joinFamily("Bearer " + token, familyId).enqueue(new ApiCallback<Boolean>(requireContext()) {
+        apiService.joinFamily("Bearer " + token, familyVolunteerPhone).enqueue(new ApiCallback<Boolean>(requireContext()) {
             @Override
             public void onSuccess(Boolean data) {
                 if (data != null && data) {
@@ -423,38 +418,59 @@ public class FamilyFragment extends Fragment {
             return;
         }
 
-        // 创建输入框
-        EditText input = new EditText(requireContext());
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        input.setHint("请输入家庭描述");
-        input.setText(currentFamily.getFamilyDescription());
-        input.setMinLines(3);
-        input.setMaxLines(5);
+        // 创建对话框布局
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 20);
 
-        // 设置输入框的布局参数
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+        // 创建家庭名称输入框
+        EditText etFamilyName = new EditText(requireContext());
+        etFamilyName.setInputType(InputType.TYPE_CLASS_TEXT);
+        etFamilyName.setHint("请输入家庭名称");
+        etFamilyName.setText(currentFamily.getFamilyName());
+        etFamilyName.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(50, 0, 50, 0);
-        input.setLayoutParams(lp);
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        etFamilyName.setPadding(0, 0, 0, 20);
+
+        // 创建家庭描述输入框
+        EditText etFamilyDescription = new EditText(requireContext());
+        etFamilyDescription.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        etFamilyDescription.setHint("请输入家庭描述");
+        etFamilyDescription.setText(currentFamily.getFamilyDescription());
+        etFamilyDescription.setMinLines(3);
+        etFamilyDescription.setMaxLines(5);
+        etFamilyDescription.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        // 添加输入框到布局
+        layout.addView(etFamilyName);
+        layout.addView(etFamilyDescription);
 
         // 创建对话框
         new AlertDialog.Builder(requireContext())
                 .setTitle("修改家庭信息")
-                .setView(input)
+                .setView(layout)
                 .setPositiveButton("确定", (dialog, which) -> {
-                    String description = input.getText().toString().trim();
-                    if (description.isEmpty()) {
+                    String familyName = etFamilyName.getText().toString().trim();
+                    String familyDescription = etFamilyDescription.getText().toString().trim();
+                    
+                    if (familyName.isEmpty()) {
+                        Toast.makeText(requireContext(), "请输入家庭名称", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (familyDescription.isEmpty()) {
                         Toast.makeText(requireContext(), "请输入家庭描述", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    updateFamilyDescription(description);
+                    updateFamilyInfo(familyName, familyDescription);
                 })
                 .setNegativeButton("取消", null)
                 .show();
     }
 
-    private void updateFamilyDescription(String description) {
+    private void updateFamilyInfo(String familyName, String familyDescription) {
         String token = SharedPrefsUtil.getToken();
         if (token == null || currentFamily == null) {
             Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
@@ -465,8 +481,8 @@ public class FamilyFragment extends Fragment {
         apiService.updateFamily(
             "Bearer " + token, 
             currentFamily.getFamilyId(),
-            currentFamily.getFamilyName(),
-            description
+            familyName,
+            familyDescription
         ).enqueue(new ApiCallback<Boolean>(requireContext()) {
             @Override
             public void onSuccess(Boolean data) {

@@ -405,14 +405,14 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void sendJoinFamilyRequest(Long familyId) {
+    private void sendJoinFamilyRequest(String familyVolunteerPhone) {
         String token = SharedPrefsUtil.getToken();
         if (token == null) {
             Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        apiService.joinFamily("Bearer " + token, familyId).enqueue(new ApiCallback<Boolean>(requireContext()) {
+        apiService.joinFamily("Bearer " + token, familyVolunteerPhone).enqueue(new ApiCallback<Boolean>(requireContext()) {
             @Override
             public void onSuccess(Boolean data) {
                 if (data != null && data) {

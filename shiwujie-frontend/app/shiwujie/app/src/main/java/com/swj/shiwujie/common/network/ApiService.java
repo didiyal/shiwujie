@@ -132,7 +132,7 @@ public interface ApiService {
     );
 
     @POST("/api/user/family/join")
-    Call<BaseResponse<Boolean>> joinFamily(@Header("Authorization") String token, @Query("familyId") Long familyId);
+    Call<BaseResponse<Boolean>> joinFamily(@Header("Authorization") String token, @Query("familyVolunteerPhone") String familyVolunteerPhone);
 
     /**
      * 创建家庭
@@ -416,7 +416,7 @@ public interface ApiService {
     /**
      * 志愿者加入社区
      * @param token JWT令牌
-     * @param communityId 社区ID
+     * @param familyVolunteerPhone 家主手机号
      * @return 加入结果
      */
     @POST("/api/user/volunteer/community/join")

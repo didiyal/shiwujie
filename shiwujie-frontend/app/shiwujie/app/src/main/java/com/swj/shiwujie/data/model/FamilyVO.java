@@ -7,6 +7,7 @@ public class FamilyVO {
     private VolunteerVO creatorVolunteer;
     private String familyDescription;
     private Long familyId;
+    private String familyVolunteerPhone;
     private String familyName;
     private List<VolunteerVO> volunteerVOList;
 

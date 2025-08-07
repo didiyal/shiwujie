@@ -63,6 +63,12 @@ public class FamilyFragment extends Fragment {
         rvBlindMembers = root.findViewById(R.id.rvFamilyMembers);
         rvVolunteerMembers = root.findViewById(R.id.rvFamilyRequests);
 
+        // 盲人端不需要显示加入申请卡片，始终隐藏
+        CardView cardFamilyRequests = root.findViewById(R.id.cardFamilyRequests);
+        if (cardFamilyRequests != null) {
+            cardFamilyRequests.setVisibility(View.GONE);
+        }
+
         rvBlindMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvVolunteerMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
     }
@@ -89,19 +95,13 @@ public class FamilyFragment extends Fragment {
         AlertDialog dialog = builder.create();
 
         btnConfirm.setOnClickListener(v -> {
-            String familyIdStr = etFamilyId.getText().toString().trim();
-            if (familyIdStr.isEmpty()) {
-                Toast.makeText(requireContext(), "请输入家庭ID", Toast.LENGTH_SHORT).show();
+            String familyVolunteerPhone = etFamilyId.getText().toString().trim();
+            if (familyVolunteerPhone.isEmpty()) {
+                Toast.makeText(requireContext(), "请输入家主手机号", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            try {
-                Long familyId = Long.parseLong(familyIdStr);
-                joinFamily(familyId);
-                dialog.dismiss();
-            } catch (NumberFormatException e) {
-                Toast.makeText(requireContext(), "请输入有效的家庭ID", Toast.LENGTH_SHORT).show();
-            }
+            joinFamily(familyVolunteerPhone);
+            dialog.dismiss();
         });
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
@@ -211,14 +211,14 @@ public class FamilyFragment extends Fragment {
         btnLeaveFamily.setVisibility(View.GONE);
     }
 
-    private void joinFamily(Long familyId) {
+    private void joinFamily(String familyVolunteerPhone) {
         String token = SharedPrefsUtil.getToken();
         if (token == null) {
             Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        apiService.joinFamily("Bearer " + token, familyId).enqueue(new ApiCallback<Boolean>(requireContext()) {
+        apiService.joinFamily("Bearer " + token, familyVolunteerPhone).enqueue(new ApiCallback<Boolean>(requireContext()) {
             @Override
             public void onSuccess(Boolean response) {
                 if (response) {
@@ -253,54 +253,28 @@ public class FamilyFragment extends Fragment {
 
     private void leaveFamily() {
         String token = SharedPrefsUtil.getToken();
-        Long userId = SharedPrefsUtil.getUserId();
-        if (token == null || userId == null) {
+        if (token == null) {
             Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 获取当前家庭ID
-        apiService.getBlindById("Bearer " + token, userId).enqueue(new ApiCallback<BlindVO>(requireContext()) {
+        // 直接调用退出家庭接口
+        apiService.leaveFamily("Bearer " + token).enqueue(new ApiCallback<Boolean>(requireContext()) {
             @Override
-            public void onSuccess(BlindVO data) {
-                if (data != null && data.getFamilyId() != null) {
-                    // 调用移除用户接口
-                    apiService.removeUserFromFamily("Bearer " + token, data.getFamilyId(), userId, null)
-                            .enqueue(new ApiCallback<Boolean>(requireContext()) {
-                                @Override
-                                public void onSuccess(Boolean data) {
-                                    Toast.makeText(requireContext(), "已退出家庭", Toast.LENGTH_SHORT).show();
-                                    showEmptyState();
-                                    // 刷新家庭状态
-                                    checkFamilyStatus();
-                                }
-
-                                @Override
-                                public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
-                                    if (response.isSuccessful() && response.body() != null) {
-                                        // 显示后端返回的message
-                                        String message = response.body().getMessage();
-                                        if (message != null && !message.isEmpty()) {
-                                            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-                                        }
-                                    }
-                                    super.onResponse(call, response);
-                                }
-
-                                @Override
-                                public void onError(String message) {
-                                    Toast.makeText(requireContext(), "退出家庭失败: " + message, Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                } else {
-                    Toast.makeText(requireContext(), "您当前未加入任何家庭", Toast.LENGTH_SHORT).show();
+            public void onSuccess(Boolean data) {
+                if (data) {
+                    Toast.makeText(requireContext(), "已退出家庭", Toast.LENGTH_SHORT).show();
                     showEmptyState();
+                    // 刷新家庭状态
+                    checkFamilyStatus();
+                } else {
+                    Toast.makeText(requireContext(), "退出家庭失败", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onError(String message) {
-                Toast.makeText(requireContext(), "获取用户信息失败: " + message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "退出家庭失败: " + message, Toast.LENGTH_SHORT).show();
             }
         });
     }
