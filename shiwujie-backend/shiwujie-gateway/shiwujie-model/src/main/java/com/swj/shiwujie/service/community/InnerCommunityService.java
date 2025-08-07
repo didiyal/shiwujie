@@ -21,6 +21,17 @@ public interface InnerCommunityService {
 
 
 
+
+    /**
+     * 删除社区
+     * @param communityId 社区ID
+     * @param volunteerId 操作人ID
+     * @return 是否删除成功
+     */
+    boolean deleteCommunity(Long communityId, Long volunteerId);
+
+
+
 }
 
 

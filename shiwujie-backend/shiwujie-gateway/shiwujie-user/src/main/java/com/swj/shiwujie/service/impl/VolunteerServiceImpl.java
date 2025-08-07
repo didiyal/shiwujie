@@ -378,6 +378,19 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
                     blindMapper.updateById(blind);
                 }
 
+                // 删除社区
+                Long communityId = volunteer.getCommunityId();
+                if(ObjUtil.isNotNull(communityId)){
+                    Community community = innerCommunityService.getById(communityId);
+                    //判断是否是社区注册人
+                    boolean equals = community.getRegisterVolunteerId().equals(volunteerId);
+                    if(equals){
+                        boolean b = innerCommunityService.deleteCommunity(communityId, volunteerId);
+                        ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR, "删除社区失败");
+                    }
+                }
+
+
 
                 QueryWrapper<Volunteer> volunteerQueryWrapper = new QueryWrapper<>();
                 volunteerQueryWrapper.eq("family_id", familyId);

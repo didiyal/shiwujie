@@ -27,7 +27,7 @@ mybatis-plus:
 #dubbo配置
 dubbo:
   application:
-    name: shiwujie-Community-consumer
+    name: shiwujie-Community
     logger: slf4j
     qos-port: 33340
     serialize-check-status: DISABLE

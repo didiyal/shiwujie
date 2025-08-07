@@ -9,13 +9,12 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 
@@ -28,7 +27,7 @@ import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvis
  */
 @Slf4j
 @Component
-public class MyApp {
+public class EasyProblemApp {
 
 
     /**
@@ -51,20 +50,23 @@ public class MyApp {
     @Resource
     private Advisor myRagCloudAdvisor;
 
+    @Resource
+    private ToolCallbackProvider toolCallbackProvider;
+
+    @Resource
+    private ToolCallback[] allTools;
+
+
     /**
      * 构造
      *
      * @param chatModel 阿里云灵积大模型
-     * @param redisChatMemory    自定义redis对话存储
+     * @param redisChatMemory 自定义redis对话存储
      */
-    public MyApp(DashScopeChatModel chatModel, RedisChatMemory redisChatMemory) {
-
-        // 引入基于redis自定义存储的ChatMemory
-//        this.chatMemory = redisChatMemory;
+    public EasyProblemApp(DashScopeChatModel chatModel, RedisChatMemory redisChatMemory) {
 
         //基于内存存储的ChatMemory
-        this.chatMemory = new InMemoryChatMemory();
-
+        this.chatMemory = redisChatMemory;
 
         // 模型名
         String model = chatModel.getDefaultOptions().getModel();
@@ -84,9 +86,8 @@ public class MyApp {
 
     /**
      * 与大模型文字交流
-     *
-     * @param text
-     * @return
+     * @param text 输入的文本
+     * @return 大模型回复
      */
     public String doChatWithText(String text, Long blindId) {
         ChatResponse chatResponse = chatClient.prompt()
@@ -94,6 +95,8 @@ public class MyApp {
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
                 .advisors(myRagCloudAdvisor)
                 .user(text)
+                .tools(toolCallbackProvider)
+                .tools(allTools)
                 .call()
                 .chatResponse();
         String res = chatResponse.getResult().getOutput().getText();
@@ -104,17 +107,18 @@ public class MyApp {
     /**
      * 与大模型图片识别
      *
-     * @param image
-     * @return
+     * @param imageUrl 图片地址
+     * @return 大模型回复
      */
-    public String doChatWithImage(String text, String image, Long blindId) {
+    public String doChatWithImage(String imageUrl, Long blindId) {
         ChatResponse chatResponse = chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
                 .advisors(myRagCloudAdvisor)
                 .user(u -> u.text("这个图片展示了什么信息")
-                        .media(MimeTypeUtils.IMAGE_PNG, URLUtil.url(image)))
-                .user(text)
+                        .media(MimeTypeUtils.IMAGE_PNG, URLUtil.url(imageUrl)))
+                .tools(toolCallbackProvider)
+                .tools(allTools)
                 .call()
                 .chatResponse();
         String res = chatResponse.getResult().getOutput().getText();

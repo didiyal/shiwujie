@@ -1,5 +1,6 @@
 package com.swj.shiwujie.utils;
 
+import com.swj.shiwujie.model.domain.user.Blind;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -16,23 +17,12 @@ public class LoginUtils {
      *
      * @return
      */
-    public static Long getLoginBlindId() {
+    public static Blind getLoginBlind() {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        Long loginUserId = (Long)request.getAttribute("loginBlindId");
-        return loginUserId;
+        return (Blind)request.getAttribute("loginBlind");
     }
 
 
-    /**
-     * 获取当前登录志愿者id
-     *
-     * @return
-     */
-    public static Long getLoginVolunteerId() {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        Long loginUserId = (Long)request.getAttribute("loginVolunteerId");
-        return loginUserId;
-    }
 
 
     /**
@@ -42,20 +32,9 @@ public class LoginUtils {
      */
     public static String getLoginUserPhone() {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        String phone = (String)request.getAttribute("phone");
-        return phone;
+        return (String)request.getAttribute("phone");
     }
 
 
-    /**
-     * 获取当前登录用户社区职位id
-     *
-     * @param request
-     * @return
-     */
-    public static Long getVolunteerRole(HttpServletRequest request) {
-        Long phone = (Long)request.getAttribute("role");
-        return phone;
-    }
 
 }
