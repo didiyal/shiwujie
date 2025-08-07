@@ -1,153 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
-    android:fitsSystemWindows="true">
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    android:background="@color/background_light">
 
-    <LinearLayout
+    <!-- 顶部状态栏占位区域，占页面高度的3% -->
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:layout_height="0dp"
+        android:layout_weight="0.03"
+        android:background="@color/background_light" />
 
-        <!-- 欢迎卡片 -->
+    <!-- 内容区域 -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.97"
+        android:background="@color/background_light">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:background="@drawable/card_background"
-            android:elevation="4dp"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="24dp">
 
-            <ImageView
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/circle_background_light"
-                android:padding="12dp"
-                android:src="@drawable/community"
-                android:tint="@color/blue_primary" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="欢迎加入社区"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
-                android:text="加入社区，获得更多帮助和支持"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-
-        </LinearLayout>
-
-        <!-- 搜索社区卡片 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:background="@drawable/card_background"
-            android:elevation="2dp"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="搜索社区"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/searchCommunityEditText"
+            <!-- 欢迎卡片 -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/edit_text_background"
-                android:hint="输入社区ID"
-                android:inputType="number"
-                android:paddingHorizontal="16dp"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_hint"
-                android:textSize="14sp" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/card_background"
+                android:elevation="4dp"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-            <Button
-                android:id="@+id/searchButton"
+                <ImageView
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/circle_background_light"
+                    android:padding="12dp"
+                    android:src="@drawable/community"
+                    android:tint="@color/blue_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="欢迎加入社区"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"
+                    android:text="加入社区，获得更多帮助和支持"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+            <!-- 搜索社区卡片 -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/button_primary"
-                android:text="搜索社区"
-                android:textColor="@color/white"
-                android:textSize="16sp" />
-
-        </LinearLayout>
-
-        <!-- 社区信息卡片 -->
-        <LinearLayout
-            android:id="@+id/communityInfoCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:background="@drawable/card_background"
-            android:elevation="2dp"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:visibility="gone">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="社区信息"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/communityNameText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="社区名称"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/communityDescriptionText"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:text="社区描述"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                android:background="@drawable/card_background"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <Button
-                android:id="@+id/joinCommunityButton"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="搜索社区"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/searchCommunityEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/edit_text_background"
+                    android:hint="输入社区ID"
+                    android:inputType="number"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_hint"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/searchButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/button_primary"
+                    android:text="搜索社区"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+
+            <!-- 社区信息卡片 -->
+            <LinearLayout
+                android:id="@+id/communityInfoCard"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/button_primary"
-                android:text="加入社区"
-                android:textColor="@color/white"
-                android:textSize="16sp" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/card_background"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="社区信息"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/communityNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="社区名称："
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/communityDescriptionText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:text="社区描述："
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/joinButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/button_primary"
+                    android:text="加入社区"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
+    </ScrollView>
 
-
-    </LinearLayout>
-
-</ScrollView> 
+</LinearLayout> 

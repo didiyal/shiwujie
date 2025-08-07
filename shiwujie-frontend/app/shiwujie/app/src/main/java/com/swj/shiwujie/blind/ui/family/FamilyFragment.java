@@ -36,10 +36,8 @@ public class FamilyFragment extends Fragment {
     private CardView cardFamilyInfo;
     private Button btnJoinFamily;
     private Button btnLeaveFamily;
-    private TextView tvFamilyId;
     private TextView tvFamilyName;
     private TextView tvFamilyDescription;
-    private TextView tvCreator;
     private RecyclerView rvBlindMembers;
     private RecyclerView rvVolunteerMembers;
     private ApiService apiService;
@@ -60,12 +58,10 @@ public class FamilyFragment extends Fragment {
         btnJoinFamily = root.findViewById(R.id.btnJoinFamily);
         btnLeaveFamily = root.findViewById(R.id.btnLeaveFamily);
         btnLeaveFamily.setVisibility(View.GONE);
-        tvFamilyId = root.findViewById(R.id.tvFamilyId);
         tvFamilyName = root.findViewById(R.id.tvFamilyName);
         tvFamilyDescription = root.findViewById(R.id.tvFamilyDescription);
-        tvCreator = root.findViewById(R.id.tvCreator);
-        rvBlindMembers = root.findViewById(R.id.rvBlindMembers);
-        rvVolunteerMembers = root.findViewById(R.id.rvVolunteerMembers);
+        rvBlindMembers = root.findViewById(R.id.rvFamilyMembers);
+        rvVolunteerMembers = root.findViewById(R.id.rvFamilyRequests);
 
         rvBlindMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvVolunteerMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -184,13 +180,8 @@ public class FamilyFragment extends Fragment {
             cardEmptyState.setVisibility(View.GONE);
             btnJoinFamily.setVisibility(View.GONE);
 
-            tvFamilyId.setText(String.format("家庭ID：%d", family.getFamilyId()));
             tvFamilyName.setText(family.getFamilyName() != null ? family.getFamilyName() : "未命名家庭");
             tvFamilyDescription.setText(family.getFamilyDescription() != null ? family.getFamilyDescription() : "暂无描述");
-
-            if (family.getCreatorVolunteer() != null) {
-                tvCreator.setText(String.format("创建者：%s", family.getCreatorVolunteer().getName()));
-            }
 
             // 更新盲人成员列表
             if (family.getBlindVOList() != null) {
