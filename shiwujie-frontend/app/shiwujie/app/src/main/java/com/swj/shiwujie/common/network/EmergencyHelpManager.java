@@ -214,8 +214,9 @@ public class EmergencyHelpManager {
                                 Log.d(TAG, "取消紧急求助成功");
                                 showToast("紧急求助已取消");
                                 
-                                // 更新状态
-                                currentHelpData = EmergencyHelpData.createHelpCancelled(currentHelpData.getBlindPhone());
+                                // 重置状态，允许重新发起求助
+                                currentHelpData = null;
+                                isInEmergencyHelp = false;
                                 
                                 if (callback != null) {
                                     callback.onHelpCancelled();

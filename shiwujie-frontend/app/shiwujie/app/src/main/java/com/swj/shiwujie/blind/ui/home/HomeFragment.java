@@ -277,6 +277,8 @@ public class HomeFragment extends Fragment {
             // 通话结束，重置视频通话启动标志
             Log.d(TAG, "收到通话结束(type=5)消息，重置isVideoCallStarted");
             isVideoCallStarted = false;
+            // 重置紧急求助状态
+            isEmergencyHelpMatching = false;
         } else if (data.getRequestType() == 0) {
             // 收到登录确认消息
             Log.d(TAG, "收到登录确认消息");
@@ -313,7 +315,12 @@ public class HomeFragment extends Fragment {
                             Log.d(TAG, "开始显示悬浮窗");
                             emergencyHelpFloatingWindow.show();
                         } else {
-                            Log.e(TAG, "emergencyHelpFloatingWindow为null，无法显示悬浮窗");
+                            Log.e(TAG, "emergencyHelpFloatingWindow为null，重新创建悬浮窗");
+                            // 如果悬浮窗为null，重新创建
+                            if (getActivity() != null) {
+                                emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
+                                emergencyHelpFloatingWindow.show();
+                            }
                         }
                     });
                 } else {
@@ -337,6 +344,10 @@ public class HomeFragment extends Fragment {
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireContext(), "紧急求助已取消", Toast.LENGTH_SHORT).show();
+                        // 隐藏悬浮窗
+                        if (emergencyHelpFloatingWindow != null) {
+                            emergencyHelpFloatingWindow.hide();
+                        }
                     });
                 }
             }
@@ -357,6 +368,8 @@ public class HomeFragment extends Fragment {
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireContext(), "通话已结束", Toast.LENGTH_SHORT).show();
+                        // 重置状态，允许重新发起求助
+                        isEmergencyHelpMatching = false;
                     });
                 }
             }
@@ -393,6 +406,18 @@ public class HomeFragment extends Fragment {
             Log.e(TAG, "手机号为空，无法发起紧急求助");
             Toast.makeText(requireContext(), "用户信息异常，请重新登录", Toast.LENGTH_SHORT).show();
             return;
+        }
+        
+        // 重置紧急求助状态，确保可以重新发起
+        emergencyHelpManager.resetEmergencyHelp();
+        isEmergencyHelpMatching = false;
+        
+        // 重新创建悬浮窗对象，确保状态干净
+        if (getActivity() != null) {
+            if (emergencyHelpFloatingWindow != null) {
+                emergencyHelpFloatingWindow.destroy();
+            }
+            emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
         }
         
         Log.d(TAG, "发起紧急求助，手机号: " + phone);
