@@ -195,10 +195,6 @@ public class EditProfileActivity extends AppCompatActivity {
                 Toast.makeText(this, "残疾证号不能为空", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (!disabilityCard.matches("^\\d{17}(\\d|X)[0-6][1-4]$")) {
-                Toast.makeText(this, "残疾证号格式错误，应为18位身份证+1位类别(0-6)+1位等级(1-4)", Toast.LENGTH_SHORT).show();
-                return;
-            }
         }
         // 如果已验证，disabilityCard保持为null，后端就不会进行验证
         blind.setDisabilityCard(disabilityCard);

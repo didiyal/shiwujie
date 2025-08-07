@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -142,9 +143,20 @@ public class VolunteerHomeActivity extends AppCompatActivity {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_id_card_verification, null);
         builder.setView(dialogView);
 
+        // 动态修改弹窗内容
+        TextView tvTitle = dialogView.findViewById(R.id.tvTitle);
+        TextView tvMessage = dialogView.findViewById(R.id.tvMessage);
         EditText etIdCard = dialogView.findViewById(R.id.etIdCard);
         Button btnCancel = dialogView.findViewById(R.id.btnCancel);
         Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+
+        // 设置志愿者端的内容
+        tvTitle.setText("实名认证");
+        tvMessage.setText("请输入您的身份证号码进行实名认证");
+        btnConfirm.setText("确认认证");
+        
+        // 设置身份证输入框的位数限制（18位）
+        //etIdCard.setMaxLength(18);
 
         AlertDialog dialog = builder.create();
         dialog.setCancelable(false); // 不允许点击外部取消，与原有逻辑保持一致
@@ -174,11 +186,6 @@ public class VolunteerHomeActivity extends AppCompatActivity {
             // 验证身份证号
             if (TextUtils.isEmpty(idCard)) {
                 Toast.makeText(this, "身份证号不能为空", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (!idCard.matches("^[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[0-9Xx]$")) {
-                Toast.makeText(this, "身份证号格式不正确", Toast.LENGTH_SHORT).show();
                 return;
             }
 

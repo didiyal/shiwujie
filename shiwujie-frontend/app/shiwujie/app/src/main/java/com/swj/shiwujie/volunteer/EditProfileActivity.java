@@ -292,10 +292,6 @@ public class EditProfileActivity extends AppCompatActivity {
                 Toast.makeText(this, "身份证号不能为空", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (!idCard.matches("^[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[0-9Xx]$")) {
-                Toast.makeText(this, "身份证号格式不正确", Toast.LENGTH_SHORT).show();
-                return;
-            }
         }
 
         // 创建请求体
