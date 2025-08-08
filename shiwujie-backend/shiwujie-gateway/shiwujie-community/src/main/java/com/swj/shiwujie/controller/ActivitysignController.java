@@ -33,7 +33,7 @@ public class ActivitysignController {
     @PostMapping("/add")
     @ApiOperation("添加活动报名签到")
     public BaseResponse<Boolean> addActivitySign(@RequestBody ActivitySignAddRequest activitySignAddRequest, HttpServletRequest request) {
-        boolean result = activitysignService.addActivitySign(activitySignAddRequest, request);
+        boolean result = activitysignService.addActivitySign(activitySignAddRequest);
         return ResultUtils.success(result);
     }
 
@@ -43,7 +43,7 @@ public class ActivitysignController {
     @GetMapping("/get/vo")
     @ApiOperation("通过id查询活动报名签到VO")
     public BaseResponse<ActivitysignVO> getActivitySignVOById(Long signId, HttpServletRequest request) {
-        ActivitysignVO activitysignVO = activitysignService.getActivitySignVOById(signId, request);
+        ActivitysignVO activitysignVO = activitysignService.getActivitySignVOById(signId);
         return ResultUtils.success(activitysignVO);
     }
 

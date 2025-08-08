@@ -107,8 +107,7 @@ public class EasyProblemApp {
                 .tools(allTools)
                 .call()
                 .chatResponse();
-        String res = chatResponse.getResult().getOutput().getText();
-        return res;
+        return chatResponse.getResult().getOutput().getText();
     }
 
 
@@ -122,15 +121,14 @@ public class EasyProblemApp {
         ChatResponse chatResponse = chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-//                .advisors(myRagCloudAdvisor)
+                .advisors(myRagCloudAdvisor)
                 .user(u -> u.text("这个图片展示了什么信息")
                         .media(MimeTypeUtils.IMAGE_PNG, URLUtil.url(imageUrl)))
                 .tools(toolCallbackProvider)
                 .tools(allTools)
                 .call()
                 .chatResponse();
-        String res = chatResponse.getResult().getOutput().getText();
-        return res;
+        return chatResponse.getResult().getOutput().getText();
     }
 
 

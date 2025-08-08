@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.domain.user.Blind;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.user.InnerBlindService;
 import org.apache.dubbo.config.annotation.DubboService;
@@ -62,6 +63,17 @@ public class InnerBlindServiceImpl implements InnerBlindService {
     public boolean removeCommunityId(Long communityId) {
         return blindService.removeCommunityId(communityId);
     }
+
+//    /**
+//     * 加入社区
+//     * @param blindId 视障人士ID
+//     * @param request 加入社区请求
+//     * @return 是否成功
+//     */
+//    public boolean joinCommunity(Long blindId, CommunityJoinRequest request){
+//        return blindService.joinCommunity(blindId, request);
+//    }
+
 }
 
 

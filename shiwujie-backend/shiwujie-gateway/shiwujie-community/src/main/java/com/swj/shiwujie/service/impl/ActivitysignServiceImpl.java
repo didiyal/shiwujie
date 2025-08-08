@@ -37,7 +37,7 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
 
 
     @Override
-    public boolean addActivitySign(ActivitySignAddRequest activitySignAddRequest, HttpServletRequest request) {
+    public boolean addActivitySign(ActivitySignAddRequest activitySignAddRequest) {
         // 参数校验
         ThrowUtils.throwIf(activitySignAddRequest == null, ErrorCode.PARAMS_ERROR);
         Long activityId = activitySignAddRequest.getActivityId();
@@ -79,7 +79,7 @@ public class ActivitysignServiceImpl extends ServiceImpl<ActivitysignMapper, Act
     }
 
     @Override
-    public ActivitysignVO getActivitySignVOById(Long signId, HttpServletRequest request) {
+    public ActivitysignVO getActivitySignVOById(Long signId) {
         // 参数校验
         ThrowUtils.throwIf(signId == null || signId <= 0, ErrorCode.PARAMS_ERROR, "签到ID无效");
 

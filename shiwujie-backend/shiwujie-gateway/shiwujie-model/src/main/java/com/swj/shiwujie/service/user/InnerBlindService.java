@@ -3,6 +3,7 @@ package com.swj.shiwujie.service.user;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 
 /**
  * dubbo 服务提供接口
@@ -37,4 +38,14 @@ public interface InnerBlindService  {
      * 删除社区后关联的所有用户信息
      */
     boolean removeCommunityId(Long communityId);
+
+
+
+//    /**
+//     * 加入社区
+//     * @param blindId 视障人士ID
+//     * @param request 加入社区请求
+//     * @return 是否成功
+//     */
+//    boolean joinCommunity(Long blindId, CommunityJoinRequest request);
 }

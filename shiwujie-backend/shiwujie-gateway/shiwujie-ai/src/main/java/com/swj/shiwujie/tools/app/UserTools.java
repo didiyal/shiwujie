@@ -3,6 +3,9 @@ package com.swj.shiwujie.tools.app;
 import cn.hutool.core.util.StrUtil;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
+import com.swj.shiwujie.model.VO.user.blind.BlindVO;
+import com.swj.shiwujie.model.VO.user.family.FamilyVO;
+import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.service.user.InnerFamilyService;
 import com.swj.shiwujie.utils.LoginUtils;
@@ -12,6 +15,8 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * 用户模块业务工具调用
@@ -46,7 +51,10 @@ public class UserTools {
     }
 
 
-
+    /**
+     * 退出家庭
+     * @return 退出结果
+     */
     @Tool(description = "APP功能操作:退出家庭(需要让用户确认)")
     public String leaveFromFamily(){
         try {
@@ -58,6 +66,46 @@ public class UserTools {
             log.error("退出家庭失败",e);
             return "退出家庭失败"+e.getMessage();
         }
+    }
+
+
+    /**
+     * 获取用户的家庭信息
+     * @return 家庭信息
+     */
+    @Tool(description = "APP功能操作:获取用户的家庭信息")
+    public String getFamilyInfo(){
+        try {
+            Blind loginBlind = LoginUtils.getLoginBlind();
+            FamilyVO familyVO = innerFamilyService.getFamilyVOById(loginBlind.getFamilyId(), LoginUtils.getLoginUserPhone());
+            List<BlindVO> blindVOList = familyVO.getBlindVOList();
+            List<VolunteerVO> volunteerVOList = familyVO.getVolunteerVOList();
+            StringBuilder sb = new StringBuilder();
+            sb.append("家庭名称：").append(familyVO.getFamilyName()).append("\n")
+                    .append("家庭描述：").append(familyVO.getFamilyDescription()).append("\n")
+                    .append("家庭创建人：").append(familyVO.getCreatorVolunteer().getName()).append("\n")
+                    .append("家庭成员数量：").append(blindVOList.size()+volunteerVOList.size());
+                    // 家庭视障人士
+            for (BlindVO blindVO : blindVOList){
+                sb.append("\n").append("家庭成员：").append(blindVO.getName()).append("，手机号：").append(blindVO.getPhone());
+            }
+            for (VolunteerVO volunteerVO : volunteerVOList){
+                sb.append("\n").append("家庭成员：").append(volunteerVO.getName()).append("，手机号：").append(volunteerVO.getPhone());
+            }
+
+            return "当前家庭信息为：" + sb.toString();
+        } catch (Exception e) {
+            log.error("获取家庭信息失败",e);
+            return "获取家庭信息失败"+e.getMessage();
+        }
+    }
+
+
+
+    @Tool(description = "APP功能操作:加入社区")
+    public String joinCommunity(){
+        //todo 页面通知前端页面跳转
+        return "社区只能手动加入,正在帮您跳转页面";
     }
 
 

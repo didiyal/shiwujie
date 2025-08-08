@@ -1,14 +1,10 @@
 package com.swj.shiwujie.service.impl.inner;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.swj.shiwujie.mapper.CommunityjoinreviewMapper;
-import com.swj.shiwujie.model.domain.community.Community;
 import com.swj.shiwujie.model.domain.community.Communityjoinreview;
 import com.swj.shiwujie.service.CommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 
@@ -21,7 +17,6 @@ public class InnerCommunityjoinreviewServiceImpl implements InnerCommunityjoinre
 
     @Resource
     private CommunityjoinreviewService communityjoinreviewService;
-
 
 
 

@@ -38,14 +38,14 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     private CommunitymanagerService communitymanagerService;
 
     @Override
-    public ActivityVO addActivity(ActivityAddRequest activityAddRequest, HttpServletRequest request) {
+    public ActivityVO addActivity(ActivityAddRequest activityAddRequest, Long loginVolunteerId) {
         ThrowUtils.throwIf(activityAddRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
 
         Activity activity = new Activity();
         BeanUtils.copyProperties(activityAddRequest, activity);
         activity.setCreateTime(new Date());
         activity.setUpdateTime(new Date());
-        activity.setManagerId(LoginUtils.getLoginVolunteerId(request));
+        activity.setManagerId(loginVolunteerId);
         activity.setActivityStatus(ActivityStatusEnum.WAITING.getPostStatus()); // 初始状态设为未开始
         boolean saveResult = this.save(activity);
         ThrowUtils.throwIf(!saveResult, ErrorCode.SYSTEM_ERROR, "创建活动失败");
@@ -55,7 +55,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     }
 
     @Override
-    public ActivityVO getActivityVOById(Long id, HttpServletRequest request) {
+    public ActivityVO getActivityVOById(Long id) {
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
 
         Activity activity = this.getById(id);
@@ -65,7 +65,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     }
 
     @Override
-    public Page<ActivityVO> listActivitiesByCommunity(ActivityQueryRequest activityQueryRequest, HttpServletRequest request) {
+    public Page<ActivityVO> listActivitiesByCommunity(ActivityQueryRequest activityQueryRequest) {
         Long communityId = activityQueryRequest.getCommunityId();
         String activityStatus = activityQueryRequest.getActivityStatus();
         long current = activityQueryRequest.getCurrent();
@@ -99,7 +99,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     }
 
     @Override
-    public boolean deleteActivity(Long activityId, HttpServletRequest request) {
+    public boolean deleteActivity(Long activityId) {
         ThrowUtils.throwIf(activityId == null || activityId <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
 
         Activity activity = this.getById(activityId);
@@ -109,7 +109,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     }
 
     @Override
-    public boolean updateActivity(ActivityUpdateRequest activityUpdateRequest, HttpServletRequest request) {
+    public boolean updateActivity(ActivityUpdateRequest activityUpdateRequest) {
         Long activityId = activityUpdateRequest.getActivityId();
         ThrowUtils.throwIf(activityId == null, ErrorCode.PARAMS_ERROR, "活动ID无效");
 

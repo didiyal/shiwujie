@@ -20,44 +20,39 @@ public interface ActivityService extends IService<Activity> {
      * 创建活动
      *
      * @param activityAddRequest 活动创建请求
-     * @param request             Http请求
      * @return 活动VO
      */
-    ActivityVO addActivity(ActivityAddRequest activityAddRequest, HttpServletRequest request);
+    ActivityVO addActivity(ActivityAddRequest activityAddRequest, Long longinVolunteerId);
 
     /**
      * 通过ID查询活动VO
      *
      * @param id      活动ID
-     * @param request Http请求
      * @return 活动VO
      */
-    ActivityVO getActivityVOById(Long id, HttpServletRequest request);
+    ActivityVO getActivityVOById(Long id);
 
     /**
      * 分页查询社区下的活动
      *
      * @param activityQueryRequest 活动查询请求
-     * @param request               Http请求
      * @return 活动VO分页结果
      */
-    Page<ActivityVO> listActivitiesByCommunity(ActivityQueryRequest activityQueryRequest, HttpServletRequest request);
+    Page<ActivityVO> listActivitiesByCommunity(ActivityQueryRequest activityQueryRequest);
 
     /**
      * 删除活动
      *
      * @param activityId      活动ID
-     * @param request Http请求
      * @return 是否删除成功
      */
-    boolean deleteActivity(Long activityId, HttpServletRequest request);
+    boolean deleteActivity(Long activityId);
 
     /**
      * 修改活动信息
      *
      * @param activityUpdateRequest 活动更新请求
-     * @param request                Http请求
      * @return 是否修改成功
      */
-    boolean updateActivity(ActivityUpdateRequest activityUpdateRequest, HttpServletRequest request);
+    boolean updateActivity(ActivityUpdateRequest activityUpdateRequest);
 }

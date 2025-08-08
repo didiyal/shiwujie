@@ -1,5 +1,6 @@
 package com.swj.shiwujie.controller;
 
+import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
 import io.swagger.annotations.Api;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -40,7 +41,8 @@ public class ActivityController {
     @ApiOperation("社区管理人员创建活动")
     public BaseResponse<ActivityVO> addActivity(@RequestBody ActivityAddRequest activityAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(activityAddRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
-        ActivityVO activityVO = activityService.addActivity(activityAddRequest, request);
+        Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
+        ActivityVO activityVO = activityService.addActivity(activityAddRequest, loginVolunteerId);
         return ResultUtils.success(activityVO);
     }
 
@@ -54,7 +56,7 @@ public class ActivityController {
         try {
             Long activityId = Long.parseLong(id);
             ThrowUtils.throwIf(activityId <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
-            ActivityVO activityVO = activityService.getActivityVOById(activityId, request);
+            ActivityVO activityVO = activityService.getActivityVOById(activityId);
             return ResultUtils.success(activityVO);
         } catch (NumberFormatException e) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "活动ID格式错误");
@@ -68,7 +70,7 @@ public class ActivityController {
     @ApiOperation("分页查询社区下的活动列表")
     public BaseResponse<Page<ActivityVO>> listActivitiesByCommunity(ActivityQueryRequest activityQueryRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(activityQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
-        Page<ActivityVO> activityVOPage = activityService.listActivitiesByCommunity(activityQueryRequest, request);
+        Page<ActivityVO> activityVOPage = activityService.listActivitiesByCommunity(activityQueryRequest);
         return ResultUtils.success(activityVOPage);
     }
 
@@ -82,7 +84,7 @@ public class ActivityController {
         try {
             Long id = Long.parseLong(activityId);
             ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR, "活动ID无效");
-            boolean result = activityService.deleteActivity(id, request);
+            boolean result = activityService.deleteActivity(id);
             return ResultUtils.success(result);
         } catch (NumberFormatException e) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "活动ID格式错误");
@@ -96,7 +98,7 @@ public class ActivityController {
     @ApiOperation("修改活动信息")
     public BaseResponse<Boolean> updateActivity(@RequestBody ActivityUpdateRequest activityUpdateRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(activityUpdateRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
-        boolean result = activityService.updateActivity(activityUpdateRequest, request);
+        boolean result = activityService.updateActivity(activityUpdateRequest);
         return ResultUtils.success(result);
     }
 }

@@ -1,12 +1,11 @@
 package com.swj.shiwujie.service.impl.inner;
 
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 
