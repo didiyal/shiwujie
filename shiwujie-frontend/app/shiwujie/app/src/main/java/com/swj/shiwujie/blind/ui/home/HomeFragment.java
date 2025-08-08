@@ -317,18 +317,19 @@ public class HomeFragment extends Fragment {
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireContext(), "紧急求助请求已发送", Toast.LENGTH_SHORT).show();
-                        // 显示悬浮窗
-                        Log.d(TAG, "准备显示悬浮窗，emergencyHelpFloatingWindow: " + (emergencyHelpFloatingWindow != null));
+                        
+                        // 强制重新创建悬浮窗，确保状态干净
                         if (emergencyHelpFloatingWindow != null) {
-                            Log.d(TAG, "开始显示悬浮窗");
+                            emergencyHelpFloatingWindow.destroy();
+                        }
+                        if (getActivity() != null) {
+                            emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
+                        }
+                        
+                        // 强制显示悬浮窗
+                        Log.d(TAG, "强制显示悬浮窗");
+                        if (emergencyHelpFloatingWindow != null) {
                             emergencyHelpFloatingWindow.show();
-                        } else {
-                            Log.e(TAG, "emergencyHelpFloatingWindow为null，重新创建悬浮窗");
-                            // 如果悬浮窗为null，重新创建
-                            if (getActivity() != null) {
-                                emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
-                                emergencyHelpFloatingWindow.show();
-                            }
                         }
                     });
                 } else {
@@ -352,10 +353,12 @@ public class HomeFragment extends Fragment {
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireContext(), "紧急求助已取消", Toast.LENGTH_SHORT).show();
-                        // 隐藏悬浮窗
+                        // 强制隐藏悬浮窗
                         if (emergencyHelpFloatingWindow != null) {
                             emergencyHelpFloatingWindow.hide();
                         }
+                        // 重置状态，确保下次可以正常发起求助
+                        isEmergencyHelpMatching = false;
                     });
                 }
             }
@@ -420,11 +423,12 @@ public class HomeFragment extends Fragment {
         emergencyHelpManager.resetEmergencyHelp();
         isEmergencyHelpMatching = false;
         
-        // 重新创建悬浮窗对象，确保状态干净
+        // 强制销毁并重新创建悬浮窗对象，确保状态干净
+        if (emergencyHelpFloatingWindow != null) {
+            emergencyHelpFloatingWindow.destroy();
+            emergencyHelpFloatingWindow = null;
+        }
         if (getActivity() != null) {
-            if (emergencyHelpFloatingWindow != null) {
-                emergencyHelpFloatingWindow.destroy();
-            }
             emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
         }
         
