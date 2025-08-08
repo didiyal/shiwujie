@@ -55,10 +55,10 @@ public class SocketDataV0 {
         data.setRequestType(0);
         if (isVolunteer) {
             data.setVolunteerPhone(phone);
-            data.setBlindPhone(null);
+            data.setBlindPhone("");
         } else {
             data.setBlindPhone(phone);
-            data.setVolunteerPhone(null);
+            data.setVolunteerPhone("");
         }
         data.setChannelId(0);
         return data;
@@ -70,10 +70,10 @@ public class SocketDataV0 {
         data.setRequestType(2);
         if (isVolunteer) {
             data.setVolunteerPhone(phone);
-            data.setBlindPhone(null);
+            data.setBlindPhone("");
         } else {
             data.setBlindPhone(phone);
-            data.setVolunteerPhone(null);
+            data.setVolunteerPhone("");
         }
         data.setChannelId(channelId);
         return data;
@@ -84,10 +84,8 @@ public class SocketDataV0 {
         SocketDataV0 data = new SocketDataV0();
         data.setRequestType(3);
         data.setBlindPhone(blindPhone);
-        data.setVolunteerPhone(null);
-        data.setCallStatus(1); // 等待匹配
-        data.setTimestamp(System.currentTimeMillis());
-        data.setMessage("视频求助请求");
+        data.setVolunteerPhone("");
+        data.setChannelId(0);
         return data;
     }
     
@@ -97,10 +95,7 @@ public class SocketDataV0 {
         data.setRequestType(4);
         data.setVolunteerPhone(volunteerPhone);
         data.setBlindPhone(blindPhone);
-        data.setCallId(callId);
-        data.setCallStatus(2); // 通话中
-        data.setTimestamp(System.currentTimeMillis());
-        data.setMessage("志愿者已接听");
+        data.setChannelId(0);
         return data;
     }
     
@@ -108,30 +103,39 @@ public class SocketDataV0 {
     public static SocketDataV0 createCallEnd(String callId, String phone, boolean isVolunteer) {
         SocketDataV0 data = new SocketDataV0();
         data.setRequestType(5);
-        data.setCallId(callId);
-        data.setCallStatus(3); // 通话结束
-        data.setTimestamp(System.currentTimeMillis());
-        data.setMessage("通话已结束");
         if (isVolunteer) {
             data.setVolunteerPhone(phone);
-            data.setBlindPhone(null);
+            data.setBlindPhone("");
         } else {
             data.setBlindPhone(phone);
-            data.setVolunteerPhone(null);
+            data.setVolunteerPhone("");
         }
+        data.setChannelId(0);
         return data;
     }
     
     // 创建匹配成功消息
     public static SocketDataV0 createMatchSuccess(String blindPhone, String volunteerPhone, String callId) {
         SocketDataV0 data = new SocketDataV0();
-        data.setRequestType(6);
+        data.setRequestType(1); // 匹配成功
         data.setBlindPhone(blindPhone);
         data.setVolunteerPhone(volunteerPhone);
-        data.setCallId(callId);
-        data.setCallStatus(2); // 通话中
-        data.setTimestamp(System.currentTimeMillis());
-        data.setMessage("匹配成功，开始通话");
+        data.setChannelId(0);
+        return data;
+    }
+    
+    // 创建心跳包消息
+    public static SocketDataV0 createHeartbeatMessage(String phone, boolean isVolunteer) {
+        SocketDataV0 data = new SocketDataV0();
+        data.setRequestType(-1); // 心跳包类型
+        if (isVolunteer) {
+            data.setVolunteerPhone(phone);
+            data.setBlindPhone("");
+        } else {
+            data.setBlindPhone(phone);
+            data.setVolunteerPhone("");
+        }
+        data.setChannelId(0);
         return data;
     }
     
@@ -240,5 +244,27 @@ public class SocketDataV0 {
                 ", timestamp=" + timestamp +
                 ", message='" + message + '\'' +
                 '}';
+    }
+    
+    /**
+     * 转换为发送给后端的JSON格式
+     * 只包含后端期望的4个字段
+     */
+    public String toSendJson() {
+        java.util.Map<String, Object> sendData = new java.util.HashMap<>();
+        sendData.put("requestType", requestType);
+        sendData.put("blindPhone", blindPhone != null ? blindPhone : "");
+        sendData.put("volunteerPhone", volunteerPhone != null ? volunteerPhone : "");
+        sendData.put("channelId", channelId);
+        return new com.google.gson.Gson().toJson(sendData);
+    }
+    
+    /**
+     * 获取额外数据（用于临时存储远程用户ID等）
+     */
+    public String getExtraData() {
+        // 这里可以根据需要返回额外的数据
+        // 目前返回null，可以根据实际需求修改
+        return null;
     }
 } 

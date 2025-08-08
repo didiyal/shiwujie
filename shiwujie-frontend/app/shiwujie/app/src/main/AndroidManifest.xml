@@ -29,7 +29,12 @@
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
     <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
     
+    <!-- 前台服务权限 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    
     <application
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -80,6 +85,13 @@
             android:name=".common.service.FloatingWindowService"
             android:enabled="true"
             android:exported="false" />
+        
+        <!-- WebSocket前台服务 -->
+        <service
+            android:name=".common.network.WebSocketService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
         
     </application>
 

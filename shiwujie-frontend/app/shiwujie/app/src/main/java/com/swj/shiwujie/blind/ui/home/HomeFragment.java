@@ -111,6 +111,9 @@ public class HomeFragment extends Fragment {
             return;
         }
         
+        // 设置匹配状态到WebSocketManager
+        webSocketManager.setMatchingStatus(true);
+        
         // 先检查登录状态
         checkLoginStatusBeforeMatching(token);
         
@@ -188,12 +191,14 @@ public class HomeFragment extends Fragment {
                             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
                             // 重置匹配状态
                             isMatching = false;
+                            webSocketManager.setMatchingStatus(false);
                         }
                     } else {
                         Log.e(TAG, "响应体为空");
                         Toast.makeText(requireContext(), "服务器响应异常", Toast.LENGTH_SHORT).show();
                         // 重置匹配状态
                         isMatching = false;
+                        webSocketManager.setMatchingStatus(false);
                     }
                 } else {
                     Log.e(TAG, "HTTP请求失败 - 状态码: " + response.code());
@@ -206,6 +211,7 @@ public class HomeFragment extends Fragment {
                     Toast.makeText(requireContext(), "网络请求失败 - HTTP " + response.code(), Toast.LENGTH_SHORT).show();
                     // 重置匹配状态
                     isMatching = false;
+                    webSocketManager.setMatchingStatus(false);
                 }
             }
             
@@ -218,6 +224,7 @@ public class HomeFragment extends Fragment {
                 Toast.makeText(requireContext(), "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 // 重置匹配状态
                 isMatching = false;
+                webSocketManager.setMatchingStatus(false);
             }
         });
     }
@@ -248,6 +255,7 @@ public class HomeFragment extends Fragment {
             
             // 重置匹配状态
             isMatching = false;
+            webSocketManager.setMatchingStatus(false);
             isVideoCallStarted = true;
             
             // 如果是紧急求助，隐藏悬浮窗

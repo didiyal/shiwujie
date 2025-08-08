@@ -40,6 +40,9 @@ import android.widget.ImageButton;
 public class VideoCallActivity extends AppCompatActivity {
     private static final String TAG = "VolunteerVideoCallActivity";
     
+    // 静态标志，防止多个实例同时存在
+    private static boolean isActivityRunning = false;
+    
     // UI组件
     private FrameLayout localVideoContainer;
     private FrameLayout remoteVideoContainer;
@@ -51,15 +54,15 @@ public class VideoCallActivity extends AppCompatActivity {
     private TextView tvCallDuration;
     private TextView tvBlindInfo;
     
-    // AnyRTC SDK
+    // RTC相关
     private RtcEngine mRtcEngine;
     private HashMap<String, TextureViewRenderer> renderers = new HashMap<>();
     
-    // 网络管理
+    // 管理器
     private WebSocketManager webSocketManager;
     private VideoCallManager videoCallManager;
     
-    // 通话状态
+    // 状态标志
     private boolean isMuted = false;
     private boolean isFrontCamera = true;
     private boolean isSpeakerOn = true; // 默认开启扬声器
@@ -69,7 +72,7 @@ public class VideoCallActivity extends AppCompatActivity {
     private String blindPhone = "";
     private String remoteUserId = "";
     
-    // 匹配信息 - 从WebSocket消息中获取的真实数据
+    // 匹配信息
     private long matchChannelId = 0;
     private String matchBlindPhone = "";
     private String matchVolunteerPhone = "";
@@ -77,10 +80,16 @@ public class VideoCallActivity extends AppCompatActivity {
     private boolean isVideoInit = false;
     private boolean hasHandledMatchSuccess = false;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // 检查是否已有Activity在运行
+        if (isActivityRunning) {
+            Log.w(TAG, "VideoCallActivity已在运行，结束当前实例");
+            finish();
+            return;
+        }
         
         // 最后检查权限，确保AnyRTC SDK能正常初始化
         if (!PermissionManager.hasVideoCallPermissions(this)) {
@@ -113,18 +122,18 @@ public class VideoCallActivity extends AppCompatActivity {
         // 如果从Intent获取到了匹配信息，手动触发处理逻辑
         if (matchChannelId > 0 && matchBlindPhone != null && !matchBlindPhone.isEmpty()) {
             Log.d(TAG, "从Intent获取到匹配信息，手动触发处理逻辑");
-            // 创建模拟的SocketDataV0对象
-            SocketDataV0 mockData = new SocketDataV0();
-            mockData.setRequestType(1);
-            mockData.setChannelId(matchChannelId);
-            mockData.setBlindPhone(matchBlindPhone);
-            mockData.setVolunteerPhone(matchVolunteerPhone);
-            
-            // 延迟一点时间，确保RtcEngine初始化完成
+            // 延迟一点时间，确保初始化完成
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                SocketDataV0 mockData = new SocketDataV0();
+                mockData.setRequestType(1); // 匹配成功
+                mockData.setChannelId(matchChannelId);
+                mockData.setBlindPhone(matchBlindPhone);
+                mockData.setVolunteerPhone(matchVolunteerPhone);
                 handleMatchSuccess(mockData);
             }, 1000);
         }
+        
+        isActivityRunning = true;
     }
 
     @Override
@@ -210,7 +219,18 @@ public class VideoCallActivity extends AppCompatActivity {
     private void initializeEngine() {
         try {
             String appId = "0e1f64f46fe60c00cfa143e535cbd22f";
+            if (appId == null || appId.isEmpty()) {
+                Log.e(TAG, "RTC AppId为空");
+                Toast.makeText(this, "视频引擎配置错误", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
             mRtcEngine = RtcEngine.create(getBaseContext(), appId, mRtcEventHandler);
+            if (mRtcEngine == null) {
+                Log.e(TAG, "RTC引擎创建失败");
+                Toast.makeText(this, "视频引擎初始化失败", Toast.LENGTH_SHORT).show();
+                return;
+            }
             
             // 启用音频和视频
             mRtcEngine.enableAudio();
@@ -235,7 +255,8 @@ public class VideoCallActivity extends AppCompatActivity {
             
         } catch (Exception e) {
             Log.e(TAG, "RTC引擎初始化失败: " + e.getMessage(), e);
-        //    Toast.makeText(this, "视频引擎初始化失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "视频引擎初始化失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            // 不立即finish，给用户一个重试的机会
         }
     }
     
@@ -394,72 +415,76 @@ public class VideoCallActivity extends AppCompatActivity {
     }
     
     private void handleWebSocketMessage(SocketDataV0 data) {
-        Log.d(TAG, "处理WebSocket消息: " + data.toString());
+        Log.d(TAG, "处理WebSocket消息: " + data.getRequestType());
+        
+        // 检查Activity是否还在运行
+        if (isFinishing() || isDestroyed()) {
+            Log.w(TAG, "Activity已结束，跳过消息处理");
+            return;
+        }
         
         switch (data.getRequestType()) {
             case 1: // 匹配成功
+                Log.d(TAG, "收到匹配成功消息");
                 handleMatchSuccess(data);
                 break;
+            case 2: // 视频初始化成功
+                Log.d(TAG, "收到视频初始化成功消息");
+                handleVideoInit(data);
+                break;
+            case 3: // 视频求助请求
+                Log.d(TAG, "收到视频求助请求消息");
+                // 志愿者端不需要处理视频求助请求
+                break;
+            case 4: // 志愿者接听
+                Log.d(TAG, "收到志愿者接听消息");
+                // 志愿者端不需要处理志愿者接听消息
+                break;
             case 5: // 通话结束
+                Log.d(TAG, "收到通话结束消息");
                 handleCallEnd(data);
+                break;
+            default:
+                Log.d(TAG, "未处理的消息类型: " + data.getRequestType());
                 break;
         }
     }
     
+    private void handleVideoInit(SocketDataV0 data) {
+        Log.d(TAG, "视频初始化成功");
+        // 视频初始化成功后，可以开始设置远程视频
+        // 假设data中包含远程用户的uid
+        String remoteUid = data.getExtraData(); // 假设extraData中包含远程用户的uid
+        if (remoteUid != null && !remoteUid.isEmpty()) {
+            setupRemoteVideo(remoteUid);
+        } else {
+            Log.w(TAG, "视频初始化成功，但未收到远程用户ID");
+        }
+    }
+    
     private void handleMatchSuccess(SocketDataV0 data) {
+        Log.d(TAG, "处理匹配成功消息");
+        
+        // 检查是否已经处理过
         if (hasHandledMatchSuccess) {
-            Log.d(TAG, "handleMatchSuccess已处理，忽略重复调用");
+            Log.w(TAG, "已处理过匹配成功消息，跳过重复处理");
             return;
         }
+        
         hasHandledMatchSuccess = true;
-        Log.d(TAG, "handleMatchSuccess首次处理，开始初始化视频通话");
         
-        // 存储匹配信息 - 直接使用WebSocket消息中的数据
-        matchChannelId = data.getChannelId();
-        matchBlindPhone = data.getBlindPhone();
-        matchVolunteerPhone = data.getVolunteerPhone();
-        
-        Log.d(TAG, "存储匹配信息 - channelId: " + matchChannelId + 
-              ", blindPhone: " + matchBlindPhone + 
-              ", volunteerPhone: " + matchVolunteerPhone);
-        
-        // 检查RtcEngine是否已初始化，如果未初始化则等待
-        if (mRtcEngine == null) {
-            Log.d(TAG, "RtcEngine未初始化，等待初始化完成...");
-            // 延迟500毫秒后重试，给RtcEngine初始化时间
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                if (mRtcEngine != null) {
-                    Log.d(TAG, "RtcEngine已初始化，现在加入频道");
-                    String channelId = String.valueOf(matchChannelId);
-                    joinVideoChannel(channelId);
-                } else {
-                    Log.e(TAG, "RtcEngine初始化超时，尝试重新初始化");
-                    // 如果还是null，尝试重新初始化
-                    try {
-                        initializeEngine();
-                        setupLocalVideo();
-                        // 再次延迟加入频道
-                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                            if (mRtcEngine != null) {
-                                String channelId = String.valueOf(matchChannelId);
-                                joinVideoChannel(channelId);
-                            } else {
-                                Log.e(TAG, "RtcEngine重新初始化失败");
-
-                            }
-                        }, 1000);
-                    } catch (Exception e) {
-                        Log.e(TAG, "重新初始化RtcEngine失败: " + e.getMessage());
-
-                    }
-                }
-            }, 500);
-        } else {
-            Log.d(TAG, "RtcEngine已初始化，直接加入频道");
-            // 加入视频通话频道，使用channelId
-            String channelId = String.valueOf(data.getChannelId());
-            joinVideoChannel(channelId);
+        // 检查Activity是否还在运行
+        if (isFinishing() || isDestroyed()) {
+            Log.w(TAG, "Activity已结束，跳过匹配成功处理");
+            return;
         }
+        
+        Log.d(TAG, "匹配成功，准备加入视频频道");
+        Log.d(TAG, "频道ID: " + data.getChannelId());
+        
+        // 加入视频通话频道，使用channelId
+        String channelId = String.valueOf(data.getChannelId());
+        joinVideoChannel(channelId);
     }
     
     private void handleCallEnd(SocketDataV0 data) {
@@ -682,6 +707,9 @@ public class VideoCallActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         
+        // 重置静态标志
+        isActivityRunning = false;
+        
         // 停止计时器
         if (callDurationHandler != null && callDurationRunnable != null) {
             callDurationHandler.removeCallbacks(callDurationRunnable);
@@ -698,8 +726,13 @@ public class VideoCallActivity extends AppCompatActivity {
         
         // 销毁RtcEngine
         if (mRtcEngine != null) {
-            RtcEngine.destroy();
-            mRtcEngine = null;
+            try {
+                RtcEngine.destroy();
+                mRtcEngine = null;
+                Log.d(TAG, "RTC实例已销毁");
+            } catch (Exception e) {
+                Log.e(TAG, "销毁RTC实例时发生异常: " + e.getMessage(), e);
+            }
         }
         
         Log.d(TAG, "VideoCallActivity销毁");
