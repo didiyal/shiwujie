@@ -54,6 +54,12 @@ public class WebSocketManager {
     private static final int MAX_RECONNECT_ATTEMPTS = 5;
     private static final long RECONNECT_DELAY = 3000; // 3秒
     
+    // 业务状态相关
+    private boolean isInVideoCall = false; // 是否正在进行视频通话
+    private boolean isInMatching = false; // 是否正在匹配中
+    private long lastBusinessActivityTime = 0; // 最后业务活动时间
+    private static final long BUSINESS_ACTIVITY_TIMEOUT = 30000; // 30秒业务活动超时
+    
     private WebSocketManager() {
         mainHandler = new Handler(Looper.getMainLooper());
         socketData = new SocketDataV0();
@@ -170,8 +176,10 @@ public class WebSocketManager {
                     });
                     
                     // 自动重连
-                    if (remote && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    if (remote && reconnectAttempts < MAX_RECONNECT_ATTEMPTS && canReconnect()) {
                         scheduleReconnect();
+                    } else if (!canReconnect()) {
+                        Log.d(TAG, "业务活动进行中，跳过自动重连");
                     }
                 }
                 
@@ -219,6 +227,12 @@ public class WebSocketManager {
      */
     public void sendMessage(SocketDataV0 data) {
         Log.d(TAG, "=== sendMessage方法被调用 ===");
+        
+        if (data == null) {
+            Log.e(TAG, "消息数据为null，无法发送");
+            return;
+        }
+        
         Log.d(TAG, "连接状态检查: isConnected=" + isConnected + ", webSocketClient=" + (webSocketClient != null));
         Log.d(TAG, "准备发送消息 - 连接状态: " + isConnected + ", WebSocket客户端: " + (webSocketClient != null));
         
@@ -229,8 +243,8 @@ public class WebSocketManager {
         }
         
         try {
-            Gson gson = new Gson();
-            String jsonMessage = gson.toJson(data);
+            // 使用toSendJson方法，只发送后端期望的4个字段
+            String jsonMessage = data.toSendJson();
             Log.d(TAG, "=== JSON序列化成功 ===");
             Log.d(TAG, "发送消息内容: " + jsonMessage);
             Log.d(TAG, "原始JSON字符串: " + jsonMessage);
@@ -243,6 +257,7 @@ public class WebSocketManager {
             Log.d(TAG, "=== 消息发送成功 ===");
         } catch (Exception e) {
             Log.e(TAG, "发送消息失败: " + e.getMessage(), e);
+            // 不抛出异常，避免调用方崩溃
         }
     }
     
@@ -290,6 +305,14 @@ public class WebSocketManager {
                         // 处理视频通话消息
                         Log.d(TAG, "开始处理视频通话消息");
                         videoCallManager.handleWebSocketMessage(data);
+                        
+                        // 处理心跳包响应
+                        if (data.getRequestType() == -1) {
+                            Log.d(TAG, "收到心跳包响应，连接状态正常");
+                        } else {
+                            // 更新业务活动时间（非心跳包消息）
+                            updateBusinessActivity();
+                        }
                         
                         // 通知消息监听器
                         mainHandler.post(() -> {
@@ -339,6 +362,14 @@ public class WebSocketManager {
                     // 处理视频通话消息
                     Log.d(TAG, "开始处理视频通话消息");
                     videoCallManager.handleWebSocketMessage(data);
+                    
+                    // 处理心跳包响应
+                    if (data.getRequestType() == -1) {
+                        Log.d(TAG, "收到心跳包响应，连接状态正常");
+                    } else {
+                        // 更新业务活动时间（非心跳包消息）
+                        updateBusinessActivity();
+                    }
                     
                     // 通知消息监听器
                     mainHandler.post(() -> {
@@ -409,7 +440,7 @@ public class WebSocketManager {
         if (message.contains("连接成功") || message.contains("connected")) {
             Log.d(TAG, "收到连接成功确认消息");
             // 可以在这里处理连接成功的逻辑
-        } else if (message.contains("心跳") || message.contains("heartbeat")) {
+        } else if (message.contains("心跳") || message.contains("heartbeat") || message.contains("pong")) {
             Log.d(TAG, "收到心跳确认消息");
             // 可以在这里处理心跳确认的逻辑
         } else if (message.contains("消息已收到") || message.contains("received")) {
@@ -448,8 +479,10 @@ public class WebSocketManager {
             } else {
                 // 连接状态变为断开，尝试自动重连
                 Log.d(TAG, "检测到连接断开，尝试自动重连");
-                if (!isConnecting && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                if (!isConnecting && reconnectAttempts < MAX_RECONNECT_ATTEMPTS && canReconnect()) {
                     scheduleReconnect();
+                } else if (!canReconnect()) {
+                    Log.d(TAG, "业务活动进行中，跳过连接状态检查重连");
                 }
                 
                 // 通知连接状态变化
@@ -470,7 +503,7 @@ public class WebSocketManager {
         Log.d(TAG, "Scheduling reconnect attempt " + reconnectAttempts);
         
         mainHandler.postDelayed(() -> {
-            if (!isConnected && !isConnecting) {
+            if (!isConnected && !isConnecting && canReconnect()) {
                 Log.d(TAG, "Attempting to reconnect...");
                 // 重新获取用户信息来重连
                 if (context != null) {
@@ -491,6 +524,8 @@ public class WebSocketManager {
                         connectionStatusListener.onReconnectNeeded();
                     }
                 }
+            } else if (!canReconnect()) {
+                Log.d(TAG, "业务活动进行中，取消重连");
             }
         }, RECONNECT_DELAY);
     }
@@ -595,6 +630,63 @@ public class WebSocketManager {
      */
     public VideoCallManager getVideoCallManager() {
         return videoCallManager;
+    }
+    
+    /**
+     * 设置视频通话状态
+     */
+    public void setVideoCallStatus(boolean inVideoCall) {
+        this.isInVideoCall = inVideoCall;
+        if (inVideoCall) {
+            lastBusinessActivityTime = System.currentTimeMillis();
+        }
+        Log.d(TAG, "视频通话状态更新: " + inVideoCall);
+    }
+    
+    /**
+     * 设置匹配状态
+     */
+    public void setMatchingStatus(boolean inMatching) {
+        this.isInMatching = inMatching;
+        if (inMatching) {
+            lastBusinessActivityTime = System.currentTimeMillis();
+        }
+        Log.d(TAG, "匹配状态更新: " + inMatching);
+    }
+    
+    /**
+     * 更新业务活动时间
+     */
+    public void updateBusinessActivity() {
+        lastBusinessActivityTime = System.currentTimeMillis();
+        Log.d(TAG, "业务活动时间已更新");
+    }
+    
+    /**
+     * 检查是否可以重连
+     * 只有在没有重要业务活动时才允许重连
+     */
+    private boolean canReconnect() {
+        // 如果正在进行视频通话，不允许重连
+        if (isInVideoCall) {
+            Log.d(TAG, "正在进行视频通话，跳过重连");
+            return false;
+        }
+        
+        // 如果正在匹配中，不允许重连
+        if (isInMatching) {
+            Log.d(TAG, "正在匹配中，跳过重连");
+            return false;
+        }
+        
+        // 检查业务活动超时
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastBusinessActivityTime < BUSINESS_ACTIVITY_TIMEOUT) {
+            Log.d(TAG, "业务活动未超时，跳过重连");
+            return false;
+        }
+        
+        return true;
     }
     
     /**

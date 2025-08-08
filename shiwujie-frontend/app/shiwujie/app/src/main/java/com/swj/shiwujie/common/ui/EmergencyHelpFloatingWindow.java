@@ -215,49 +215,16 @@ public class EmergencyHelpFloatingWindow {
         btnCancel.setEnabled(false);
         btnCancel.setText("取消中...");
         
-        // 调用紧急求助管理器取消求助
-        emergencyHelpManager.setCallback(new EmergencyHelpManager.EmergencyHelpCallback() {
-            @Override
-            public void onHelpRequestSuccess() {
-                // 不会调用
-            }
-            
-            @Override
-            public void onHelpRequestFailed(String error) {
-                // 不会调用
-            }
-            
-            @Override
-            public void onHelpCancelled() {
-                Log.d(TAG, "紧急求助取消成功");
-                handler.post(() -> {
-                    Toast.makeText(context, "紧急求助已取消", Toast.LENGTH_SHORT).show();
-                    hide();
-                });
-            }
-            
-            @Override
-            public void onHelpResponseSuccess() {
-                // 不会调用
-            }
-            
-            @Override
-            public void onHelpResponseFailed(String error) {
-                // 不会调用
-            }
-            
-            @Override
-            public void onHelpHangupSuccess() {
-                // 不会调用
-            }
-            
-            @Override
-            public void onHelpHangupFailed(String error) {
-                // 不会调用
-            }
-        });
-        
+        // 直接调用取消求助，不覆盖回调
         emergencyHelpManager.cancelEmergencyHelp();
+        
+        // 延迟隐藏悬浮窗，让HomeFragment的回调处理
+        handler.postDelayed(() -> {
+            if (isShowing) {
+                Log.d(TAG, "延迟隐藏悬浮窗");
+                hide();
+            }
+        }, 1000);
     }
     
     /**

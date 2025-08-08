@@ -48,6 +48,9 @@ import org.ar.rtc.Constants;
 public class VideoCallActivity extends AppCompatActivity {
     private static final String TAG = "VideoCallActivity";
     
+    // 静态标志，防止多个实例同时存在
+    private static boolean isActivityRunning = false;
+    
     // UI组件
     private FrameLayout localVideoContainer;
     private FrameLayout remoteVideoContainer;
@@ -58,15 +61,15 @@ public class VideoCallActivity extends AppCompatActivity {
     private TextView tvCallStatus;
     private TextView tvCallDuration;
     
-    // AnyRTC SDK
+    // RTC相关
     private RtcEngine mRtcEngine;
     private HashMap<String, TextureViewRenderer> renderers = new HashMap<>();
     
-    // 网络管理
+    // 管理器
     private WebSocketManager webSocketManager;
     private VideoCallManager videoCallManager;
     
-    // 通话状态
+    // 状态标志
     private boolean isMuted = false;
     private boolean isFrontCamera = true;
     private boolean isSpeakerOn = true; // 默认开启扬声器
@@ -75,16 +78,25 @@ public class VideoCallActivity extends AppCompatActivity {
     private Runnable callDurationRunnable;
     private String remoteUserId = "";
     
-    // 匹配信息 - 从Intent中获取
+    // 匹配信息
     private long matchChannelId = 0;
     private String matchVolunteerPhone = "";
     private boolean isInitialized = false; // 防止重复初始化
 
     private boolean isVideoInit = false;
 
+    private boolean hasHandledMatchSuccess = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // 检查是否已有Activity在运行
+        if (isActivityRunning) {
+            Log.w(TAG, "VideoCallActivity已在运行，结束当前实例");
+            finish();
+            return;
+        }
         
         // 防止重复初始化
         if (isInitialized) {
@@ -126,6 +138,7 @@ public class VideoCallActivity extends AppCompatActivity {
         }
         
         isInitialized = true;
+        isActivityRunning = true;
     }
 
     @Override
@@ -417,20 +430,72 @@ public class VideoCallActivity extends AppCompatActivity {
     }
     
     private void handleWebSocketMessage(SocketDataV0 data) {
-        Log.d(TAG, "处理WebSocket消息: " + data.toString());
+        Log.d(TAG, "处理WebSocket消息: " + data.getRequestType());
+        
+        // 检查Activity是否还在运行
+        if (isFinishing() || isDestroyed()) {
+            Log.w(TAG, "Activity已结束，跳过消息处理");
+            return;
+        }
         
         switch (data.getRequestType()) {
+            case 1: // 匹配成功
+                Log.d(TAG, "收到匹配成功消息");
+                handleMatchSuccess(data);
+                break;
+            case 2: // 视频初始化成功
+                Log.d(TAG, "收到视频初始化成功消息");
+                handleVideoInit(data);
+                break;
+            case 3: // 视频求助请求
+                Log.d(TAG, "收到视频求助请求消息");
+                // 盲人端不需要处理视频求助请求
+                break;
+            case 4: // 志愿者接听
+                Log.d(TAG, "收到志愿者接听消息");
+                // 盲人端不需要处理志愿者接听消息
+                break;
             case 5: // 通话结束
+                Log.d(TAG, "收到通话结束消息");
                 handleCallEnd(data);
                 break;
             default:
-                Log.d(TAG, "收到其他类型消息: " + data.getRequestType());
+                Log.d(TAG, "未处理的消息类型: " + data.getRequestType());
                 break;
         }
     }
     
+    private void handleVideoInit(SocketDataV0 data) {
+        Log.d(TAG, "视频初始化成功");
+        // 视频初始化成功后，可以开始设置远程视频
+        // 假设data中包含远程用户的uid
+        String remoteUid = data.getExtraData(); // 假设extraData中包含远程用户的uid
+        if (remoteUid != null && !remoteUid.isEmpty()) {
+            setupRemoteVideo(remoteUid);
+        } else {
+            Log.w(TAG, "视频初始化成功，但未收到远程用户ID");
+        }
+    }
+    
     private void handleMatchSuccess(SocketDataV0 data) {
-        Log.d(TAG, "匹配成功，开始视频通话");
+        Log.d(TAG, "处理匹配成功消息");
+        
+        // 检查是否已经处理过
+        if (hasHandledMatchSuccess) {
+            Log.w(TAG, "已处理过匹配成功消息，跳过重复处理");
+            return;
+        }
+        
+        hasHandledMatchSuccess = true;
+        
+        // 检查Activity是否还在运行
+        if (isFinishing() || isDestroyed()) {
+            Log.w(TAG, "Activity已结束，跳过匹配成功处理");
+            return;
+        }
+        
+        Log.d(TAG, "匹配成功，准备加入视频频道");
+        Log.d(TAG, "频道ID: " + data.getChannelId());
         
         // 加入视频通话频道，使用channelId
         String channelId = String.valueOf(data.getChannelId());
@@ -610,6 +675,9 @@ public class VideoCallActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         
+        // 重置静态标志
+        isActivityRunning = false;
+        
         // 停止计时器
         if (callDurationHandler != null && callDurationRunnable != null) {
             callDurationHandler.removeCallbacks(callDurationRunnable);
@@ -626,8 +694,13 @@ public class VideoCallActivity extends AppCompatActivity {
         
         // 销毁RtcEngine
         if (mRtcEngine != null) {
-            RtcEngine.destroy();
-            mRtcEngine = null;
+            try {
+                RtcEngine.destroy();
+                mRtcEngine = null;
+                Log.d(TAG, "RTC实例已销毁");
+            } catch (Exception e) {
+                Log.e(TAG, "销毁RTC实例时发生异常: " + e.getMessage(), e);
+            }
         }
         
         // 重置HomeFragment的isVideoCallStarted标志

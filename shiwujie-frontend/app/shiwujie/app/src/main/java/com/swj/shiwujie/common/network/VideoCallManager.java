@@ -84,6 +84,11 @@ public class VideoCallManager {
             callStartTime = 0;
         }
         
+        // 更新WebSocketManager的业务状态
+        WebSocketManager webSocketManager = WebSocketManager.getInstance();
+        boolean inVideoCall = (status == CALL_STATUS_IN_CALL);
+        webSocketManager.setVideoCallStatus(inVideoCall);
+        
         // 通知所有监听器
         notifyStatusChanged(status, callId, blindPhone, volunteerPhone);
         

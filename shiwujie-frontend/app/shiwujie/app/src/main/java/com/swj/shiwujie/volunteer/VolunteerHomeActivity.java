@@ -108,14 +108,9 @@ public class VolunteerHomeActivity extends AppCompatActivity {
                 boolean isVolunteer = !SharedPrefsUtil.isBlind(); // 志愿者用户
                 
                 if (phone != null && !phone.isEmpty()) {
-                    // 检查WebSocket连接状态，避免重复连接
-                    WebSocketManager webSocketManager = WebSocketManager.getInstance();
-                    if (!webSocketManager.isConnected()) {
-                        Log.d(TAG, "用户已登录，建立WebSocket连接 - 手机号: " + phone);
-                        WebSocketManager.connectWebSocket(this, phone, isVolunteer);
-                    } else {
-                        Log.d(TAG, "WebSocket已连接，跳过重复连接");
-                    }
+                    Log.d(TAG, "用户已登录，启动WebSocket前台服务 - 手机号: " + phone);
+                    // 启动前台服务来维护WebSocket连接
+                    com.swj.shiwujie.common.network.WebSocketService.startService(this);
                 } else {
                     Log.w(TAG, "用户已登录但手机号为空");
                 }
@@ -236,5 +231,8 @@ public class VolunteerHomeActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         binding = null;
+        
+        // 停止WebSocket前台服务
+        com.swj.shiwujie.common.network.WebSocketService.stopService(this);
     }
 } 

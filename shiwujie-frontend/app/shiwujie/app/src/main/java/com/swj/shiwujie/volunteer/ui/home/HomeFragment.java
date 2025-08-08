@@ -74,6 +74,9 @@ public class HomeFragment extends Fragment {
     private void startVideoHelpMatching() {
         Log.d(TAG, "开始视频求助匹配");
         
+        // 设置匹配状态到WebSocketManager
+        webSocketManager.setMatchingStatus(true);
+        
         // 获取并打印token信息
         String token = SharedPrefsUtil.getToken();
         Log.d(TAG, "当前token: " + (token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null"));
@@ -81,6 +84,7 @@ public class HomeFragment extends Fragment {
         if (token == null || token.isEmpty()) {
             Log.e(TAG, "Token为空，无法进行匹配");
             Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
+            webSocketManager.setMatchingStatus(false);
             return;
         }
         
@@ -104,14 +108,17 @@ public class HomeFragment extends Fragment {
                             Log.d(TAG, "匹配请求成功，开始等待匹配");
                             // 启动悬浮窗服务
                             startFloatingWindowService();
+                            // 匹配成功，保持匹配状态，等待WebSocket消息
                           //  Toast.makeText(requireContext(), "已开始等待匹配", Toast.LENGTH_SHORT).show();
                         } else {
                             Log.e(TAG, "匹配失败 - 业务错误: " + result.getMessage());
                             Toast.makeText(requireContext(), "匹配失败: " + result.getMessage(), Toast.LENGTH_SHORT).show();
+                            webSocketManager.setMatchingStatus(false);
                         }
                     } else {
                         Log.e(TAG, "响应体为空");
                         Toast.makeText(requireContext(), "服务器响应异常", Toast.LENGTH_SHORT).show();
+                        webSocketManager.setMatchingStatus(false);
                     }
                 } else {
                     Log.e(TAG, "HTTP请求失败 - 状态码: " + response.code());
@@ -122,6 +129,7 @@ public class HomeFragment extends Fragment {
                         Log.e(TAG, "读取错误响应体失败", e);
                     }
                     Toast.makeText(requireContext(), "网络请求失败 - HTTP " + response.code(), Toast.LENGTH_SHORT).show();
+                    webSocketManager.setMatchingStatus(false);
                 }
             }
             
@@ -132,6 +140,7 @@ public class HomeFragment extends Fragment {
                 Log.e(TAG, "请求方法: " + call.request().method());
                 Log.e(TAG, "请求头: " + call.request().headers());
                 Toast.makeText(requireContext(), "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                webSocketManager.setMatchingStatus(false);
             }
         });
     }
@@ -179,6 +188,9 @@ public class HomeFragment extends Fragment {
             // 志愿者匹配成功通知
             Log.d(TAG, "收到匹配成功通知，准备进入视频通话页面");
             Log.d(TAG, "频道ID: " + data.getChannelId() + ", 盲人手机号: " + data.getBlindPhone());
+            
+            // 重置匹配状态
+            webSocketManager.setMatchingStatus(false);
             
             // 立即发送type=2消息给盲人端，确保盲人端能收到通知
             sendVideoInitMessage(data);
