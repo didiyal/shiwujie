@@ -11,19 +11,20 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "vue": "^3.3.4",
-    "vue-router": "^4.2.4",
-    "pinia": "^2.1.6",
+    "@ant-design/icons-vue": "^7.0.0",
     "ant-design-vue": "^4.0.0",
     "axios": "^1.4.0",
-    "@ant-design/icons-vue": "^7.0.0"
+    "pinia": "^2.1.6",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",
-    "vite": "^4.4.5",
+    "@vue/eslint-config-prettier": "^8.0.0",
     "eslint": "^8.45.0",
     "eslint-plugin-vue": "^9.15.1",
-    "@vue/eslint-config-prettier": "^8.0.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "terser": "^5.43.1",
+    "vite": "^4.4.5"
   }
-} 
+}

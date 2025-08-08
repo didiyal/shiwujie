@@ -144,12 +144,26 @@ export default {
 <style scoped>
 .main-layout {
   min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .header {
-  background: #fff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1000;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  pointer-events: none;
 }
 
 .header-content {
@@ -158,64 +172,156 @@ export default {
   align-items: center;
   height: 100%;
   padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .logo-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1890ff;
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #333;
-  padding: 8px 12px;
-  border-radius: 6px;
+  gap: 12px;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .username {
-  font-weight: 500;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar {
-  background: #001529;
+  background: linear-gradient(180deg, #001529 0%, #003a70 100%);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  pointer-events: none;
+}
+
+:deep(.ant-menu) {
+  background: transparent;
+  border: none;
+  padding: 16px 8px;
+}
+
+:deep(.ant-menu-item) {
+  margin: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.ant-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:deep(.ant-menu-item-selected) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+:deep(.ant-menu-submenu-title:hover) {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.logout-item {
+  color: #ff4d4f !important;
+  border-radius: 8px;
+  margin: 0;
+  transition: all 0.3s ease;
+}
+
+.logout-item:hover {
+  background: #ff4d4f !important;
+  color: white !important;
+  transform: translateX(4px);
 }
 
 .main-content {
-  background: #f0f2f5;
+  background: transparent;
 }
 
 .content {
   margin: 24px;
   padding: 24px;
-  background: #fff;
-  border-radius: 8px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   min-height: calc(100vh - 112px);
+  animation: fadeInUp 0.6s ease-out;
 }
 
-/* 退出登录样式 */
-.logout-item {
-  margin-top: auto !important;
-  border-top: 1px solid #303030;
-  color: #ff4d4f !important;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.logout-item:hover {
-  background-color: #ff4d4f !important;
-  color: #fff !important;
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 16px;
+  }
+  
+  .logo-text {
+    font-size: 16px;
+  }
+  
+  .user-info {
+    padding: 6px 12px;
+  }
+  
+  .content {
+    margin: 16px;
+    padding: 16px;
+  }
 }
 
-/* 确保退出登录在底部 */
-:deep(.ant-menu) {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-:deep(.ant-menu-item.logout-item) {
-  margin-top: auto;
-  border-top: 1px solid #303030;
+/* 深色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .content {
+    background: #1f1f1f;
+    color: white;
+  }
 }
 </style> 

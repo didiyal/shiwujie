@@ -2,32 +2,44 @@
   <div class="community-list">
     <!-- 页面标题 -->
     <div class="page-header">
-      <h2>我的社区管理</h2>
-      <p>管理您创建的社区信息</p>
+      <div class="header-content">
+        <div class="header-left">
+          <h2 class="page-title">
+            🏘️ 我的社区管理
+          </h2>
+          <p class="page-subtitle">管理您创建的社区信息</p>
+        </div>
+        <div class="header-right">
+          <a-button type="primary" size="large" @click="handleRefresh">
+            🔄 刷新
+          </a-button>
+        </div>
+      </div>
     </div>
 
     <!-- 搜索栏 -->
-    <div class="search-bar">
-      <a-row :gutter="16" align="middle">
-        <a-col :xs="24" :sm="16" :md="12" :lg="8">
-          <a-input-search
-            v-model="searchForm.communityId"
-            placeholder="输入社区ID搜索"
-            @search="handleSearch"
-            allow-clear
-            size="large"
-            class="search-input"
-          />
-        </a-col>
-        <a-col :xs="24" :sm="8" :md="12" :lg="16" class="action-col">
-          <div class="action-buttons">
-            <a-button type="primary" @click="handleRefresh" size="large">
-              🔄 刷新
-            </a-button>
-            <span class="community-count">共 {{ communityList.length }} 个社区</span>
-          </div>
-        </a-col>
-      </a-row>
+    <div class="search-section">
+      <div class="search-card">
+        <a-row :gutter="16" align="middle">
+          <a-col :xs="24" :sm="16" :md="12" :lg="8">
+            <a-input-search
+              v-model="searchForm.communityId"
+              placeholder="输入社区ID搜索"
+              @search="handleSearch"
+              allow-clear
+              size="large"
+              class="search-input"
+            />
+          </a-col>
+          <a-col :xs="24" :sm="8" :md="12" :lg="16" class="action-col">
+            <div class="action-buttons">
+              <span class="community-count">
+                👥 共 {{ communityList.length }} 个社区
+              </span>
+            </div>
+          </a-col>
+        </a-row>
+      </div>
     </div>
 
     <!-- 社区列表 -->
@@ -38,16 +50,42 @@
         class="community-card"
       >
         <div class="card-header">
-          <h3 class="community-name">{{ community.communityName }}</h3>
-          <div class="community-status" :class="getStatusClass(community.communityStatus)">
-            {{ getStatusText(community.communityStatus) }}
+          <div class="header-left">
+            <h3 class="community-name">{{ community.communityName }}</h3>
+            <div class="community-status" :class="getStatusClass(community.communityStatus)">
+              <span class="status-dot"></span>
+              {{ getStatusText(community.communityStatus) }}
+            </div>
+          </div>
+          <div class="header-right">
+            <a-dropdown>
+              <a-button type="text" class="more-actions">
+                ⋯
+              </a-button>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item key="view" @click="viewDetail(community)">
+                    👁️ 查看详情
+                  </a-menu-item>
+                  <a-menu-item key="edit" @click="editCommunity(community)">
+                    ✏️ 编辑
+                  </a-menu-item>
+                  <a-menu-divider />
+                  <a-menu-item key="delete" @click="confirmDelete(community)" danger>
+                    🗑️ 删除社区
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </div>
         </div>
         
         <div class="card-content">
           <!-- 基本信息 -->
           <div class="info-section">
-            <h4 class="section-title">基本信息</h4>
+            <h4 class="section-title">
+              ℹ️ 基本信息
+            </h4>
             <div class="info-grid">
               <div class="info-item">
                 <span class="label">社区类型：</span>
@@ -70,10 +108,12 @@
           
           <!-- 地址信息 -->
           <div class="info-section">
-            <h4 class="section-title">地址信息</h4>
+            <h4 class="section-title">
+              📍 地址信息
+            </h4>
             <div class="address-info">
               <div class="address-item">
-                <i class="address-icon">📍</i>
+                <span class="address-icon">📍</span>
                 <span class="address-text">{{ getFullAddress(community) }}</span>
               </div>
             </div>
@@ -81,7 +121,9 @@
           
           <!-- 描述信息 -->
           <div class="info-section" v-if="community.communityDescription || community.registrationInfo">
-            <h4 class="section-title">详细信息</h4>
+            <h4 class="section-title">
+              📄 详细信息
+            </h4>
             <div class="description-content">
               <div v-if="community.communityDescription" class="description-item">
                 <span class="description-label">社区介绍：</span>
@@ -97,12 +139,13 @@
           <!-- 子社区列表 -->
           <div class="info-section">
             <h4 class="section-title">
-              子社区列表
+              🏘️ 子社区列表
               <a-button 
                 type="link" 
                 size="small" 
                 @click="loadSubCommunities(community.communityId)"
                 :loading="loadingSubCommunities === community.communityId"
+                class="refresh-btn"
               >
                 🔄 刷新子社区
               </a-button>
@@ -150,41 +193,25 @@
             </div>
           </div>
         </div>
-        
-        <div class="card-actions">
-          <a-button type="primary" size="small" @click="viewDetail(community)">
-            查看详情
-          </a-button>
-          <a-button type="default" size="small" @click="editCommunity(community)">
-            编辑
-          </a-button>
-          <a-button 
-            type="primary" 
-            size="small" 
-            danger 
-            @click="confirmDelete(community)"
-            :loading="deletingCommunityId === community.communityId"
-          >
-            删除社区
-          </a-button>
-        </div>
       </div>
     </div>
 
     <!-- 空状态 -->
     <div v-else-if="!loading" class="empty-state">
-      <div class="empty-icon">🏘️</div>
-      <h3>暂无社区</h3>
-      <p>您还没有创建任何社区，请先注册社区入驻</p>
-      <a-button type="primary" @click="$router.push('/login')">
-        去注册社区
+      <div class="empty-illustration">
+        <div class="empty-icon">🏘️</div>
+      </div>
+      <h3 class="empty-title">暂无社区</h3>
+      <p class="empty-description">您还没有创建任何社区，请先注册社区入驻</p>
+      <a-button type="primary" size="large" @click="$router.push('/login')">
+        ➕ 去注册社区
       </a-button>
     </div>
 
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-state">
       <a-spin size="large" />
-      <p>加载中...</p>
+      <p class="loading-text">加载中...</p>
     </div>
 
     <!-- 底部安全区域 -->
@@ -205,11 +232,12 @@ export default {
   setup() {
     const router = useRouter();
     const authStore = useAuthStore();
+    
     const loading = ref(false);
+    const communityList = ref([]);
     const loadingSubCommunities = ref(null);
     const deletingCommunityId = ref(null);
-    const communityList = ref([]);
-
+    
     // 搜索表单
     const searchForm = reactive({
       communityId: ''
@@ -498,349 +526,308 @@ export default {
 
 <style scoped>
 .community-list {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  min-height: 100vh;
-  position: relative;
-  /* 移动端软键盘适配 */
-  min-height: 100dvh; /* 使用动态视口高度 */
-  box-sizing: border-box;
+  padding: 0;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .page-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 32px;
   margin-bottom: 24px;
-  text-align: center;
+  color: white;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
-.page-header h2 {
-  color: #1890ff;
-  margin-bottom: 8px;
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  pointer-events: none;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.page-title {
   font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.page-header p {
-  color: #666;
-  margin: 0;
+.page-subtitle {
   font-size: 16px;
+  margin: 0;
+  opacity: 0.9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* 搜索栏样式 */
-.search-bar {
+.search-section {
   margin-bottom: 24px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.search-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .search-input {
-  width: 100%;
-}
-
-.search-input .ant-input {
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 12px;
 }
 
 .action-col {
   display: flex;
-  align-items: center;
+  justify-content: flex-end;
 }
 
 .action-buttons {
   display: flex;
   align-items: center;
   gap: 16px;
-  width: 100%;
-  justify-content: flex-end;
 }
 
 .community-count {
-  color: #666;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.action-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 16px 20px;
+  gap: 8px;
+  font-weight: 500;
+  color: #666;
+  padding: 8px 16px;
   background: #f8f9fa;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
 }
 
 .community-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
+  gap: 24px;
   margin-bottom: 24px;
 }
 
- .community-card {
-   background: white;
-   border: 1px solid #e9ecef;
-   border-radius: 16px;
-   padding: 24px;
-   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-   position: relative;
-   overflow: hidden;
- }
-
- .community-card::before {
-   content: '';
-   position: absolute;
-   top: 0;
-   left: 0;
-   right: 0;
-   height: 4px;
-   background: linear-gradient(90deg, #1890ff, #52c41a);
-   opacity: 0;
-   transition: opacity 0.3s ease;
- }
-
- .community-card:hover {
-   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-   transform: translateY(-4px);
-   border-color: #1890ff;
- }
-
- .community-card:hover::before {
-   opacity: 1;
- }
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+.community-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
-.community-name {
-  margin: 0;
-  color: #1890ff;
-  font-size: 18px;
-  font-weight: 600;
+.community-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
   flex: 1;
 }
 
- .community-status {
-   padding: 6px 12px;
-   border-radius: 20px;
-   font-size: 11px;
-   font-weight: 600;
-   white-space: nowrap;
-   text-transform: uppercase;
-   letter-spacing: 0.5px;
-   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
- }
-
- .status-pending {
-   background: linear-gradient(135deg, #fff7e6, #ffe7ba);
-   color: #d46b08;
-   border: 1px solid #ffd591;
- }
-
- .status-approved {
-   background: linear-gradient(135deg, #f6ffed, #d9f7be);
-   color: #389e0d;
-   border: 1px solid #b7eb8f;
- }
-
- .status-disabled {
-   background: linear-gradient(135deg, #fff2f0, #ffccc7);
-   color: #cf1322;
-   border: 1px solid #ffa39e;
- }
-
- .status-unknown {
-   background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
-   color: #595959;
-   border: 1px solid #d9d9d9;
- }
-
- .card-content {
-   margin-bottom: 20px;
- }
-
- .info-section {
-   margin-bottom: 20px;
-  padding: 16px;
-  background: #fafafa;
-   border-radius: 8px;
-   border-left: 4px solid #1890ff;
- }
-
- .info-section:last-child {
-   margin-bottom: 0;
- }
-
- .section-title {
-   margin: 0 0 12px 0;
-   color: #1890ff;
-   font-size: 14px;
-   font-weight: 600;
-   text-transform: uppercase;
-   letter-spacing: 0.5px;
- }
-
- .info-grid {
-   display: grid;
-   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-   gap: 12px;
- }
-
- .info-item {
-   display: flex;
-   align-items: center;
-   font-size: 13px;
-   line-height: 1.4;
- }
-
- .info-item .label {
-   color: #666;
-   min-width: 80px;
-   font-weight: 500;
-   margin-right: 8px;
- }
-
- .info-item .value {
-   color: #333;
-   flex: 1;
-   font-weight: 500;
-   word-break: break-all;
- }
-
- /* 志愿者ID特殊样式 */
- .volunteer-id {
-   font-family: 'Courier New', monospace;
-   font-size: 12px;
-   background: #f0f0f0;
-   padding: 2px 6px;
-   border-radius: 4px;
-   color: #1890ff;
-   font-weight: 600;
- }
-
- .address-info {
-   margin-top: 8px;
- }
-
- .address-item {
-   display: flex;
-   align-items: flex-start;
-   gap: 8px;
- }
-
- .address-icon {
-   font-style: normal;
-   font-size: 16px;
-   margin-top: 2px;
- }
-
- .address-text {
-   color: #333;
-   font-size: 13px;
-   line-height: 1.4;
-   flex: 1;
- }
-
- .description-content {
-   margin-top: 8px;
- }
-
- .description-item {
-   margin-bottom: 12px;
- }
-
- .description-item:last-child {
-   margin-bottom: 0;
- }
-
- .description-label {
-   display: block;
-   color: #666;
-   font-size: 12px;
-   font-weight: 500;
-   margin-bottom: 4px;
-   text-transform: uppercase;
-   letter-spacing: 0.5px;
- }
-
- .description-text {
-   margin: 0;
-   color: #333;
-   font-size: 13px;
-   line-height: 1.5;
-   background: white;
-   padding: 8px 12px;
-   border-radius: 4px;
-   border: 1px solid #e8e8e8;
- }
-
- .card-actions {
-   display: flex;
-   gap: 10px;
-   justify-content: flex-end;
-   padding-top: 20px;
-   border-top: 1px solid #f0f0f0;
-   margin-top: 20px;
- }
-
- .card-actions .ant-btn {
-   border-radius: 8px;
-   font-weight: 500;
-   transition: all 0.2s ease;
- }
-
- .card-actions .ant-btn:hover {
-   transform: translateY(-1px);
-   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
- }
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  background: white;
-  border-radius: 12px;
-  border: 2px dashed #d9d9d9;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.empty-state h3 {
-  color: #333;
-  margin-bottom: 8px;
+.community-name {
   font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
 }
 
-.empty-state p {
+.community-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-pending {
+  color: #faad14;
+  background: rgba(250, 173, 20, 0.1);
+}
+
+.status-approved {
+  color: #52c41a;
+  background: rgba(82, 196, 26, 0.1);
+}
+
+.status-disabled {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+}
+
+.status-unknown {
+  color: #999;
+  background: rgba(153, 153, 153, 0.1);
+}
+
+.more-actions {
   color: #666;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.more-actions:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.card-content {
+  padding: 24px;
+}
+
+.info-section {
   margin-bottom: 24px;
+}
+
+.info-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.refresh-btn {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.label {
+  font-weight: 500;
+  color: #666;
   font-size: 14px;
 }
 
-.loading-state {
-  text-align: center;
-  padding: 60px 20px;
+.value {
+  color: #1a1a1a;
+  font-weight: 500;
 }
 
-.loading-state p {
-  margin-top: 16px;
+.volunteer-id {
+  color: #667eea;
+  font-family: 'Courier New', monospace;
+}
+
+.address-info {
+  margin-top: 8px;
+}
+
+.address-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.address-icon {
+  color: #667eea;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.address-text {
+  color: #1a1a1a;
+  line-height: 1.5;
+}
+
+.description-content {
+  margin-top: 8px;
+}
+
+.description-item {
+  margin-bottom: 12px;
+}
+
+.description-item:last-child {
+  margin-bottom: 0;
+}
+
+.description-label {
+  font-weight: 500;
   color: #666;
+  display: block;
+  margin-bottom: 4px;
 }
 
-/* 子社区列表样式 */
+.description-text {
+  color: #1a1a1a;
+  line-height: 1.6;
+  margin: 0;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
 .sub-communities-content {
   margin-top: 12px;
 }
@@ -852,16 +839,16 @@ export default {
 }
 
 .sub-community-item {
-  background: white;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
+  background: #f8f9fa;
+  border-radius: 8px;
   padding: 12px;
-  transition: all 0.2s ease;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
 }
 
 .sub-community-item:hover {
-  border-color: #1890ff;
-  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+  background: #e9ecef;
+  transform: translateX(4px);
 }
 
 .sub-community-header {
@@ -873,196 +860,165 @@ export default {
 
 .sub-community-name {
   font-weight: 600;
-  color: #1890ff;
-  font-size: 14px;
+  color: #1a1a1a;
 }
 
 .sub-community-status {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
 }
 
 .sub-community-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.sub-community-type {
-  color: #666;
   font-size: 12px;
+  color: #666;
 }
 
-.sub-community-address {
-  color: #999;
-  font-size: 11px;
-  line-height: 1.3;
-}
-
-.sub-communities-empty {
-  text-align: center;
-  padding: 20px;
-  color: #999;
-  font-size: 13px;
-  background: #fafafa;
-  border-radius: 6px;
-  border: 1px dashed #d9d9d9;
-}
-
-.sub-communities-placeholder {
-  text-align: center;
-  padding: 20px;
-  color: #999;
-  font-size: 13px;
-  background: #fafafa;
-  border-radius: 6px;
-  border: 1px dashed #d9d9d9;
-}
-
-.placeholder-text {
-  color: #999;
-}
-
-.empty-text {
-  color: #999;
-}
-
-/* 子社区分页样式 */
 .sub-communities-pagination {
   margin-top: 16px;
-  display: flex;
-  justify-content: center;
-  padding: 12px 0;
-  border-top: 1px solid #f0f0f0;
+  text-align: center;
 }
 
-.sub-communities-pagination .ant-pagination {
-  margin: 0;
+.sub-communities-empty,
+.sub-communities-placeholder {
+  text-align: center;
+  padding: 24px;
+  color: #999;
 }
 
-/* 子社区标题区域样式 */
-.section-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.section-title .ant-btn-link {
-  padding: 0;
-  height: auto;
-  font-size: 12px;
-  color: #1890ff;
+.empty-illustration {
+  margin-bottom: 24px;
 }
 
-.section-title .ant-btn-link:hover {
-  color: #40a9ff;
+.empty-icon {
+  font-size: 64px;
+  color: #d9d9d9;
+  animation: float 3s ease-in-out infinite;
 }
 
-/* 底部安全区域 */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.empty-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 12px 0;
+}
+
+.empty-description {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 24px 0;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 80px 24px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.loading-text {
+  margin-top: 16px;
+  color: #666;
+  font-size: 16px;
+}
+
 .bottom-safe-area {
-  height: env(safe-area-inset-bottom, 20px);
-  background: transparent;
-  min-height: 20px;
+  height: 24px;
 }
 
-
-
-/* 移动端软键盘适配 */
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .community-list {
-    padding: 16px;
-    padding-bottom: env(safe-area-inset-bottom, 20px);
-    /* 使用CSS环境变量处理底部安全区域 */
-    min-height: calc(100dvh - env(safe-area-inset-bottom, 0px));
+  .page-header {
+    padding: 24px;
   }
   
-  .search-bar {
-    padding: 16px;
-    /* 确保搜索栏在软键盘弹出时可见 */
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: #f8f9fa;
-    margin-bottom: 16px;
+  .page-title {
+    font-size: 24px;
   }
   
-  .action-buttons {
+  .header-content {
     flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
+    gap: 16px;
+    text-align: center;
   }
   
   .community-grid {
     grid-template-columns: 1fr;
-    /* 为软键盘留出空间 */
-    margin-bottom: 100px;
-  }
-  
-  .card-actions {
-    flex-direction: column;
-  }
-  
-  .card-actions .ant-btn {
-    width: 100%;
+    gap: 16px;
   }
   
   .info-grid {
     grid-template-columns: 1fr;
   }
   
-  .info-item {
+  .card-header {
     flex-direction: column;
+    gap: 12px;
     align-items: flex-start;
   }
-  
-  .info-item .label {
-    margin-bottom: 4px;
-  }
-  
-  .volunteer-id {
-    font-size: 11px;
-    padding: 1px 4px;
-  }
-  
-  /* 软键盘弹出时的特殊处理 */
-  .community-list:has(.ant-input:focus) {
-    padding-bottom: 200px; /* 为软键盘留出更多空间 */
-  }
-  
-  /* 底部安全区域 */
-  .bottom-safe-area {
-    height: env(safe-area-inset-bottom, 20px);
-    background: transparent;
-  }
 }
 
-/* 平板端适配 */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .community-grid {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+/* 深色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .search-card,
+  .community-card,
+  .empty-state,
+  .loading-state {
+    background: #1f1f1f;
+    color: white;
+    border-color: #333;
   }
   
-  .search-bar {
-    padding: 18px;
-  }
-}
-
-/* iOS设备特殊处理 */
-@supports (-webkit-touch-callout: none) {
-  .community-list {
-    /* iOS Safari 特殊处理 */
-    min-height: -webkit-fill-available;
+  .card-header {
+    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+    border-bottom-color: #333;
   }
   
-  @media (max-width: 768px) {
-    .community-list {
-      min-height: -webkit-fill-available;
-      padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 100px);
-    }
+  .community-name,
+  .section-title {
+    color: white;
+  }
+  
+  .label {
+    color: #ccc;
+  }
+  
+  .value {
+    color: white;
+  }
+  
+  .description-text {
+    background: #2a2a2a;
+    color: white;
+  }
+  
+  .sub-community-item {
+    background: #2a2a2a;
+    border-color: #333;
+  }
+  
+  .sub-community-item:hover {
+    background: #333;
   }
 }
 </style> 
