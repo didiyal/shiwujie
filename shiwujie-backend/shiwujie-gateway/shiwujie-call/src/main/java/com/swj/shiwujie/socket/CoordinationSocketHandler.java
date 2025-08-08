@@ -4,8 +4,6 @@ package com.swj.shiwujie.socket;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -58,19 +56,43 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
         //接收的消息
-        SocketData res = JSON.parseObject(msg.text(), SocketData.class);
-        Integer type = res.getRequestType();
+        SocketData socketData = JSONUtil.toBean(msg.text(), SocketData.class);
+        Integer type = socketData.getRequestType();
         switch (type) {
+            case -1:   // ping
+                ping(socketData);
+                break;
             case 0:   // 建立连接
-                websocketLogin(res, ctx);
+                websocketLogin(socketData, ctx);
                 break;
             case 2: // 志愿者初始化成功
-                toBlindJoin(res);
+                toBlindJoin(socketData);
                 break;
         }
         ctx.channel().writeAndFlush(new TextWebSocketFrame("收到客户端的数据"));
         System.out.println(String.format("收到客户端%s的数据：%s", pmap.get(ctx.channel()), msg.text()));
     }
+
+    /**
+     * ping - -1
+     * @param socketData socketData
+     */
+    private void ping(SocketData socketData) {
+        if (cmap.containsKey(socketData.getBlindPhone())) {
+            Channel channel = cmap.get(socketData.getBlindPhone());
+            String response = this.getResponse(0, "pong", -1, socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info( socketData.getBlindPhone() + "心跳 - -1" );
+        }else{
+            Channel channel = cmap.get(socketData.getVolunteerPhone());
+            String response = this.getResponse(0, "pong", -1, socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info( socketData.getVolunteerPhone() + "心跳 - -1" );
+        }
+
+    }
+
+
 
     /**
      * 志愿者初始化成功,向盲人转发 - 2

@@ -4,6 +4,8 @@ import com.swj.shiwujie.model.domain.call.Videohelp;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.swj.shiwujie.model.domain.user.Blind;
 
+import java.util.List;
+
 /**
 * @author Administrator
 * @description 针对表【VideoHelp(视频求助表)】的数据库操作Service
@@ -64,7 +66,7 @@ public interface VideohelpService extends IService<Videohelp> {
      * @param volunteerId 志愿者id
      * @return 表信息
      */
-    Videohelp getHelpingByVolunteerId(Long volunteerId);
+    List<Videohelp> getHelpingByVolunteerId(Long volunteerId);
 
     /**
      * 通过盲人id查询信息
@@ -82,7 +84,7 @@ public interface VideohelpService extends IService<Videohelp> {
      * @param blindId 视障人士id
      * @return 表信息
      */
-    Videohelp getHelpingByBlindId(Long blindId);
+    List<Videohelp> getHelpingByBlindId(Long blindId);
 
 
     //endregion

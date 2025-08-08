@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 /**
@@ -225,14 +226,14 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
      * @return 表信息
      */
     @Override
-    public Videohelp getHelpingByVolunteerId(Long volunteerId) {
+    public List<Videohelp> getHelpingByVolunteerId(Long volunteerId) {
         if (ObjUtil.isNull(volunteerId)) {
             return null;
         }
         QueryWrapper<Videohelp> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("volunteer_id", volunteerId);
         queryWrapper.eq("help_status", CallHelpStatusEnum.HELPING.getHelpStatus());
-        return this.getOne(queryWrapper);
+        return this.list(queryWrapper);
     }
 
 
@@ -260,14 +261,14 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
      * @return 表信息
      */
     @Override
-    public Videohelp getHelpingByBlindId(Long blindId) {
+    public List<Videohelp> getHelpingByBlindId(Long blindId) {
         if (ObjUtil.isNull(blindId)) {
             return null;
         }
         QueryWrapper<Videohelp> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("blind_id", blindId);
         queryWrapper.eq("help_status", CallHelpStatusEnum.HELPING.getHelpStatus());
-        return this.getOne(queryWrapper);
+        return this.list(queryWrapper);
     }
 
     //endregion

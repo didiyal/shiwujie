@@ -31,13 +31,13 @@ public class UserTools {
      * @param familyVolunteerPhone 家庭创建人手机号
      * @return 申请结果
      */
-    @Tool(description = "APP功能操作:申请加入家庭(需要让用户确认)")
+    @Tool(name = "申请加入家庭", description = "当用户提供了家庭创建人手机号并说\"我确认加入家庭\"时调用此工具。")
     public String joinFamily(@ToolParam (description = "家庭创建人手机号") String familyVolunteerPhone){
         try {
             Blind loginBlind = LoginUtils.getLoginBlind();
             ThrowUtils.throwIf(StrUtil.isBlankIfStr(familyVolunteerPhone), ErrorCode.PARAMS_ERROR,"请输入家庭创建人手机号");
             boolean b = innerFamilyService.joinFamily(familyVolunteerPhone, loginBlind.getBlindId(), null, LoginUtils.getLoginUserPhone());
-            if(b) return "申请加入家庭成功,请等待返回结果";
+            if(b) return "正在为您申请加入家庭，请稍候。申请成功后会通知您结果。";
             else return "申请加入家庭失败";
         } catch (Exception e) {
             log.error("申请加入家庭失败",e);

@@ -8,6 +8,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.preretrieval.query.transformation.CompressionQueryTransformer;
 import org.springframework.ai.rag.preretrieval.query.transformation.QueryTransformer;
 import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
@@ -54,13 +55,20 @@ class MyAppRagCloudAdvisorConfig {
 //        queryTransformers.add(rewriteQueryTransformer);
 
         // 上下文感知
-        CompressionQueryTransformer compressionQueryTransformer = CompressionQueryTransformer.builder()
-                .chatClientBuilder(chatClient.mutate())
-                .build();
-        queryTransformers.add(compressionQueryTransformer);
+//        CompressionQueryTransformer compressionQueryTransformer = CompressionQueryTransformer.builder()
+//                .chatClientBuilder(chatClient.mutate())
+//                .build();
+//        queryTransformers.add(compressionQueryTransformer);
+
 
         return RetrievalAugmentationAdvisor.builder()
                 .queryTransformers(queryTransformers)
+                // 允许检索不到数据
+                .queryAugmenter(
+                        ContextualQueryAugmenter.builder()
+                                .allowEmptyContext(false)
+                                .build()
+                )
                 .documentRetriever(dashScopeDocumentRetriever)
                 .build();
     }

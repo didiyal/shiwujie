@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.Time;
+import java.util.List;
 
 
 /**
@@ -150,20 +151,22 @@ public class VideohelpController {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         Long loginBlindId = LoginUtils.getLoginBlindId(request);
         String loginUserPhone = LoginUtils.getLoginUserPhone(request);
-        Videohelp videohelp = null;
+        List<Videohelp> videohelps = null;
         if(ObjUtil.isNotNull(loginVolunteerId)){
-            videohelp = videohelpService.getHelpingByVolunteerId(loginVolunteerId);
+            videohelps = videohelpService.getHelpingByVolunteerId(loginVolunteerId);
         } else if (ObjUtil.isNotNull(loginBlindId)) {
-            videohelp = videohelpService.getHelpingByBlindId(loginBlindId);
+            videohelps = videohelpService.getHelpingByBlindId(loginBlindId);
         }
         // 只有通话中才可以挂断通话
-        ThrowUtils.throwIf(ObjUtil.isNull(videohelp),ErrorCode.PARAMS_ERROR,"只有通话中才可以挂断通话");
+        ThrowUtils.throwIf(ObjUtil.isNull(videohelps),ErrorCode.PARAMS_ERROR,"只有通话中才可以挂断通话");
 
-        videohelp.setEnd_time(DateUtil.date());
-        videohelp.setHelp_status(CallHelpStatusEnum.END_HELP.getHelpStatus());
-        long between = DateUtil.between(videohelp.getResponse_time(), videohelp.getEnd_time(), DateUnit.MINUTE);
-        videohelp.setDuration(between);
-        videohelpService.updateById(videohelp);
+        for (Videohelp videohelp : videohelps) {
+            videohelp.setEnd_time(DateUtil.date());
+            videohelp.setHelp_status(CallHelpStatusEnum.END_HELP.getHelpStatus());
+            long between = DateUtil.between(videohelp.getResponse_time(), videohelp.getEnd_time(), DateUnit.MINUTE);
+            videohelp.setDuration(between);
+        }
+        videohelpService.updateBatchById(videohelps);
 
         return ResultUtils.success(true);
     }

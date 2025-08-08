@@ -27,10 +27,19 @@ mybatis-plus:
 #dubbo配置
 dubbo:
   application:
-    name: shiwujie-call-consumer
+    name: shiwujie-ai
     logger: slf4j
-    qos-port: 33350
+    qos-port: 33360
     serialize-check-status: DISABLE
   registry:
     address: nacos://${nacos.address:127.0.0.1}:8848?username=nacos&password=nacos
     timeout: 5000
+
+# 解决Nacos与Logback配置冲突问题
+nacos:
+  logging:
+    config-enabled: false
+
+# 明确指定日志配置
+logging:
+  config: classpath:logback-spring.xml

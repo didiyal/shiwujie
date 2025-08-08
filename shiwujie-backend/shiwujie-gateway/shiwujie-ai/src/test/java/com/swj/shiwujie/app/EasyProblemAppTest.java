@@ -15,9 +15,12 @@ class EasyProblemAppTest {
     @Test
     void doChatWithText() {
 
+        easyProblemApp.doChatWithText("介绍一下这个软件",10000L);
+        easyProblemApp.doChatWithText("今天宜昌天气如何",10000L);
         easyProblemApp.doChatWithText("我想要加入家庭",10000L);
 //        easyProblemApp.doChatWithText("我要知道这个网页有什么内容https://blog.csdn.net/m0_37145844/article/details/146019608",10000L);
         easyProblemApp.doChatWithText("家主手机号是17745540159",10000L);
+        easyProblemApp.doChatWithText("我确认加入家庭",10000L);
 //        myApp.doChatWithText("我想知道今天宜昌的天气如何",10000L);
 
     }
