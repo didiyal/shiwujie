@@ -61,6 +61,7 @@ public class GatewayApp {
     public GatewayApp(OpenAiChatModel chatModel) {
 
 
+
         String model = chatModel.getDefaultOptions().getModel();
         log.info(model);
 

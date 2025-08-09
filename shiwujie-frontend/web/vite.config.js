@@ -21,7 +21,6 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path // 保持 /api 前缀
       }
-    },
-    publicPath: '/'
+    }
   }
 }) 

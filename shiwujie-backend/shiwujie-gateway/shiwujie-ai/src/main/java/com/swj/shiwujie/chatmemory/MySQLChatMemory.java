@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.swj.shiwujie.mapper.AiLogsMapper;
 import com.swj.shiwujie.model.domain.ai.AiLogs;
 import com.swj.shiwujie.utils.MessageSerializer;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 
@@ -23,14 +23,10 @@ import java.util.List;
 public class MySQLChatMemory implements ChatMemory {
 
 
-    private final AiLogsMapper aiLogsMapper;
+    @Resource
+    private AiLogsMapper aiLogsMapper;
 
-    public MySQLChatMemory(AiLogsMapper mapper){
-        this.aiLogsMapper = mapper;
-    }
-    
 
-            
 
     /**
      * 添加一个数据到数据库中
