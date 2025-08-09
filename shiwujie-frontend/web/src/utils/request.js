@@ -6,7 +6,7 @@ import { traceDataFlow, findBigNumbers } from './debugUtils'
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: 'http://43.139.38.62:8400/api', // 使用完整的后端地址
+  baseURL: '/api', // 使用完整的后端地址
   timeout: 30000, // 增加超时时间到30秒
   headers: {
     'Content-Type': 'application/json'
