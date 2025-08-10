@@ -26,7 +26,7 @@ import reactor.core.publisher.Flux;
 import java.io.File;
 
 @RestController
-@RequestMapping("/api/ai/ai")
+@RequestMapping(path = "/api/ai/ai")
 @Slf4j
 @Tag(name = "AI接口")
 public class AiController {

@@ -36,8 +36,6 @@ spring:
         stdio:
           servers-configuration: classpath:mcp-servers.json
 server:
-#  servlet:
-#    context-path: /api/ai   # 确保这里没有设置特殊的context-path
   port: 8500
 mybatis-plus:
   configuration:
