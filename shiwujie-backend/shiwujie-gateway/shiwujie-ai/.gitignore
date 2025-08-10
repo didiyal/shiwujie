@@ -1,6 +1,5 @@
 ### CUSTOM ###
-src/main/resources/application-dev.yml
-
+logs/
 
 HELP.md
 target/
