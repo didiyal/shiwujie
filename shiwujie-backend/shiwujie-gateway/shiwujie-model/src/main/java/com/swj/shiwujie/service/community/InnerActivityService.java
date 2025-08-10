@@ -6,6 +6,8 @@ import com.swj.shiwujie.common.PageRequest;
 import com.swj.shiwujie.model.VO.community.activity.ActivityVO;
 import com.swj.shiwujie.model.request.community.activity.ActivityQueryRequest;
 
+import java.util.List;
+
 /**
  * 社区活动服务
  */
@@ -25,6 +27,14 @@ public interface InnerActivityService {
      * @return 活动VO分页
      */
     Page<ActivityVO> listActivitiesByCommunity(ActivityQueryRequest activityQueryRequest);
+
+
+    /**
+     * 查询活动VOs
+     * @param activityIds
+     * @return
+     */
+    List<ActivityVO> listActivities(Long[] activityIds);
 
 
 }

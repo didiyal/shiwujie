@@ -144,8 +144,10 @@ public class CommunityTools {
 //            }
 //            ActivitySignQueryRequest activitySignQueryRequest = new ActivitySignQueryRequest();
 //            activitySignQueryRequest.setBlindId(loginBlind.getBlindId());
-//            activitySignQueryRequest.s
 //            Page<ActivitysignVO> activitysignVOPage = innerActivitysignService.listActivitySignByActivity(activitySignQueryRequest);
+//            // 拿到报名的id
+//            Long[] activityIds = activitysignVOPage.getRecords().stream().map(ActivitysignVO::getActivityId).toArray(Long[]::new);
+//            innerActivityService.listActivitiesByCommunity()
 //            StringBuilder sb = new StringBuilder();
 //            for (ActivitysignVO activitysignVO : activitysignVOPage.getRecords()) {
 //                sb.append("活动名称：").append(activitysignVO.()).append("\n")
