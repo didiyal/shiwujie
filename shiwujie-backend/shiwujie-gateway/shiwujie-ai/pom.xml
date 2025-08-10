@@ -28,8 +28,8 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <mybatis-plus.version>3.5.1</mybatis-plus.version>
     </properties>
-
 
     <dependencies>
         <!-- 视无界公共模块 -->
@@ -37,6 +37,20 @@
             <groupId>com.swj</groupId>
             <artifactId>shiwujieModel</artifactId>
             <version>0.0.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.baomidou</groupId>
+                    <artifactId>mybatis-plus-boot-starter</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.baomidou</groupId>
+                    <artifactId>mybatis-plus-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.baomidou</groupId>
+                    <artifactId>mybatis-plus-extension</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- dubbo -->
         <dependency>
@@ -48,31 +62,6 @@
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
             <version>3.3.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>nacos-client</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-client</artifactId>
-            <version>2.2.3</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>nacos-logging</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!--spring ai alibaba-->
         <dependency>
@@ -131,16 +120,18 @@
 
 
 
-
-
-
-
+        <!-- MyBatis Plus for Spring Boot 3 with exclusions to avoid conflicts -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>3.5.9</version>
+        </dependency>
 
         <!--knife4j接口文档-->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-            <version>4.3.0</version>
+            <version>4.5.0</version>
         </dependency>
         <!-- 自定义持久化的序列化库-->
         <dependency>
@@ -175,20 +166,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-        <!-- mybatis-Plus-->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-            <version>3.5.12</version>
-        </dependency>
-        <!-- 3.5.9及以上版本想使用mybatis plus分页配置需要单独引入-->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
-            <version>3.5.12</version> <!-- 确保版本和 MyBatis Plus 主包一致 -->
-        </dependency>
         <!-- Junit测试 -->
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

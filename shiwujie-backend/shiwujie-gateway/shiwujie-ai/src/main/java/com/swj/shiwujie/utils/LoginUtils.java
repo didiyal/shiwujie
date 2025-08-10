@@ -1,5 +1,9 @@
 package com.swj.shiwujie.utils;
 
+import cn.hutool.core.convert.Convert;
+import cn.hutool.core.lang.TypeReference;
+import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.swj.shiwujie.model.domain.user.Blind;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -19,7 +23,10 @@ public class LoginUtils {
      */
     public static Blind getLoginBlind() {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        return (Blind)request.getAttribute("loginBlind");
+        Blind loginBlind = Convert.convert(new TypeReference<Blind>() {
+        }, request.getAttribute("loginBlind"));
+
+        return loginBlind;
     }
 
 

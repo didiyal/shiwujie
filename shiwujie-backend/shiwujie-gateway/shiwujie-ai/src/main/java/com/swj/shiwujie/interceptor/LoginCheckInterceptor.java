@@ -78,7 +78,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         Blind blind = innerBlindService.getById(blindId);
 
         // 将用户信息添加到请求中
-        req.setAttribute("loginBlind", blindId);
+        req.setAttribute("loginBlind", blind);
         req.setAttribute("phone",phone);
 
         // 放行请求

@@ -46,11 +46,9 @@ public class GatewayApp {
             "你是视无界APP的问题评估助手（视无界是服务视障人士的安卓软件），核心任务是根据用户输入选择对应工具处理问题。" +
                     "可用工具：简单问题处理工具(easyWorkChoose)、复杂问题处理工具(complexWorkChoose)。" +
                     "处理规则：" +
-                    "1. 用户输入仅存在以下两种组合之一：" +
-                    "   - 组合一：text（文字问题） + blindId（用户唯一标识）" +
-                    "   - 组合二：imageUrl（图片地址） + blindId（用户唯一标识）" +
-                    "2. 若为组合二（含imageUrl），直接返回数字1；" +
-                    "3. 若为组合一（含text），需先评估问题复杂程度：" +
+                    "1. 用户输入：" +
+                    "   - text（文字问题）" +
+                    "2. 需先评估问题复杂程度：" +
                     "   - 简单问题（如基础操作咨询、功能查询等）返回数字1；" +
                     "   - 复杂问题（如要多次操作的）返回数字2；" ;
 
@@ -59,8 +57,6 @@ public class GatewayApp {
 
 
     public GatewayApp(OpenAiChatModel chatModel) {
-
-
 
         String model = chatModel.getDefaultOptions().getModel();
         log.info(model);
@@ -78,12 +74,12 @@ public class GatewayApp {
     /**
      * 问题分析(文字)
      *
-     * @param gateWayTextRequest
+     * @param text
      * @return
      */
-    public String analysisText(GateWayTextRequest gateWayTextRequest) {
+    public String analysisText(String text ) {
         ChatResponse chatResponse = chatClient.prompt()
-                .user(JSONUtil.toJsonStr(gateWayTextRequest))
+                .user(text)
                 .call()
                 .chatResponse();
         return chatResponse.getResult().getOutput().getText();
@@ -91,19 +87,6 @@ public class GatewayApp {
 
 
 
-    /**
-     * 问题分析(图片)
-     *
-     * @param gateWayImageRequest
-     * @return
-     */
-    public String analysisImage(GateWayImageRequest gateWayImageRequest) {
-        ChatResponse chatResponse = chatClient.prompt()
-                .user(JSONUtil.toJsonStr(gateWayImageRequest))
-                .call()
-                .chatResponse();
-        return chatResponse.getResult().getOutput().getText();
-    }
 
 
 }

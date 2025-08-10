@@ -27,7 +27,7 @@ mybatis-plus:
 #dubbo配置
 dubbo:
   application:
-    name: shiwujie-user-provider
+    name: shiwujie-user
     logger: slf4j
     serialize-check-status: DISABLE
   protocol:
