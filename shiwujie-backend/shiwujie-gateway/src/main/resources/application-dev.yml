@@ -32,10 +32,10 @@ spring:
           uri: http://localhost:8500
           predicates:
             - Path=/api/ai/**
-logging:
-  level:
-    org:
-      springframework:
-        cloud:
-          gateway: trace
+#logging:
+#  level:
+#    org:
+#      springframework:
+#        cloud:
+#          gateway: trace
 

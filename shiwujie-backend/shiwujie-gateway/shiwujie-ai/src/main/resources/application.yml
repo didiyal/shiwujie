@@ -11,9 +11,33 @@ spring:
       connection-test-query: SELECT 1
       idle-timeout: 30000
       connection-timeout: 30000
+  # ai配置
+  ai:
+    dashscope:
+      api-key: sk-6374b4a1ebd64f56ae8d0799e74b7927
+      chat:
+        options:
+          model: qwen-vl-plus
+          multi-model: true
+    # deepseek
+    openai:
+      api-key: sk-6717d9d3bdd44474af03115a68a207b4
+      chat:
+        options:
+          model: deepseek-chat
+        base-url: https://api.deepseek.com
+    # 取消自动注入大模型
+    chat:
+      client:
+        enabled: false
+    # 搜索服务配置
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
 server:
-  servlet:
-    context-path: /api/ai   # 确保这里没有设置特殊的context-path
+#  servlet:
+#    context-path: /api/ai   # 确保这里没有设置特殊的context-path
   port: 8500
 mybatis-plus:
   configuration:
@@ -34,12 +58,30 @@ dubbo:
   registry:
     address: nacos://${nacos.address:127.0.0.1}:8848?username=nacos&password=nacos
     timeout: 5000
-
 # 解决Nacos与Logback配置冲突问题
 nacos:
   logging:
     config-enabled: false
-
 # 明确指定日志配置
 logging:
   config: classpath:logback-spring.xml
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'ai'
+      paths-to-match: '/**'
+      packages-to-scan: com.swj.shiwujie.controller
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+# searchApi
+search-api:
+  api-key: 4qkQ96eSGHAbAQKS5wbs8WyT

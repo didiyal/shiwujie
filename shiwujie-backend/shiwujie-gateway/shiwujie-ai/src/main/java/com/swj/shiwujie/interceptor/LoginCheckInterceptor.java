@@ -41,7 +41,9 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         if (HttpMethod.OPTIONS.toString().equals(req.getMethod())) {
             return true;
         }
-
+        String url = req.getRequestURL().toString();
+        log.info("------------------------------------------------------");
+        log.info("请求的url: {}", url);
         // 获取Authorization请求头中的令牌（token）
         String header = req.getHeader("Authorization");
         ThrowUtils.throwIf(header == null || !header.startsWith("Bearer "), ErrorCode.NOT_LOGIN, "未登录");

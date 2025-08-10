@@ -7,8 +7,10 @@ import com.swj.shiwujie.chatmemory.MySQLChatMemory;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
@@ -75,9 +77,9 @@ public class EasyProblemApp {
                 .defaultSystem(systemPrompt)
                 .defaultAdvisors(
                         // 自定义日志校验
-                        new MyLoggerAdvisor()
+//                        new MyLoggerAdvisor(),
                         // 自定义消息记录(基于redis)
-//                        new MessageChatMemoryAdvisor(chatMemory)
+                        new MessageChatMemoryAdvisor(chatMemory)
                 )
                 .build();
     }
