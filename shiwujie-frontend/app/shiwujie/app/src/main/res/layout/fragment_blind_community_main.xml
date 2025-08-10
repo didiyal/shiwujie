@@ -4,14 +4,14 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:fitsSystemWindows="true"
-    android:background="@color/background_light">
+    android:background="@color/primary_blue">
 
     <!-- 顶部状态栏占位区域，占页面高度的3% -->
     <View
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.03"
-        android:background="@color/background_light" />
+        android:background="@color/primary_blue" />
 
     <!-- 内容区域 -->
     <LinearLayout
@@ -390,7 +390,7 @@
                                 android:layout_marginStart="10dp"
                                 android:background="@drawable/button_secondary"
                                 android:text="社区活动"
-                                android:textColor="@color/text_primary"
+                                android:textColor="@color/white"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -402,7 +402,7 @@
                             android:layout_height="60dp"
                             android:background="@drawable/button_secondary"
                             android:text="参与的活动"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/white"
                             android:textSize="16sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -419,8 +419,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="我的社区信息"
-                            android:textSize="18sp"
-                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:textColor="@color/primary_blue"
                             android:textStyle="bold"
                             android:layout_marginBottom="16dp" />
 
@@ -435,7 +435,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="社区名称："
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/text_secondary" />
 
                             <TextView
@@ -443,7 +443,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="社区名称"
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/text_primary"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -453,13 +453,13 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:layout_marginBottom="12dp">
+                            android:layout_marginBottom="10dp">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="社区描述："
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/text_secondary" />
 
                             <TextView
@@ -467,7 +467,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="社区描述"
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/text_primary" />
                         </LinearLayout>
 
@@ -490,7 +490,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="123456"
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textColor="@color/text_primary"
                                 android:textStyle="bold" />
                         </LinearLayout>

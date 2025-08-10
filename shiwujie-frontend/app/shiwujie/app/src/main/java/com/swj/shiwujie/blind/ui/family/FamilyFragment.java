@@ -48,7 +48,19 @@ public class FamilyFragment extends Fragment {
         initViews();
         initService();
         setupClickListeners();
-        checkFamilyStatus();
+        
+        // 检查用户是否已登录并获取基本信息
+        String token = SharedPrefsUtil.getToken();
+        Long userId = SharedPrefsUtil.getUserId();
+        
+        if (token != null && userId != null) {
+            // 如果已登录，立即获取用户信息并更新状态
+            loadUserInfo();
+        } else {
+            // 未登录，显示空状态
+            showEmptyState();
+        }
+        
         return root;
     }
 
@@ -108,28 +120,50 @@ public class FamilyFragment extends Fragment {
         dialog.show();
     }
 
-    private void checkFamilyStatus() {
+    private void loadUserInfo() {
         String token = SharedPrefsUtil.getToken();
         Long userId = SharedPrefsUtil.getUserId();
 
         if (token == null || userId == null) {
-            Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
+            showEmptyState();
             return;
         }
 
-        // 先获取用户信息，检查是否已加入家庭
+        // 获取用户信息，检查是否已加入家庭
         apiService.getBlindById("Bearer " + token, userId).enqueue(new ApiCallback<BlindVO>(requireContext()) {
             @Override
             public void onSuccess(BlindVO data) {
-                if (data != null && data.getFamilyId() != null) {
-                    // 已加入家庭，获取家庭信息
-                    getFamilyInfo(data.getFamilyId());
-                } else {
-                    // 未加入家庭，显示空状态
-                    showEmptyState();
-                }
+                updateViewBasedOnFamilyStatus(data);
+            }
+            
+            @Override
+            public void onError(String message) {
+                // 获取用户信息失败，显示空状态
+                showEmptyState();
             }
         });
+    }
+    
+    private void updateViewBasedOnFamilyStatus(BlindVO userInfo) {
+        if (userInfo == null) {
+            // 用户信息为空，显示空状态
+            showEmptyState();
+            return;
+        }
+        
+        // 检查用户是否已加入家庭
+        if (userInfo.getFamilyId() != null) {
+            // 已加入家庭，获取家庭信息并显示
+            getFamilyInfo(userInfo.getFamilyId());
+        } else {
+            // 未加入家庭，显示空状态
+            showEmptyState();
+        }
+    }
+    
+    private void checkFamilyStatus() {
+        // 保留此方法用于刷新状态（加入/退出家庭后调用）
+        loadUserInfo();
     }
 
     private void getFamilyInfo(Long familyId) {

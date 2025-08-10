@@ -167,7 +167,9 @@ public class CommunityFragment extends Fragment {
     
     private void updateViewBasedOnUserStatus() {
         if (currentUserInfo == null) {
-            // 用户信息为空，保持当前视图
+            // 用户信息为空，显示我的社区页面的未加入状态
+            showMyCommunityTab();
+            showNoJoinState();
             return;
         }
         
@@ -177,7 +179,8 @@ public class CommunityFragment extends Fragment {
             showMyCommunityTab();
             loadCommunityInfo(currentUserInfo.getCommunityId());
         } else {
-            // 未加入社区，显示未加入状态
+            // 未加入社区，显示我的社区页面的未加入状态
+            showMyCommunityTab();
             showNoJoinState();
         }
     }
@@ -1129,18 +1132,35 @@ public class CommunityFragment extends Fragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("我的活动");
 
-        // 创建简单的文本显示
+        // 创建丰富的文本显示
         StringBuilder content = new StringBuilder();
-        for (ActivitysignVO activitysign : activitysigns) {
-            content.append("活动ID: ").append(activitysign.getActivityId()).append("\n");
-            content.append("报名时间: ").append(activitysign.getSignUpTime()).append("\n");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault());
+        
+        for (int i = 0; i < activitysigns.size(); i++) {
+            ActivitysignVO activitysign = activitysigns.get(i);
+            content.append("📌 活动 ").append(i + 1).append("\n");
+            content.append("━━━━━━━━━━━━━━━━━━━━━━\n");
+            content.append("🏷️ 活动ID: ").append(activitysign.getActivityId()).append("\n");
+            
+            if (activitysign.getSignUpTime() != null) {
+                content.append("📝 报名时间: ").append(sdf.format(activitysign.getSignUpTime())).append("\n");
+            }
+            
             if (activitysign.getCheckInTime() != null) {
-                content.append("签到时间: ").append(activitysign.getCheckInTime()).append("\n");
+                content.append("✅ 签到时间: ").append(sdf.format(activitysign.getCheckInTime())).append("\n");
+            } else {
+                content.append("⏳ 签到状态: 未签到\n");
             }
+            
             if (activitysign.getCheckOutTime() != null) {
-                content.append("签退时间: ").append(activitysign.getCheckOutTime()).append("\n");
+                content.append("🏁 签退时间: ").append(sdf.format(activitysign.getCheckOutTime())).append("\n");
+            } else if (activitysign.getCheckInTime() != null) {
+                content.append("🔄 签退状态: 进行中\n");
             }
-            content.append("\n");
+            
+            if (i < activitysigns.size() - 1) {
+                content.append("\n");
+            }
         }
 
         builder.setMessage(content.toString());

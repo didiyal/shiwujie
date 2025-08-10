@@ -22,6 +22,8 @@ import com.swj.shiwujie.data.model.BaseResponse;
 import com.swj.shiwujie.data.model.SocketDataV0;
 import com.swj.shiwujie.common.ui.EmergencyHelpFloatingWindow;
 import com.swj.shiwujie.common.ui.EmergencyHelpIncomingWindow;
+import com.swj.shiwujie.common.utils.EmergencyRingerManager;
+import com.swj.shiwujie.common.utils.PermissionManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -165,15 +167,28 @@ public class HomeFragment extends Fragment {
         
         if (data.getRequestType() == 3) {
             // 志愿者端来电提醒弹窗
+            // 检查权限并启动紧急求助响铃
+            if (PermissionManager.hasRingerPermissions(requireContext())) {
+                EmergencyRingerManager.getInstance().startEmergencyRinger(requireContext());
+            } else {
+                Log.w(TAG, "缺少响铃权限，请求权限");
+                PermissionManager.requestRingerPermissions(requireActivity());
+                // 即使没有权限，也要显示弹窗
+            }
+            
             if (emergencyHelpIncomingWindow == null) {
                 emergencyHelpIncomingWindow = new EmergencyHelpIncomingWindow(requireActivity());
             }
             emergencyHelpIncomingWindow.setBlindPhone(data.getBlindPhone());
             emergencyHelpIncomingWindow.setOnAcceptListener(v -> {
+                // 停止响铃
+                EmergencyRingerManager.getInstance().stopEmergencyRinger();
                 respondToEmergencyHelp(data);
                 emergencyHelpIncomingWindow.hide();
             });
             emergencyHelpIncomingWindow.setOnRejectListener(v -> {
+                // 停止响铃
+                EmergencyRingerManager.getInstance().stopEmergencyRinger();
                 emergencyHelpIncomingWindow.hide();
             });
             emergencyHelpIncomingWindow.show();
@@ -181,6 +196,8 @@ public class HomeFragment extends Fragment {
         } else if (data.getRequestType() == 4) {
             // 盲人取消紧急求助，家属端关闭弹窗
             Log.d(TAG, "收到紧急求助取消通知，关闭弹窗");
+            // 停止响铃
+            EmergencyRingerManager.getInstance().stopEmergencyRinger();
             if (emergencyHelpIncomingWindow != null) {
                 emergencyHelpIncomingWindow.hide();
             }
@@ -296,6 +313,19 @@ public class HomeFragment extends Fragment {
 
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (PermissionManager.handlePermissionResult(requestCode, permissions, grantResults)) {
+            Log.d(TAG, "权限申请成功，可以使用响铃功能");
+            Toast.makeText(requireContext(), "权限申请成功，紧急求助时会有响铃提醒", Toast.LENGTH_SHORT).show();
+        } else {
+            Log.w(TAG, "权限申请失败，响铃功能可能不可用");
+            Toast.makeText(requireContext(), "权限申请失败，可能无法播放响铃提醒", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         // 移除Socket消息监听
@@ -307,6 +337,8 @@ public class HomeFragment extends Fragment {
             emergencyHelpIncomingWindow.destroy();
             emergencyHelpIncomingWindow = null;
         }
+        // 确保停止响铃
+        EmergencyRingerManager.getInstance().stopEmergencyRinger();
         // 销毁紧急求助悬浮窗（盲人端专用）
         if (emergencyHelpFloatingWindow != null) {
             emergencyHelpFloatingWindow.destroy();

@@ -154,7 +154,9 @@ public class CommunityFragment extends Fragment {
                 @Override
                 public void onError(String message) {
                     Toast.makeText(getContext(), "获取用户信息失败: " + message, Toast.LENGTH_SHORT).show();
-                    // 如果获取用户信息失败，默认显示未加入社区页面
+                    // 如果获取用户信息失败，切换到我的社区页面并弹窗提示
+                    showMyCommunityTab();
+                    showJoinCommunityPrompt();
                 }
             });
         } catch (Exception e) {
@@ -165,7 +167,9 @@ public class CommunityFragment extends Fragment {
 
     private void updateViewBasedOnUserStatus() {
         if (currentUserInfo == null) {
-            // 用户信息为空，保持当前视图
+            // 用户信息为空，切换到我的社区页面并弹窗提示
+            showMyCommunityTab();
+            showJoinCommunityPrompt();
             return;
         }
 
@@ -174,10 +178,13 @@ public class CommunityFragment extends Fragment {
             // 已加入社区，自动切换到"我的社区"标签并显示社区详情
             showMyCommunityTab();
         } else {
-            // 未加入社区，更新用户名
+            // 未加入社区，切换到我的社区页面并弹窗提示
+            showMyCommunityTab();
             if (userNameText != null && currentUserInfo.getName() != null) {
                 userNameText.setText(currentUserInfo.getName());
             }
+            // 弹窗提示用户加入社区
+            showJoinCommunityPrompt();
         }
     }
 
@@ -364,6 +371,23 @@ public class CommunityFragment extends Fragment {
         }
     }
 
+    private void showJoinCommunityPrompt() {
+        if (getContext() != null) {
+            new AlertDialog.Builder(getContext())
+                    .setTitle("加入社区")
+                    .setMessage("您还没有加入任何社区，请先加入社区以享受完整的社区服务。")
+                    .setPositiveButton("立即加入", (dialog, which) -> {
+                        // 用户点击立即加入，聚焦到搜索社区输入框
+                        if (searchCommunityEditText != null) {
+                            searchCommunityEditText.requestFocus();
+                        }
+                    })
+                    .setNegativeButton("稍后再说", null)
+                    .setCancelable(true)
+                    .show();
+        }
+    }
+
 
 
     private void initComponents(View view) {
@@ -498,12 +522,12 @@ public class CommunityFragment extends Fragment {
             pendingHelpCountText = view.findViewById(R.id.pendingHelpCountText);
             ongoingActivityCountText = view.findViewById(R.id.ongoingActivityCountText);
 
-            allHelpPostsButton = view.findViewById(R.id.allHelpPostsButton);
-            allActivitiesButton = view.findViewById(R.id.allActivitiesButton);
+            //allHelpPostsButton = view.findViewById(R.id.allHelpPostsButton);
+            //allActivitiesButton = view.findViewById(R.id.allActivitiesButton);
             myHelpButton = view.findViewById(R.id.myHelpButton);
             myActivitiesButton = view.findViewById(R.id.myActivitiesButton);
 
-            if (allHelpPostsButton != null) {
+            /*if (allHelpPostsButton != null) {
                 allHelpPostsButton.setOnClickListener(v -> {
                     Toast.makeText(getContext(), "查看全部求助帖", Toast.LENGTH_SHORT).show();
                 });
@@ -513,7 +537,7 @@ public class CommunityFragment extends Fragment {
                 allActivitiesButton.setOnClickListener(v -> {
                     Toast.makeText(getContext(), "查看全部活动", Toast.LENGTH_SHORT).show();
                 });
-            }
+            }*/
 
             if (myHelpButton != null) {
                 myHelpButton.setOnClickListener(v -> {
@@ -530,8 +554,7 @@ public class CommunityFragment extends Fragment {
             // 设置标签点击事件
             setupTabClickListeners();
 
-            // 默认显示社区活动页面
-            showCommunityActivityTab();
+            // 不设置默认显示页面，等待用户信息加载完成后再决定显示哪个页面
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -1267,18 +1290,35 @@ public class CommunityFragment extends Fragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("我的活动");
 
-        // 创建简单的文本显示
+        // 创建丰富的文本显示
         StringBuilder content = new StringBuilder();
-        for (ActivitysignVO activitysign : activitysigns) {
-            content.append("活动ID: ").append(activitysign.getActivityId()).append("\n");
-            content.append("报名时间: ").append(activitysign.getSignUpTime()).append("\n");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault());
+        
+        for (int i = 0; i < activitysigns.size(); i++) {
+            ActivitysignVO activitysign = activitysigns.get(i);
+            content.append("📌 活动 ").append(i + 1).append("\n");
+            content.append("━━━━━━━━━━━━━━━━━━━━━━\n");
+            content.append("🏷️ 活动ID: ").append(activitysign.getActivityId()).append("\n");
+            
+            if (activitysign.getSignUpTime() != null) {
+                content.append("📝 报名时间: ").append(sdf.format(activitysign.getSignUpTime())).append("\n");
+            }
+            
             if (activitysign.getCheckInTime() != null) {
-                content.append("签到时间: ").append(activitysign.getCheckInTime()).append("\n");
+                content.append("✅ 签到时间: ").append(sdf.format(activitysign.getCheckInTime())).append("\n");
+            } else {
+                content.append("⏳ 签到状态: 未签到\n");
             }
+            
             if (activitysign.getCheckOutTime() != null) {
-                content.append("签退时间: ").append(activitysign.getCheckOutTime()).append("\n");
+                content.append("🏁 签退时间: ").append(sdf.format(activitysign.getCheckOutTime())).append("\n");
+            } else if (activitysign.getCheckInTime() != null) {
+                content.append("🔄 签退状态: 进行中\n");
             }
-            content.append("\n");
+            
+            if (i < activitysigns.size() - 1) {
+                content.append("\n");
+            }
         }
 
         builder.setMessage(content.toString());

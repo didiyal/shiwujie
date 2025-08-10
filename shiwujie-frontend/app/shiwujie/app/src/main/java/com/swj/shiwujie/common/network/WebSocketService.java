@@ -180,9 +180,10 @@ public class WebSocketService extends Service {
         }
         
         heartbeatExecutor = Executors.newScheduledThreadPool(1);
+
         heartbeatExecutor.scheduleAtFixedRate(() -> {
             sendHeartbeat();
-        }, 30, 30, TimeUnit.SECONDS); // 每30秒发送一次心跳包
+        }, 2, 2, TimeUnit.HOURS); // 每30秒发送一次心跳包
         
         isHeartbeatStarted = true;
         Log.d(TAG, "心跳包已启动，间隔30秒");

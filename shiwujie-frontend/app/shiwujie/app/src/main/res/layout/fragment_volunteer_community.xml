@@ -96,7 +96,7 @@
             android:orientation="horizontal"
             android:gravity="center">
 
-            <Button
+           <!-- <Button
                 android:id="@+id/helpPostButton"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
@@ -117,7 +117,7 @@
                 android:background="@drawable/button_outline"
                 android:text="查看活动"
                 android:textColor="@color/blue_primary"
-                android:textSize="16sp" />
+                android:textSize="16sp" />-->
         </LinearLayout>
 
         <!-- 状态卡片区域 -->
@@ -251,7 +251,7 @@
                 android:textStyle="bold" />
 
             <!-- 第一行按钮 -->
-            <LinearLayout
+           <!-- <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
@@ -278,7 +278,7 @@
                     android:text="全部活动"
                     android:textColor="@color/blue_primary"
                     android:textSize="14sp" />
-            </LinearLayout>
+            </LinearLayout>-->
 
             <!-- 第二行按钮 -->
             <LinearLayout
@@ -293,8 +293,8 @@
                     android:layout_weight="1"
                     android:layout_marginEnd="8dp"
                     android:background="@drawable/button_outline"
-                    android:text="我的求助"
-                    android:textColor="@color/blue_primary"
+                    android:text="我接受的求助"
+                    android:textColor="@color/white"
                     android:textSize="14sp" />
 
                 <Button
@@ -305,7 +305,7 @@
                     android:layout_marginStart="8dp"
                     android:background="@drawable/button_outline"
                     android:text="我的活动"
-                    android:textColor="@color/blue_primary"
+                    android:textColor="@color/white"
                     android:textSize="14sp" />
             </LinearLayout>
         </LinearLayout>

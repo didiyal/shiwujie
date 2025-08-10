@@ -45,7 +45,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:textColor="#757575"
-                android:textSize="14sp" />
+                android:textSize="10sp" />
         </LinearLayout>
 
         <!-- 角色标签 -->
@@ -56,7 +56,7 @@
             android:background="@drawable/bg_role_tag"
             android:paddingHorizontal="12dp"
             android:paddingVertical="4dp"
-            android:textColor="@android:color/white"
+            android:textColor="@color/primary_blue"
             android:textSize="12sp" />
 </LinearLayout> 
 </androidx.cardview.widget.CardView> 

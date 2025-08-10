@@ -39,7 +39,8 @@ public class PermissionManager {
     
     // 辅助权限（可选）
     private static final String[] OPTIONAL_PERMISSIONS = {
-        Manifest.permission.BLUETOOTH_CONNECT
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.VIBRATE
     };
     
     // 所有权限
@@ -47,7 +48,8 @@ public class PermissionManager {
         Manifest.permission.CAMERA,
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.MODIFY_AUDIO_SETTINGS,
-        Manifest.permission.BLUETOOTH_CONNECT
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.VIBRATE
     };
     
     /**
@@ -174,6 +176,35 @@ public class PermissionManager {
      */
     public static boolean checkAudioCallPermissions(Context context) {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+    }
+    
+    /**
+     * 检查响铃和震动权限（用于紧急求助提醒）
+     */
+    public static boolean hasRingerPermissions(Context context) {
+        return ContextCompat.checkSelfPermission(context, Manifest.permission.MODIFY_AUDIO_SETTINGS) == PackageManager.PERMISSION_GRANTED &&
+               ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) == PackageManager.PERMISSION_GRANTED;
+    }
+    
+    /**
+     * 请求响铃和震动权限
+     */
+    public static void requestRingerPermissions(Activity activity) {
+        List<String> missingPermissions = new ArrayList<>();
+        
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.MODIFY_AUDIO_SETTINGS) != PackageManager.PERMISSION_GRANTED) {
+            missingPermissions.add(Manifest.permission.MODIFY_AUDIO_SETTINGS);
+        }
+        
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.VIBRATE) != PackageManager.PERMISSION_GRANTED) {
+            missingPermissions.add(Manifest.permission.VIBRATE);
+        }
+        
+        if (!missingPermissions.isEmpty()) {
+            ActivityCompat.requestPermissions(activity, 
+                missingPermissions.toArray(new String[0]), 
+                PERMISSION_REQUEST_CODE);
+        }
     }
     
     /**
