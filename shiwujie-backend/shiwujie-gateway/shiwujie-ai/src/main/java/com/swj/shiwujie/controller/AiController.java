@@ -3,7 +3,6 @@ package com.swj.shiwujie.controller;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
-import com.swj.shiwujie.app.ComplexProblemApp;
 import com.swj.shiwujie.app.EasyProblemApp;
 import com.swj.shiwujie.app.GatewayApp;
 import com.swj.shiwujie.common.ErrorCode;

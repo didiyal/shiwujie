@@ -1,6 +1,5 @@
 package com.swj.shiwujie.interceptor;
 
-import cn.hutool.core.util.ObjUtil;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;

@@ -1,20 +1,13 @@
 package com.swj.shiwujie.chatmemory;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.convert.Convert;
-import cn.hutool.core.lang.TypeReference;
-
-
 import com.swj.shiwujie.utils.MessageSerializer;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
-
 import java.util.List;
 
 /**

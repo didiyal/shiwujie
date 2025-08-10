@@ -1,27 +1,12 @@
 package com.swj.shiwujie.app;
 
 
-import cn.hutool.json.JSONUtil;
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
-import com.swj.shiwujie.advisor.MyLoggerAdvisor;
-import com.swj.shiwujie.chatmemory.RedisChatMemory;
-import com.swj.shiwujie.model.request.ai.GateWayImageRequest;
-import com.swj.shiwujie.model.request.ai.GateWayTextRequest;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
 
-
-import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
-import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
 
 
 /**
