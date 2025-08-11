@@ -80,9 +80,13 @@ public class AiController {
             log.info("图片保存成功，路径: {}", filePath);
 
             // 传递给AI时使用文件系统路径
-            return easyProblemApp.doChatWithImageSSE(filePath, blindId);
+            Flux<String> stringFlux = easyProblemApp.doChatWithImageSSE(filePath, blindId);
 
+            // 打印
+            log.info("AI返回:");
+            stringFlux.subscribe(System.out::print);
 
+            return stringFlux;
 
         } catch (Exception e) {
             log.error("处理图片识别请求时发生错误", e);
@@ -104,15 +108,16 @@ public class AiController {
         // 判断参数是否合法
         ThrowUtils.throwIf(ObjUtil.hasEmpty(text), ErrorCode.PARAMS_ERROR,"参数不合法");
 
-        return easyProblemApp.doChatWithTextSSE(text, blindId);
+        Flux<String> stringFlux = easyProblemApp.doChatWithTextSSE(text, blindId);
+        // 打印
+        log.info("AI返回:");
+        stringFlux.subscribe(System.out::print);
 
-//        String s = gatewayApp.analysisText(text);
-//        log.info("问题复杂度判断:{}",s);
-//        if ("1".equals(s)){
-//            return easyProblemApp.doChatWithText(text, blindId);
-//        }else{
-//            return complexProblemApp.doChatWithText(text, blindId);
-//        }
+        return stringFlux;
+
+//        String s = easyProblemApp.doChatWithText(text, blindId);
+//        System.out.println(s);
+//        return s;
     }
 
 

@@ -21,11 +21,11 @@ public interface InnerHelppostService{
 
 
     /**
-     * 分页选择查询社区下的求助帖
+     * 分页选择查询求助帖
      * @param helppostQueryRequest 求助帖查询请求
      * @return 求助帖VO列表
      */
-    Page<HelppostVO> listHelppostsByCommunity(HelppostQueryRequest helppostQueryRequest);
+    Page<HelppostVO> listQueryHelpposts(HelppostQueryRequest helppostQueryRequest);
 
     /**
      * 删除求助帖

@@ -7,14 +7,16 @@ import com.swj.shiwujie.model.request.community.activitysign.ActivitySignAddRequ
 import com.swj.shiwujie.model.request.community.activitysign.ActivitySignQueryRequest;
 import com.swj.shiwujie.service.ActivitysignService;
 import com.swj.shiwujie.service.community.InnerActivitysignService;
+import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
 * 内部服务实现类
 */
-@Service
+@DubboService
 public class InnerActivitysignServiceImpl implements InnerActivitysignService {
 
 
@@ -32,6 +34,8 @@ public class InnerActivitysignServiceImpl implements InnerActivitysignService {
     public Page<ActivitysignVO> listActivitySignByActivity(ActivitySignQueryRequest activitySignQueryRequest) {
         return activitysignService.listActivitySignByActivity(activitySignQueryRequest);
     }
+
+
 
 }
 

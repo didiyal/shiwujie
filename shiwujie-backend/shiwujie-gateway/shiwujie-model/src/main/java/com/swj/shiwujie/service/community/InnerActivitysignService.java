@@ -32,11 +32,4 @@ public interface InnerActivitysignService{
     Page<ActivitysignVO> listActivitySignByActivity(ActivitySignQueryRequest activitySignQueryRequest);
 
 
-
-    /**
-     * 查询活动VOs
-     * @param activitySignIds 活动报名签到IDs
-     * @return
-     */
-    List<ActivitysignVO> listActivitiySigns(Long[] activitySignIds);
 }

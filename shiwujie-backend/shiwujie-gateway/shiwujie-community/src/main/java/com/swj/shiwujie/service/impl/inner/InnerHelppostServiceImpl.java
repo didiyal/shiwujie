@@ -8,6 +8,7 @@ import com.swj.shiwujie.model.request.community.helppost.HelppostUpdateRequest;
 import com.swj.shiwujie.service.HelppostService;
 import com.swj.shiwujie.service.community.InnerHelppostService;
 
+import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -18,7 +19,7 @@ import javax.annotation.Resource;
  *
  * @author swj
  */
-@Service
+@DubboService
 public class InnerHelppostServiceImpl implements InnerHelppostService {
 
 
@@ -38,7 +39,7 @@ public class InnerHelppostServiceImpl implements InnerHelppostService {
      * 分页选择查询社区下的求助帖
      */
     @Override
-    public Page<HelppostVO> listHelppostsByCommunity(HelppostQueryRequest helppostQueryRequest) {
+    public Page<HelppostVO> listQueryHelpposts(HelppostQueryRequest helppostQueryRequest) {
         return helppostService.listHelppostsByCommunity(helppostQueryRequest);
     }
 

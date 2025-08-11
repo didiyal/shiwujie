@@ -35,8 +35,8 @@ public class UserTools {
      * @param familyVolunteerPhone 家庭创建人手机号
      * @return 申请结果
      */
-    @Tool(name = "申请加入家庭", description = "当用户提供了家庭创建人手机号并说\"我确认加入家庭\"时调用此工具。")
-    public String joinFamily(@ToolParam (description = "家庭创建人手机号") String familyVolunteerPhone){
+    @Tool(name = "申请加入家庭", description = "帮助用户完成加入家庭的操作，在用户提供家庭创建人手机号并确认后调用此工具")
+    public String joinFamily(@ToolParam (description = "家庭创建人的手机号，用于申请加入家庭") String familyVolunteerPhone){
         try {
             Blind loginBlind = LoginUtils.getLoginBlind();
             ThrowUtils.throwIf(StrUtil.isBlankIfStr(familyVolunteerPhone), ErrorCode.PARAMS_ERROR,"请输入家庭创建人手机号");
@@ -54,7 +54,7 @@ public class UserTools {
      * 退出家庭
      * @return 退出结果
      */
-    @Tool(description = "APP功能操作:退出家庭(需要让用户确认)")
+    @Tool(name = "退出家庭", description = "帮助用户退出当前所在的家庭")
     public String leaveFromFamily(){
         try {
             Blind loginBlind = LoginUtils.getLoginBlind();
@@ -72,7 +72,7 @@ public class UserTools {
      * 获取用户的家庭信息
      * @return 家庭信息
      */
-    @Tool(description = "APP功能操作:获取用户的家庭信息")
+    @Tool(name = "获取用户的家庭信息", description = "获取用户当前家庭的详细信息，包括家庭名称和成员列表")
     public String getFamilyInfo(){
         try {
             Blind loginBlind = LoginUtils.getLoginBlind();
@@ -101,7 +101,7 @@ public class UserTools {
 
 
 
-    @Tool(description = "APP功能操作:加入社区")
+    @Tool(name = "前往社区加入页面", description = "引导用户前往社区加入页面")
     public String joinCommunity(){
         //todo 页面通知前端页面跳转
         return "社区只能手动加入,正在帮您跳转页面";

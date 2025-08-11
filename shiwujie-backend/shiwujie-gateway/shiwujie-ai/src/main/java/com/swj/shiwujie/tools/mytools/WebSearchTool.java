@@ -24,9 +24,14 @@ public class WebSearchTool {
         this.apiKey = apiKey;
     }
 
-    @Tool(description = "通过百度搜索引擎获取与查询词相关的信息。适用于需要获取最新资讯、多来源对比、未知领域知识等场景，返回前5条相关搜索结果（含标题、链接和摘要）")
+    @Tool(name = "百度搜索", description = "使用百度搜索获取与查询词相关的信息，返回前五条结果")
     public String searchWeb(
-            @ToolParam(description = "搜索关键词或短语，应清晰描述所需信息的核心内容（如\"2024年人工智能发展趋势\"、\"Java性能优化最佳实践\"）") String query) {
+            @ToolParam(description = "搜索关键词或短语") String query) {
+        // 添加参数验证，防止null或空字符串导致的错误
+        if (query == null || query.trim().isEmpty()) {
+            return "错误：搜索关键词不能为空";
+        }
+        
         // 实现代码保持不变
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("q", query);

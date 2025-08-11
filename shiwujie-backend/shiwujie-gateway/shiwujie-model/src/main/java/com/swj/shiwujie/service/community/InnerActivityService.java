@@ -34,7 +34,7 @@ public interface InnerActivityService {
      * @param activityIds
      * @return
      */
-    List<ActivityVO> listActivities(Long[] activityIds);
+    List<ActivityVO> listActivities(List<Long> activityIds);
 
 
 }
