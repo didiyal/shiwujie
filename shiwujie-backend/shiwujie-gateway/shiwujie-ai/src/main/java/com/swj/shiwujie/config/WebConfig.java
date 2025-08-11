@@ -3,13 +3,23 @@ package com.swj.shiwujie.config;
 import com.swj.shiwujie.interceptor.LoginCheckInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-@Configuration //配置类
+@Configuration
 public class WebConfig implements WebMvcConfigurer {
-
+    
+    @Value("${upload.image-path:${user.home}/shiwujie/images}")
+    private String imageUploadPath;
+    
+    @Bean
+    public String imageUploadPath() {
+        return imageUploadPath;
+    }
+    
     @Autowired
     private LoginCheckInterceptor loginCheckInterceptor;
 

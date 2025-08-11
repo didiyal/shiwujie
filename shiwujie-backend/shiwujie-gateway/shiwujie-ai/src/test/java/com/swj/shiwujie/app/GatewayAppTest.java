@@ -1,7 +1,5 @@
 package com.swj.shiwujie.app;
 
-import com.swj.shiwujie.model.request.ai.GateWayImageRequest;
-import com.swj.shiwujie.model.request.ai.GateWayTextRequest;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;

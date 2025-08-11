@@ -1,9 +1,12 @@
 package com.swj.shiwujie.service.community;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.swj.shiwujie.model.VO.community.activity.ActivityVO;
 import com.swj.shiwujie.model.VO.community.activitysign.ActivitysignVO;
 import com.swj.shiwujie.model.request.community.activitysign.ActivitySignAddRequest;
 import com.swj.shiwujie.model.request.community.activitysign.ActivitySignQueryRequest;
+
+import java.util.List;
 
 
 /**
@@ -28,4 +31,12 @@ public interface InnerActivitysignService{
      */
     Page<ActivitysignVO> listActivitySignByActivity(ActivitySignQueryRequest activitySignQueryRequest);
 
+
+
+    /**
+     * 查询活动VOs
+     * @param activitySignIds 活动报名签到IDs
+     * @return
+     */
+    List<ActivitysignVO> listActivitiySigns(Long[] activitySignIds);
 }

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +38,9 @@ public class AiController {
 
     @Resource
     private EasyProblemApp easyProblemApp;
+    
+    @Value("${upload.image-path:${user.home}/shiwujie/images}")
+    private String imageUploadPath;
 
 
 
@@ -61,29 +65,22 @@ public class AiController {
             
             String name = "imageFile" + System.currentTimeMillis() + fileExtension;
             
-            // 获取项目resources目录的绝对路径
-            String resourcesPath = Thread.currentThread().getContextClassLoader()
-                .getResource("").getPath();
-            // 处理Windows路径中的前导斜杠
-            if (resourcesPath.startsWith("/") && System.getProperty("os.name").toLowerCase().contains("win")) {
-                resourcesPath = resourcesPath.substring(1);
-            }
-            String filePath = resourcesPath + "image/" + blindId + "/" + name;
+            // 使用配置的上传目录
+            String filePath = imageUploadPath + File.separator + blindId + File.separator + name;
             
             // 确保目录存在
-            File directory = new File(resourcesPath + "image/" + blindId);
+            File directory = new File(imageUploadPath + File.separator + blindId);
             if (!directory.exists()) {
                 directory.mkdirs();
             }
             
-            // 使用Hutool工具库保存到resources目录下
+            // 使用Hutool工具库保存到指定目录下
             FileUtil.writeBytes(imageFile.getBytes(), filePath);
             
             log.info("图片保存成功，路径: {}", filePath);
 
-            // 传递给AI时使用classpath路径
-            String classpath = "image/" + blindId + "/" + name;
-            return easyProblemApp.doChatWithImageSSE(classpath, blindId);
+            // 传递给AI时使用文件系统路径
+            return easyProblemApp.doChatWithImageSSE(filePath, blindId);
 
 
 

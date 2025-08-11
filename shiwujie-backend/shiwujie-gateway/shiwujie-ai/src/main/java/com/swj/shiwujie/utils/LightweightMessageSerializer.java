@@ -52,11 +52,11 @@ public class LightweightMessageSerializer {
             // MySQL的LONGTEXT最大可以存储4GB数据，一般来说足够使用
             // 如果需要限制大小，可以取消下面的注释
 
-            if (base64.length() > 65535) {
-                // 如果序列化后的内容超过65KB，进行截断处理并记录日志
-                System.err.println("警告：消息内容过长，已截断: " + base64.length() + " 字符");
-                base64 = base64.substring(0, 65535);
-            }
+//            if (base64.length() > 65535) {
+//                // 如果序列化后的内容超过65KB，进行截断处理并记录日志
+//                System.err.println("警告：消息内容过长，已截断: " + base64.length() + " 字符");
+//                base64 = base64.substring(0, 65535);
+//            }
 
             
             return base64;

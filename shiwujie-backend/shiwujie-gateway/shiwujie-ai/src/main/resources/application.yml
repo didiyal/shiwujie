@@ -3,6 +3,10 @@ spring:
     name: shiwujieAI
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   datasource:
     hikari:
       minimum-idle: 5
@@ -83,3 +87,6 @@ knife4j:
 # searchApi
 search-api:
   api-key: 4qkQ96eSGHAbAQKS5wbs8WyT
+# 图片上传路径配置
+upload:
+  image-path: ${user.home}/shiwujie/images

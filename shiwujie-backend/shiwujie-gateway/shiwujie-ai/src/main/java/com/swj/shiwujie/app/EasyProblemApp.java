@@ -15,9 +15,13 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Flux;
+
+import java.io.File;
+import java.net.URL;
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
@@ -85,8 +89,6 @@ public class EasyProblemApp {
     }
 
 
-
-
     // region 非流式调用
 
     /**
@@ -116,32 +118,18 @@ public class EasyProblemApp {
      * @return 大模型回复
      */
     public String doChatWithImage(String imageUrl, Long blindId) {
-        try {
-            log.info("开始处理图片识别，图片路径: {}", imageUrl);
+        ChatResponse chatResponse = chatClient.prompt()
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
+                .advisors(myRagCloudAdvisor)
+                .user(u -> u.text("这个图片展示了什么信息")
+                        .media(MimeTypeUtils.IMAGE_PNG, new FileSystemResource(imageUrl)))
+                .tools(toolCallbackProvider)
+                .tools(allTools)
+                .call()
+                .chatResponse();
+        return chatResponse.getResult().getOutput().getText();
 
-            // 检查资源是否存在
-            ClassPathResource resource = new ClassPathResource(imageUrl);
-            log.info("资源是否存在: {}, 文件路径: {}", resource.exists(), resource.getPath());
-
-            if (!resource.exists()) {
-                throw new RuntimeException("图片资源不存在: " + imageUrl);
-            }
-
-            ChatResponse chatResponse = chatClient.prompt()
-                    .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
-                            .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                    .advisors(myRagCloudAdvisor)
-                    .user(u -> u.text("这个图片展示了什么信息")
-                            .media(MimeTypeUtils.IMAGE_PNG, resource))
-                    .tools(toolCallbackProvider)
-                    .tools(allTools)
-                    .call()
-                    .chatResponse();
-            return chatResponse.getResult().getOutput().getText();
-        } catch (Exception e) {
-            log.error("处理图片识别时发生错误，图片路径: {}", imageUrl, e);
-            throw new RuntimeException("处理图片识别时发生错误: " + e.getMessage(), e);
-        }
     }
 
 
@@ -181,7 +169,7 @@ public class EasyProblemApp {
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
                 .advisors(myRagCloudAdvisor)
                 .user(u -> u.text("这个图片展示了什么信息")
-                        .media(MimeTypeUtils.IMAGE_PNG, new ClassPathResource(imageUrl)))
+                        .media(MimeTypeUtils.IMAGE_PNG, new FileSystemResource(imageUrl)))
                 .tools(toolCallbackProvider)
                 .tools(allTools)
                 .stream()
