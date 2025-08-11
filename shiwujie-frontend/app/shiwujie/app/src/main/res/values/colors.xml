@@ -25,4 +25,10 @@
     <color name="text_hint">#BDBDBD</color>
     <color name="background_light">#FAFAFA</color>
     <color name="success_green">#4CAF50</color>
+   <!-- 蓝色系（简洁清爽）-->
+    <color name="blue_50">#EEF5FF</color>
+    <color name="blue_100">#D9E8FF</color>
+    <color name="blue_600">#1677FF</color>
+    <color name="blue_700">#0F6AE5</color>
+    <color name="blue_900">#0A3D91</color>
 </resources>
