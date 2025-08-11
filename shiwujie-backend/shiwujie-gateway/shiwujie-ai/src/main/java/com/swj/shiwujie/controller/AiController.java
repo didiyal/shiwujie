@@ -1,10 +1,12 @@
 package com.swj.shiwujie.controller;
 
 
+import cn.hutool.core.convert.Convert;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.swj.shiwujie.app.EasyProblemApp;
 import com.swj.shiwujie.app.GatewayApp;
+import com.swj.shiwujie.common.AiToolRequest;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -33,6 +35,7 @@ import java.io.File;
 public class AiController {
 
 
+
     @Resource
     private GatewayApp gatewayApp;
 
@@ -41,10 +44,6 @@ public class AiController {
     
     @Value("${upload.image-path:${user.home}/shiwujie/images}")
     private String imageUploadPath;
-
-
-
-
 
     @PostMapping(path = "/doChatByImage",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "图片识别")
@@ -80,7 +79,7 @@ public class AiController {
             log.info("图片保存成功，路径: {}", filePath);
 
             // 传递给AI时使用文件系统路径
-            Flux<String> stringFlux = easyProblemApp.doChatWithImageSSE(filePath, blindId);
+            Flux<String> stringFlux = easyProblemApp.doChatWithImageSSE(filePath, 1000L);
 
             // 打印
             log.info("AI返回:");
@@ -96,29 +95,44 @@ public class AiController {
 
 
 
-
-
-    @PostMapping(path = "/doChatByText",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(path = "/doChatByText/stream",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "文本对话")
     @SecurityRequirement(name = "Authorization")
-    public Flux<String> doChatByText(String text){
+    public Flux<String> doChatByTextStream(String text){
         Blind loginBlind = LoginUtils.getLoginBlind();
         Long blindId = loginBlind.getBlindId();
 
         // 判断参数是否合法
         ThrowUtils.throwIf(ObjUtil.hasEmpty(text), ErrorCode.PARAMS_ERROR,"参数不合法");
 
-        Flux<String> stringFlux = easyProblemApp.doChatWithTextSSE(text, blindId);
+        Flux<String> stringFlux = easyProblemApp.doChatWithTextSSE(text, 2000L);
         // 打印
         log.info("AI返回:");
         stringFlux.subscribe(System.out::print);
 
         return stringFlux;
 
-//        String s = easyProblemApp.doChatWithText(text, blindId);
-//        System.out.println(s);
-//        return s;
     }
+
+
+
+    @PostMapping(path = "/doChatByText")
+    @Operation(summary = "文本对话")
+    @SecurityRequirement(name = "Authorization")
+    public String doChatByText(String text){
+        Blind loginBlind = LoginUtils.getLoginBlind();
+        Long blindId = loginBlind.getBlindId();
+
+        // 判断参数是否合法
+        ThrowUtils.throwIf(ObjUtil.hasEmpty(text), ErrorCode.PARAMS_ERROR,"参数不合法");
+
+        return easyProblemApp.doChatWithText(text, 1000L);
+
+    }
+
+
+
+
 
 
 

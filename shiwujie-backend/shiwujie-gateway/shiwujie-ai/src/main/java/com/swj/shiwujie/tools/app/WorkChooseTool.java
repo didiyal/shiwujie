@@ -7,6 +7,7 @@ import com.swj.shiwujie.app.EasyProblemApp;
 import com.swj.shiwujie.common.AiToolRequest;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -24,15 +25,12 @@ public class WorkChooseTool {
 
 
     // 用户模块业务工具
+    @Resource
     private UserTools userTools;
 
     // 社区模块业务工具
+    @Resource
     private CommunityTools communityTools;
-
-    public WorkChooseTool(UserTools userTools, CommunityTools communityTools) {
-        this.userTools = userTools;
-        this.communityTools = communityTools;
-    }
 
 
     /**
@@ -57,31 +55,41 @@ public class WorkChooseTool {
                     " 12 - 加入社区/修改个人信息(名字,手机号,密码等)/退出社区/跳转到其它软件/图像识别 格式示例：{ \"type\":12 }" +
                     "使用说明：调用时需要严格遵守JSON格式，传入工具类型（type：1-12）及数据（data）。" +
                     "注意：此工具是执行业务操作的唯一途径，AI只能在需要时调用此工具，并且仅在工具类型（type）有效时执行。" +
-                    "例如，若用户请求‘加入家庭’，则需要传入包含家主手机号的JSON格式请求。")
+                    "例如，若用户请求'加入家庭'，则需要传入包含家主手机号的JSON格式请求。" +
+                    "重要：在流式调用模式下，AI不应直接调用此工具，而应按照系统提示词中的格式返回工具调用请求。")
     public String questionChoose(@ToolParam(description = "工具请求JSON字符串，必须严格遵守格式要求: {\"type\":数字, \"data\":\"JSON字符串\"}") String toolRequest) {
+        log.info("WorkChooseTool 被调用，接收到的参数: {}", toolRequest);
+        
         // 添加对null或空字符串的处理，防止流式调用中出现空参数导致异常
         if (toolRequest == null || toolRequest.trim().isEmpty()) {
+            log.warn("工具调用参数为空");
             return "此功能暂不支持自动操作，请您手动操作";
         }
 
         try {
+            log.info("开始解析工具请求参数");
             // 添加参数验证，防止null或空字符串导致的错误
             if (toolRequest == null || toolRequest.trim().isEmpty()) {
+                log.warn("工具请求参数为空或仅包含空白字符");
                 return "此功能暂不支持自动操作,请您手动操作";
             }
 
             // 解析工具请求
             AiToolRequest request = AiToolRequest.fromJson(toolRequest);
+            log.info("解析后的工具请求: type={}, data={}", request.getType(), request.getData());
+            
             Integer indexNum = request.getType();
             String jsonStr = request.getData();
 
             // 检查type是否为空
             if (indexNum == null) {
+                log.warn("工具类型(type)为空");
                 return "错误：请提供有效的工具类型(type)";
             }
 
             // 如果data为空，设置默认值
             if (jsonStr == null) {
+                log.info("工具数据(data)为空，设置默认值");
                 jsonStr = "{}";
             }
 

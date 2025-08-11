@@ -7,6 +7,7 @@ import com.swj.shiwujie.tools.mytools.WebScrapingTool;
 import com.swj.shiwujie.tools.mytools.WebSearchTool;
 import jakarta.annotation.Resource;
 import org.apache.catalina.User;
+import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbacks;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,22 +21,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ToolRegistration {
 
-    @Value("${search-api.api-key}")
-    private String searchApiKey;
 
 
     @Resource
-    private UserTools userTools;
+    private WorkChooseTool workChooseTool;
+
 
     @Resource
-    private CommunityTools communityTools;
-
+    private WebSearchTool webSearchTool;
 
     @Bean
     public ToolCallback[] allTools() {
-        WebSearchTool webSearchTool = new WebSearchTool(searchApiKey);
         WebScrapingTool webScrapingTool = new WebScrapingTool();
-        WorkChooseTool workChooseTool = new WorkChooseTool(userTools, communityTools);
         return ToolCallbacks.from(
                 webSearchTool,
                 webScrapingTool,
