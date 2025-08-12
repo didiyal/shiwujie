@@ -15,6 +15,8 @@ import com.swj.shiwujie.data.model.ActivitysignVO;
 import com.swj.shiwujie.data.model.ActivitySignAddRequest;
 import com.swj.shiwujie.data.model.Page;
 import com.swj.shiwujie.data.model.HelppostUpdateRequest;
+import com.swj.shiwujie.data.model.AiChatRequest;
+import com.swj.shiwujie.data.model.AiChatResponse;
 
 import java.util.List;
 
@@ -658,6 +660,18 @@ public interface ApiService {
             @Query("blindId") Long blindId,
             @Query("current") Long current,
             @Query("pageSize") Long pageSize
+    );
+
+    /**
+     * AI文本对话接口
+     * @param token JWT令牌
+     * @param text 用户输入的文本
+     * @return AI对话响应（流式）
+     */
+    @POST("/api/ai/ai/doChatByText")
+    Call<okhttp3.ResponseBody> sendAiTextMessage(
+            @Header("Authorization") String token,
+            @Query("text") String text
     );
 
 }

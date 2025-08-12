@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.utils.SpeechRecognitionManager;
+import com.swj.shiwujie.common.network.AiChatManager;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public class AiFragment extends Fragment {
     private static final String KEY_CURRENT_CONVERSATION = "current_conversation";
     
     private SpeechRecognitionManager speechManager;
+    private AiChatManager aiChatManager;
     private MaterialButton btnVoice;
     private FloatingActionButton fabHistory;
     private boolean isListening = false;
@@ -113,6 +115,7 @@ public class AiFragment extends Fragment {
             initViews(view);
             initData();
             initSpeechManager();
+            initAiChatManager();
             
             return view;
         } catch (Exception e) {
@@ -500,6 +503,42 @@ public class AiFragment extends Fragment {
     }
     
     /**
+     * 初始化AI对话管理器
+     */
+    private void initAiChatManager() {
+        aiChatManager = new AiChatManager(requireContext());
+        
+        // 配置打字机效果速度（可选）
+        aiChatManager.setTypingSpeed(50); // 50ms延迟，可以根据需要调整
+        
+        aiChatManager.setOnStreamingListener(new AiChatManager.OnStreamingListener() {
+            @Override
+            public void onStreamingStart() {
+                // AI开始回复，显示"正在思考..."状态
+                showAiThinkingStatus();
+            }
+            
+            @Override
+            public void onStreamingText(String text) {
+                // 实时更新AI回复的流式输出
+                updateAiResponseStreaming(text);
+            }
+            
+            @Override
+            public void onStreamingComplete(String fullResponse) {
+                // 流式输出完成，保存完整回复
+                completeAiResponse(fullResponse);
+            }
+            
+            @Override
+            public void onStreamingError(String error) {
+                // AI回复出错，显示错误信息
+                handleAiResponseError(error);
+            }
+        });
+    }
+    
+    /**
      * 显示录音状态提示
      */
     private void showRecordingStatus(String status) {
@@ -631,8 +670,11 @@ public class AiFragment extends Fragment {
         // 将语音识别结果添加到对话界面
         addUserMessage(result);
         
-        // 这里可以调用真实的AI接口，暂时不显示回复
-        // 或者可以显示一个"正在思考..."的提示
+        // 延迟发送AI请求，确保用户消息完全显示后再发送
+        // 这样可以避免AI回复比用户问题出现更早的问题
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            sendAiRequest(result);
+        }, 500); // 延迟500ms，确保用户消息完全显示
     }
     
     /**
@@ -670,6 +712,169 @@ public class AiFragment extends Fragment {
         }
         
         Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+    }
+    
+    /**
+     * 发送AI请求
+     * @param userMessage 用户消息
+     */
+    private void sendAiRequest(String userMessage) {
+        if (aiChatManager != null) {
+            Log.d(TAG, "开始发送AI请求，用户消息: " + userMessage);
+            
+            // 显示AI正在思考的状态
+            showAiThinkingStatus();
+            
+            // 发送消息到AI接口（使用预先设置的监听器）
+            aiChatManager.sendMessage(userMessage);
+        } else {
+            Log.e(TAG, "AiChatManager未初始化");
+            Toast.makeText(requireContext(), "AI对话管理器未初始化", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * 显示AI正在思考的状态
+     */
+    private void showAiThinkingStatus() {
+        if (getView() == null) return;
+        
+        try {
+            // 创建AI思考状态的消息卡片
+            com.google.android.material.card.MaterialCardView thinkingCard = createMessageCard(
+                "正在思考...", 
+                false,  // AI消息
+                R.color.blue_50,  // AI消息背景色
+                R.color.text_secondary  // 思考状态文字色
+            );
+            
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer != null) {
+                // 添加思考状态卡片
+                chatContainer.addView(thinkingCard);
+                
+                // 滚动到底部
+                scrollToBottom();
+                
+                // 保存思考状态卡片的引用，用于后续更新
+                thinkingCard.setTag("thinking_card");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "显示AI思考状态失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 更新AI回复的流式输出
+     * @param text 当前流式输出的文本
+     */
+    private void updateAiResponseStreaming(String text) {
+        if (getView() == null) return;
+        
+        try {
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer == null) return;
+            
+            // 查找思考状态卡片
+            com.google.android.material.card.MaterialCardView thinkingCard = null;
+            for (int i = 0; i < chatContainer.getChildCount(); i++) {
+                View child = chatContainer.getChildAt(i);
+                if (child instanceof com.google.android.material.card.MaterialCardView && 
+                    "thinking_card".equals(child.getTag())) {
+                    thinkingCard = (com.google.android.material.card.MaterialCardView) child;
+                    break;
+                }
+            }
+            
+            if (thinkingCard != null) {
+                // 更新思考状态卡片的内容为流式输出
+                TextView textView = (TextView) thinkingCard.getChildAt(0);
+                if (textView != null) {
+                    textView.setText(text);
+                }
+                
+                // 滚动到底部
+                scrollToBottom();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "更新AI回复流式输出失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 完成AI回复
+     * @param fullResponse 完整的AI回复
+     */
+    private void completeAiResponse(String fullResponse) {
+        if (getView() == null) return;
+        
+        try {
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer == null) return;
+            
+            // 查找思考状态卡片
+            com.google.android.material.card.MaterialCardView thinkingCard = null;
+            int thinkingCardIndex = -1;
+            for (int i = 0; i < chatContainer.getChildCount(); i++) {
+                View child = chatContainer.getChildAt(i);
+                if (child instanceof com.google.android.material.card.MaterialCardView && 
+                    "thinking_card".equals(child.getTag())) {
+                    thinkingCard = (com.google.android.material.card.MaterialCardView) child;
+                    thinkingCardIndex = i;
+                    break;
+                }
+            }
+            
+            if (thinkingCard != null && thinkingCardIndex >= 0) {
+                // 移除思考状态卡片
+                chatContainer.removeViewAt(thinkingCardIndex);
+                
+                // 添加完整的AI回复消息
+                addAIResponse(fullResponse);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "完成AI回复失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 处理AI回复错误
+     * @param error 错误信息
+     */
+    private void handleAiResponseError(String error) {
+        if (getView() == null) return;
+        
+        try {
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer == null) return;
+            
+            // 查找思考状态卡片
+            com.google.android.material.card.MaterialCardView thinkingCard = null;
+            int thinkingCardIndex = -1;
+            for (int i = 0; i < chatContainer.getChildCount(); i++) {
+                View child = chatContainer.getChildAt(i);
+                if (child instanceof com.google.android.material.card.MaterialCardView && 
+                    "thinking_card".equals(child.getTag())) {
+                    thinkingCard = (com.google.android.material.card.MaterialCardView) child;
+                    thinkingCardIndex = i;
+                    break;
+                }
+            }
+            
+            if (thinkingCard != null && thinkingCardIndex >= 0) {
+                // 移除思考状态卡片
+                chatContainer.removeViewAt(thinkingCardIndex);
+                
+                // 显示错误消息
+                Toast.makeText(requireContext(), "AI回复失败: " + error, Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "处理AI回复错误失败: " + e.getMessage(), e);
+        }
     }
     
     /**
@@ -715,9 +920,24 @@ public class AiFragment extends Fragment {
             // 滚动到底部
             scrollToBottom();
             
+            // 添加消息显示完成的回调，确保UI完全更新后再触发后续操作
+            userMessageCard.post(() -> {
+                // 消息卡片完全显示后的回调
+                onUserMessageDisplayed(message);
+            });
+            
         } catch (Exception e) {
             Log.e(TAG, "添加用户消息失败: " + e.getMessage(), e);
         }
+    }
+    
+    /**
+     * 用户消息显示完成后的回调
+     * 在这里可以确保用户消息完全显示后再进行后续操作
+     */
+    private void onUserMessageDisplayed(String message) {
+        // 可以在这里添加额外的逻辑，比如动画效果等
+        Log.d(TAG, "用户消息已完全显示: " + message);
     }
     
     /**
@@ -871,6 +1091,11 @@ public class AiFragment extends Fragment {
         // 按照官方文档要求，销毁时释放语音识别资源
         if (speechManager != null) {
             speechManager.destroy();
+        }
+        
+        // 释放AI对话管理器资源
+        if (aiChatManager != null) {
+            aiChatManager.destroy();
         }
     }
 } 

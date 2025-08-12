@@ -1,0 +1,67 @@
+[33m01b4174[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m Merge branch 'master' of https://gitee.com/didyal/shiwujie
+[33m3dcf577[m AI模块测试音频数据,代码重新上传
+[33mfcee055[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m AI模块测试音频数据,代码重新上传
+[33m7319d00[m Merge remote-tracking branch 'origin/master'
+[33m2c80ff9[m Ai模块修改springbootAI版本,修改了基于redis存储的advisor,实现了多模态测试,基础的校验app开发
+[33mce0a729[m APP的活动功能完成
+[33m51e35a6[m web端社区完成
+[33m01aad3b[m 回退了错误修改
+[33m11d7ba7[m Merge remote-tracking branch 'origin/master'
+[33md9a6005[m 分开了子模块model,ai模块初始化,修改了社区的部分bug,完善接口
+[33m269124f[m web端社区管理功能完善
+[33mbbb1bb0[m Merge remote-tracking branch 'origin/master'
+[33m4afbf0c[m web端社区用户管理bug修复
+[33m97ce28e[m Revert "web端活动功能"
+[33m9327fca[m web端活动功能
+[33m759d788[m 求助帖
+[33m983ddce[m 社区审核
+[33m7a6b398[m web端加入和审核
+[33m223f66e[m web端社区管理者功能
+[33md724bdf[m web查询信息
+[33ma0c44a5[m web查询信息
+[33mc26d203[m 志愿者社区雏形
+[33m049572d[m 修改了社区注册的bug
+[33m59bb710[m 社区端debug测试,并且修改了用户端的部分内容
+[33mb5a072e[m 实现了社区的求助帖,活动功能
+[33m1cf37fe[m 社区的求助帖,活动初步
+[33mf9f9135[m 社区的求助帖,活动初步
+[33md2d149a[m 实现了社区的加入审核,管理员设置管理,社区的基本管理增删改查
+[33ma69c609[m 社区分页条件查询社区内的志愿者,视障人士;加入社区
+[33m3ee8034[m 修改了社区注册登录的返回类,用户模块的只团长登录返回类,修改了部分bug
+[33ma650f92[m 添加了gateway配置
+[33m61f5102[m 改为了公共拦截器代码
+[33ma81f13a[m 社区的注册登录(未处理分布式事务)
+[33m4590ba5[m 前端视频debug
+[33m7d72662[m 删掉了多余的sql文件
+[33m4bae798[m 前端视频实现紧急求助
+[33m8592a45[m 前端视频实现紧急求助
+[33ma656cdb[m 修正了视频通话的bug,并优化了取消通话的通知
+[33m2265136[m 社区注册
+[33mb66411c[m 社区初步
+[33ma5320a8[m 前端测试
+[33m43c3d2c[m 前端视频初步
+[33m39878a7[m 修改了部分配置文件,社区初步
+[33m03ad66d[m 修改了请求的命名逻辑
+[33m85777ec[m 视频紧急求助的代码实现
+[33me31ccd6[m 修改了dubbo配置与业务逻辑的部分bug
+[33mb7b2f94[m 前端完善用户部分,视频初步
+[33mcd162ff[m 后端聚合swagger文档,视频初步开发
+[33md8e0624[m 修改了用户删除的bug
+[33mbb0e33f[m 实现了部分页面
+[33m656f702[m 完成了用户模块添加了退出登录
+[33m3696687[m 完成了用户模块的基础开发
+[33m0617ac4[m 完成了家庭表的开发,加入家庭还剩审核部分,现在无法加入家庭
+[33m07005d9[m 实现了用户端的除了家庭以外的功能,并基本测试成功
+[33m6d7cbb4[m 实现了blind的除了家庭以外的功能,并基本测试成功
+[33mbc71864[m 后端: 1. 实现了blind的其它基本操作 2. 添加了common的工具类,ThrowUtils,LoginUtils
+[33m7900f1a[m 后端: 1. 实现了志愿者与视障人士的手机号一键注册,手机号密码注册功能,且通过了测试 前端: 1. 前端项目初始化
+[33m4e8eaf3[m 1. 给blind,volunteer添加了性别字段 2. 重新开发了jwt令牌与redis工具类 3. 拦截器开发更新 4. 开发完成blind的手机号一键登录功能,配置好了令牌校验 5. blind的手机号密码登录开发了一半
+[33m8119470[m Merge remote-tracking branch 'origin/master'
+[33m316498b[m !1 用户模块修改了表的内容与配置,连接公共的nacos Merge pull request !1 from 迪dyal/phase2
+[33mde25e6f[m 新的mapper
+[33m845c5a3[m 用户模块修改了表的内容与配置,连接公共的nacos
+[33m6648944[m 休整模块内容
+[33mb9036ca[m 测试提交
+[33m1773407[m update shiwujie-ai/testgit.txt.
+[33ma38c525[m 初始化
+[33m1e63465[m 初始化

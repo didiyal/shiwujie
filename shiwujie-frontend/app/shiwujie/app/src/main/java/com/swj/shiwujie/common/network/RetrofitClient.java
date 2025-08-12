@@ -4,6 +4,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import java.util.concurrent.TimeUnit;
 
 public class RetrofitClient {
     private static final String BASE_URL = "http://43.139.38.62:8100";
@@ -15,9 +16,12 @@ public class RetrofitClient {
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-        // 创建OkHttpClient
+        // 创建OkHttpClient，支持流式响应和更长的超时时间
         OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(loggingInterceptor)
+                .readTimeout(60, TimeUnit.SECONDS)      // 读取超时60秒
+                .writeTimeout(30, TimeUnit.SECONDS)     // 写入超时30秒
+                .connectTimeout(30, TimeUnit.SECONDS)   // 连接超时30秒
                 .build();
 
         // 创建Retrofit实例
