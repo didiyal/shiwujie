@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 工具统一注册类
  */
-@Configuration
+//@Configuration
 public class ToolRegistration {
 
 

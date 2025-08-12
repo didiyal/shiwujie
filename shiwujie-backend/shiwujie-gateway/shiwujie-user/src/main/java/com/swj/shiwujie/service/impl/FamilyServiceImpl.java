@@ -278,13 +278,13 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
             if (ObjUtil.isNotNull(loginBlindId)) {
                 Blind blind = blindService.getById(loginBlindId);
                 blind.setFamilyId(null);
-                boolean save = blindService.save(blind);
-                ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR);
+                boolean update = blindService.updateById(blind);
+                ThrowUtils.throwIf(!update, ErrorCode.SYSTEM_ERROR, "退出家庭失败");
             } else if (ObjUtil.isNotNull(loginVolunteerId)) {
                 Volunteer volunteer = volunteerService.getById(loginVolunteerId);
                 volunteer.setFamilyId(null);
-                boolean save = volunteerService.save(volunteer);
-                ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR);
+                boolean update = volunteerService.updateById(volunteer);
+                ThrowUtils.throwIf(!update, ErrorCode.SYSTEM_ERROR, "退出家庭失败");
             }
 
 

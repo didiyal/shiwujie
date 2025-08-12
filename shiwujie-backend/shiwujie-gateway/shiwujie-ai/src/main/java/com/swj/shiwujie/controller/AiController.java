@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
+import java.io.IOException;
 
 @RestController
 @RequestMapping(path = "/api/ai/ai")
@@ -43,41 +45,25 @@ public class AiController {
     @Value("${upload.image-path:${user.home}/shiwujie/images}")
     private String imageUploadPath;
 
+    /**
+     * 图片识别
+     * @param imageFile 图片文件
+     * @return 图片识别结果
+     */
     @PostMapping(path = "/doChatByImage",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "图片识别(流式)")
     @SecurityRequirement(name = "Authorization")
-    public Flux<String> doChatByImage(@RequestParam("imageFile") MultipartFile imageFile) {
+    public Flux<String> doChatByImageStream(@RequestParam("imageFile") MultipartFile imageFile) {
         try {
             Blind loginBlind = LoginUtils.getLoginBlind();
             Long blindId = loginBlind.getBlindId();
             // 判断参数是否合法
             ThrowUtils.throwIf(ObjUtil.isNull(imageFile), ErrorCode.PARAMS_ERROR,"参数不合法");
-            
-            // 生成更合理的文件名
-            String originalFilename = imageFile.getOriginalFilename();
-            String fileExtension = ".png"; // 默认扩展名
-            if (originalFilename != null && originalFilename.lastIndexOf(".") != -1) {
-                fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            
-            String name = "imageFile" + System.currentTimeMillis() + fileExtension;
-            
-            // 使用配置的上传目录
-            String filePath = imageUploadPath + File.separator + blindId + File.separator + name;
-            
-            // 确保目录存在
-            File directory = new File(imageUploadPath + File.separator + blindId);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-            
-            // 使用Hutool工具库保存到指定目录下
-            FileUtil.writeBytes(imageFile.getBytes(), filePath);
-            
-            log.info("图片保存成功，路径: {}", filePath);
+
+            String filePath = this.saveImageAndgetPath(imageFile, blindId);
 
             // 传递给AI时使用文件系统路径
-            Flux<String> stringFlux = easyProblemApp.doChatWithImageSSE(filePath, 1000L);
+            Flux<String> stringFlux = easyProblemApp.doChatWithImageSSE(filePath, blindId);
 
             // 使用doOnNext记录每个响应片段，避免重复订阅
             log.info("AI返回:");
@@ -89,9 +75,12 @@ public class AiController {
         }
     }
 
-
-
-    @PostMapping(path = "/doChatByText/stream",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    /**
+     * 文本对话
+     * @param text 文本
+     * @return 文本对话结果
+     */
+    @PostMapping(path = "/doChatByText",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "文本对话(流式)")
     @SecurityRequirement(name = "Authorization")
     public Flux<String> doChatByTextStream(String text){
@@ -110,25 +99,41 @@ public class AiController {
 
 
 
-    @PostMapping(path = "/doChatByText")
-    @Operation(summary = "文本对话")
-    @SecurityRequirement(name = "Authorization")
-    public String doChatByText(String text){
-        Blind loginBlind = LoginUtils.getLoginBlind();
-        Long blindId = loginBlind.getBlindId();
 
-        // 判断参数是否合法
-        ThrowUtils.throwIf(ObjUtil.hasEmpty(text), ErrorCode.PARAMS_ERROR,"参数不合法");
 
-        return easyProblemApp.doChatWithText(text, blindId);
+    /**
+     * (工具)保存图片并返回文件路径
+     * @param imageFile 图片文件
+     * @param blindId 盲人id
+     * @return 文件路径
+     * @throws IOException 抛出IO异常
+     */
+    @NotNull
+    private String saveImageAndgetPath(MultipartFile imageFile, Long blindId) throws IOException {
+        // 生成更合理的文件名
+        String originalFilename = imageFile.getOriginalFilename();
+        String fileExtension = ".png"; // 默认扩展名
+        if (originalFilename != null && originalFilename.lastIndexOf(".") != -1) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
 
+        String name = "imageFile" + System.currentTimeMillis() + fileExtension;
+
+        // 使用配置的上传目录
+        String filePath = imageUploadPath + File.separator + blindId + File.separator + name;
+
+        // 确保目录存在
+        File directory = new File(imageUploadPath + File.separator + blindId);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        // 使用Hutool工具库保存到指定目录下
+        FileUtil.writeBytes(imageFile.getBytes(), filePath);
+
+        log.info("图片保存成功，路径: {}", filePath);
+        return filePath;
     }
-
-
-
-
-
-
 
 
 

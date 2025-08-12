@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
@@ -136,11 +137,6 @@ public class EasyProblemApp {
     @Resource
     private Advisor myRagCloudAdvisor;
 
-    @Resource
-    private ToolCallbackProvider toolCallbackProvider;
-
-    @Resource
-    private ToolCallback[] allTools;
 
     public EasyProblemApp(DashScopeChatModel chatModel, MySQLChatMemory mySQLChatMemory) {
 
@@ -162,13 +158,15 @@ public class EasyProblemApp {
     }
 
 
+
+    // region 聊天
+
     /**
-     * 与大模型文字交流
-     *
+     * 与大模型文字交流(工具调用判断)
      * @param text 输入的文本
      * @return 大模型回复
      */
-    public String doChatWithText(String text, Long blindId) {
+    public String doChatWithTextStart(String text, Long blindId) {
         ChatResponse chatResponse = chatClient.prompt(systemPrompt1)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
@@ -178,6 +176,31 @@ public class EasyProblemApp {
                 .chatResponse();
         return chatResponse.getResult().getOutput().getText();
     }
+
+
+    /**
+     * 与大模型文字交流(流式输出)
+     * @param blindId
+     * @param finalPrompt
+     * @return
+     */
+    @NotNull
+    private Flux<String> doChatWithTextEnd(Long blindId, String finalPrompt) {
+        return chatClient.prompt(systemPrompt2)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
+                .user(finalPrompt)
+                .stream()
+                .content()
+                .onBackpressureDrop() // 处理背压问题
+                .onErrorResume(throwable -> {
+                    log.error("Stream processing error: ", throwable);
+                    return Flux.just("系统发生错误，请稍后再试。");
+                });
+    }
+
+
+    // endregion
 
 
     /**
@@ -208,7 +231,7 @@ public class EasyProblemApp {
             try {
                 // 第一阶段：使用非流式调用获取AI响应
                 log.info("开始第一阶段：获取AI响应");
-                String aiResponse = doChatWithText(text, blindId);
+                String aiResponse = doChatWithTextStart(text, blindId);
                 log.info("AI响应: {}", aiResponse);
 
                 // 检查AI是否要求调用工具，直接根据type判断
@@ -226,17 +249,7 @@ public class EasyProblemApp {
                             text, toolResult);
 
                     log.info("开始第二阶段：流式输出最终结果");
-                    return chatClient.prompt(systemPrompt2)
-                            .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
-                                    .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                            .user(finalPrompt)
-                            .stream()
-                            .content()
-                            .onBackpressureDrop() // 处理背压问题
-                            .onErrorResume(throwable -> {
-                                log.error("Stream processing error: ", throwable);
-                                return Flux.just("系统发生错误，请稍后再试。");
-                            });
+                    return doChatWithTextEnd(blindId, finalPrompt);
                 } else {
                     // 没有工具调用请求，直接流式输出AI响应
                     log.info("无需工具调用，直接流式输出结果");
@@ -248,6 +261,8 @@ public class EasyProblemApp {
             }
         });
     }
+
+
 
     // region 工具
 
