@@ -27,4 +27,22 @@
     <string name="english">English</string>
     <string name="learn_call">学习接听电话</string>
     <string name="help_notification">当有人需要你的帮助时，您将收到通知。</string>
+    
+    <!-- TTS音频流类型配置 -->
+    <string-array name="stream_entries">
+        <item>通话</item>
+        <item>系统</item>
+        <item>铃声</item>
+        <item>音乐</item>
+        <item>闹铃</item>
+        <item>通知</item>
+    </string-array>
+    <string-array name="stream_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
 </resources>
