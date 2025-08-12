@@ -2,6 +2,8 @@ package com.swj.shiwujie;
 
 import android.app.Application;
 import android.util.Log;
+import com.iflytek.cloud.SpeechUtility;
+import com.iflytek.cloud.Setting;
 
 public class MyApplication extends Application {
     private static final String TAG = "MyApplication";
@@ -9,6 +11,18 @@ public class MyApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        
+        // 初始化讯飞语音识别SDK（按照官方文档要求）
+        try {
+            SpeechUtility.createUtility(this, "appid=26fe4713");
+            
+            // 以下语句用于设置日志开关（默认开启），设置成false时关闭语音云SDK日志打印
+            Setting.setShowLog(true);
+            
+            Log.d(TAG, "讯飞语音识别SDK初始化成功");
+        } catch (Exception e) {
+            Log.e(TAG, "讯飞语音识别SDK初始化失败: " + e.getMessage(), e);
+        }
         
         // 设置全局异常处理器
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {

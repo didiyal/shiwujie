@@ -33,6 +33,13 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    
+    // 按照讯飞官方文档要求配置jniLibs
+    sourceSets {
+        getByName("main") {
+            jniLibs.srcDirs("src/main/Jnilibs")
+        }
+    }
 }
 
 
@@ -60,7 +67,8 @@ dependencies {
     
     // AnyRTC SDK (官方Maven仓库)
     implementation("io.anyrtc:rtc:4.3.1.2")
-    
+    implementation(files("libs\\Msc.jar"))
+
     // Test
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
