@@ -13,9 +13,10 @@ import java.util.Date;
  */
 
 @Data
-public class CommunityVO {
+public class CommunityVO implements java.io.Serializable{
 
 
+    private static final long serialVersionUID = -8620203260290249923L;
     /**
      * 社区ID
      */

@@ -10,9 +10,11 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
@@ -60,7 +62,7 @@ public class ComplexProblemApp {
      * @param chatModel 阿里云灵积大模型
      * @param redisChatMemory    自定义redis对话存储
      */
-    public ComplexProblemApp(DashScopeChatModel chatModel, RedisChatMemory redisChatMemory) {
+    public ComplexProblemApp(OpenAiChatModel chatModel, RedisChatMemory redisChatMemory) {
 
         //基于内存存储的ChatMemory
         this.chatMemory = redisChatMemory;
@@ -87,18 +89,14 @@ public class ComplexProblemApp {
      * @param text 输入的文本
      * @return 大模型回复
      */
-    public String doChatWithText(String text, Long blindId) {
-        ChatResponse chatResponse = chatClient.prompt()
+    public Flux<String> doChatWithText(String text, Long blindId) {
+        return chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
                 .advisors(myRagCloudAdvisor)
                 .user(text)
-                .tools(toolCallbackProvider)
-                .tools(allTools)
-                .call()
-                .chatResponse();
-        String res = chatResponse.getResult().getOutput().getText();
-        return res;
+                .stream()
+                .content();
     }
 
 

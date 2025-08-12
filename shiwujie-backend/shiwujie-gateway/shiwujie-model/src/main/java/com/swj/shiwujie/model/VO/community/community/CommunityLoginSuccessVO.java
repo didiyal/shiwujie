@@ -9,8 +9,9 @@ import lombok.Data;
  * 社区注册脱敏返回类
  */
 @Data
-public class CommunityLoginSuccessVO{
+public class CommunityLoginSuccessVO implements java.io.Serializable{
 
+    private static final long serialVersionUID = 1L;
 
     /**
      * 脱敏的志愿者信息

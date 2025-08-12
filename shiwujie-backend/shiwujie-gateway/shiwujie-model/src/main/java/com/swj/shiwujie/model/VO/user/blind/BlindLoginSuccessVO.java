@@ -10,10 +10,10 @@ import java.util.Date;
 /**
  * 登录成功返回类
  */
-public class BlindLoginSuccessVO extends BlindVO{
+public class BlindLoginSuccessVO extends BlindVO implements java.io.Serializable{
 
 
-
+    private static final long serialVersionUID = -5080740418833339431L;
     /**
      * 登录token
      */

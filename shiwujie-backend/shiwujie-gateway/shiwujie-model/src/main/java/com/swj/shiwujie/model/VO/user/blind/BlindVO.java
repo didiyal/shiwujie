@@ -11,9 +11,10 @@ import java.util.Date;
  * 请求返回类
  */
 @Data
-public class BlindVO {
+public class BlindVO implements java.io.Serializable{
 
 
+    private static final long serialVersionUID = -1496156123308537532L;
     /**
      * 视障人士ID
      */

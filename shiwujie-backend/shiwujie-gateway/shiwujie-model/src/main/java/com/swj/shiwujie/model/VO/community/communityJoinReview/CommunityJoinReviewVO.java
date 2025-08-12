@@ -10,6 +10,9 @@ import java.util.Date;
  */
 @Data
 public class CommunityJoinReviewVO implements Serializable {
+
+
+
     /**
      * 社区审核ID
      */

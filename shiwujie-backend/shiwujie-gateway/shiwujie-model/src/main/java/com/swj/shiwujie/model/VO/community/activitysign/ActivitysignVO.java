@@ -7,7 +7,9 @@ import java.util.Date;
  * 活动报名签到VO
  */
 @Data
-public class ActivitysignVO {
+public class ActivitysignVO implements java.io.Serializable{
+
+    private static final long serialVersionUID = 1L;
     /**
      * 活动报名签到ID
      */

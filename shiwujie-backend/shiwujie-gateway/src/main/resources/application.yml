@@ -40,7 +40,7 @@ knife4j:
         context-path: /
         order: 4
       - name: ai
-        url: /api/ai/v3/api-docs?group=ai
+        url: /v3/api-docs?group=ai
         service-name: order-service
         # 路由前缀
         context-path: /

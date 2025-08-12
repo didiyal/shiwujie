@@ -15,7 +15,7 @@ import java.util.Date;
 public class VolunteerLoginSuccessVO extends VolunteerVO{
 
 
-
+    private static final long serialVersionUID = 5115728641061849684L;
     /**
      * 登录token
      */

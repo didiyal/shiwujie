@@ -1,12 +1,10 @@
 package com.swj.shiwujie.controller;
 
 
-import cn.hutool.core.convert.Convert;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.swj.shiwujie.app.EasyProblemApp;
 import com.swj.shiwujie.app.GatewayApp;
-import com.swj.shiwujie.common.AiToolRequest;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -46,7 +44,7 @@ public class AiController {
     private String imageUploadPath;
 
     @PostMapping(path = "/doChatByImage",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @Operation(summary = "图片识别")
+    @Operation(summary = "图片识别(流式)")
     @SecurityRequirement(name = "Authorization")
     public Flux<String> doChatByImage(@RequestParam("imageFile") MultipartFile imageFile) {
         try {
@@ -81,11 +79,9 @@ public class AiController {
             // 传递给AI时使用文件系统路径
             Flux<String> stringFlux = easyProblemApp.doChatWithImageSSE(filePath, 1000L);
 
-            // 打印
+            // 使用doOnNext记录每个响应片段，避免重复订阅
             log.info("AI返回:");
-            stringFlux.subscribe(System.out::print);
-
-            return stringFlux;
+            return stringFlux.doOnNext(System.out::print);
 
         } catch (Exception e) {
             log.error("处理图片识别请求时发生错误", e);
@@ -96,7 +92,7 @@ public class AiController {
 
 
     @PostMapping(path = "/doChatByText/stream",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @Operation(summary = "文本对话")
+    @Operation(summary = "文本对话(流式)")
     @SecurityRequirement(name = "Authorization")
     public Flux<String> doChatByTextStream(String text){
         Blind loginBlind = LoginUtils.getLoginBlind();
@@ -105,12 +101,10 @@ public class AiController {
         // 判断参数是否合法
         ThrowUtils.throwIf(ObjUtil.hasEmpty(text), ErrorCode.PARAMS_ERROR,"参数不合法");
 
-        Flux<String> stringFlux = easyProblemApp.doChatWithTextSSE(text, 2000L);
-        // 打印
+        Flux<String> stringFlux = easyProblemApp.doChatWithTextSSE(text, blindId);
+        // 使用doOnNext记录每个响应片段，避免重复订阅
         log.info("AI返回:");
-        stringFlux.subscribe(System.out::print);
-
-        return stringFlux;
+        return stringFlux.doOnNext(System.out::print);
 
     }
 
@@ -126,7 +120,7 @@ public class AiController {
         // 判断参数是否合法
         ThrowUtils.throwIf(ObjUtil.hasEmpty(text), ErrorCode.PARAMS_ERROR,"参数不合法");
 
-        return easyProblemApp.doChatWithText(text, 1000L);
+        return easyProblemApp.doChatWithText(text, blindId);
 
     }
 

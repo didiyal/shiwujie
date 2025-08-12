@@ -9,7 +9,8 @@ import java.util.Date;
  * 活动VO
  */
 @Data
-public class ActivityVO {
+public class ActivityVO implements java.io.Serializable{
+    private static final long serialVersionUID = -1668474140006914408L;
     /**
      * 活动ID
      */
@@ -76,4 +77,6 @@ public class ActivityVO {
     public void setActivityStatus(Integer activityStatus) {
         this.activityStatus = ActivityStatusEnum.getById(activityStatus).getName();
     }
+
+
 }

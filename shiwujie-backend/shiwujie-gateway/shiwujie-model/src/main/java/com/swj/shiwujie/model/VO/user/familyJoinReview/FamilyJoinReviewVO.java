@@ -13,6 +13,7 @@ import java.util.Date;
  */
 @Data
 public class FamilyJoinReviewVO implements Serializable {
+    private static final long serialVersionUID = -7405795888806528774L;
     /**
      * 家庭审核ID
      */
@@ -47,5 +48,6 @@ public class FamilyJoinReviewVO implements Serializable {
      * 审核状态 0-待审核 1-已通过 2-已拒绝
      */
     private String reviewStatus;
+
 
 }

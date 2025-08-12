@@ -56,7 +56,7 @@ public class EasyProblemApp {
     /**
      * 系统提示词
      */
-    private final String systemPrompt = """
+    private final String systemPrompt1 = """
             你是"视无界"App的智能助手，负责帮助用户解决问题并在需要时调用合适的工具。
                    以下是行为准则：
                    1. 考虑用户是视障人士：返回的语音结果要简洁、清晰，避免冗长，以便用户能轻松理解。
@@ -97,6 +97,35 @@ public class EasyProblemApp {
             
                    如果不需要调用工具，请直接回答用户问题。请确保严格按照上述格式返回工具调用请求，否则系统将无法正确处理。
             """;
+    /**
+     * 系统提示词
+     */
+    private final String systemPrompt2 = """
+            你是"视无界"App的智能助手，负责使用工具调用的结果处理信息并清晰地反馈给用户。
+            
+            以下是行为准则：
+            1. 考虑用户是视障人士：返回的语音结果要简洁、清晰，避免冗长，以便用户能轻松理解。
+            2. 尊重视障用户身份：始终牢记用户是视障人士，确保每一步操作都简单直观，避免重复步骤。
+            
+            系统提供的工具包括：
+            
+            1. 核心业务工具调用：帮助实现所有与用户、家庭和社区相关的操作。当用户需要执行具体业务操作时，必须调用此工具。
+               可用功能列表如下：
+                1 - 申请加入家庭(加入家庭)（需要提供家庭创建人手机号）
+                2 - 查看家庭信息(家庭里有几个人/家庭成员信息)
+                3 - 退出家庭(离开家庭)
+                4 - 获取用户的社区信息(我的社区信息)
+                5 - 获取社区活动信息(查看活动)
+                6 - 添加活动报名(报名活动)
+                7 - 获取用户报名的活动信息(查看我报名的活动/我报名了哪些活动)
+                8 - 获取自己发布的求助帖(我的求助帖)
+                9 - 删除求助帖
+                10 - 修改求助帖
+                11 - 添加求助帖(发布求助帖)
+                12 - 加入社区/修改个人信息(名字,手机号,密码等)/退出社区/跳转到其它软件/图像识别
+            
+            你的任务是根据工具返回的结果，用简洁明了的语言回答用户最初的问题，确保信息准确且易于理解。
+            """;
 
     // endregion
 
@@ -133,7 +162,6 @@ public class EasyProblemApp {
     }
 
 
-
     /**
      * 与大模型文字交流
      *
@@ -141,13 +169,11 @@ public class EasyProblemApp {
      * @return 大模型回复
      */
     public String doChatWithText(String text, Long blindId) {
-        ChatResponse chatResponse = chatClient.prompt(systemPrompt)
+        ChatResponse chatResponse = chatClient.prompt(systemPrompt1)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
 //                .advisors(myRagCloudAdvisor)
                 .user(text)
-                .tools(toolCallbackProvider)
-                .tools(allTools)
                 .call()
                 .chatResponse();
         return chatResponse.getResult().getOutput().getText();
@@ -200,7 +226,7 @@ public class EasyProblemApp {
                             text, toolResult);
 
                     log.info("开始第二阶段：流式输出最终结果");
-                    return chatClient.prompt(systemPrompt)
+                    return chatClient.prompt(systemPrompt2)
                             .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                                     .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
                             .user(finalPrompt)
@@ -234,18 +260,18 @@ public class EasyProblemApp {
             if (aiResponse == null || aiResponse.trim().isEmpty()) {
                 return null;
             }
-            
+
             // 清理响应字符串，尝试提取JSON部分
             String cleanedResponse = aiResponse.trim();
-            
+
             // 查找JSON的开始和结束位置
             int jsonStart = cleanedResponse.indexOf("{");
             int jsonEnd = cleanedResponse.lastIndexOf("}");
-            
+
             if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
                 // 提取JSON部分
                 cleanedResponse = cleanedResponse.substring(jsonStart, jsonEnd + 1);
-                
+
                 // 使用Hutool解析JSON
                 cn.hutool.json.JSONObject jsonObject = JSONUtil.parseObj(cleanedResponse);
                 Integer type = jsonObject.getInt("type");
@@ -283,7 +309,7 @@ public class EasyProblemApp {
             return "工具执行失败: " + e.getMessage();
         }
     }
-    
+
 
     /**
      * 将字符串转换为流式输出

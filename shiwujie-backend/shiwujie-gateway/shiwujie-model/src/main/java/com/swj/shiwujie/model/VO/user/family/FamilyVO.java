@@ -15,6 +15,7 @@ import java.util.List;
 public class FamilyVO implements Serializable {
 
 
+    private static final long serialVersionUID = -2796022435981093530L;
     /**
      * 家庭ID
      */
