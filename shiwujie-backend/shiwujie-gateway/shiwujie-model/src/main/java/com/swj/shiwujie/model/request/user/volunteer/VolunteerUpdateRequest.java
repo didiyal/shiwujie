@@ -3,6 +3,7 @@ package com.swj.shiwujie.model.request.user.volunteer;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
@@ -10,7 +11,10 @@ import java.math.BigDecimal;
  */
 
 @Data
-public class VolunteerUpdateRequest {
+public class VolunteerUpdateRequest implements Serializable {
+
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * 视障人士ID

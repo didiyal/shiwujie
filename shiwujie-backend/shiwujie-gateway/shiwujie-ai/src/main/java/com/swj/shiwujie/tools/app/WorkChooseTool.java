@@ -40,7 +40,7 @@ public class WorkChooseTool {
                     " 5 - 获取社区活动信息(查看活动) 格式示例：{ \"type\":5 }" +
                     " 6 - 添加活动报名(报名活动)（需要提供活动ID - activityId）格式示例：{ \"type\":6, \"data\":\"{\\\"activityId\\\":123}\" }" +
                     " 7 - 获取用户报名的活动信息(查看我报名的活动/我报名了哪些活动) 格式示例：{ \"type\":7 }" +
-                    " 8 - 获取自己发布的求助帖(我的求助帖) 格式示例：{ \"type\":8 }" +
+                    " 8 - 获取自己发布的求助帖(我的求助帖/我发了什么求助帖) 格式示例：{ \"type\":8 }" +
                     " 9 - 删除求助帖（需要提供求助帖ID - helppostId）格式示例：{ \"type\":9, \"data\":\"{\\\"helppostId\\\":456}\" }" +
                     " 10 - 修改求助帖（需要提供求助帖ID - helppostId、新内容 - helpContent 和新地点 - helpLocation）格式示例：{ \"type\":10, \"data\":\"{\\\"helppostId\\\":456,\\\"helpContent\\\":\\\"修改后的内容\\\",\\\"helpLocation\\\":\\\"修改后的地点\\\"}\" }" +
                     " 11 - 添加求助帖(发布求助帖)（需要提供内容 - helpContent 和地点 - helpLocation）格式示例：{ \"type\":11, \"data\":\"{\\\"helpContent\\\":\\\"新的求助内容\\\",\\\"helpLocation\\\":\\\"新的求助地点\\\"}\" }" +
@@ -50,7 +50,7 @@ public class WorkChooseTool {
                     "例如，若用户请求'加入家庭'，则需要传入包含家主手机号的JSON格式请求。" +
                     "重要：在流式调用模式下，AI不应直接调用此工具，而应按照系统提示词中的格式返回工具调用请求。")
     public String questionChoose(@ToolParam(description = "工具请求JSON字符串，必须严格遵守格式要求: {\"type\":数字, \"data\":\"JSON字符串\"}") String toolRequest) {
-        log.info("WorkChooseTool 被调用，接收到的参数: {}", toolRequest);
+//        log.info("WorkChooseTool 被调用，接收到的参数: {}", toolRequest);
         
         // 添加对null或空字符串的处理，防止流式调用中出现空参数导致异常
         if (toolRequest == null || toolRequest.trim().isEmpty()) {
@@ -86,52 +86,30 @@ public class WorkChooseTool {
             }
 
             switch (indexNum) {
-                case 1:
-                    // 加入家庭 - 需要家庭创建人手机号
+                case 1:// 加入家庭 - 需要家庭创建人手机号
                     // 从jsonStr中解析出手机号
                     String phone = parseJsonParam(jsonStr, "familyVolunteerPhone");
                     if (phone == null) {
                         return "缺少必要参数：家庭创建人手机号";
                     }
-                    // 检查userTools是否已正确初始化
-                    if (userTools == null) {
-                        return "错误：用户工具未正确初始化";
-                    }
                     return userTools.joinFamily(phone);
 
-                case 2:
-                    // 查看家庭信息
-                    if (userTools == null) {
-                        return "错误：用户工具未正确初始化";
-                    }
+                case 2:// 查看家庭信息
                     return userTools.getFamilyInfo();
 
-                case 3:
-                    // 退出家庭
-                    if (userTools == null) {
-                        return "错误：用户工具未正确初始化";
-                    }
+                case 3:// 退出家庭
                     return userTools.leaveFromFamily();
 
-                case 4:
-                    // 获取用户的社区信息
-                    if (communityTools == null) {
-                        return "错误：社区工具未正确初始化";
-                    }
+                case 4:// 获取用户的社区信息
+
                     return communityTools.getCommunityInfo();
 
-                case 5:
-                    // 获取社区活动信息
-                    if (communityTools == null) {
-                        return "错误：社区工具未正确初始化";
-                    }
+                case 5:// 获取社区活动信息
+
                     return communityTools.getActivityInfo();
 
-                case 6:
-                    // 添加活动报名 - 需要活动ID
-                    if (communityTools == null) {
-                        return "错误：社区工具未正确初始化";
-                    }
+                case 6:// 添加活动报名 - 需要活动ID
+
                     String activityIdStr = parseJsonParam(jsonStr, "activityId");
                     if (activityIdStr == null) {
                         return "缺少必要参数：活动ID";
@@ -143,25 +121,13 @@ public class WorkChooseTool {
                         return "活动ID格式错误";
                     }
 
-                case 7:
-                    // 获取用户报名的活动信息
-                    if (communityTools == null) {
-                        return "错误：社区工具未正确初始化";
-                    }
+                case 7:// 获取用户报名的活动信息
                     return communityTools.getBlindAcctivitySignInfo();
 
-                case 8:
-                    // 获取自己发布的求助帖
-                    if (communityTools == null) {
-                        return "错误：社区工具未正确初始化";
-                    }
+                case 8:// 获取自己发布的求助帖
                     return communityTools.getHelpPostInfo();
 
-                case 9:
-                    // 删除求助帖 - 需要求助帖ID
-                    if (communityTools == null) {
-                        return "错误：社区工具未正确初始化";
-                    }
+                case 9:// 删除求助帖 - 需要求助帖ID
                     String helpPostIdStr = parseJsonParam(jsonStr, "helppostId");
                     if (helpPostIdStr == null) {
                         return "缺少必要参数：求助帖ID";
@@ -173,11 +139,8 @@ public class WorkChooseTool {
                         return "求助帖ID格式错误";
                     }
 
-                case 10:
-                    // 修改求助帖 - 需要求助帖ID、内容和地点
-                    if (communityTools == null) {
-                        return "错误：社区工具未正确初始化";
-                    }
+                case 10:// 修改求助帖 - 需要求助帖ID、内容和地点
+
                     String helppostIdStr = parseJsonParam(jsonStr, "helppostId");
                     String helpContent = parseJsonParam(jsonStr, "helpContent");
                     String helpLocation = parseJsonParam(jsonStr, "helpLocation");
@@ -193,11 +156,7 @@ public class WorkChooseTool {
                         return "求助帖ID格式错误";
                     }
 
-                case 11:
-                    // 添加求助帖 - 需要内容和地点
-                    if (communityTools == null) {
-                        return "错误：社区工具未正确初始化";
-                    }
+                case 11:// 添加求助帖 - 需要内容和地点
                     String content = parseJsonParam(jsonStr, "helpContent");
                     String location = parseJsonParam(jsonStr, "helpLocation");
 
@@ -207,8 +166,8 @@ public class WorkChooseTool {
 
                     return communityTools.addHelpPost(content, location);
 
-                case 12:
-                    // 加入社区功能暂不支持
+                case 12:// 加入社区功能暂不支持
+
                     return "此功能暂不支持自动操作，请您手动操作";
 
                 default:

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -15,7 +16,10 @@ import java.util.Date;
  */
 
 @Data
-public class BlindUpdateRequest {
+public class BlindUpdateRequest implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
 
     /**
      * 视障人士ID

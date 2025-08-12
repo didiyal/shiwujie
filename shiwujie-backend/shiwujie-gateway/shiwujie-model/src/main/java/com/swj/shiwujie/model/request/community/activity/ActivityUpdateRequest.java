@@ -1,13 +1,18 @@
 package com.swj.shiwujie.model.request.community.activity;
 
 import lombok.Data;
+
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  * 活动更新请求
  */
 @Data
-public class ActivityUpdateRequest {
+public class ActivityUpdateRequest implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     /**
      * 活动ID
      */

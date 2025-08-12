@@ -3,12 +3,17 @@ package com.swj.shiwujie.model.request.user.volunteer;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 社区入驻志愿者注册信息
  * @author ldl
  */
 @Data
-public class CommunityVolunteerRegisterRequest {
+public class CommunityVolunteerRegisterRequest implements Serializable {
+
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * 名字

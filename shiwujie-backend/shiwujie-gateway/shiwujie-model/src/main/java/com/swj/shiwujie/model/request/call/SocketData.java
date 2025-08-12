@@ -3,11 +3,13 @@ package com.swj.shiwujie.model.request.call;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * socket请求类
  */
 @Data
-public class SocketData {
+public class SocketData implements Serializable {
 
 
     /**
@@ -32,4 +34,8 @@ public class SocketData {
      * 频道id
      */
     private Long channelId;
+
+
+
+    private final static long serialVersionUID = 1L;
 }

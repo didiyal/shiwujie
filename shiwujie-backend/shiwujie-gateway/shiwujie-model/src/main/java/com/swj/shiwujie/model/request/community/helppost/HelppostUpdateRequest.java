@@ -1,9 +1,8 @@
 package com.swj.shiwujie.model.request.community.helppost;
 
-import com.swj.shiwujie.common.PageRequest;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
 
 /**
  * 求助帖更新请求
@@ -11,7 +10,9 @@ import lombok.EqualsAndHashCode;
  * @author swj
  */
 @Data
-public class HelppostUpdateRequest{
+public class HelppostUpdateRequest implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
 
     private Long helppostId;
 

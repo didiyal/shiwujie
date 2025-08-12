@@ -94,25 +94,29 @@ public class CommunityTools {
             if (ObjUtil.isNull(communityId)) {
                 return "您未加入任何社区！";
             }
-            // 拿到市级社区
-            Community community = innerCommunityService.getById(communityId);
-            Long parentCommunityId = community.getParentCommunityId();
 
             // 查询活动
             ActivityQueryRequest activityQueryRequest = new ActivityQueryRequest();
-            activityQueryRequest.setCommunityId(parentCommunityId);
+            activityQueryRequest.setCommunityId(communityId);
             activityQueryRequest.setPageSize(20);
             activityQueryRequest.setCurrent(1);
             activityQueryRequest.setActivityStatus(ActivityStatusEnum.WAITING.getName());
             Page<ActivityVO> activityVOPage = innerActivityService.listActivitiesByCommunity(activityQueryRequest);
 
+            List<ActivityVO> records = activityVOPage.getRecords();
+            if (records.isEmpty()) {
+                return "当前社区内没有活动";
+            }
+
             StringBuilder sb = new StringBuilder();
-            sb.append("获取社区活动信息成功！")
-                    .append("您加入的社区活动信息为")
-                    .append("活动名称：").append(activityVOPage.getRecords().get(0).getActivityName()).append("\n")
-                    .append("活动描述：").append(activityVOPage.getRecords().get(0).getActivityContent()).append("\n")
-                    .append("活动时间：").append(activityVOPage.getRecords().get(0).getStartTime()).append("\n")
-                    .append("活动地点：").append(activityVOPage.getRecords().get(0).getActivityLocation()).append("\n");
+            records.forEach(activityVO -> {
+                sb.append("活动名称：").append(activityVO.getActivityName()).append("\n")
+                        .append("活动ID：").append(activityVO.getActivityId()).append("\n")
+                        .append("活动内容：").append(activityVO.getActivityContent()).append("\n")
+                        .append("活动时间：").append(activityVO.getStartTime()).append("-").append(activityVO.getEndTime()).append("\n")
+                        .append("活动地点：").append(activityVO.getActivityLocation()).append("\n")
+                        .append("活动状态：").append(activityVO.getActivityStatus());
+            });
             return sb.toString();
         } catch (Exception e) {
             log.error("获取社区活动信息失败", e);
@@ -122,10 +126,11 @@ public class CommunityTools {
 
     /**
      * 添加活动报名
+     *
      * @param activityId 活动ID
      * @return 添加结果
      */
-    public String addActivitySign( Long activityId) {
+    public String addActivitySign(Long activityId) {
         try {
             Blind loginBlind = LoginUtils.getLoginBlind();
             Long communityId = loginBlind.getCommunityId();
@@ -165,8 +170,14 @@ public class CommunityTools {
             activitySignQueryRequest.setPageSize(20);
             // 查询本人所有报名的活动签到信息
             Page<ActivitysignVO> activitysignVOPage = innerActivitysignService.listActivitySignByActivity(activitySignQueryRequest);
+            // 判空
+            List<ActivitysignVO> records = activitysignVOPage.getRecords();
+            if (records.isEmpty()) {
+                return "您未报名任何活动";
+            }
+
             // 拿到相应的活动信息
-            List<Long> activityIds = activitysignVOPage.getRecords().stream().map(ActivitysignVO::getActivityId).toList();
+            List<Long> activityIds = records.stream().map(ActivitysignVO::getActivityId).toList();
             List<ActivityVO> activityVOS = innerActivityService.listActivities(activityIds);
             // 移除已经结束和开始的活动
             for (ActivityVO activityVO : activityVOS) {
@@ -177,13 +188,15 @@ public class CommunityTools {
             }
 
             StringBuilder sb = new StringBuilder();
-            for (ActivityVO activityVO : activityVOS) {
+            sb.append("您报名的活动有：").append("\n");
+            activityVOS.forEach(activityVO -> {
                 sb.append("活动名称：").append(activityVO.getActivityName()).append("\n")
+                        .append("活动ID：").append(activityVO.getActivityId()).append("\n")
                         .append("活动时间：").append(activityVO.getStartTime()).append("\n")
                         .append("活动地点：").append(activityVO.getActivityLocation()).append("\n")
                         .append("活动状态：").append(activityVO.getActivityStatus()).append("\n");
-            }
-            return "获取用户活动报名信息成功！" + sb.toString();
+            });
+            return sb.toString();
         } catch (Exception e) {
             log.error("获取用户活动报名信息失败", e);
             return "获取用户活动报名信息失败" + e.getMessage();
@@ -211,8 +224,23 @@ public class CommunityTools {
 
             HelppostQueryRequest helppostQueryRequest = new HelppostQueryRequest();
             helppostQueryRequest.setBlindId(blindId);
+            helppostQueryRequest.setCommunityId(communityId);
             Page<HelppostVO> helppostVOPage = innerHelppostService.listQueryHelpposts(helppostQueryRequest);
-            return "获取自己发布的求助帖成功！" + helppostVOPage.getRecords().stream().map(HelppostVO::getHelpContent).collect(Collectors.joining("\n"));
+            // 判断获取结果是否为空
+            List<HelppostVO> records = helppostVOPage.getRecords();
+            if (records.isEmpty()) {
+                return "您未发布任何求助帖！";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("您发布的求助帖有：").append("\n");
+            records.forEach(helppostVO -> {
+                sb.append("求助帖ID").append(helppostVO.getHelppostId()).append("\n")
+                        .append("内容：").append(helppostVO.getHelpContent()).append("\n")
+                        .append("地点").append(helppostVO.getHelpLocation()).append("\n");
+            });
+            return sb.toString();
+
         } catch (Exception e) {
             log.error("获取自己发布的求助帖失败", e);
             return "获取自己发布的求助帖失败" + e.getMessage();
@@ -250,7 +278,7 @@ public class CommunityTools {
      * @return 修改结果
      */
 
-    public String updateHelpPost( Long helppostId, String helpContent, String helpLocation) {
+    public String updateHelpPost(Long helppostId, String helpContent, String helpLocation) {
         try {
             Blind loginBlind = LoginUtils.getLoginBlind();
             Long blindId = loginBlind.getBlindId();
@@ -262,7 +290,17 @@ public class CommunityTools {
             helppostUpdateRequest.setHelppostId(helppostId);
             helppostUpdateRequest.setHelpContent(helpContent);
             helppostUpdateRequest.setHelpLocation(helpLocation);
-            return innerHelppostService.updateHelppost(helppostUpdateRequest, blindId, null) ? "修改求助帖成功" : "修改求助帖失败";
+            boolean b = innerHelppostService.updateHelppost(helppostUpdateRequest, blindId, null);
+            if (!b) {
+                return "修改失败";
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("修改成功").append("\n")
+                    .append("修改后的求助帖信息为").append("\n")
+                    .append("求助内容：").append(helpContent).append("\n")
+                    .append("求助位置：").append(helpLocation).append("\n");
+            return sb.toString();
+
         } catch (Exception e) {
             log.error("修改求助帖失败", e);
             return "修改求助帖失败" + e.getMessage();
@@ -273,7 +311,7 @@ public class CommunityTools {
     /**
      * 添加求助帖
      *
-     * @param helpContent 求助帖内容
+     * @param helpContent  求助帖内容
      * @param helpLocation 求助帖地点
      * @return 添加结果
      */

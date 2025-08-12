@@ -53,7 +53,7 @@ public class MySQLChatMemory implements ChatMemory {
             }
         }
         
-        log.debug("已向对话 [{}] 添加 {} 条消息", conversationId, messages.size());
+//        log.debug("已向对话 [{}] 添加 {} 条消息", conversationId, messages.size());
     }
 
     /**
@@ -98,7 +98,7 @@ public class MySQLChatMemory implements ChatMemory {
         QueryWrapper<AiLogs> logQueryWrapper = new QueryWrapper<>();
         logQueryWrapper.eq("operator_id", userId);
         aiLogsMapper.delete(logQueryWrapper);
-        log.debug("已清空对话 [{}] 的历史消息", conversationId);
+//        log.debug("已清空对话 [{}] 的历史消息", conversationId);
     }
 }
 

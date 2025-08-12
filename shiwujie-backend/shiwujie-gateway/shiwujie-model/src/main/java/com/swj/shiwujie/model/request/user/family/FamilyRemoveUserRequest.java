@@ -3,13 +3,16 @@ package com.swj.shiwujie.model.request.user.family;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 删除家庭成员(家主操作)
  */
 
 @Data
-public class FamilyRemoveUserRequest {
+public class FamilyRemoveUserRequest  implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     /**
      * 家庭ID
      */

@@ -9,6 +9,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 基于 Redis 的对话记忆存储实现
@@ -51,11 +52,11 @@ public class RedisChatMemory implements ChatMemory {
             log.warn("尝试添加空消息列表到对话: {}", conversationId);
             return;
         }
-// 获取现有消息列表
+        // 获取现有消息列表
         List<Message> existingMessages = getFromRedis(conversationId);
-// 合并消息
+        // 合并消息
         existingMessages.addAll(messages);
-// 保存更新后的消息列表
+        // 保存更新后的消息列表
         setToRedis(conversationId, existingMessages);
         log.debug("已向对话 [{}] 添加 {} 条消息，当前总消息数: {}",
                 conversationId, messages.size(), existingMessages.size());
@@ -147,7 +148,7 @@ public class RedisChatMemory implements ChatMemory {
                 log.error("序列化消息失败，跳过该消息: {}", message, e);
             }
         }
-        redisTemplate.opsForValue().set(key, serializedMessages);
+        redisTemplate.opsForValue().set(key, serializedMessages, 1L, TimeUnit.DAYS);
     }
 
     /**

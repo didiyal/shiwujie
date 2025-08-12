@@ -93,13 +93,12 @@ public class AiController {
         Flux<String> stringFlux = easyProblemApp.doChatWithTextSSE(text, blindId);
         // 使用doOnNext记录每个响应片段，避免重复订阅
         log.info("AI返回:");
-        return stringFlux.doOnNext(System.out::print);
-
+        return stringFlux
+                .onBackpressureBuffer(5000) // 增加缓冲区
+                .doOnNext(System.out::print)
+                .doOnError(e -> log.error("流式输出发生错误", e)) // 添加错误日志
+                .doOnComplete(() -> log.info("流式输出完成")); // 添加完成日志
     }
-
-
-
-
 
     /**
      * (工具)保存图片并返回文件路径

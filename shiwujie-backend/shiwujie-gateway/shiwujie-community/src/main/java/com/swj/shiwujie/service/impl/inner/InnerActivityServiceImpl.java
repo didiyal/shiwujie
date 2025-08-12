@@ -47,7 +47,11 @@ public class InnerActivityServiceImpl  implements InnerActivityService {
     @Override
     public List<ActivityVO> listActivities(List<Long> activityIds) {
         List<ActivityVO> activityVOS = new ArrayList<>();
-        for (Activity listById : activityService.listByIds(activityIds)) {
+        if (activityIds.isEmpty()) {
+            return activityVOS;
+        }
+        List<Activity> activities = activityService.listByIds(activityIds);
+        for (Activity listById : activities) {
             ActivityVO activityVOById = activityService.getActivityVOById(listById.getActivityId());
             activityVOS.add(activityVOById);
         }
