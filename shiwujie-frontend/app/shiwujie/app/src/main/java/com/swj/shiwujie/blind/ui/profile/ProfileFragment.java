@@ -322,6 +322,8 @@ public class ProfileFragment extends Fragment {
                 .enqueue(new ApiCallback<Boolean>(requireContext()) {
                     @Override
                     public void onSuccess(Boolean data) {
+                        // 设置清理AI对话的标记
+                        setClearConversationFlag();
                         // 清除本地存储的登录信息
                         SharedPrefsUtil.clearAll();
                         // 退出成功直接跳转到身份选择页面，并添加标记
@@ -365,6 +367,8 @@ public class ProfileFragment extends Fragment {
                 .enqueue(new ApiCallback<Boolean>(requireContext()) {
                     @Override
                     public void onSuccess(Boolean data) {
+                                // 设置清理AI对话的标记
+                                setClearConversationFlag();
                                 // 删除成功后立即清除本地数据并跳转
                                 SharedPrefsUtil.clearAll();
                                 Intent intent = new Intent(requireContext(), ChooseIdentityActivity.class);
@@ -405,6 +409,21 @@ public class ProfileFragment extends Fragment {
         }
     }
 
+    /**
+     * 设置清理AI对话的标记
+     */
+    private void setClearConversationFlag() {
+        try {
+            Context context = requireContext();
+            android.content.SharedPreferences prefs = context.getSharedPreferences("ai_conversation_history", Context.MODE_PRIVATE);
+            android.content.SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("should_clear_conversation", true);
+            editor.apply();
+        } catch (Exception e) {
+            android.util.Log.e("ProfileFragment", "设置清理对话标记失败", e);
+        }
+    }
+    
     private void sendJoinFamilyRequest(String familyVolunteerPhone) {
         String token = SharedPrefsUtil.getToken();
         if (token == null) {

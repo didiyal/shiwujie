@@ -10,17 +10,7 @@
     android:orientation="vertical"
     android:background="@android:color/white">
 
-    <!--<TextView
-        android:id="@+id/tv_debug_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="AI页面测试"
-        android:textSize="24sp"
-        android:textColor="@color/primary_blue"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="8dp"
-        android:visibility="gone" />-->
+
 
 
     <com.google.android.material.appbar.MaterialToolbar
@@ -75,69 +65,8 @@
             android:paddingBottom="12dp">
 
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_greeting"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardUseCompatPadding="true"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="8dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="@android:color/white">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
-
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/tv_greeting_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="您好，我是你的智能AI助理。"
-                            android:textColor="#111111"
-                            android:textStyle="bold"
-                            android:textSize="18sp"
-                            android:letterSpacing="0.01"
-                            android:lineHeight="22sp" />
-
-                        <TextView
-                            android:id="@+id/tv_greeting_desc"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:textColor="#667185"
-                            android:textSize="14sp"
-                            android:lineSpacingExtra="2sp"
-                            android:letterSpacing="0.005"
-                            android:text="很高兴能和你互动" />
-                    </LinearLayout>
-
-
-                    <ImageView
-                        android:id="@+id/img_robot"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:layout_marginStart="12dp"
-                        android:padding="10dp"
-                        android:contentDescription="吉祥物"
-                        android:background="@android:color/transparent"
-                        app:tint="@color/blue_600"
-                        android:scaleType="centerInside"
-                        tools:src="@drawable/community" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
+-->
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_suggestions"
@@ -328,28 +257,6 @@
                 android:layout_height="8dp" />
 
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/bubble_assistant_1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="56dp"
-                app:cardCornerRadius="18dp"
-                app:strokeColor="@color/blue_100"
-                app:strokeWidth="1dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="@android:color/white"
-                android:layout_gravity="start">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:maxWidth="280dp"
-                    android:padding="12dp"
-                    android:textSize="15sp"
-                    android:textColor="#222222"
-                    android:text="你好！我可以帮你总结、生成内容或完成任务。需要我做什么？" />
-            </com.google.android.material.card.MaterialCardView>
 
 
             <com.google.android.material.card.MaterialCardView
@@ -376,6 +283,22 @@
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+
+    <!-- 悬浮的历史记录按钮 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_history"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="100dp"
+        android:src="@drawable/ic_time"
+        app:backgroundTint="@color/primary_blue"
+        app:tint="@color/white"
+        app:fabSize="normal"
+        android:contentDescription="历史记录" />
+
 
 
     <com.google.android.material.card.MaterialCardView
@@ -480,37 +403,8 @@
         android:paddingEnd="16dp"
         android:paddingBottom="16dp">
 
-      <!--  <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/til_message"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:boxBackgroundMode="filled"
-            app:boxBackgroundColor="#FFFFFFFF"
-            app:boxStrokeColor="@color/blue_600"
-            app:boxStrokeWidth="2dp"
-            app:boxCornerRadiusTopStart="28dp"
-            app:boxCornerRadiusTopEnd="28dp"
-            app:boxCornerRadiusBottomStart="28dp"
-            app:boxCornerRadiusBottomEnd="28dp"
-            app:startIconDrawable="@drawable/ic_mic_24"
-            app:startIconTint="@color/blue_600"
-            app:endIconMode="none">-->
 
-         <!--   <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_message"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:background="@android:color/transparent"
-                android:hint="提供一份电商平台的用户画像"
-                android:paddingEnd="8dp"
-                android:textColor="#1F2937"
-                android:textColorHint="#9AA4B2"
-                android:letterSpacing="0.005"
-                android:imeOptions="actionSend"
-                android:inputType="textCapSentences|textMultiLine"
-                android:maxLines="3"
-                android:minLines="1" />
-        </com.google.android.material.textfield.TextInputLayout>-->
     </LinearLayout>
+
 
 </LinearLayout>
