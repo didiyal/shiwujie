@@ -127,6 +127,8 @@ public class BlindHomeActivity extends AppCompatActivity {
                 showIdentityVerificationDialog();
             })
             .setNegativeButton("退出APP", (dialog, which) -> {
+                // 设置清理AI对话的标记
+                setClearConversationFlag();
                 // 直接退出APP，不调用logout API
                 SharedPrefsUtil.clearAll();
                 finishAffinity();
@@ -206,5 +208,19 @@ public class BlindHomeActivity extends AppCompatActivity {
                 Toast.makeText(BlindHomeActivity.this, "残疾证校验失败：" + message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    /**
+     * 设置清理AI对话的标记
+     */
+    private void setClearConversationFlag() {
+        try {
+            android.content.SharedPreferences prefs = getSharedPreferences("ai_conversation_history", MODE_PRIVATE);
+            android.content.SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("should_clear_conversation", true);
+            editor.apply();
+        } catch (Exception e) {
+            Log.e(TAG, "设置清理对话标记失败", e);
+        }
     }
 } 

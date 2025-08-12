@@ -2,8 +2,13 @@ package com.swj.shiwujie.common.utils;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import com.iflytek.cloud.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 讯飞语音识别管理类
@@ -18,8 +23,14 @@ public class SpeechRecognitionManager {
     private RecognizerListener mRecognizerListener;
     private InitListener mInitListener;
     
+    // 按照官方demo实现结果累积
+    private Map<Integer, String> resultMap = new HashMap<>();
+    private int currentSequence = 0;
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    
     public interface OnRecognitionListener {
         void onResult(String result);
+        void onPartialResult(String result); // 添加中间结果回调
         void onError(String error);
         void onStart();
         void onEnd();
@@ -57,22 +68,16 @@ public class SpeechRecognitionManager {
         // 根据官方demo，createRecognizer需要传入InitListener
         mIat = SpeechRecognizer.createRecognizer(mContext, mInitListener);
         
-        // 设置语音听写参数，按照官方文档要求
-        mIat.setParameter(SpeechConstant.DOMAIN, "iat");
+        // 按照官方文档设置参数
+        mIat.setParameter(SpeechConstant.CLOUD_GRAMMAR, null);
+        mIat.setParameter(SpeechConstant.SUBJECT, null);
+        mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
+        mIat.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD);
         mIat.setParameter(SpeechConstant.LANGUAGE, "zh_cn");
         mIat.setParameter(SpeechConstant.ACCENT, "mandarin");
-        mIat.setParameter(SpeechConstant.VAD_BOS, "4000");
-        mIat.setParameter(SpeechConstant.VAD_EOS, "1000");
-        mIat.setParameter(SpeechConstant.ASR_PTT, "0");
-        
-        // 根据官方demo添加更多参数设置
-        mIat.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD);
-        mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
-        mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "wav");
-        
-        // 设置音频保存路径
-        mIat.setParameter(SpeechConstant.ASR_AUDIO_PATH,
-                mContext.getExternalFilesDir("msc").getAbsolutePath() + "/iat.wav");
+        mIat.setParameter(SpeechConstant.VAD_BOS, "2000");
+        mIat.setParameter(SpeechConstant.VAD_EOS, "6000");
+        mIat.setParameter(SpeechConstant.ASR_PTT, "1");
         
         // 设置语音听写监听器
         mRecognizerListener = new RecognizerListener() {
@@ -81,11 +86,30 @@ public class SpeechRecognitionManager {
                 if (mListener != null) {
                     // 使用IatResultParser解析讯飞返回的结果
                     String text = IatResultParser.parseIatResult(result.getResultString());
-                    mListener.onResult(text);
                     
-                    // 记录解析结果
-                    Log.d(TAG, "语音识别结果: " + text);
-                    Log.d(TAG, "是否为最终结果: " + isLast);
+                    if (isLast) {
+                        // 最终结果，合并所有中间结果
+                        String finalResult = mergeResults(text);
+                        mListener.onResult(finalResult);
+                        
+                        // 强制调用onEnd，确保状态更新
+                        mListener.onEnd();
+                        
+                        Log.d(TAG, "最终识别结果: " + finalResult);
+                        
+                        // 清空结果缓存
+                        resultMap.clear();
+                        currentSequence = 0;
+                    } else {
+                        // 中间结果，累积并显示
+                        currentSequence++;
+                        resultMap.put(currentSequence, text);
+                        
+                        // 显示累积的中间结果
+                        String partialResult = mergeResults(text);
+                        mListener.onPartialResult(partialResult);
+                        Log.d(TAG, "中间识别结果: " + partialResult);
+                    }
                 }
             }
             
@@ -93,6 +117,8 @@ public class SpeechRecognitionManager {
             public void onError(SpeechError error) {
                 if (mListener != null) {
                     mListener.onError(error.getErrorDescription());
+                    // 确保异常情况下状态正确
+                    mListener.onEnd();
                 }
                 Log.e(TAG, "语音识别错误: " + error.getErrorDescription());
             }
@@ -132,10 +158,36 @@ public class SpeechRecognitionManager {
     }
     
     /**
+     * 合并所有中间结果，按照官方demo的方式
+     */
+    private String mergeResults(String currentText) {
+        StringBuilder sb = new StringBuilder();
+        
+        // 按顺序合并所有中间结果
+        for (int i = 1; i <= currentSequence; i++) {
+            String text = resultMap.get(i);
+            if (text != null) {
+                sb.append(text);
+            }
+        }
+        
+        // 添加当前结果
+        if (currentText != null && !currentText.isEmpty()) {
+            sb.append(currentText);
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
      * 开始语音识别
      */
     public void startListening() {
         if (mIat != null) {
+            // 重置状态
+            resultMap.clear();
+            currentSequence = 0;
+            
             // 根据官方demo，startListening需要传入RecognizerListener
             int ret = mIat.startListening(mRecognizerListener);
             if (ret == com.iflytek.cloud.ErrorCode.SUCCESS) {
@@ -155,9 +207,6 @@ public class SpeechRecognitionManager {
     public void stopListening() {
         if (mIat != null) {
             mIat.stopListening();
-            if (mListener != null) {
-                mListener.onEnd();
-            }
             Log.d(TAG, "停止语音识别");
         }
     }

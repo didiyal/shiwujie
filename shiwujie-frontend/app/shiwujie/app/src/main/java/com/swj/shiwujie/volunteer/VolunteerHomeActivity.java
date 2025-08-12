@@ -69,11 +69,13 @@ public class VolunteerHomeActivity extends AppCompatActivity {
                             apiService.volunteerLogout("Bearer " + token).enqueue(new com.swj.shiwujie.common.network.ApiCallback<Boolean>(VolunteerHomeActivity.this) {
                                 @Override
                                 public void onSuccess(Boolean data) {
+                                    setClearConversationFlag();
                                     com.swj.shiwujie.common.utils.SharedPrefsUtil.clearAll();
                                     finishAffinity();
                                 }
                                 @Override
                                 public void onError(String message) {
+                                    setClearConversationFlag();
                                     com.swj.shiwujie.common.utils.SharedPrefsUtil.clearAll();
                                     finishAffinity();
                                 }
@@ -163,11 +165,13 @@ public class VolunteerHomeActivity extends AppCompatActivity {
             apiService.volunteerLogout("Bearer " + token).enqueue(new com.swj.shiwujie.common.network.ApiCallback<Boolean>(this) {
                 @Override
                 public void onSuccess(Boolean data) {
+                    setClearConversationFlag();
                     com.swj.shiwujie.common.utils.SharedPrefsUtil.clearAll();
                     finishAffinity();
                 }
                 @Override
                 public void onError(String message) {
+                    setClearConversationFlag();
                     com.swj.shiwujie.common.utils.SharedPrefsUtil.clearAll();
                     finishAffinity();
                 }
@@ -234,5 +238,19 @@ public class VolunteerHomeActivity extends AppCompatActivity {
         
         // 停止WebSocket前台服务
         com.swj.shiwujie.common.network.WebSocketService.stopService(this);
+    }
+    
+    /**
+     * 设置清理AI对话的标记
+     */
+    private void setClearConversationFlag() {
+        try {
+            android.content.SharedPreferences prefs = getSharedPreferences("ai_conversation_history", MODE_PRIVATE);
+            android.content.SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("should_clear_conversation", true);
+            editor.apply();
+        } catch (Exception e) {
+            Log.e(TAG, "设置清理对话标记失败", e);
+        }
     }
 } 
