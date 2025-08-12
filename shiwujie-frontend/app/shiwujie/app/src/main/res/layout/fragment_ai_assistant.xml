@@ -35,6 +35,27 @@
         android:elevation="0dp"
         tools:ignore="PrivateResource" />
 
+    <!-- 录音状态提示 -->
+    <TextView
+        android:id="@+id/tv_recording_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text=""
+        android:textColor="@color/primary_blue"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:background="@drawable/bg_recording_status"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="正在录音..." />
+
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll_content"
@@ -126,7 +147,7 @@
                 app:cardCornerRadius="18dp"
                 app:cardElevation="8dp"
                 app:strokeWidth="0dp"
-                app:cardBackgroundColor="@android:color/white">
+                app:cardBackgroundColor="@color/blue_100">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -150,7 +171,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:background="@android:color/white"
+                        android:background="@color/blue_100"
                         android:paddingTop="2dp"
                         android:paddingBottom="2dp">
 
@@ -164,7 +185,7 @@
                             android:clickable="true"
                             android:focusable="true"
                             android:foreground="?attr/selectableItemBackground"
-                            android:background="@android:color/transparent"
+                            android:background="@color/blue_100"
                             android:layout_marginTop="2dp">
 
                             <TextView
@@ -202,7 +223,7 @@
                             android:clickable="true"
                             android:focusable="true"
                             android:foreground="?attr/selectableItemBackground"
-                            android:background="@android:color/transparent"
+                            android:background="@color/blue_100"
                             android:layout_marginTop="2dp">
 
                             <TextView
@@ -239,7 +260,7 @@
                             android:clickable="true"
                             android:focusable="true"
                             android:foreground="?attr/selectableItemBackground"
-                            android:background="@android:color/transparent"
+                            android:background="@color/blue_100"
                             android:layout_marginTop="2dp">
 
                             <TextView
@@ -276,7 +297,7 @@
                             android:clickable="true"
                             android:focusable="true"
                             android:foreground="?attr/selectableItemBackground"
-                            android:background="@android:color/transparent"
+                            android:background="@color/blue_100"
                             android:layout_marginTop="2dp">
 
                             <TextView
@@ -350,7 +371,7 @@
                     android:padding="12dp"
                     android:textSize="15sp"
                     android:textColor="@color/white"
-                    android:text="帮我规划一下从家到公司的最快通勤路线。" />
+                    android:text="介绍一下AI功能的使用。" />
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>

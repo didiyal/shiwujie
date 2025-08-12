@@ -31,3 +31,8 @@
 # 保持网络相关类
 -keep class com.swj.shiwujie.common.network.**{*;}
 -keep class com.swj.shiwujie.data.model.**{*;}
+
+# 讯飞语音听写SDK防混淆规则（按照官方文档要求）
+-keep class com.iflytek.**{*;}
+-keep class com.iflytek.cloud.**{*;}
+-keep class com.iflytek.speech.**{*;}
