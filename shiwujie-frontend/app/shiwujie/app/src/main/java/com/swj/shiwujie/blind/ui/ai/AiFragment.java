@@ -26,6 +26,10 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.webkit.SslErrorHandler;
+import android.net.http.SslError;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
@@ -326,9 +330,6 @@ public class AiFragment extends Fragment {
         btnExpandMessage = view.findViewById(R.id.btn_expand_message);
         messagePanel = view.findViewById(R.id.message_panel);
         cameraPreview = view.findViewById(R.id.camera_preview);
-        tabCurrentConversation = view.findViewById(R.id.tab_current_conversation);
-        tabHistory = view.findViewById(R.id.tab_history);
-        tvConversationTitle = view.findViewById(R.id.tv_conversation_title);
         
         // 初始化震动器
         vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
@@ -337,8 +338,12 @@ public class AiFragment extends Fragment {
         btnCamera.setOnClickListener(v -> handleCameraButtonClick());
         btnCollapseMessage.setOnClickListener(v -> collapseMessagePanel());
         btnExpandMessage.setOnClickListener(v -> expandMessagePanel());
-        tabCurrentConversation.setOnClickListener(v -> switchToCurrentTab());
-        tabHistory.setOnClickListener(v -> switchToHistoryTab());
+        
+        // 添加AI协助按钮点击事件
+        MaterialButton btnAiAssist = view.findViewById(R.id.btn_ai_assist);
+        if (btnAiAssist != null) {
+            btnAiAssist.setOnClickListener(v -> handleAiAssistButtonClick());
+        }
     }
     
     /**
@@ -1092,6 +1097,71 @@ public class AiFragment extends Fragment {
                 stopStatusCheck(); // 停止状态检查
                 // 强制更新按钮状态
                 updateVoiceButtonState(false);
+            }
+        }
+    }
+    
+    /**
+     * 处理AI协助按钮点击
+     */
+    private void handleAiAssistButtonClick() {
+        try {
+            // 添加震动反馈
+            if (vibrator != null && vibrator.hasVibrator()) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
+            
+            // 使用WebView打开指定网址
+            openWebView("https://192.168.229.248:8080");
+        } catch (Exception e) {
+            Log.e(TAG, "打开AI协助页面失败", e);
+            Toast.makeText(requireContext(), "无法打开AI协助页面", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * 使用WebView打开网址
+     */
+    private void openWebView(String url) {
+        try {
+            // 创建WebView
+            WebView webView = new WebView(requireContext());
+            webView.getSettings().setJavaScriptEnabled(true);
+            webView.getSettings().setDomStorageEnabled(true);
+            webView.getSettings().setAllowFileAccess(true);
+            webView.getSettings().setAllowContentAccess(true);
+            
+            // 设置WebViewClient以处理页面加载
+            webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                    // 处理SSL证书错误（开发环境可能需要忽略）
+                    Log.w(TAG, "SSL证书错误: " + error.toString());
+                    handler.proceed(); // 继续加载（仅用于开发环境）
+                }
+                
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    view.loadUrl(url);
+                    return true;
+                }
+            });
+            
+            // 创建新的Activity来显示WebView
+            Intent intent = new Intent(requireContext(), WebViewActivity.class);
+            intent.putExtra("url", url);
+            intent.putExtra("title", "AI协助");
+            startActivity(intent);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "创建WebView失败", e);
+            // 如果WebView创建失败，尝试使用系统浏览器打开
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intent);
+            } catch (Exception e2) {
+                Log.e(TAG, "使用系统浏览器打开失败", e2);
+                Toast.makeText(requireContext(), "无法打开网页", Toast.LENGTH_SHORT).show();
             }
         }
     }

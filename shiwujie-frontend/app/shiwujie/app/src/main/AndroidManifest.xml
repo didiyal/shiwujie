@@ -83,6 +83,12 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Shiwujie.Fullscreen" />
         
+        <!-- WebView Activity -->
+        <activity
+            android:name=".blind.ui.ai.WebViewActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Shiwujie" />
+        
         <!-- 悬浮窗服务 -->
         <service
             android:name=".common.service.FloatingWindowService"
