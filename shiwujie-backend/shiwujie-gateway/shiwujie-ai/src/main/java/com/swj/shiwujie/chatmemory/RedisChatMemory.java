@@ -62,8 +62,13 @@ public class RedisChatMemory implements ChatMemory {
         // 异步存储到MySQL数据库
         mySQLChatMemoryStore.storeMessages(conversationId, messages);
         
+        // 检查消息数量，如果超过20条则删除多余部分，只保留最新的20条
+        if (existingMessages.size() > 20) {
+            trimConversation(conversationId);
+        }
+        
         log.debug("已向对话 [{}] 添加 {} 条消息，当前总消息数: {}",
-                conversationId, messages.size(), existingMessages.size());
+                conversationId, messages.size(), Math.min(existingMessages.size(), 20));
     }
 
     /**

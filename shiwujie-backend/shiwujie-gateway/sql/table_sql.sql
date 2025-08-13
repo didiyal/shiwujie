@@ -1,6 +1,3 @@
-create database 'shiwujie';
-
-
 create table Activity
 (
     activity_id       bigint auto_increment comment '活动ID'
@@ -31,7 +28,7 @@ create table ActivitySign
     sign_id           bigint auto_increment comment '活动报名签到ID'
         primary key,
     activity_id       bigint                             null comment '活动id',
-    blind_id          bigint                             not null comment '视障人士ID',
+    blind_id          bigint                             null comment '视障人士ID',
     volunteer_id      bigint                             null comment '志愿者id',
     sign_up_time      datetime                           not null comment '活动报名时间',
     check_in_time     datetime                           null comment '活动签到时间',
@@ -43,12 +40,20 @@ create table ActivitySign
 )
     comment '活动报名签到表';
 
+create index activityId_volunteerId
+    on ActivitySign (activity_id, volunteer_id)
+    comment '活动id,志愿者id';
+
+create index blindId_activityId
+    on ActivitySign (activity_id, blind_id)
+    comment '活动id,视障人士id';
+
 create table AiLogs
 (
     log_id      bigint auto_increment comment 'AI操作日志ID'
         primary key,
     operator_id bigint                             null comment '操作人ID',
-    content     text                               null comment '发送内容',
+    content     longtext                           null comment '发送内容',
     log_type    varchar(50)                        null comment '类型',
     create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '信息更新时间',
@@ -85,6 +90,14 @@ create table Blind
     is_delete            tinyint     default 0                 not null comment '逻辑删除 0-存在 1-删除'
 )
     comment '视障人士信息表';
+
+create index Blind__phone
+    on Blind (phone)
+    comment '用户手机号查询';
+
+create index family_id
+    on Blind (family_id)
+    comment '家庭id';
 
 create table Community
 (
@@ -135,8 +148,8 @@ create table CommunityJoinReview
 )
     comment '社区加入审核表';
 
-create index idx_review_user_status
-    on CommunityJoinReview (blind_id, volunteer_id, review_status);
+create index idx_review_user
+    on CommunityJoinReview (blind_id, volunteer_id);
 
 create table CommunityLevel
 (
@@ -200,6 +213,10 @@ create table Family
 )
     comment '家庭信息表';
 
+create index Family__creator_volunteer_id
+    on Family (creator_volunteer_id)
+    comment '家庭创建人ID';
+
 create table FamilyJoinReview
 (
     review_id     bigint auto_increment comment '家庭审核ID'
@@ -236,10 +253,10 @@ create table HelpPost
     comment '求助帖表';
 
 create index idx_helppost_blind_status_level
-    on HelpPost (blind_id, post_status, help_level);
+    on HelpPost (blind_id, post_status);
 
 create index idx_helppost_volunteer
-    on HelpPost (volunteer_id);
+    on HelpPost (volunteer_id, post_status);
 
 create table Navigation
 (
@@ -299,6 +316,10 @@ create table UrgentHelp
 )
     comment '紧急求助表';
 
+create index blindId_status
+    on UrgentHelp (blind_id, help_status)
+    comment '视障人士id与状态';
+
 create table UserLogs
 (
     log_id           bigint auto_increment comment '用户操作日志ID'
@@ -346,6 +367,14 @@ create table VideoHelp
 )
     comment '视频求助表';
 
+create index blindId_status
+    on VideoHelp (blind_id, help_status)
+    comment '视障人士id与状态';
+
+create index volunteerId_status
+    on VideoHelp (volunteer_id, help_status)
+    comment '志愿者id与状态';
+
 create table Volunteer
 (
     volunteer_id         bigint auto_increment comment '志愿者ID'
@@ -374,9 +403,11 @@ create table Volunteer
 )
     comment '志愿者信息表';
 
-create index idx_volunteer_community_status
-    on Volunteer (community_id, online_status);
+create index Volunteer__phone
+    on Volunteer (phone)
+    comment '手机号唯一索引';
 
-create index idx_volunteer_family_rating
-    on Volunteer (family_id, rating);
+create index family_id
+    on Volunteer (family_id)
+    comment '家庭id';
 

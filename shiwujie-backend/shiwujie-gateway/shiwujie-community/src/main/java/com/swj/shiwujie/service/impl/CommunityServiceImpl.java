@@ -7,10 +7,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
-import com.swj.shiwujie.constants.UserConstants;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.mapper.CommunityMapper;
-import com.swj.shiwujie.mapper.CommunitymanagerMapper;
 import com.swj.shiwujie.model.VO.community.community.CommunityLoginSuccessVO;
 import com.swj.shiwujie.model.VO.community.community.CommunityVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
@@ -35,10 +33,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
 
 /**
  * @author Administrator
@@ -56,9 +51,6 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     @DubboReference
     private InnerBlindService innerBlindService;
 
-
-    @Resource
-    private RedisUtils redisUtils;
 
     @Resource
     private CommunitymanagerService communitymanagerService;
@@ -206,13 +198,10 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
                 ErrorCode.PARAMS_ERROR, "密码错误");
 
         // 3. 检查该志愿者是否为社区管理员
-        QueryWrapper<Communitymanager> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("volunteer_id", volunteer.getVolunteerId()).eq("community_id", volunteer.getCommunityId());
-        Communitymanager communitymanager = communitymanagerService.getOne(queryWrapper);
-        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无社区管理权限");
-
+        long count = communitymanagerService.getCountByVolunteerIdAndCommunityId(volunteer.getVolunteerId(), volunteer.getCommunityId());
+        ThrowUtils.throwIf(count <= 0, ErrorCode.NO_AUTH, "无社区管理权限");
         // 4. 获取社区信息
-        Community community = this.getById(communitymanager.getCommunityId());
+        Community community = this.getById(volunteer.getCommunityId());
         ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.OPERATION_ERROR, "社区不存在");
 
         //5. 构建并返回结果

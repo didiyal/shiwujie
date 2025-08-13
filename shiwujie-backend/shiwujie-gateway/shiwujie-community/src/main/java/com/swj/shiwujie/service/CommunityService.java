@@ -11,8 +11,6 @@ import com.swj.shiwujie.model.request.community.community.CommunityRegisterReque
 import com.swj.shiwujie.model.request.community.community.CommunityUpdateRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
 
-import java.util.List;
-
 /**
 * @author Administrator
 * @description 针对表【Community(社区信息表)】的数据库操作Service

@@ -7,15 +7,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.community.helppost.HelppostVO;
-import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.community.Helppost;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.enums.community.PostStatusEnum;
 import com.swj.shiwujie.model.request.community.helppost.HelppostAddRequest;
 import com.swj.shiwujie.model.request.community.helppost.HelppostQueryRequest;
 import com.swj.shiwujie.model.request.community.helppost.HelppostUpdateRequest;
-import com.swj.shiwujie.service.CommunityService;
-import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.service.HelppostService;
 import com.swj.shiwujie.mapper.HelppostMapper;
 import com.swj.shiwujie.service.user.InnerBlindService;
@@ -23,7 +20,6 @@ import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,8 +31,6 @@ import java.util.stream.Collectors;
 @Service
 public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> implements HelppostService {
 
-    @Resource
-    private CommunitymanagerService communitymanagerService;
 
     @DubboReference
     private InnerBlindService innerBlindService;

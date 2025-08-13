@@ -30,6 +30,7 @@ public class WorkChooseTool {
 
     /**
      * 根据索引值调用对应的业务工具
+     *
      * @param toolRequest 工具请求JSON字符串，包含type(问题索引1-11)和data(传入数据，可为空)
      * @return 执行结果
      */
@@ -59,7 +60,7 @@ public class WorkChooseTool {
                     "重要：在流式调用模式下，AI不应直接调用此工具，而应按照系统提示词中的格式返回工具调用请求。")
     public String questionChoose(@ToolParam(description = "工具请求JSON字符串，必须严格遵守格式要求: {\"type\":数字, \"data\":\"JSON字符串\"}") String toolRequest) {
 //        log.info("WorkChooseTool 被调用，接收到的参数: {}", toolRequest);
-        
+
         // 添加对null或空字符串的处理，防止流式调用中出现空参数导致异常
         if (toolRequest == null || toolRequest.trim().isEmpty()) {
             log.warn("工具调用参数为空");
@@ -77,7 +78,7 @@ public class WorkChooseTool {
             // 解析工具请求
             AiToolRequest request = AiToolRequest.fromJson(toolRequest);
             log.info("解析后的工具请求: type={}, data={}", request.getType(), request.getData());
-            
+
             Integer indexNum = request.getType();
             String jsonStr = request.getData();
 
@@ -185,8 +186,9 @@ public class WorkChooseTool {
 
                 case 14:// 图像识别功能
 
-                    frontendTools.noticeTakePhoto();
-                    return "执行成功";
+//                    frontendTools.noticeTakePhoto();
+//                    return "执行成功";
+                    return "此功能暂不支持自动操作，请您手动操作";
 
                 case 15:// 志愿者视频求助功能
                     frontendTools.noticeVideoHelp();
@@ -212,7 +214,8 @@ public class WorkChooseTool {
 
     /**
      * 从JSON字符串中解析指定参数
-     * @param jsonStr JSON字符串
+     *
+     * @param jsonStr   JSON字符串
      * @param paramName 参数名
      * @return 参数值，如果不存在则返回null
      */

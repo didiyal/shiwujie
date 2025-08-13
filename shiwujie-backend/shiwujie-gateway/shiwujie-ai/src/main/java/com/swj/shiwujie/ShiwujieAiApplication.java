@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableDubbo // 启动dubbo
 @MapperScan("com.swj.shiwujie.mapper")
 @EnableAsync // 启动异步任务
-@EnableScheduling // 启动定时任务
 public class ShiwujieAiApplication {
 
     public static void main(String[] args) {

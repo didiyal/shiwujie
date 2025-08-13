@@ -3,23 +3,16 @@ package com.swj.shiwujie.controller;
 
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.PhoneUtil;
-import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
-import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.domain.user.Blind;
-import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.user.blind.*;
 import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
-import com.swj.shiwujie.model.VO.user.blind.BlindVO;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.RedisUtils;
@@ -27,16 +20,12 @@ import com.swj.shiwujie.utils.ResultUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 import java.util.Objects;
 
-import static com.swj.shiwujie.constants.UserConstants.PASSWORD_REGEX;
 import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
 
 /**

@@ -8,27 +8,21 @@ import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.community.community.CommunityLoginSuccessVO;
 import com.swj.shiwujie.model.VO.community.community.CommunityVO;
-import com.swj.shiwujie.model.VO.user.volunteer.VolunteerLoginSuccessVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
-import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.community.community.CommunityRegisterRequest;
 import com.swj.shiwujie.model.request.community.community.CommunitySubListRequest;
 import com.swj.shiwujie.model.request.community.community.CommunityUpdateRequest;
 import com.swj.shiwujie.model.request.user.volunteer.VolunteerLARRequest;
-import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.service.CommunityService;
-import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 
 /**
