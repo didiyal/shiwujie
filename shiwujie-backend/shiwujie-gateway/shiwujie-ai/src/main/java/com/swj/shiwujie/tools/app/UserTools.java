@@ -42,7 +42,7 @@ public class UserTools {
             Blind loginBlind = LoginUtils.getLoginBlind();
             ThrowUtils.throwIf(StrUtil.isBlankIfStr(familyVolunteerPhone), ErrorCode.PARAMS_ERROR, "请输入家庭创建人手机号");
             boolean b = innerFamilyService.joinFamily(familyVolunteerPhone, loginBlind.getBlindId(), null, LoginUtils.getLoginUserPhone());
-            if (b) return "正在为您申请加入家庭，请稍候。申请成功后会通知您结果。";
+            if (b) return "正在为您申请加入家庭，申请成功,需要等待家庭创始人审核。";
             else return "申请加入家庭失败";
         } catch (Exception e) {
             log.error("申请加入家庭失败", e);

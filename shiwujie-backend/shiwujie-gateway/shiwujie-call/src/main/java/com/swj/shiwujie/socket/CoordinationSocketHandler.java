@@ -73,6 +73,9 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
         System.out.println(String.format("收到客户端%s的数据：%s", pmap.get(ctx.channel()), msg.text()));
     }
 
+
+    // region 初始化与心跳
+
     /**
      * ping - -1
      * @param socketData socketData
@@ -95,8 +98,54 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
 
 
     /**
-     * 志愿者初始化成功,向盲人转发 - 2
-     * @param socketData
+     * 初始化socket登录 - 0
+     * 返回type,0
+     *
+     * @param socketData socketData
+     * @param ctx         ChannelHandlerContext
+     */
+    private void websocketLogin(SocketData socketData, ChannelHandlerContext ctx) {
+        String phone = socketData.getVolunteerPhone();
+        if (StrUtil.isBlankIfStr(phone)) {
+            phone = socketData.getBlindPhone();
+        }
+        cmap.put(phone, ctx.channel());
+        pmap.put(ctx.channel(), phone);
+        System.out.println(phone + "登录");
+
+        String response = this.getResponse(0, "初始化成功", 0, socketData);
+        log.info("初始化socket登录 - 0" );
+        ctx.channel().writeAndFlush(new TextWebSocketFrame(response));
+    }
+
+    // endregion
+
+
+    // region 视频通话
+
+    /**
+     * 匹配成功,向志愿者发送信息 1
+     *
+     * @param socketData socketData
+     */
+    public void matchSuccess(SocketData socketData) {
+
+        if (cmap.containsKey(socketData.getVolunteerPhone())) {
+            Channel channel = cmap.get(socketData.getVolunteerPhone());
+
+            String response = this.getResponse(0, "匹配成功", 1, socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info("匹配成功,向志愿者发送信息 - 1" );
+        }else{
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"该用户未连接服务器");
+        }
+    }
+
+
+
+    /**
+     * 志愿者初始化成功,向盲人转发 2
+     * @param socketData socketData
      */
     private void toBlindJoin(SocketData socketData) {
         if (cmap.containsKey(socketData.getBlindPhone())) {
@@ -113,59 +162,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
 
 
     /**
-     * 匹配成功,向志愿者发送信息 - 1
-     *
-     * @param socketData
-     */
-    public void matchSuccess(SocketData socketData) {
-
-        if (cmap.containsKey(socketData.getVolunteerPhone())) {
-            Channel channel = cmap.get(socketData.getVolunteerPhone());
-
-            String response = this.getResponse(0, "匹配成功", 1, socketData);
-            channel.writeAndFlush(new TextWebSocketFrame(response));
-            log.info("匹配成功,向志愿者发送信息 - 1" );
-        }else{
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"该用户未连接服务器");
-        }
-    }
-
-
-    /**
-     * 初始化socket登录 - 0
-     * 返回type,0
-     *
-     * @param socketData
-     * @param ctx
-     */
-    private void websocketLogin(SocketData socketData, ChannelHandlerContext ctx) {
-        String phone = socketData.getVolunteerPhone();
-        if (StrUtil.isBlankIfStr(phone)) {
-            phone = socketData.getBlindPhone();
-        }
-        cmap.put(phone, ctx.channel());
-        pmap.put(ctx.channel(), phone);
-        System.out.println(phone + "登录");
-
-        String response = this.getResponse(0, "初始化成功", 0, socketData);
-        log.info("初始化socket登录 - 0" );
-        ctx.channel().writeAndFlush(new TextWebSocketFrame(response));
-    }
-
-
-    private String getResponse(Integer code, String message, Integer requestType, SocketData socketData) {
-        SocketVO socketVO = new SocketVO();
-        socketVO.setSocketData(socketData);
-        socketVO.setCode(code);
-        socketVO.setMessage(message);
-        socketData.setRequestType(requestType);
-        socketVO.setSocketData(socketData);
-        return JSONUtil.toJsonStr(socketVO);
-    }
-
-
-    /**
-     * 盲人向家属紧急求助,向家属转发 - 3
+     * 盲人向家属紧急求助,向家属转发 3
      * @param volunteerList 家属列表
      * @param socketData 返回类型
      */
@@ -189,7 +186,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
 
 
     /**
-     * 盲人取消求助通知 - 4
+     * 盲人取消求助通知 4
      * @param volunteerList 家属列表
      * @param socketData 返回类型
      */
@@ -211,5 +208,116 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
 
         log.info("盲人取消求助通知 - 4" );
     }
+
+    // endregion
+
+
+    //region AI与前端联动
+
+
+    /**
+     * 通知前端拍照识别 5001
+     */
+    public void noticeTakePhoto(SocketData socketData){
+        if (cmap.containsKey(socketData.getBlindPhone())) {
+            Channel channel = cmap.get(socketData.getBlindPhone());
+            String response = this.getResponse(0, "拍照识别", socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info("通知前端拍照识别 - 5001" );
+        }else{
+            this.getResponse(1, "系统错误", socketData);
+        }
+    }
+
+
+    /**
+     * 通知前端视频求助 5002
+     */
+    public void noticeVideoHelp(SocketData socketData){
+        if (cmap.containsKey(socketData.getBlindPhone())) {
+            Channel channel = cmap.get(socketData.getBlindPhone());
+            String response = this.getResponse(0, "视频求助", socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info("通知前端视频求助 - 5002" );
+        }else{
+            this.getResponse(1, "系统错误", socketData);
+        }
+
+    }
+
+
+    /**
+     * 通知前端紧急求助 5003
+     */
+    public void noticeUrgentHelp(SocketData socketData){
+        if (cmap.containsKey(socketData.getBlindPhone())) {
+            Channel channel = cmap.get(socketData.getBlindPhone());
+            String response = this.getResponse(0, "紧急求助", socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info("通知前端紧急求助 - 5003" );
+        }else{
+            this.getResponse(1, "系统错误", socketData);
+        }
+
+    }
+
+
+    /**
+     * 通知前端跳转软件 5004
+     */
+    public void noticeJumpSoftware(SocketData socketData){
+        if (cmap.containsKey(socketData.getBlindPhone())) {
+            Channel channel = cmap.get(socketData.getBlindPhone());
+            String response = this.getResponse(0, "跳转软件", socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info("通知前端跳转软件 - 5004" );
+        }else{
+            this.getResponse(1, "系统错误", socketData);
+        }
+
+    }
+
+
+    /**
+     * 通知前端跳转到用户修改页面 5005
+     */
+    public void noticeJumpToUserUpdate(SocketData socketData){
+        if (cmap.containsKey(socketData.getBlindPhone())) {
+            Channel channel = cmap.get(socketData.getBlindPhone());
+            String response = this.getResponse(0, "跳转到用户修改页面", socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info("通知前端跳转到用户修改页面 - 5005" );
+        }else{
+            this.getResponse(1, "系统错误", socketData);
+        }
+    }
+
+
+    //endregion
+
+
+
+
+
+    private String getResponse(Integer code, String message, Integer requestType, SocketData socketData) {
+        SocketVO socketVO = new SocketVO();
+        socketVO.setSocketData(socketData);
+        socketVO.setCode(code);
+        socketVO.setMessage(message);
+        socketData.setRequestType(requestType);
+        socketVO.setSocketData(socketData);
+        return JSONUtil.toJsonStr(socketVO);
+    }
+
+
+    private String getResponse(Integer code, String message, SocketData socketData) {
+        SocketVO socketVO = new SocketVO();
+        socketVO.setSocketData(socketData);
+        socketVO.setCode(code);
+        socketVO.setMessage(message);
+        return JSONUtil.toJsonStr(socketVO);
+    }
+
+
 
 }

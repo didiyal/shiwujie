@@ -30,9 +30,10 @@ dubbo:
     name: shiwujie-user
     logger: slf4j
     serialize-check-status: DISABLE
+    qos-port: 33320
   protocol:
     name: dubbo
-    port: 50052
+    port: 50020
   registry:
     address: nacos://${nacos.address:127.0.0.1}:8848?username=nacos&password=nacos
     timeout: 5000

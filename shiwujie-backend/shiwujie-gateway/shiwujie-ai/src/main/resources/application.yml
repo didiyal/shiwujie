@@ -34,11 +34,11 @@ spring:
     chat:
       client:
         enabled: false
-    # 搜索服务配置
-    mcp:
-      client:
-        stdio:
-          servers-configuration: classpath:mcp-servers.json
+#    # 搜索服务配置
+#    mcp:
+#      client:
+#        stdio:
+#          servers-configuration: classpath:mcp-servers.json
 server:
   port: 8500
 mybatis-plus:

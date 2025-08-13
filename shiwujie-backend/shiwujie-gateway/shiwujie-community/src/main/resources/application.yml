@@ -33,7 +33,7 @@ dubbo:
     serialize-check-status: DISABLE
   protocol:
     name: dubbo
-    port: 50053
+    port: 50040
   registry:
     address: nacos://${nacos.address:127.0.0.1}:8848?username=nacos&password=nacos
     timeout: 5000

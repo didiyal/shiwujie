@@ -27,12 +27,14 @@ mybatis-plus:
 #dubbo配置
 dubbo:
   application:
-    name: shiwujie-call-consumer
+    name: shiwujie-call
     logger: slf4j
     qos-port: 33330
     serialize-check-status: DISABLE
+  protocol:
+    name: dubbo
+    port: 50030
   registry:
     address: nacos://${nacos.address:127.0.0.1}:8848?username=nacos&password=nacos
     timeout: 5000
-
 

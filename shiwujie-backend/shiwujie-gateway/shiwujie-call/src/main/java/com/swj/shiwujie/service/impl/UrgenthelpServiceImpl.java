@@ -48,7 +48,7 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
 
 
 
-    @Autowired
+    @Resource
     private CoordinationSocketHandler coordinationSocketHandler;
 
 
