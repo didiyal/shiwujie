@@ -4,6 +4,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
 import java.util.concurrent.TimeUnit;
 
 public class RetrofitClient {
@@ -28,7 +29,8 @@ public class RetrofitClient {
         retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(client)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(ScalarsConverterFactory.create())  // 支持字符串和基本类型
+                .addConverterFactory(GsonConverterFactory.create())     // 支持JSON
                 .build();
     }
 

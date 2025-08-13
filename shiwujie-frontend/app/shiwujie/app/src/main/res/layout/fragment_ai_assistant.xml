@@ -1,327 +1,379 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/ai_assistant_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="@android:color/black"
+    android:orientation="vertical">
 
-
-
-
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/top_app_bar"
-        style="@style/Widget.Material3.Toolbar"
+    <!-- 摄像头预览区域 -->
+    <TextureView
+        android:id="@+id/camera_preview"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:backgroundTint="?attr/colorSurface"
-        app:title="AI 助理"
-        app:titleCentered="true"
-        app:titleTextColor="@color/primary_blue"
-        android:elevation="0dp"
-        tools:ignore="PrivateResource" />
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true" />
+
+    <!-- 消息面板区域 - 悬浮在摄像头画面上方 -->
+    <LinearLayout
+        android:id="@+id/message_panel"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="80dp"
+        android:orientation="vertical"
+        android:background="@drawable/bg_message_panel_transparent"
+        android:elevation="16dp"
+        android:visibility="visible"
+        tools:layout_width="320dp"
+        android:alpha="0.9">
+
+        <!-- 消息面板头部 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="74dp"
+            android:background="@color/white"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <!-- 收起按钮移动到左侧 -->
+            <ImageView
+                android:id="@+id/btn_collapse_message"
+                android:layout_width="53dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="折叠消息面板"
+                android:focusable="true"
+                android:padding="4dp"
+                android:src="@drawable/ic_chevron_right_24" />
+
+            <!-- 标题文本 -->
+            <TextView
+                android:id="@+id/tv_conversation_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:text="当前对话"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/tab_current_conversation"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_tab_selected"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:padding="12dp"
+                android:text="当前对话"
+                android:textColor="@color/primary_blue"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tab_history"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_tab_unselected"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:padding="12dp"
+                android:text="历史记录"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- 对话内容区域 -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scroll_content"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@color/white"
+            android:fillViewport="true"
+            android:paddingStart="16dp"
+            android:paddingEnd="12dp">
+
+            <LinearLayout
+                android:id="@+id/chat_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
+
+                <!-- 建议卡片 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_suggestions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="@color/blue_100"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="8dp"
+                    app:cardUseCompatPadding="true"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="272dp"
+                        android:layout_height="236dp"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tv_suggest_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:letterSpacing="0.01"
+                            android:text="您可以尝试这样问我："
+                            android:textColor="#111111"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@color/blue_100"
+                            android:orientation="vertical"
+                            android:paddingTop="1dp"
+                            android:paddingBottom="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="40dp"
+                                android:layout_marginTop="2dp"
+                                android:background="@color/blue_100"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:ellipsize="end"
+                                    android:letterSpacing="0.005"
+                                    android:maxLines="1"
+                                    android:text="为我介绍一下软件"
+                                    android:textColor="#1F2937"
+                                    android:textSize="15sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="43dp"
+                                android:layout_marginTop="2dp"
+                                android:background="@color/blue_100"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:ellipsize="end"
+                                    android:letterSpacing="0.005"
+                                    android:maxLines="1"
+                                    android:text="如何使用AI功能"
+                                    android:textColor="#1F2937"
+                                    android:textSize="15sp" />
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:contentDescription="更多"
+                                    app:tint="#C2CAD6"
+                                    tools:src="@drawable/ic_chevron_right_24" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="40dp"
+                                android:layout_marginTop="2dp"
+                                android:background="@color/blue_100"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:ellipsize="end"
+                                    android:letterSpacing="0.005"
+                                    android:maxLines="1"
+                                    android:text="介绍一下软件的功能，提供一份使用指南"
+                                    android:textColor="#1F2937"
+                                    android:textSize="15sp" />
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:contentDescription="更多"
+                                    app:tint="#C2CAD6"
+                                    tools:src="@drawable/ic_chevron_right_24" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="44dp"
+                                android:layout_marginTop="2dp"
+                                android:background="@color/blue_100"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:foreground="?attr/selectableItemBackground"
+                                android:gravity="center_vertical"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:ellipsize="end"
+                                    android:letterSpacing="0.005"
+                                    android:maxLines="1"
+                                    android:text="AI能够做什么"
+                                    android:textColor="#1F2937"
+                                    android:textSize="15sp" />
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:contentDescription="更多"
+                                    app:tint="#C2CAD6"
+                                    tools:src="@drawable/ic_chevron_right_24" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp" />
+
+                <!-- 示例对话 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/bubble_user_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginStart="56dp"
+                    android:layout_marginTop="8dp"
+                    app:cardBackgroundColor="@color/primary_blue"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxWidth="280dp"
+                        android:padding="12dp"
+                        android:text="介绍一下AI功能的使用。"
+                        android:textColor="@color/white"
+                        android:textSize="15sp" />
+                </com.google.android.material.card.MaterialCardView>
+
+
+
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+    
+    <!-- 侧边栏展开按钮 (当消息面板收起时显示) -->
+    <ImageView
+        android:id="@+id/btn_expand_message"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/button_primary"
+        android:clickable="true"
+        android:contentDescription="展开消息面板"
+        android:focusable="true"
+        android:src="@drawable/ic_history"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
     <!-- 录音状态提示 -->
     <TextView
         android:id="@+id/tv_recording_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:text=""
-        android:textColor="@color/primary_blue"
-        android:textSize="14sp"
-        android:textStyle="bold"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
         android:background="@drawable/bg_recording_status"
         android:paddingStart="16dp"
-        android:paddingEnd="16dp"
         android:paddingTop="6dp"
+        android:paddingEnd="16dp"
         android:paddingBottom="6dp"
+        android:text=""
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold"
         android:visibility="gone"
-        tools:visibility="visible"
-        tools:text="正在录音..." />
+        tools:text="正在录音..."
+        tools:visibility="visible" />
 
-
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/scroll_content"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        android:layout_weight="1"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp">
-
-        <LinearLayout
-            android:id="@+id/chat_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp">
-
-
-
--->
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_suggestions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardUseCompatPadding="true"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="8dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="@color/blue_100">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-
-                    <TextView
-                        android:id="@+id/tv_suggest_title"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="您可以尝试这样问我："
-                        android:textColor="#111111"
-                        android:textStyle="bold"
-                        android:textSize="16sp"
-                        android:letterSpacing="0.01"
-                        android:layout_marginBottom="6dp" />
-
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@color/blue_100"
-                        android:paddingTop="2dp"
-                        android:paddingBottom="2dp">
-
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:gravity="center_vertical"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:background="@color/blue_100"
-                            android:layout_marginTop="2dp">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="#1F2937"
-                                android:textSize="15sp"
-                                android:maxLines="1"
-                                android:ellipsize="end"
-                                android:letterSpacing="0.005"
-                                android:text="为我介绍一下软件" />
-
-                          <!--  <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:contentDescription="更多"
-                                app:tint="#C2CAD6"
-                                tools:src="@drawable/ic_chevron_right_24" />-->
-                        </LinearLayout>
-
-
-                        <com.google.android.material.divider.MaterialDivider
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:visibility="gone" />
-
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:gravity="center_vertical"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:background="@color/blue_100"
-                            android:layout_marginTop="2dp">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="#1F2937"
-                                android:textSize="15sp"
-                                android:maxLines="1"
-                                android:ellipsize="end"
-                                android:letterSpacing="0.005"
-                                android:text="如何使用AI功能" />
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:contentDescription="更多"
-                                app:tint="#C2CAD6"
-                                tools:src="@drawable/ic_chevron_right_24" />
-                        </LinearLayout>
-
-                        <com.google.android.material.divider.MaterialDivider
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:visibility="gone" />
-
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:gravity="center_vertical"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:background="@color/blue_100"
-                            android:layout_marginTop="2dp">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="#1F2937"
-                                android:textSize="15sp"
-                                android:maxLines="1"
-                                android:ellipsize="end"
-                                android:letterSpacing="0.005"
-                                android:text="介绍一下软件的功能，提供一份使用指南" />
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:contentDescription="更多"
-                                app:tint="#C2CAD6"
-                                tools:src="@drawable/ic_chevron_right_24" />
-                        </LinearLayout>
-
-                        <com.google.android.material.divider.MaterialDivider
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:visibility="gone" />
-
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:gravity="center_vertical"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:background="@color/blue_100"
-                            android:layout_marginTop="2dp">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="#1F2937"
-                                android:textSize="15sp"
-                                android:maxLines="1"
-                                android:ellipsize="end"
-                                android:letterSpacing="0.005"
-                                android:text="AI能够做什么" />
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:contentDescription="更多"
-                                app:tint="#C2CAD6"
-                                tools:src="@drawable/ic_chevron_right_24" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="8dp" />
-
-
-
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/bubble_user_1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginStart="56dp"
-                app:cardCornerRadius="18dp"
-                app:strokeWidth="0dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/primary_blue"
-                android:layout_gravity="end">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:maxWidth="280dp"
-                    android:padding="12dp"
-                    android:textSize="15sp"
-                    android:textColor="@color/white"
-                    android:text="介绍一下AI功能的使用。" />
-            </com.google.android.material.card.MaterialCardView>
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-
-    <!-- 悬浮的历史记录按钮 -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_history"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="100dp"
-        android:src="@drawable/ic_time"
-        app:backgroundTint="@color/primary_blue"
-        app:tint="@color/white"
-        app:fabSize="normal"
-        android:contentDescription="历史记录" />
-
-
-
+    <!-- 底部功能按钮区域 -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/action_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="16dp"
+        android:alpha="0.9"
+        app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="20dp"
         app:cardElevation="8dp"
-        app:strokeWidth="0dp"
-        app:cardBackgroundColor="@android:color/white">
+        app:strokeWidth="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="64dp"
-            android:orientation="horizontal"
             android:gravity="center"
+            android:orientation="horizontal"
             android:paddingStart="8dp"
             android:paddingEnd="8dp">
-
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_back"
@@ -329,15 +381,15 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_marginEnd="8dp"
-                app:cornerRadius="14dp"
-                app:iconTint="@color/blue_700"
+                android:contentDescription="返回主页"
                 app:backgroundTint="@color/blue_50"
-                app:rippleColor="@color/blue_100"
-                android:contentDescription="返回"
+                app:cornerRadius="14dp"
+                app:icon="@drawable/ic_back"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 app:iconSize="22dp"
-                app:icon="@drawable/ic_back"
+                app:iconTint="@color/blue_700"
+                app:rippleColor="@color/blue_100"
                 tools:ignore="PrivateResource" />
 
             <com.google.android.material.button.MaterialButton
@@ -346,15 +398,15 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_marginEnd="8dp"
-                app:cornerRadius="14dp"
-                app:iconTint="@color/blue_700"
+                android:contentDescription="拍照识别"
                 app:backgroundTint="@color/blue_50"
-                app:rippleColor="@color/blue_100"
-                android:contentDescription="拍照"
+                app:cornerRadius="14dp"
+                app:icon="@drawable/icon_camera_switch"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 app:iconSize="22dp"
-                app:icon="@drawable/icon_camera_switch"
+                app:iconTint="@color/blue_700"
+                app:rippleColor="@color/blue_100"
                 tools:ignore="PrivateResource" />
 
             <com.google.android.material.button.MaterialButton
@@ -363,52 +415,34 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_marginEnd="8dp"
-                app:cornerRadius="14dp"
-                app:iconTint="@color/blue_700"
-                app:backgroundTint="@color/blue_50"
-                app:rippleColor="@color/blue_100"
+
                 android:contentDescription="语音输入"
+                app:backgroundTint="@color/blue_50"
+                app:cornerRadius="14dp"
+                app:icon="@drawable/ic_mic_24"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 app:iconSize="22dp"
-                app:icon="@drawable/ic_mic_24"
+                app:iconTint="@color/blue_700"
+                app:rippleColor="@color/blue_100"
                 tools:ignore="PrivateResource" />
-
-
-
-
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_ai_assist"
                 style="@style/Widget.Material3.Button.Icon"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                app:cornerRadius="14dp"
-                app:iconTint="@color/blue_700"
-                app:backgroundTint="@color/blue_50"
-                app:rippleColor="@color/blue_100"
                 android:contentDescription="AI 协助"
+                app:backgroundTint="@color/blue_50"
+                app:cornerRadius="14dp"
+                app:icon="@drawable/ai"
                 app:iconGravity="textStart"
                 app:iconPadding="0dp"
                 app:iconSize="22dp"
-                app:icon="@drawable/ai"
+                app:iconTint="@color/blue_700"
+                app:rippleColor="@color/blue_100"
                 tools:ignore="PrivateResource" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-
-    <LinearLayout
-        android:id="@+id/message_bar_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@android:color/white"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="16dp">
-
-
-    </LinearLayout>
-
-
-</LinearLayout>
+</RelativeLayout>

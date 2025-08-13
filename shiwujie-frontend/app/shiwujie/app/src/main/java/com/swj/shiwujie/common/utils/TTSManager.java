@@ -125,8 +125,7 @@ public class TTSManager {
         
         @Override
         public void onSpeakProgress(int percent, int beginPos, int endPos) {
-            // 播放进度
-            Log.d(TAG, "播放进度: " + percent + "%, 位置: " + beginPos + "-" + endPos);
+            // 播放进度（移除调试日志）
             mPercentForPlaying = percent;
             if (ttsListener != null) {
                 ttsListener.onTTSProgress(percent, beginPos, endPos);
