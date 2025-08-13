@@ -2,11 +2,17 @@ package com.swj.shiwujie.blind.ui.ai;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,20 +20,28 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.TextureView;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.utils.SpeechRecognitionManager;
 import com.swj.shiwujie.common.network.AiChatManager;
+import com.swj.shiwujie.common.network.ImageRecognitionManager;
 import com.swj.shiwujie.common.utils.TTSManager;
+import com.swj.shiwujie.common.utils.CameraPreviewManager;
 
+import java.io.File;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,17 +54,33 @@ import java.util.UUID;
 public class AiFragment extends Fragment {
     private static final String TAG = "AiFragment";
     private static final int PERMISSION_REQUEST_CODE = 200;
+    private static final int CAMERA_PERMISSION_REQUEST_CODE = 201;
     private static final String PREF_NAME = "ai_conversation_history";
     private static final String KEY_CONVERSATIONS = "conversations";
     private static final String KEY_CURRENT_CONVERSATION = "current_conversation";
     
     private SpeechRecognitionManager speechManager;
     private AiChatManager aiChatManager;
+    private ImageRecognitionManager imageRecognitionManager;
     private TTSManager ttsManager;
+    private CameraPreviewManager cameraManager;
     private Vibrator vibrator;
     private MaterialButton btnVoice;
-    private FloatingActionButton fabHistory;
+    private MaterialButton btnCamera;
+    private ImageView btnCollapseMessage;
+    private ImageView btnExpandMessage;
+    private LinearLayout messagePanel;
+    private TextureView cameraPreview;
+    private TextView tabCurrentConversation;
+    private TextView tabHistory;
+    private TextView tvConversationTitle;
     private boolean isListening = false;
+    private boolean isMessagePanelExpanded = true;
+    private boolean isCurrentTabSelected = true;
+    
+    // 图片相关
+    private Uri photoUri;
+    private File photoFile;
     
     // 添加状态检查定时器
     private android.os.Handler statusCheckHandler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -62,7 +92,7 @@ public class AiFragment extends Fragment {
                 btnVoice.getBackgroundTintList() != ContextCompat.getColorStateList(requireContext(), R.color.red)) {
                 // 状态不一致，强制重置
                 updateVoiceButtonState(true);
-                Log.d(TAG, "检测到按钮状态不一致，已重置为录音状态");
+              
             }
             
             // 继续检查
@@ -142,18 +172,31 @@ public class AiFragment extends Fragment {
             initData();
             initSpeechManager();
             initAiChatManager();
+            initImageRecognitionManager();
             initTTSManager();
+            // 延迟初始化摄像头，避免在onCreateView中过早调用
             
             return view;
         } catch (Exception e) {
             Log.e(TAG, "Error inflating AI fragment layout", e);
-            return new View(requireContext());
+            // 返回一个简单的错误视图，而不是空的View
+            TextView errorView = new TextView(requireContext());
+            errorView.setText("AI页面加载失败，请重试");
+            errorView.setGravity(android.view.Gravity.CENTER);
+            errorView.setPadding(32, 32, 32, 32);
+            return errorView;
         }
     }
 
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        
+        // 在视图创建完成后初始化摄像头
+        initCameraManager();
+        
+        // 设置消息面板初始状态
+        setupMessagePanelInitialState();
     }
     
     @Override
@@ -163,6 +206,15 @@ public class AiFragment extends Fragment {
         saveCurrentConversation();
         // 停止状态检查定时器
         stopStatusCheck();
+        
+        // 停止摄像头预览
+        if (cameraManager != null) {
+            try {
+                cameraManager.stopPreview();
+            } catch (Exception e) {
+                Log.e(TAG, "停止摄像头预览失败", e);
+            }
+        }
     }
     
     @Override
@@ -174,6 +226,15 @@ public class AiFragment extends Fragment {
         checkAndClearConversationIfNeeded();
         // 检查并重置按钮状态
         checkAndResetButtonState();
+        
+        // 启动摄像头预览
+        if (cameraManager != null && cameraPreview != null) {
+            try {
+                cameraManager.startPreview();
+            } catch (Exception e) {
+                Log.e(TAG, "启动摄像头预览失败", e);
+            }
+        }
         
         // 如果正在录音，重新启动状态检查
         if (isListening) {
@@ -192,9 +253,6 @@ public class AiFragment extends Fragment {
             if (shouldClear) {
                 // 清空当前对话
                 clearCurrentConversation();
-                
-                // 清空UI中的对话内容
-                clearConversationUI();
                 
                 // 重置标记
                 SharedPreferences.Editor editor = prefs.edit();
@@ -263,13 +321,24 @@ public class AiFragment extends Fragment {
      */
     private void initViews(View view) {
         btnVoice = view.findViewById(R.id.btn_voice);
-        fabHistory = view.findViewById(R.id.fab_history);
+        btnCamera = view.findViewById(R.id.btn_camera);
+        btnCollapseMessage = view.findViewById(R.id.btn_collapse_message);
+        btnExpandMessage = view.findViewById(R.id.btn_expand_message);
+        messagePanel = view.findViewById(R.id.message_panel);
+        cameraPreview = view.findViewById(R.id.camera_preview);
+        tabCurrentConversation = view.findViewById(R.id.tab_current_conversation);
+        tabHistory = view.findViewById(R.id.tab_history);
+        tvConversationTitle = view.findViewById(R.id.tv_conversation_title);
         
         // 初始化震动器
         vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
         
         btnVoice.setOnClickListener(v -> handleVoiceButtonClick());
-        fabHistory.setOnClickListener(v -> showHistoryDialog());
+        btnCamera.setOnClickListener(v -> handleCameraButtonClick());
+        btnCollapseMessage.setOnClickListener(v -> collapseMessagePanel());
+        btnExpandMessage.setOnClickListener(v -> expandMessagePanel());
+        tabCurrentConversation.setOnClickListener(v -> switchToCurrentTab());
+        tabHistory.setOnClickListener(v -> switchToHistoryTab());
     }
     
     /**
@@ -388,43 +457,7 @@ public class AiFragment extends Fragment {
         }
     }
     
-    /**
-     * 显示历史记录对话框
-     */
-    private void showHistoryDialog() {
-        if (conversationHistory.isEmpty()) {
-            Toast.makeText(requireContext(), "暂无对话记录", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle("对话历史");
-        
-        // 创建历史记录列表
-        LinearLayout container = new LinearLayout(requireContext());
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setPadding(32, 16, 32, 16);
-        
-        for (Conversation conv : conversationHistory) {
-            View itemView = createHistoryItemView(conv);
-            container.addView(itemView);
-            
-            // 添加分割线
-            if (conversationHistory.indexOf(conv) < conversationHistory.size() - 1) {
-                View divider = new View(requireContext());
-                divider.setBackgroundColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray));
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 1);
-                params.setMargins(0, 16, 0, 16);
-                divider.setLayoutParams(params);
-                container.addView(divider);
-            }
-        }
-        
-        builder.setView(container);
-        builder.setPositiveButton("关闭", null);
-        builder.show();
-    }
+
     
     /**
      * 创建历史记录项视图
@@ -434,6 +467,9 @@ public class AiFragment extends Fragment {
         itemView.setOrientation(LinearLayout.VERTICAL);
         itemView.setPadding(16, 12, 16, 12);
         itemView.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.bg_card_round_white));
+        itemView.setClickable(true);
+        itemView.setFocusable(true);
+        itemView.setForeground(ContextCompat.getDrawable(requireContext(), android.R.attr.selectableItemBackground));
         
         // 预览文本
         TextView previewText = new TextView(requireContext());
@@ -454,6 +490,15 @@ public class AiFragment extends Fragment {
         itemView.addView(previewText);
         itemView.addView(timeText);
         
+        // 添加点击事件，返回到当前对话
+        itemView.setOnClickListener(v -> {
+            // 切换到当前对话标签页
+            switchToCurrentTab();
+            
+            // 显示提示
+            Toast.makeText(requireContext(), "已返回到当前对话", Toast.LENGTH_SHORT).show();
+        });
+        
         return itemView;
     }
     
@@ -472,6 +517,53 @@ public class AiFragment extends Fragment {
             return (diff / 3600000) + "小时前";
         } else {
             return (diff / 86400000) + "天前";
+        }
+    }
+    
+    /**
+     * 初始化摄像头预览管理器
+     */
+    private void initCameraManager() {
+        try {
+            if (cameraPreview == null) {
+                Log.e(TAG, "cameraPreview为null，无法初始化摄像头");
+                return;
+            }
+            
+            cameraManager = new CameraPreviewManager(requireContext());
+            cameraManager.setPreviewView(cameraPreview);
+            
+            // 检查摄像头权限
+            if (checkCameraPermission()) {
+                // 权限已授予，启动预览
+                cameraManager.startPreview();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "初始化摄像头管理器失败", e);
+        }
+    }
+    
+    /**
+     * 设置消息面板初始状态
+     */
+    private void setupMessagePanelInitialState() {
+        if (messagePanel == null) return;
+        
+        try {
+            // 设置初始宽度为屏幕宽度的80%
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int panelWidth = (int) (screenWidth * 0.8);
+            
+            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) messagePanel.getLayoutParams();
+            params.width = panelWidth;
+            messagePanel.setLayoutParams(params);
+            
+            // 设置初始透明度
+            messagePanel.setAlpha(0.9f);
+            
+            Log.d(TAG, "消息面板初始宽度设置为: " + panelWidth);
+        } catch (Exception e) {
+            Log.e(TAG, "设置消息面板初始状态失败", e);
         }
     }
     
@@ -561,7 +653,6 @@ public class AiFragment extends Fragment {
             @Override
             public void onStreamingChunk(String chunk, int totalLength) {
                 // 流式数据块回调，用于真正的流式播报
-                Log.d(TAG, "收到流式数据块，长度: " + chunk.length() + ", 总长度: " + totalLength);
                 handleStreamingChunk(chunk, totalLength);
             }
             
@@ -584,10 +675,59 @@ public class AiFragment extends Fragment {
     }
     
     /**
+     * 初始化图片识别管理器
+     */
+    private void initImageRecognitionManager() {
+        imageRecognitionManager = new ImageRecognitionManager(requireContext());
+        
+        // 配置打字机效果速度
+        imageRecognitionManager.setTypingSpeed(50);
+        
+        imageRecognitionManager.setOnStreamingListener(new ImageRecognitionManager.OnStreamingListener() {
+            @Override
+            public void onStreamingStart() {
+                // 图片识别开始，显示"正在识别图片..."状态
+                showImageRecognitionStatus();
+                // 启动智能播报系统
+                startSmartPlaybackSystem();
+            }
+            
+            @Override
+            public void onStreamingText(String text) {
+                // 实时更新图片识别结果的流式输出
+                updateImageRecognitionStreaming(text);
+                // 处理智能播报逻辑
+                handleSmartPlayback(text);
+            }
+            
+            @Override
+            public void onStreamingChunk(String chunk, int totalLength) {
+                // 流式数据块回调，用于真正的流式播报
+                handleStreamingChunk(chunk, totalLength);
+            }
+            
+            @Override
+            public void onStreamingComplete(String fullResponse) {
+                // 图片识别完成，保存完整回复
+                completeImageRecognition(fullResponse);
+                // 完成智能播报
+                completeSmartPlayback(fullResponse);
+            }
+            
+            @Override
+            public void onStreamingError(String error) {
+                // 图片识别出错，显示错误信息
+                handleImageRecognitionError(error);
+                // 重置智能播报状态
+                resetSmartPlaybackState();
+            }
+        });
+    }
+    
+    /**
      * 启动智能播报系统
      */
     private void startSmartPlaybackSystem() {
-        Log.d(TAG, "启动智能播报系统");
         currentStreamingState = StreamingState.STREAMING;
         streamingContentBuffer.setLength(0);
         lastTextTime = System.currentTimeMillis();
@@ -608,7 +748,7 @@ public class AiFragment extends Fragment {
         // 累积内容到缓冲区
         streamingContentBuffer.append(text);
         
-        Log.d(TAG, "智能播报处理文本: " + text + ", 缓冲区长度: " + streamingContentBuffer.length());
+
         
         // 如果正在播报，动态更新播报内容
         if (currentStreamingState == StreamingState.PLAYING) {
@@ -622,11 +762,8 @@ public class AiFragment extends Fragment {
     private void handleStreamingChunk(String chunk, int totalLength) {
         if (currentStreamingState != StreamingState.STREAMING) return;
         
-        Log.d(TAG, "处理流式数据块，当前块长度: " + chunk.length() + ", 总长度: " + totalLength);
-        
         // 如果还没开始播报，且内容足够长，立即开始播报
         if (currentStreamingState == StreamingState.STREAMING && chunk.length() >= 80) { // 增加触发阈值
-            Log.d(TAG, "内容足够长，立即开始播报，长度: " + chunk.length());
             startSmartPlayback();
         }
     }
@@ -647,11 +784,9 @@ public class AiFragment extends Fragment {
             
             if (timeSinceLastText >= IDLE_THRESHOLD) {
                 // 超过空闲阈值，开始播报
-                Log.d(TAG, "达到空闲阈值，开始播报");
                 startSmartPlayback();
             } else {
                 // 继续等待，重新启动计时器
-                Log.d(TAG, "继续等待，重新启动计时器");
                 startSmartTimer();
             }
         };
@@ -659,8 +794,6 @@ public class AiFragment extends Fragment {
         // 启动计时器，等待时间根据当前状态动态调整
         long waitTime = streamingContentBuffer.length() < 50 ? SHORT_WAIT : MAX_WAIT;
         smartTimerHandler.postDelayed(smartTimerRunnable, waitTime);
-        
-        Log.d(TAG, "启动智能计时器，等待时间: " + waitTime + "ms");
     }
     
     /**
@@ -677,17 +810,16 @@ public class AiFragment extends Fragment {
         
         // 只有当内容增加超过50个字符，且当前播报进度超过70%时才重新播报
         if (contentIncrease > 50 && getCurrentPlaybackProgress() > 70) {
-            Log.d(TAG, "内容显著增加且播报进度较高，重新开始播报，增加长度: " + contentIncrease + ", 当前长度: " + currentContent.length());
-            
             // 停止当前播报，重新开始播报完整内容
+            String contentToSpeak = parseResponseForTTS(currentContent);
             ttsManager.stopSpeaking();
-            ttsManager.startSpeaking(currentContent);
+            ttsManager.startSpeaking(contentToSpeak);
             lastPlayedContentLength = currentContent.length();
         } else if (contentIncrease > 100) {
             // 如果内容增加超过100个字符，强制重新播报
-            Log.d(TAG, "内容大量增加，强制重新播报，增加长度: " + contentIncrease);
+            String contentToSpeak = parseResponseForTTS(currentContent);
             ttsManager.stopSpeaking();
-            ttsManager.startSpeaking(currentContent);
+            ttsManager.startSpeaking(contentToSpeak);
             lastPlayedContentLength = currentContent.length();
         }
     }
@@ -719,18 +851,75 @@ public class AiFragment extends Fragment {
         String contentToPlay = streamingContentBuffer.toString();
         
         if (contentToPlay.trim().isEmpty()) {
-            Log.d(TAG, "内容为空，不进行播报");
             currentStreamingState = StreamingState.STREAMING;
             return;
         }
         
-        Log.d(TAG, "开始智能播报，内容长度: " + contentToPlay.length());
-        ttsManager.startSpeaking(contentToPlay);
+        // 解析后端响应，决定播报内容
+        String contentToSpeak = parseResponseForTTS(contentToPlay);
+        
+        ttsManager.startSpeaking(contentToSpeak);
         lastPlayedContentLength = contentToPlay.length();
         lastPlaybackStartTime = System.currentTimeMillis(); // 记录播报开始时间
         
         // 启动流式播报更新定时器
         startStreamingPlaybackUpdateTimer();
+    }
+    
+    /**
+     * 解析后端响应，决定播报内容
+     * 只有当code=1时才播报data内容，否则播报description内容
+     */
+    private String parseResponseForTTS(String response) {
+        try {
+            // 尝试解析为JSON格式
+            if (response.trim().startsWith("{")) {
+                // 使用Gson解析JSON
+                com.google.gson.Gson gson = new com.google.gson.Gson();
+                com.google.gson.JsonElement jsonElement = gson.fromJson(response, com.google.gson.JsonElement.class);
+                
+                if (jsonElement.isJsonObject()) {
+                    com.google.gson.JsonObject jsonObject = jsonElement.getAsJsonObject();
+                    
+                    // 检查是否有code字段
+                    if (jsonObject.has("code")) {
+                        int code = jsonObject.get("code").getAsInt();
+                        
+                        if (code == 1) {
+                            // code=1，播报data内容
+                            if (jsonObject.has("data") && !jsonObject.get("data").isJsonNull()) {
+                                String data = jsonObject.get("data").getAsString();
+                                if (data != null && !data.trim().isEmpty()) {
+                                    return data;
+                                }
+                            }
+                        } else {
+                            // code!=1，播报description内容
+                            if (jsonObject.has("description") && !jsonObject.get("description").isJsonNull()) {
+                                String description = jsonObject.get("description").getAsString();
+                                if (description != null && !description.trim().isEmpty()) {
+                                    return description;
+                                }
+                            }
+                            // 如果没有description字段，播报message字段
+                            if (jsonObject.has("message") && !jsonObject.get("message").isJsonNull()) {
+                                String message = jsonObject.get("message").getAsString();
+                                if (message != null && !message.trim().isEmpty()) {
+                                    return message;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 如果不是JSON格式或解析失败，直接播报原始内容
+            return response;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "解析响应失败，播报原始内容", e);
+            return response;
+        }
     }
     
     /**
@@ -753,23 +942,23 @@ public class AiFragment extends Fragment {
         
         // 启动定时器
         streamingPlaybackHandler.postDelayed(streamingPlaybackRunnable, STREAMING_UPDATE_INTERVAL);
-        Log.d(TAG, "启动流式播报更新定时器，间隔: " + STREAMING_UPDATE_INTERVAL + "ms");
     }
     
     /**
      * 完成智能播报
      */
     private void completeSmartPlayback(String fullResponse) {
-        Log.d(TAG, "完成智能播报");
+        // 解析后端响应，决定播报内容
+        String contentToSpeak = parseResponseForTTS(fullResponse);
         
         // 如果还在播报，确保播报完整内容
         if (currentStreamingState == StreamingState.PLAYING) {
             // 停止当前播报，重新播报完整内容
             ttsManager.stopSpeaking();
-            ttsManager.startSpeaking(fullResponse);
+            ttsManager.startSpeaking(contentToSpeak);
         } else if (currentStreamingState == StreamingState.STREAMING) {
             // 如果还没开始播报，直接播报完整内容
-            ttsManager.startSpeaking(fullResponse);
+            ttsManager.startSpeaking(contentToSpeak);
         }
         
         // 重置状态
@@ -797,8 +986,6 @@ public class AiFragment extends Fragment {
             streamingPlaybackHandler.removeCallbacks(streamingPlaybackRunnable);
             streamingPlaybackRunnable = null;
         }
-        
-        Log.d(TAG, "重置智能播报状态");
     }
     
     /**
@@ -810,7 +997,6 @@ public class AiFragment extends Fragment {
             @Override
             public void onTTSStart() {
                 // 语音开始播放
-                Log.d(TAG, "TTS开始播放");
             }
             
             @Override
@@ -821,7 +1007,6 @@ public class AiFragment extends Fragment {
             @Override
             public void onTTSComplete() {
                 // 语音播放完成
-                Log.d(TAG, "TTS播放完成");
             }
             
             @Override
@@ -911,6 +1096,21 @@ public class AiFragment extends Fragment {
         }
     }
     
+    /**
+     * 处理拍照按钮点击事件
+     */
+    private void handleCameraButtonClick() {
+        // 添加震动反馈
+        if (vibrator != null && vibrator.hasVibrator()) {
+            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+        }
+        
+        // 检查相机权限
+        if (checkCameraPermission()) {
+            takePhotoDirectly();
+        }
+    }
+    
 
     
 
@@ -934,6 +1134,78 @@ public class AiFragment extends Fragment {
     }
     
     /**
+     * 检查摄像头权限
+     */
+    private boolean checkCameraPermission() {
+        int permissionStatus = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA);
+        Log.d(TAG, "相机权限状态: " + permissionStatus + " (0=已授权, -1=未授权)");
+        
+        if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "相机权限未授予，开始请求权限");
+            
+            // 检查是否应该显示权限说明
+            if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.CAMERA)) {
+                Log.d(TAG, "显示相机权限说明对话框");
+                // 用户之前拒绝过权限，显示说明对话框
+                showCameraPermissionExplanationDialog();
+            } else {
+                Log.d(TAG, "直接请求相机权限");
+                // 直接请求权限
+                requestCameraPermission();
+            }
+            return false;
+        }
+        
+        Log.d(TAG, "相机权限已授予");
+        return true;
+    }
+    
+    /**
+     * 请求相机权限
+     */
+    private void requestCameraPermission() {
+        ActivityCompat.requestPermissions(requireActivity(), 
+                new String[]{Manifest.permission.CAMERA}, 
+                CAMERA_PERMISSION_REQUEST_CODE);
+    }
+    
+    /**
+     * 检查所有必要权限是否已授予
+     */
+    private boolean checkAllRequiredPermissions() {
+        boolean hasCameraPermission = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) 
+                == PackageManager.PERMISSION_GRANTED;
+        
+        return hasCameraPermission; // 新的拍照方案只需要相机权限
+    }
+    
+    /**
+     * 显示权限被拒绝的对话框
+     */
+    private void showPermissionDeniedDialog(String permissionName, String message) {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("权限被拒绝")
+            .setMessage(message)
+            .setPositiveButton("去设置", (dialog, which) -> {
+                // 跳转到应用设置页面
+                try {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    intent.setData(Uri.fromParts("package", requireContext().getPackageName(), null));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Log.e(TAG, "跳转设置页面失败", e);
+                    Toast.makeText(requireContext(), "无法跳转设置页面，请手动开启" + permissionName, Toast.LENGTH_LONG).show();
+                }
+            })
+            .setNegativeButton("取消", null)
+            .show();
+    }
+    
+    // 移除存储权限检查，因为新的拍照方案使用应用私有目录，无需存储权限
+    
+    // 移除存储权限请求方法
+    
+    /**
      * 显示权限说明对话框
      */
     private void showPermissionExplanationDialog() {
@@ -943,6 +1215,27 @@ public class AiFragment extends Fragment {
             .setPositiveButton("确定", null)
             .show();
     }
+    
+    /**
+     * 显示摄像头权限说明对话框
+     */
+    private void showCameraPermissionExplanationDialog() {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("需要摄像头权限")
+            .setMessage("拍照功能需要摄像头权限才能正常工作。请在接下来的对话框中允许摄像头权限。")
+            .setPositiveButton("确定", (dialog, which) -> {
+                // 用户点击确定后，立即请求权限
+                requestCameraPermission();
+            })
+            .setNegativeButton("取消", (dialog, which) -> {
+                // 用户取消，显示提示
+                Toast.makeText(requireContext(), "没有摄像头权限无法使用拍照功能", Toast.LENGTH_LONG).show();
+            })
+            .setCancelable(false)
+            .show();
+    }
+    
+    // 移除存储权限说明对话框
     
     /**
      * 处理权限请求结果
@@ -957,8 +1250,28 @@ public class AiFragment extends Fragment {
             } else {
                 Toast.makeText(requireContext(), "录音权限被拒绝，无法使用语音识别功能", Toast.LENGTH_LONG).show();
             }
+        } else if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(requireContext(), "摄像头权限已授予", Toast.LENGTH_SHORT).show();
+                // 权限授予后启动摄像头预览
+                if (cameraManager != null) {
+                    cameraManager.startPreview();
+                }
+                // 权限授予后，检查是否所有权限都已获得，如果是则自动重试拍照
+                if (checkAllRequiredPermissions()) {
+                    // 延迟一下再拍照，确保权限完全生效
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        takePhotoDirectly();
+                    }, 500);
+                }
+            } else {
+                showPermissionDeniedDialog("摄像头权限", "拍照功能需要摄像头权限才能正常工作。请在设置中开启摄像头权限。");
+            }
         }
+        // 移除存储权限处理，因为新的拍照方案不需要存储权限
     }
+    
+    // 移除onActivityResult方法，因为新的拍照方案不需要启动系统相机
     
     /**
      * 开始语音识别
@@ -975,6 +1288,82 @@ public class AiFragment extends Fragment {
     private void stopVoiceRecognition() {
         speechManager.stopListening();
     }
+    
+    /**
+     * 直接拍照（使用Camera2 API，无需启动系统相机）
+     */
+    private void takePhotoDirectly() {
+        if (cameraManager == null) {
+            Log.e(TAG, "CameraPreviewManager未初始化");
+            Toast.makeText(requireContext(), "相机管理器未初始化", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (!cameraManager.isPreviewActive()) {
+            Log.e(TAG, "相机预览未激活");
+            Toast.makeText(requireContext(), "相机预览未激活，请稍后再试", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (cameraManager.isTakingPhoto()) {
+            Toast.makeText(requireContext(), "正在拍照中，请稍候", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // 显示拍照提示
+        Toast.makeText(requireContext(), "正在拍照...", Toast.LENGTH_SHORT).show();
+        
+        // 调用CameraPreviewManager的直接拍照方法
+        cameraManager.takePhoto(new com.swj.shiwujie.common.utils.CameraPreviewManager.TakePhotoCallback() {
+            @Override
+            public void onPhotoTaken(byte[] data) {
+                // 在主线程中处理照片数据
+                requireActivity().runOnUiThread(() -> {
+                    handlePhotoData(data);
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "拍照失败: " + error);
+                
+                // 在主线程中显示错误
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "拍照失败: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+    
+    /**
+     * 处理拍照得到的字节数据
+     */
+    private void handlePhotoData(byte[] data) {
+        try {
+            // 保存为临时文件（应用私有目录，无需存储权限）
+            File tempFile = new File(requireContext().getExternalCacheDir(), "temp_photo_" + System.currentTimeMillis() + ".jpg");
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile);
+            fos.write(data);
+            fos.close();
+            
+            // 保存文件引用
+            photoFile = tempFile;
+            
+            // 显示拍摄的图片到对话界面
+            addImageMessage(photoFile);
+            
+            // 延迟发送图片识别请求，确保图片完全显示后再发送
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                sendImageRecognitionRequest(photoFile);
+            }, 500); // 延迟500ms，确保图片完全显示
+            
+        } catch (Exception e) {
+            Log.e(TAG, "处理照片数据失败", e);
+            Toast.makeText(requireContext(), "处理照片失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    // 移除旧的handlePhotoResult方法，已被handlePhotoData替代
     
     /**
      * 处理语音识别结果
@@ -1053,6 +1442,23 @@ public class AiFragment extends Fragment {
     }
     
     /**
+     * 发送图片识别请求
+     * @param imageFile 图片文件
+     */
+    private void sendImageRecognitionRequest(File imageFile) {
+        if (imageRecognitionManager != null) {
+            // 显示图片识别状态
+            showImageRecognitionStatus();
+            
+            // 发送图片到AI接口（使用预先设置的监听器）
+            imageRecognitionManager.sendImage(imageFile);
+        } else {
+            Log.e(TAG, "ImageRecognitionManager未初始化");
+            Toast.makeText(requireContext(), "图片识别管理器未初始化", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
      * 显示AI正在思考的状态
      */
     private void showAiThinkingStatus() {
@@ -1081,6 +1487,38 @@ public class AiFragment extends Fragment {
             }
         } catch (Exception e) {
             Log.e(TAG, "显示AI思考状态失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 显示图片识别状态
+     */
+    private void showImageRecognitionStatus() {
+        if (getView() == null) return;
+        
+        try {
+            // 创建图片识别状态的消息卡片
+            com.google.android.material.card.MaterialCardView recognitionCard = createMessageCard(
+                "正在识别图片...", 
+                false,  // AI消息
+                R.color.blue_50,  // AI消息背景色
+                R.color.text_secondary  // 识别状态文字色
+            );
+            
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer != null) {
+                // 添加识别状态卡片
+                chatContainer.addView(recognitionCard);
+                
+                // 滚动到底部
+                scrollToBottom();
+                
+                // 保存识别状态卡片的引用，用于后续更新
+                recognitionCard.setTag("recognition_card");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "显示图片识别状态失败: " + e.getMessage(), e);
         }
     }
     
@@ -1123,6 +1561,44 @@ public class AiFragment extends Fragment {
     }
     
     /**
+     * 更新图片识别结果的流式输出
+     * @param text 当前流式输出的文本
+     */
+    private void updateImageRecognitionStreaming(String text) {
+        if (getView() == null) return;
+        
+        try {
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer == null) return;
+            
+            // 查找识别状态卡片
+            com.google.android.material.card.MaterialCardView recognitionCard = null;
+            for (int i = 0; i < chatContainer.getChildCount(); i++) {
+                View child = chatContainer.getChildAt(i);
+                if (child instanceof com.google.android.material.card.MaterialCardView && 
+                    "recognition_card".equals(child.getTag())) {
+                    recognitionCard = (com.google.android.material.card.MaterialCardView) child;
+                    break;
+                }
+            }
+            
+            if (recognitionCard != null) {
+                // 更新识别状态卡片的内容为流式输出
+                TextView textView = (TextView) recognitionCard.getChildAt(0);
+                if (textView != null) {
+                    textView.setText(text);
+                }
+                
+                // 滚动到底部
+                scrollToBottom();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "更新图片识别流式输出失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
      * 完成AI回复
      * @param fullResponse 完整的AI回复
      */
@@ -1160,6 +1636,43 @@ public class AiFragment extends Fragment {
     }
     
     /**
+     * 完成图片识别
+     * @param fullResponse 完整的识别结果
+     */
+    private void completeImageRecognition(String fullResponse) {
+        if (getView() == null) return;
+        
+        try {
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer == null) return;
+            
+            // 查找识别状态卡片
+            com.google.android.material.card.MaterialCardView recognitionCard = null;
+            int recognitionCardIndex = -1;
+            for (int i = 0; i < chatContainer.getChildCount(); i++) {
+                View child = chatContainer.getChildAt(i);
+                if (child instanceof com.google.android.material.card.MaterialCardView && 
+                    "recognition_card".equals(child.getTag())) {
+                    recognitionCard = (com.google.android.material.card.MaterialCardView) child;
+                    recognitionCardIndex = i;
+                    break;
+                }
+            }
+            
+            if (recognitionCard != null && recognitionCardIndex >= 0) {
+                // 移除识别状态卡片
+                chatContainer.removeViewAt(recognitionCardIndex);
+                
+                // 添加完整的AI识别结果消息
+                addAIResponse(fullResponse);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "完成图片识别失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
      * 处理AI回复错误
      * @param error 错误信息
      */
@@ -1193,6 +1706,43 @@ public class AiFragment extends Fragment {
             }
         } catch (Exception e) {
             Log.e(TAG, "处理AI回复错误失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 处理图片识别错误
+     * @param error 错误信息
+     */
+    private void handleImageRecognitionError(String error) {
+        if (getView() == null) return;
+        
+        try {
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer == null) return;
+            
+            // 查找识别状态卡片
+            com.google.android.material.card.MaterialCardView recognitionCard = null;
+            int recognitionCardIndex = -1;
+            for (int i = 0; i < chatContainer.getChildCount(); i++) {
+                View child = chatContainer.getChildAt(i);
+                if (child instanceof com.google.android.material.card.MaterialCardView && 
+                    "recognition_card".equals(child.getTag())) {
+                    recognitionCard = (com.google.android.material.card.MaterialCardView) child;
+                    recognitionCardIndex = i;
+                    break;
+                }
+            }
+            
+            if (recognitionCard != null && recognitionCardIndex >= 0) {
+                // 移除识别状态卡片
+                chatContainer.removeViewAt(recognitionCardIndex);
+                
+                // 显示错误消息
+                Toast.makeText(requireContext(), "图片识别失败: " + error, Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "处理图片识别错误失败: " + e.getMessage(), e);
         }
     }
     
@@ -1249,6 +1799,35 @@ public class AiFragment extends Fragment {
             
         } catch (Exception e) {
             Log.e(TAG, "添加用户消息失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 添加图片消息到对话界面
+     */
+    private void addImageMessage(File imageFile) {
+        if (getView() == null) return;
+        
+        try {
+            // 创建图片消息
+            Message imageMsg = new Message("[图片]", true);
+            currentConversation.add(imageMsg);
+            
+            // 获取对话容器
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer == null) return;
+            
+            // 创建图片消息卡片
+            com.google.android.material.card.MaterialCardView imageMessageCard = createImageMessageCard(imageFile);
+            
+            // 添加到对话容器
+            chatContainer.addView(imageMessageCard);
+            
+            // 滚动到底部
+            scrollToBottom();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "添加图片消息失败: " + e.getMessage(), e);
         }
     }
     
@@ -1317,17 +1896,27 @@ public class AiFragment extends Fragment {
      * 清空当前对话（退出登录时调用）
      */
     public void clearCurrentConversation() {
-        currentConversation.clear();
-        currentConversationId = UUID.randomUUID().toString();
-        
-        // 清除存储的当前对话
         try {
-            SharedPreferences prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.remove(KEY_CURRENT_CONVERSATION);
-            editor.apply();
+            // 清空当前对话
+            currentConversation.clear();
+            currentConversationId = UUID.randomUUID().toString();
+            
+            // 清除存储的当前对话
+            try {
+                SharedPreferences prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.remove(KEY_CURRENT_CONVERSATION);
+                editor.apply();
+            } catch (Exception e) {
+                Log.e(TAG, "清除当前对话存储失败", e);
+            }
+            
+            // 清空对话UI
+            clearConversationUI();
+            
+            Log.d(TAG, "当前对话已清除");
         } catch (Exception e) {
-            Log.e(TAG, "清除当前对话存储失败", e);
+            Log.e(TAG, "清除对话失败", e);
         }
     }
     
@@ -1386,6 +1975,329 @@ public class AiFragment extends Fragment {
     }
     
     /**
+     * 创建图片消息卡片
+     */
+    private com.google.android.material.card.MaterialCardView createImageMessageCard(File imageFile) {
+        // 创建卡片容器
+        com.google.android.material.card.MaterialCardView card = new com.google.android.material.card.MaterialCardView(requireContext());
+        
+        // 设置卡片属性
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        
+        // 用户图片消息靠右显示
+        cardParams.gravity = android.view.Gravity.END;
+        cardParams.setMargins(56, 8, 16, 8);
+        
+        card.setLayoutParams(cardParams);
+        card.setRadius(18);
+        card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.primary_blue));
+        card.setStrokeWidth(0);
+        card.setCardElevation(2);
+        
+        // 创建垂直布局容器
+        LinearLayout container = new LinearLayout(requireContext());
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(12, 12, 12, 12);
+        
+        // 创建图片视图
+        ImageView imageView = new ImageView(requireContext());
+        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        imageView.setLayoutParams(imageParams);
+        
+        // 设置图片
+        try {
+            Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+            if (bitmap != null) {
+                // 压缩图片以适应显示
+                int maxWidth = (int) (getResources().getDisplayMetrics().widthPixels * 0.6);
+                int maxHeight = 400;
+                
+                float scale = Math.min(
+                    (float) maxWidth / bitmap.getWidth(),
+                    (float) maxHeight / bitmap.getHeight()
+                );
+                
+                if (scale < 1) {
+                    int newWidth = Math.round(bitmap.getWidth() * scale);
+                    int newHeight = Math.round(bitmap.getHeight() * scale);
+                    bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+                }
+                
+                imageView.setImageBitmap(bitmap);
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "加载图片失败", e);
+            // 如果加载失败，显示占位符
+            imageView.setImageResource(R.drawable.icon_camera_switch);
+        }
+        
+        // 添加图片到容器
+        container.addView(imageView);
+        
+        // 将容器添加到卡片
+        card.addView(container);
+        
+        return card;
+    }
+    
+    /**
+     * 切换到当前对话标签页
+     */
+    private void switchToCurrentTab() {
+        if (isCurrentTabSelected) return;
+        
+        isCurrentTabSelected = true;
+        updateTabAppearance();
+        showCurrentConversation();
+    }
+    
+    /**
+     * 切换到历史记录标签页
+     */
+    private void switchToHistoryTab() {
+        if (!isCurrentTabSelected) return;
+        
+        isCurrentTabSelected = false;
+        updateTabAppearance();
+        showHistoryConversation();
+    }
+    
+    /**
+     * 更新标签页外观
+     */
+    private void updateTabAppearance() {
+        if (tabCurrentConversation != null && tabHistory != null) {
+            if (isCurrentTabSelected) {
+                tabCurrentConversation.setBackgroundResource(R.drawable.bg_tab_selected);
+                tabCurrentConversation.setTextColor(ContextCompat.getColor(requireContext(), R.color.primary_blue));
+                tabHistory.setBackgroundResource(R.drawable.bg_tab_unselected);
+                tabHistory.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+            } else {
+                tabCurrentConversation.setBackgroundResource(R.drawable.bg_tab_unselected);
+                tabCurrentConversation.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+                tabHistory.setBackgroundResource(R.drawable.bg_tab_selected);
+                tabHistory.setTextColor(ContextCompat.getColor(requireContext(), R.color.primary_blue));
+            }
+        }
+    }
+    
+    /**
+     * 显示当前对话内容
+     */
+    private void showCurrentConversation() {
+        if (getView() == null) return;
+        
+        try {
+            // 获取滚动容器
+            androidx.core.widget.NestedScrollView scrollView = getView().findViewById(R.id.scroll_content);
+            if (scrollView == null) return;
+            
+            // 检查是否有历史记录容器，如果有则移除
+            View historyContainer = null;
+            for (int i = 0; i < scrollView.getChildCount(); i++) {
+                View child = scrollView.getChildAt(i);
+                if ("history_container".equals(child.getTag())) {
+                    historyContainer = child;
+                    break;
+                }
+            }
+            
+            if (historyContainer != null) {
+                scrollView.removeView(historyContainer);
+            }
+            
+            // 恢复原有的对话内容
+            Object tag = scrollView.getTag(R.id.scroll_content);
+            if (tag instanceof View) {
+                View originalContent = (View) tag;
+                scrollView.addView(originalContent);
+                scrollView.setTag(R.id.scroll_content, null); // 清除引用
+            }
+            
+            // 显示当前对话内容
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer != null) {
+                // 显示建议卡片和示例对话
+                chatContainer.setVisibility(View.VISIBLE);
+            }
+            
+            // 更新标题
+            if (tvConversationTitle != null) {
+                tvConversationTitle.setText("当前对话");
+            }
+            
+            Log.d(TAG, "切换到当前对话标签页");
+        } catch (Exception e) {
+            Log.e(TAG, "显示当前对话失败", e);
+        }
+    }
+    
+    /**
+     * 显示历史对话内容
+     */
+    private void showHistoryConversation() {
+        if (getView() == null) return;
+        
+        try {
+            // 隐藏当前对话内容
+            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
+            if (chatContainer != null) {
+                chatContainer.setVisibility(View.GONE);
+            }
+            
+            // 显示历史记录内容
+            showHistoryContent();
+            
+            // 更新标题
+            if (tvConversationTitle != null) {
+                tvConversationTitle.setText("历史记录");
+            }
+            
+            Log.d(TAG, "切换到历史记录标签页");
+        } catch (Exception e) {
+            Log.e(TAG, "显示历史对话失败", e);
+        }
+    }
+    
+    /**
+     * 显示历史记录内容
+     */
+    private void showHistoryContent() {
+        if (getView() == null) return;
+        
+        try {
+            // 获取滚动容器
+            androidx.core.widget.NestedScrollView scrollView = getView().findViewById(R.id.scroll_content);
+            if (scrollView == null) return;
+            
+            // 保存原有的对话内容
+            View originalContent = null;
+            if (scrollView.getChildCount() > 0) {
+                originalContent = scrollView.getChildAt(0);
+                scrollView.removeView(originalContent);
+            }
+            
+            // 创建历史记录容器
+            LinearLayout historyContainer = new LinearLayout(requireContext());
+            historyContainer.setOrientation(LinearLayout.VERTICAL);
+            historyContainer.setPadding(16, 12, 12, 12);
+            historyContainer.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.white));
+            historyContainer.setTag("history_container"); // 标记为历史记录容器
+            
+            if (conversationHistory.isEmpty()) {
+                // 没有历史记录时显示提示
+                TextView noHistoryText = new TextView(requireContext());
+                noHistoryText.setText("暂无对话记录");
+                noHistoryText.setTextSize(16);
+                noHistoryText.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary));
+                noHistoryText.setGravity(android.view.Gravity.CENTER);
+                noHistoryText.setPadding(32, 64, 32, 64);
+                historyContainer.addView(noHistoryText);
+            } else {
+                // 显示历史记录列表
+                for (Conversation conv : conversationHistory) {
+                    View historyItem = createHistoryItemView(conv);
+                    historyContainer.addView(historyItem);
+                    
+                    // 添加分割线
+                    if (conversationHistory.indexOf(conv) < conversationHistory.size() - 1) {
+                        View divider = new View(requireContext());
+                        divider.setBackgroundColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray));
+                        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                        params.setMargins(0, 16, 0, 16);
+                        divider.setLayoutParams(params);
+                        historyContainer.addView(divider);
+                    }
+                }
+            }
+            
+            // 将历史记录容器添加到滚动视图
+            scrollView.addView(historyContainer);
+            
+            // 保存原始内容的引用，以便后续恢复
+            scrollView.setTag(R.id.scroll_content, originalContent);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "显示历史记录内容失败", e);
+        }
+    }
+    
+    /**
+     * 收起消息面板
+     */
+    private void collapseMessagePanel() {
+        if (messagePanel == null) return;
+        
+        // 创建收起动画 - 透明度从1变为0
+        android.view.animation.AlphaAnimation alphaAnimation = new android.view.animation.AlphaAnimation(1.0f, 0.0f);
+        alphaAnimation.setDuration(300);
+        alphaAnimation.setFillAfter(true);
+        
+        alphaAnimation.setAnimationListener(new android.view.animation.Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(android.view.animation.Animation animation) {}
+            
+            @Override
+            public void onAnimationEnd(android.view.animation.Animation animation) {
+                messagePanel.setVisibility(View.GONE);
+                btnExpandMessage.setVisibility(View.VISIBLE);
+                isMessagePanelExpanded = false;
+                
+                // 重置宽度为0
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) messagePanel.getLayoutParams();
+                params.width = 0;
+                messagePanel.setLayoutParams(params);
+            }
+            
+            @Override
+            public void onAnimationRepeat(android.view.animation.Animation animation) {}
+        });
+        
+        messagePanel.startAnimation(alphaAnimation);
+    }
+    
+    /**
+     * 展开消息面板
+     */
+    private void expandMessagePanel() {
+        if (messagePanel == null) return;
+        
+        btnExpandMessage.setVisibility(View.GONE);
+        messagePanel.setVisibility(View.VISIBLE);
+        
+        // 动态设置宽度为屏幕宽度的80%
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int panelWidth = (int) (screenWidth * 0.8);
+        
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) messagePanel.getLayoutParams();
+        params.width = panelWidth;
+        messagePanel.setLayoutParams(params);
+        
+        // 创建展开动画 - 透明度从0变为1
+        android.view.animation.AlphaAnimation alphaAnimation = new android.view.animation.AlphaAnimation(0.0f, 1.0f);
+        alphaAnimation.setDuration(300);
+        alphaAnimation.setFillAfter(true);
+        
+        messagePanel.startAnimation(alphaAnimation);
+        isMessagePanelExpanded = true;
+        
+        // 确保当前标签页内容正确显示
+        if (isCurrentTabSelected) {
+            showCurrentConversation();
+        } else {
+            showHistoryConversation();
+        }
+    }
+    
+    /**
      * 滚动到底部
      */
     private void scrollToBottom() {
@@ -1419,9 +2331,23 @@ public class AiFragment extends Fragment {
             aiChatManager.destroy();
         }
         
+        // 释放图片识别管理器资源
+        if (imageRecognitionManager != null) {
+            imageRecognitionManager.destroy();
+        }
+        
         // 释放TTS资源
         if (ttsManager != null) {
             ttsManager.destroy();
+        }
+        
+        // 释放摄像头资源
+        if (cameraManager != null) {
+            try {
+                cameraManager.release();
+            } catch (Exception e) {
+                Log.e(TAG, "释放摄像头资源失败", e);
+            }
         }
         
         // 清理智能播报资源

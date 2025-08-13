@@ -28,6 +28,8 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Query;
 import retrofit2.http.Body;
+import retrofit2.http.Part;
+import retrofit2.http.Multipart;
 
 /**
  * API接口定义
@@ -672,6 +674,19 @@ public interface ApiService {
     Call<okhttp3.ResponseBody> sendAiTextMessage(
             @Header("Authorization") String token,
             @Query("text") String text
+    );
+
+    /**
+     * AI图片识别接口
+     * @param token JWT令牌
+     * @param imageFile 图片文件
+     * @return AI图片识别响应（流式）
+     */
+    @Multipart
+    @POST("/api/ai/ai/doChatByImage")
+    Call<okhttp3.ResponseBody> sendAiImageMessage(
+            @Header("Authorization") String token,
+            @Part okhttp3.MultipartBody.Part imageFile
     );
 
 }
