@@ -100,6 +100,14 @@ public class AiController {
                 .doOnComplete(() -> log.info("流式输出完成")); // 添加完成日志
     }
 
+
+
+
+
+
+
+
+
     /**
      * (工具)保存图片并返回文件路径
      * @param imageFile 图片文件

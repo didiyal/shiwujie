@@ -54,7 +54,7 @@ public class EasyProblemApp {
      */
     private final ChatClient chatClient;
 
-    // region system prompt
+    // region 提示词
 
     /**
      * 系统提示词(负责调用工具)
@@ -186,6 +186,62 @@ public class EasyProblemApp {
     }
 
 
+    /**
+     * 与大模型图片识别
+     *
+     * @param imageUrl 图片地址
+     * @return 大模型回复
+     */
+    public Flux<String> doChatWithImageSSE(String imageUrl, Long blindId) {
+        return chatClient.prompt()
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
+                .user(u -> u.text("这个图片展示了什么信息")
+                        .media(MimeTypeUtils.IMAGE_PNG, new FileSystemResource(imageUrl)))
+                .stream()
+                .content();
+    }
+
+    /**
+     * 与大模型文字交流（流式）
+     *
+     * @param text    输入的文本
+     * @param blindId 用户盲ID
+     * @return 大模型流式回复
+     */
+    public Flux<String> doChatWithTextSSE(String text, Long blindId) {
+        return Flux.defer(() -> {
+            try {
+                // 第一阶段：使用非流式调用获取AI响应
+                String aiResponse = doChatWithTextStart(text, blindId);
+
+                // 检查AI是否要求调用工具，直接根据type判断
+                ToolCallRequest toolCallRequest = parseToolCallRequest(aiResponse);
+                if (toolCallRequest != null) {
+                    // 执行工具调用
+                    String toolResult = executeToolByRequest(toolCallRequest);
+
+                    // 第二阶段：将工具结果反馈给AI并流式输出最终结果
+                    String finalPrompt = String.format(
+                            "用户的问题是：%s\n工具执行结果是：%s\n请根据工具执行结果，用简洁明了的语言回答用户最初的问题。",
+                            text, toolResult);
+
+                    return doChatWithTextEnd(blindId, finalPrompt);
+                } else {
+//                    // 没有工具调用请求，直接流式输出AI响应
+//                    log.info("无需工具调用，直接流式输出结果");
+//                    return stringToFlux(aiResponse);
+                    // 没有工具调用请求，使用RAG功能直接流式输出AI响应
+                    log.info("无需工具调用，直接流式输出结果");
+                    return doChatWithTextRag(blindId, text);
+                }
+            } catch (Exception e) {
+                log.error("Error in tool-aware SSE processing: ", e);
+                return stringToFlux("系统发生错误，请稍后再试。");
+            }
+        });
+    }
+
 
     // region 聊天
 
@@ -255,70 +311,6 @@ public class EasyProblemApp {
 
 
     // endregion
-
-
-    /**
-     * 与大模型图片识别
-     *
-     * @param imageUrl 图片地址
-     * @return 大模型回复
-     */
-    public Flux<String> doChatWithImageSSE(String imageUrl, Long blindId) {
-        return chatClient.prompt()
-                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
-                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                .user(u -> u.text("这个图片展示了什么信息")
-                        .media(MimeTypeUtils.IMAGE_PNG, new FileSystemResource(imageUrl)))
-                .stream()
-                .content();
-    }
-
-    /**
-     * 与大模型文字交流（流式）
-     *
-     * @param text    输入的文本
-     * @param blindId 用户盲ID
-     * @return 大模型流式回复
-     */
-    public Flux<String> doChatWithTextSSE(String text, Long blindId) {
-        return Flux.defer(() -> {
-            try {
-                // 第一阶段：使用非流式调用获取AI响应
-//                log.info("开始第一阶段：获取AI响应");
-                String aiResponse = doChatWithTextStart(text, blindId);
-//                log.info("AI响应: {}", aiResponse);
-
-                // 检查AI是否要求调用工具，直接根据type判断
-                ToolCallRequest toolCallRequest = parseToolCallRequest(aiResponse);
-                if (toolCallRequest != null) {
-//                    log.info("检测到工具调用请求，type: {}, data: {}", toolCallRequest.getType(), toolCallRequest.getData());
-
-                    // 执行工具调用
-                    String toolResult = executeToolByRequest(toolCallRequest);
-//                    log.info("工具调用结果: {}", toolResult);
-
-                    // 第二阶段：将工具结果反馈给AI并流式输出最终结果
-                    String finalPrompt = String.format(
-                            "用户的问题是：%s\n工具执行结果是：%s\n请根据工具执行结果，用简洁明了的语言回答用户最初的问题。",
-                            text, toolResult);
-
-//                    log.info("开始第二阶段：流式输出最终结果");
-                    return doChatWithTextEnd(blindId, finalPrompt);
-                } else {
-//                    // 没有工具调用请求，直接流式输出AI响应
-//                    log.info("无需工具调用，直接流式输出结果");
-//                    return stringToFlux(aiResponse);
-                    // 没有工具调用请求，使用RAG功能直接流式输出AI响应
-                    log.info("无需工具调用，直接流式输出结果");
-                    return doChatWithTextRag(blindId, text);
-                }
-            } catch (Exception e) {
-                log.error("Error in tool-aware SSE processing: ", e);
-                return stringToFlux("系统发生错误，请稍后再试。");
-            }
-        });
-    }
-
 
 
     // region 工具

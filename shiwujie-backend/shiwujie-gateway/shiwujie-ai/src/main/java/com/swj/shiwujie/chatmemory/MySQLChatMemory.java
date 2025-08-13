@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * 自定义数据库持久化
  */
-@Service
+//@Service
 @Slf4j
 public class MySQLChatMemory implements ChatMemory {
 
