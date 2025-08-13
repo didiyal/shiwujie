@@ -41,6 +41,7 @@ public class AiChatManager {
     public interface OnStreamingListener {
         void onStreamingStart();
         void onStreamingText(String text);
+        void onStreamingChunk(String chunk, int totalLength); // 新增：流式数据块回调
         void onStreamingComplete(String fullResponse);
         void onStreamingError(String error);
     }
@@ -232,6 +233,17 @@ public class AiChatManager {
                                         }
                                     });
                                     
+                                    // 流式播报：每累积一定字符数就触发播报回调
+                                    if (currentResponse.length() % 50 == 0) { // 每50个字符触发一次（减少频率）
+                                        final String chunkText = currentResponse;
+                                        final int totalLength = currentResponse.length();
+                                        mainHandler.post(() -> {
+                                            if (targetListener != null) {
+                                                targetListener.onStreamingChunk(chunkText, totalLength);
+                                            }
+                                        });
+                                    }
+                                    
                                     // 添加字符间延迟，模拟打字机效果
                                     try {
                                         Thread.sleep(typingSpeed); // 使用配置的打字机速度
@@ -270,6 +282,17 @@ public class AiChatManager {
                                         targetListener.onStreamingText(currentText);
                                     }
                                 });
+                                
+                                // 流式播报：每累积一定字符数就触发播报回调
+                                if (currentResponse.length() % 50 == 0) { // 每50个字符触发一次（减少频率）
+                                    final String chunkText = currentResponse;
+                                    final int totalLength = currentResponse.length();
+                                    mainHandler.post(() -> {
+                                        if (targetListener != null) {
+                                            targetListener.onStreamingChunk(chunkText, totalLength);
+                                        }
+                                    });
+                                }
                                 
                                 // 添加字符间延迟
                                 try {

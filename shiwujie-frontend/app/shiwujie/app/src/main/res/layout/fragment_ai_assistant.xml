@@ -374,6 +374,10 @@
                 app:icon="@drawable/ic_mic_24"
                 tools:ignore="PrivateResource" />
 
+
+
+
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_ai_assist"
                 style="@style/Widget.Material3.Button.Icon"

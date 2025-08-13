@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,6 +26,7 @@ import com.google.gson.reflect.TypeToken;
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.utils.SpeechRecognitionManager;
 import com.swj.shiwujie.common.network.AiChatManager;
+import com.swj.shiwujie.common.utils.TTSManager;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -43,6 +46,8 @@ public class AiFragment extends Fragment {
     
     private SpeechRecognitionManager speechManager;
     private AiChatManager aiChatManager;
+    private TTSManager ttsManager;
+    private Vibrator vibrator;
     private MaterialButton btnVoice;
     private FloatingActionButton fabHistory;
     private boolean isListening = false;
@@ -64,6 +69,27 @@ public class AiFragment extends Fragment {
             statusCheckHandler.postDelayed(this, 1000);
         }
     };
+    
+    // 智能播报系统相关
+    private enum StreamingState {
+        IDLE,           // 空闲状态
+        STREAMING,      // 正在流式输出
+        PLAYING         // 正在播报
+    }
+    
+    private StreamingState currentStreamingState = StreamingState.IDLE;
+    private android.os.Handler smartTimerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable smartTimerRunnable;
+    private android.os.Handler streamingPlaybackHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable streamingPlaybackRunnable;
+    private long lastTextTime = 0;      // 最后收到文本的时间
+    private StringBuilder streamingContentBuffer = new StringBuilder();
+    private int lastPlayedContentLength = 0;  // 上次播报的内容长度
+    private long lastPlaybackStartTime = 0;   // 上次播报开始的时间
+    private static final long SHORT_WAIT = 500;    // 短等待：0.5秒
+    private static final long MAX_WAIT = 1500;      // 最大等待：1.5秒
+    private static final long IDLE_THRESHOLD = 500; // 空闲阈值：500ms
+    private static final long STREAMING_UPDATE_INTERVAL = 3000; // 流式播报更新间隔：3秒（减少更新频率）
     
     // 对话管理
     private List<Message> currentConversation;
@@ -116,6 +142,7 @@ public class AiFragment extends Fragment {
             initData();
             initSpeechManager();
             initAiChatManager();
+            initTTSManager();
             
             return view;
         } catch (Exception e) {
@@ -237,6 +264,9 @@ public class AiFragment extends Fragment {
     private void initViews(View view) {
         btnVoice = view.findViewById(R.id.btn_voice);
         fabHistory = view.findViewById(R.id.fab_history);
+        
+        // 初始化震动器
+        vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
         
         btnVoice.setOnClickListener(v -> handleVoiceButtonClick());
         fabHistory.setOnClickListener(v -> showHistoryDialog());
@@ -516,24 +546,304 @@ public class AiFragment extends Fragment {
             public void onStreamingStart() {
                 // AI开始回复，显示"正在思考..."状态
                 showAiThinkingStatus();
+                // 启动智能播报系统
+                startSmartPlaybackSystem();
             }
             
             @Override
             public void onStreamingText(String text) {
                 // 实时更新AI回复的流式输出
                 updateAiResponseStreaming(text);
+                // 处理智能播报逻辑
+                handleSmartPlayback(text);
+            }
+            
+            @Override
+            public void onStreamingChunk(String chunk, int totalLength) {
+                // 流式数据块回调，用于真正的流式播报
+                Log.d(TAG, "收到流式数据块，长度: " + chunk.length() + ", 总长度: " + totalLength);
+                handleStreamingChunk(chunk, totalLength);
             }
             
             @Override
             public void onStreamingComplete(String fullResponse) {
                 // 流式输出完成，保存完整回复
                 completeAiResponse(fullResponse);
+                // 完成智能播报
+                completeSmartPlayback(fullResponse);
             }
             
             @Override
             public void onStreamingError(String error) {
                 // AI回复出错，显示错误信息
                 handleAiResponseError(error);
+                // 重置智能播报状态
+                resetSmartPlaybackState();
+            }
+        });
+    }
+    
+    /**
+     * 启动智能播报系统
+     */
+    private void startSmartPlaybackSystem() {
+        Log.d(TAG, "启动智能播报系统");
+        currentStreamingState = StreamingState.STREAMING;
+        streamingContentBuffer.setLength(0);
+        lastTextTime = System.currentTimeMillis();
+        
+        // 启动智能计时器
+        startSmartTimer();
+    }
+    
+    /**
+     * 处理智能播报逻辑
+     */
+    private void handleSmartPlayback(String text) {
+        if (currentStreamingState != StreamingState.STREAMING) return;
+        
+        // 更新最后收到文本的时间
+        lastTextTime = System.currentTimeMillis();
+        
+        // 累积内容到缓冲区
+        streamingContentBuffer.append(text);
+        
+        Log.d(TAG, "智能播报处理文本: " + text + ", 缓冲区长度: " + streamingContentBuffer.length());
+        
+        // 如果正在播报，动态更新播报内容
+        if (currentStreamingState == StreamingState.PLAYING) {
+            updatePlaybackContent();
+        }
+    }
+    
+    /**
+     * 处理流式数据块，实现真正的流式播报
+     */
+    private void handleStreamingChunk(String chunk, int totalLength) {
+        if (currentStreamingState != StreamingState.STREAMING) return;
+        
+        Log.d(TAG, "处理流式数据块，当前块长度: " + chunk.length() + ", 总长度: " + totalLength);
+        
+        // 如果还没开始播报，且内容足够长，立即开始播报
+        if (currentStreamingState == StreamingState.STREAMING && chunk.length() >= 80) { // 增加触发阈值
+            Log.d(TAG, "内容足够长，立即开始播报，长度: " + chunk.length());
+            startSmartPlayback();
+        }
+    }
+    
+    /**
+     * 启动智能计时器
+     */
+    private void startSmartTimer() {
+        // 取消之前的计时器
+        if (smartTimerRunnable != null) {
+            smartTimerHandler.removeCallbacks(smartTimerRunnable);
+        }
+        
+        smartTimerRunnable = () -> {
+            // 检查是否应该开始播报
+            long currentTime = System.currentTimeMillis();
+            long timeSinceLastText = currentTime - lastTextTime;
+            
+            if (timeSinceLastText >= IDLE_THRESHOLD) {
+                // 超过空闲阈值，开始播报
+                Log.d(TAG, "达到空闲阈值，开始播报");
+                startSmartPlayback();
+            } else {
+                // 继续等待，重新启动计时器
+                Log.d(TAG, "继续等待，重新启动计时器");
+                startSmartTimer();
+            }
+        };
+        
+        // 启动计时器，等待时间根据当前状态动态调整
+        long waitTime = streamingContentBuffer.length() < 50 ? SHORT_WAIT : MAX_WAIT;
+        smartTimerHandler.postDelayed(smartTimerRunnable, waitTime);
+        
+        Log.d(TAG, "启动智能计时器，等待时间: " + waitTime + "ms");
+    }
+    
+    /**
+     * 动态更新播报内容
+     */
+    private void updatePlaybackContent() {
+        if (currentStreamingState != StreamingState.PLAYING || ttsManager == null) return;
+        
+        // 获取当前缓冲区的最新内容
+        String currentContent = streamingContentBuffer.toString();
+        
+        // 优化内容长度判断逻辑
+        int contentIncrease = currentContent.length() - lastPlayedContentLength;
+        
+        // 只有当内容增加超过50个字符，且当前播报进度超过70%时才重新播报
+        if (contentIncrease > 50 && getCurrentPlaybackProgress() > 70) {
+            Log.d(TAG, "内容显著增加且播报进度较高，重新开始播报，增加长度: " + contentIncrease + ", 当前长度: " + currentContent.length());
+            
+            // 停止当前播报，重新开始播报完整内容
+            ttsManager.stopSpeaking();
+            ttsManager.startSpeaking(currentContent);
+            lastPlayedContentLength = currentContent.length();
+        } else if (contentIncrease > 100) {
+            // 如果内容增加超过100个字符，强制重新播报
+            Log.d(TAG, "内容大量增加，强制重新播报，增加长度: " + contentIncrease);
+            ttsManager.stopSpeaking();
+            ttsManager.startSpeaking(currentContent);
+            lastPlayedContentLength = currentContent.length();
+        }
+    }
+    
+    /**
+     * 获取当前播报进度（估算值）
+     */
+    private int getCurrentPlaybackProgress() {
+        // 基于时间估算播报进度
+        if (lastPlayedContentLength == 0) return 0;
+        
+        // 假设播报速度约为每分钟200个字符
+        long estimatedPlaybackTime = (lastPlayedContentLength * 60) / 200; // 秒
+        long elapsedTime = System.currentTimeMillis() - lastPlaybackStartTime;
+        
+        if (estimatedPlaybackTime <= 0) return 0;
+        
+        int progress = (int) ((elapsedTime / 1000.0 / estimatedPlaybackTime) * 100);
+        return Math.min(progress, 100);
+    }
+    
+    /**
+     * 开始智能播报
+     */
+    private void startSmartPlayback() {
+        if (currentStreamingState == StreamingState.PLAYING) return;
+        
+        currentStreamingState = StreamingState.PLAYING;
+        String contentToPlay = streamingContentBuffer.toString();
+        
+        if (contentToPlay.trim().isEmpty()) {
+            Log.d(TAG, "内容为空，不进行播报");
+            currentStreamingState = StreamingState.STREAMING;
+            return;
+        }
+        
+        Log.d(TAG, "开始智能播报，内容长度: " + contentToPlay.length());
+        ttsManager.startSpeaking(contentToPlay);
+        lastPlayedContentLength = contentToPlay.length();
+        lastPlaybackStartTime = System.currentTimeMillis(); // 记录播报开始时间
+        
+        // 启动流式播报更新定时器
+        startStreamingPlaybackUpdateTimer();
+    }
+    
+    /**
+     * 启动流式播报更新定时器
+     */
+    private void startStreamingPlaybackUpdateTimer() {
+        if (streamingPlaybackRunnable != null) {
+            streamingPlaybackHandler.removeCallbacks(streamingPlaybackRunnable);
+        }
+        
+        streamingPlaybackRunnable = () -> {
+            if (currentStreamingState == StreamingState.PLAYING) {
+                // 检查是否有新内容需要播报
+                updatePlaybackContent();
+                
+                // 继续定时器
+                streamingPlaybackHandler.postDelayed(streamingPlaybackRunnable, STREAMING_UPDATE_INTERVAL);
+            }
+        };
+        
+        // 启动定时器
+        streamingPlaybackHandler.postDelayed(streamingPlaybackRunnable, STREAMING_UPDATE_INTERVAL);
+        Log.d(TAG, "启动流式播报更新定时器，间隔: " + STREAMING_UPDATE_INTERVAL + "ms");
+    }
+    
+    /**
+     * 完成智能播报
+     */
+    private void completeSmartPlayback(String fullResponse) {
+        Log.d(TAG, "完成智能播报");
+        
+        // 如果还在播报，确保播报完整内容
+        if (currentStreamingState == StreamingState.PLAYING) {
+            // 停止当前播报，重新播报完整内容
+            ttsManager.stopSpeaking();
+            ttsManager.startSpeaking(fullResponse);
+        } else if (currentStreamingState == StreamingState.STREAMING) {
+            // 如果还没开始播报，直接播报完整内容
+            ttsManager.startSpeaking(fullResponse);
+        }
+        
+        // 重置状态
+        resetSmartPlaybackState();
+    }
+    
+    /**
+     * 重置智能播报状态
+     */
+    private void resetSmartPlaybackState() {
+        currentStreamingState = StreamingState.IDLE;
+        streamingContentBuffer.setLength(0);
+        lastTextTime = 0;
+        lastPlayedContentLength = 0;
+        lastPlaybackStartTime = 0;
+        
+        // 取消智能计时器
+        if (smartTimerRunnable != null) {
+            smartTimerHandler.removeCallbacks(smartTimerRunnable);
+            smartTimerRunnable = null;
+        }
+        
+        // 取消流式播报更新定时器
+        if (streamingPlaybackRunnable != null) {
+            streamingPlaybackHandler.removeCallbacks(streamingPlaybackRunnable);
+            streamingPlaybackRunnable = null;
+        }
+        
+        Log.d(TAG, "重置智能播报状态");
+    }
+    
+    /**
+     * 初始化语音合成管理器
+     */
+    private void initTTSManager() {
+        ttsManager = new TTSManager(requireContext());
+        ttsManager.setOnTTSListener(new TTSManager.OnTTSListener() {
+            @Override
+            public void onTTSStart() {
+                // 语音开始播放
+                Log.d(TAG, "TTS开始播放");
+            }
+            
+            @Override
+            public void onTTSProgress(int progress, int beginPos, int endPos) {
+                // 播放进度更新
+            }
+            
+            @Override
+            public void onTTSComplete() {
+                // 语音播放完成
+                Log.d(TAG, "TTS播放完成");
+            }
+            
+            @Override
+            public void onTTSError(String error) {
+                // 语音播放出错
+                Log.e(TAG, "TTS播放失败: " + error);
+                Toast.makeText(requireContext(), "语音播放失败: " + error, Toast.LENGTH_SHORT).show();
+            }
+            
+            @Override
+            public void onTTSPause() {
+                // 语音暂停
+            }
+            
+            @Override
+            public void onTTSResume() {
+                // 语音恢复
+            }
+            
+            @Override
+            public void onTTSBufferProgress(int percent, int beginPos, int endPos, String info) {
+                // 缓冲进度更新
             }
         });
     }
@@ -583,6 +893,11 @@ public class AiFragment extends Fragment {
      * 按照官方文档要求实现语音识别控制
      */
     private void handleVoiceButtonClick() {
+        // 添加震动反馈
+        if (vibrator != null && vibrator.hasVibrator()) {
+            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+        }
+        
         if (checkAudioPermission()) {
             if (!isListening) {
                 startVoiceRecognition();
@@ -595,6 +910,10 @@ public class AiFragment extends Fragment {
             }
         }
     }
+    
+
+    
+
     
     /**
      * 检查录音权限
@@ -890,6 +1209,8 @@ public class AiFragment extends Fragment {
         }
     }
     
+
+    
     /**
      * 添加用户消息到对话界面
      * 动态添加消息的逻辑
@@ -1097,5 +1418,19 @@ public class AiFragment extends Fragment {
         if (aiChatManager != null) {
             aiChatManager.destroy();
         }
+        
+        // 释放TTS资源
+        if (ttsManager != null) {
+            ttsManager.destroy();
+        }
+        
+        // 清理智能播报资源
+        if (smartTimerHandler != null) {
+            smartTimerHandler.removeCallbacksAndMessages(null);
+        }
+        if (streamingPlaybackHandler != null) {
+            streamingPlaybackHandler.removeCallbacksAndMessages(null);
+        }
+        resetSmartPlaybackState();
     }
 } 
