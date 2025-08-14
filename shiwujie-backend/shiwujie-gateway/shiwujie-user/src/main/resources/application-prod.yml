@@ -8,9 +8,9 @@ spring:
   #数据库连接
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: user
-    password: 3Abf6DpPP6WTbT3x
-    url: jdbc:mysql://127.0.0.1:3306/shiwujiephase2
+    username: shiwujieUser
+    password: iiyKs4CaXfLmRnk8
+    url: jdbc:mysql://127.0.0.1:3306/shiwujieuser
 
 
 

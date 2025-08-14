@@ -205,7 +205,7 @@ public class EasyProblemApp {
         return chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                .user(u -> u.text("这个图片展示了什么信息")
+                .user(u -> u.text("请描述这张图片的内容，从整体到细节，用简洁明了的语言，避免使用标点符号，适合语音播报")
                         .media(MimeTypeUtils.IMAGE_PNG, new FileSystemResource(imageUrl)))
                 .stream()
                 .content();

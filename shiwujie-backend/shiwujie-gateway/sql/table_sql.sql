@@ -1,4 +1,4 @@
-create table Activity
+create table if not exists Activity
 (
     activity_id       bigint auto_increment comment '活动ID'
         primary key,
@@ -23,7 +23,7 @@ create index idx_activity_community_status_time
 create index idx_activity_status_participants
     on Activity (activity_status, max_participants);
 
-create table ActivitySign
+create table if not exists ActivitySign
 (
     sign_id           bigint auto_increment comment '活动报名签到ID'
         primary key,
@@ -48,7 +48,7 @@ create index blindId_activityId
     on ActivitySign (activity_id, blind_id)
     comment '活动id,视障人士id';
 
-create table AiLogs
+create table if not exists AiLogs
 (
     log_id      bigint auto_increment comment 'AI操作日志ID'
         primary key,
@@ -64,7 +64,7 @@ create table AiLogs
 create index idx_ailogs_operator_time
     on AiLogs (operator_id);
 
-create table Blind
+create table if not exists Blind
 (
     blind_id             bigint auto_increment comment '视障人士ID'
         primary key,
@@ -99,7 +99,7 @@ create index family_id
     on Blind (family_id)
     comment '家庭id';
 
-create table Community
+create table if not exists Community
 (
     community_id          bigint auto_increment comment '社区ID'
         primary key,
@@ -131,7 +131,7 @@ create index idx_community_default_status
 create index idx_community_type_level
     on Community (community_type_id, community_level_id);
 
-create table CommunityJoinReview
+create table if not exists CommunityJoinReview
 (
     review_id     bigint auto_increment comment '社区审核ID'
         primary key,
@@ -151,7 +151,7 @@ create table CommunityJoinReview
 create index idx_review_user
     on CommunityJoinReview (blind_id, volunteer_id);
 
-create table CommunityLevel
+create table if not exists CommunityLevel
 (
     community_level_id bigint auto_increment comment '社区级别ID'
         primary key,
@@ -163,7 +163,7 @@ create table CommunityLevel
 )
     comment '社区级别字典表';
 
-create table CommunityManager
+create table if not exists CommunityManager
 (
     manager_id         bigint auto_increment comment '社区管理人员ID'
         primary key,
@@ -176,7 +176,7 @@ create table CommunityManager
 )
     comment '社区管理人员表';
 
-create table CommunityRolePermission
+create table if not exists CommunityRolePermission
 (
     role_permission_id     bigint auto_increment comment '社区角色权限ID'
         primary key,
@@ -188,7 +188,7 @@ create table CommunityRolePermission
 )
     comment '社区角色权限表';
 
-create table CommunityType
+create table if not exists CommunityType
 (
     community_type_id bigint auto_increment comment '社区类型ID'
         primary key,
@@ -200,7 +200,7 @@ create table CommunityType
 )
     comment '社区类型字典表';
 
-create table Family
+create table if not exists Family
 (
     family_id            bigint auto_increment comment '家庭ID'
         primary key,
@@ -217,7 +217,7 @@ create index Family__creator_volunteer_id
     on Family (creator_volunteer_id)
     comment '家庭创建人ID';
 
-create table FamilyJoinReview
+create table if not exists FamilyJoinReview
 (
     review_id     bigint auto_increment comment '家庭审核ID'
         primary key,
@@ -234,7 +234,7 @@ create table FamilyJoinReview
 )
     comment '家庭加入审核表';
 
-create table HelpPost
+create table if not exists HelpPost
 (
     helppost_id   bigint auto_increment comment '求助帖ID'
         primary key,
@@ -258,7 +258,7 @@ create index idx_helppost_blind_status_level
 create index idx_helppost_volunteer
     on HelpPost (volunteer_id, post_status);
 
-create table Navigation
+create table if not exists Navigation
 (
     navigation_id   bigint auto_increment comment '导航ID'
         primary key,
@@ -290,7 +290,7 @@ create index idx_nav_type
 create index idx_nav_user_type
     on Navigation (user_type, user_id);
 
-create table UrgentHelp
+create table if not exists UrgentHelp
 (
     help_id                    bigint auto_increment comment '紧急求助ID'
         primary key,
@@ -320,7 +320,7 @@ create index blindId_status
     on UrgentHelp (blind_id, help_status)
     comment '视障人士id与状态';
 
-create table UserLogs
+create table if not exists UserLogs
 (
     log_id           bigint auto_increment comment '用户操作日志ID'
         primary key,
@@ -341,7 +341,7 @@ create table UserLogs
 create index idx_userlogs_time_type
     on UserLogs (request_time, request_type);
 
-create table VideoHelp
+create table if not exists VideoHelp
 (
     help_id                    bigint auto_increment comment '视频求助ID'
         primary key,
@@ -375,7 +375,7 @@ create index volunteerId_status
     on VideoHelp (volunteer_id, help_status)
     comment '志愿者id与状态';
 
-create table Volunteer
+create table if not exists Volunteer
 (
     volunteer_id         bigint auto_increment comment '志愿者ID'
         primary key,
