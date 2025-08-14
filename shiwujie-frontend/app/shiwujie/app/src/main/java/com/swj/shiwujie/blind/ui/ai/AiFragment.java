@@ -1140,6 +1140,8 @@ public class AiFragment extends Fragment {
      */
     private void initTTSManager() {
         ttsManager = new TTSManager(requireContext());
+        // 设置TTS语速为1.5倍速
+        ttsManager.setSpeed(75);
         ttsManager.setOnTTSListener(new TTSManager.OnTTSListener() {
             @Override
             public void onTTSStart() {
@@ -2684,6 +2686,9 @@ public class AiFragment extends Fragment {
             Log.d(TAG, "开始启动帧处理...");
             Log.d(TAG, "当前状态 - isDetecting: " + isDetecting + ", sessionId: " + sessionId);
             
+            // 立即执行一次检测，然后开始8秒循环
+            processCurrentFrame();
+            
             Runnable frameProcessor = new Runnable() {
                 @Override
                 public void run() {
@@ -2694,7 +2699,7 @@ public class AiFragment extends Fragment {
                             // 每8秒处理一帧
                             processCurrentFrame();
                             // 每8秒执行一次
-                            mainHandler.postDelayed(this, 8000);
+                            mainHandler.postDelayed(this, 5000);
                         } else {
                             Log.d(TAG, "检测已停止或会话无效，帧处理循环退出");
                         }
@@ -2703,8 +2708,8 @@ public class AiFragment extends Fragment {
                     }
                 }
             };
-            mainHandler.post(frameProcessor);
-            Log.d(TAG, "帧处理已启动");
+            mainHandler.postDelayed(frameProcessor, 5000);
+            Log.d(TAG, "帧处理已启动，8秒后开始循环");
         } catch (Exception e) {
             Log.e(TAG, "启动帧处理失败", e);
         }
@@ -2899,8 +2904,8 @@ public class AiFragment extends Fragment {
                 nearestObstacle = jsonResponse.getString("nearest_unknown_obstacle");
             }
             
-            // ===== 直接生成TTS播报文本，跳过弹窗显示 =====
-            String ttsText = generateObstacleDetectionSummary(jsonResponse);
+            // ===== 直接生成TTS播报文本，只播报距离最近的障碍物 =====
+            String ttsText = generateSimpleObstacleSummary(jsonResponse);
             if (ttsText != null && !ttsText.trim().isEmpty()) {
                 // 立即启动TTS播报，减少等待时间
                 speakObstacleDetectionResult(ttsText);
@@ -2912,14 +2917,14 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 生成障碍物检测的中文摘要文本
-     * 参考JavaScript版本的generateSummary函数逻辑
+     * 生成简化的障碍物检测摘要，只播报距离最近的障碍物
      * @param jsonResponse 检测结果JSON对象
      * @return 中文摘要文本
      */
-    private String generateObstacleDetectionSummary(org.json.JSONObject jsonResponse) {
+    private String generateSimpleObstacleSummary(org.json.JSONObject jsonResponse) {
         try {
-            StringBuilder summary = new StringBuilder();
+            // 收集所有障碍物信息
+            java.util.List<ObstacleInfo> obstacleInfos = new java.util.ArrayList<>();
             
             // 检查是否有未知障碍物
             if (jsonResponse.has("nearest_unknown_obstacle") && !jsonResponse.isNull("nearest_unknown_obstacle")) {
@@ -2931,8 +2936,7 @@ public class AiFragment extends Fragment {
                         if (location.length() > 0) {
                             double relativeX = location.getDouble(0);
                             String position = getPositionDescription(relativeX);
-                            summary.append("在您").append(position).append("方，大约");
-                            summary.append(String.format("%.1f", distance)).append("米，有未知障碍物。");
+                            obstacleInfos.add(new ObstacleInfo(distance, position, "未知障碍物"));
                         }
                     }
                 } catch (Exception e) {
@@ -2945,26 +2949,8 @@ public class AiFragment extends Fragment {
                 try {
                     org.json.JSONArray detectedObjects = jsonResponse.getJSONArray("detected_objects");
                     if (detectedObjects.length() > 0) {
-                        // 按距离排序（距离越近越重要）
-                        java.util.List<org.json.JSONObject> sortedObjects = new java.util.ArrayList<>();
                         for (int i = 0; i < detectedObjects.length(); i++) {
-                            sortedObjects.add(detectedObjects.getJSONObject(i));
-                        }
-                        
-                        // 简单的距离排序（这里假设distance_m字段存在）
-                        sortedObjects.sort((a, b) -> {
-                            try {
-                                double distA = a.optDouble("distance_m", Double.MAX_VALUE);
-                                double distB = b.optDouble("distance_m", Double.MAX_VALUE);
-                                return Double.compare(distA, distB);
-                            } catch (Exception e) {
-                                return 0;
-                            }
-                        });
-                        
-                        summary.append("侦测到，");
-                        for (int i = 0; i < sortedObjects.size(); i++) {
-                            org.json.JSONObject obj = sortedObjects.get(i);
+                            org.json.JSONObject obj = detectedObjects.getJSONObject(i);
                             try {
                                 if (obj.has("box_center_relative") && obj.has("class_name") && obj.has("distance_m")) {
                                     org.json.JSONArray boxCenter = obj.getJSONArray("box_center_relative");
@@ -2974,35 +2960,52 @@ public class AiFragment extends Fragment {
                                         String className = obj.getString("class_name");
                                         double distance = obj.getDouble("distance_m");
                                         
-                                        summary.append("在").append(position).append("方，大约");
-                                        summary.append(String.format("%.1f", distance)).append("米处，有一个");
-                                        summary.append(translateClassName(className)).append("。");
+                                        obstacleInfos.add(new ObstacleInfo(distance, position, translateClassName(className)));
                                     }
                                 }
                             } catch (Exception e) {
                                 Log.e(TAG, "解析检测物体信息失败", e);
                             }
                         }
-                    } else {
-                        summary.append("未侦测到明确的物体。");
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "解析检测物体列表失败", e);
                 }
-            } else {
-                summary.append("未侦测到明确的物体。");
             }
             
-            // 如果没有检测到任何障碍物或物体
-            if (summary.toString().isEmpty()) {
-                summary.append("前方似乎是开阔地带，未检测到近距离的物体或障碍物。");
+            // 只选择距离最近的障碍物
+            if (!obstacleInfos.isEmpty()) {
+                obstacleInfos.sort((a, b) -> Double.compare(a.distance, b.distance));
+                ObstacleInfo nearest = obstacleInfos.get(0);
+                
+                if ("未知障碍物".equals(nearest.className)) {
+                    return String.format("在您%s方，大约%.1f米处，有一个未知障碍物。", nearest.position, nearest.distance);
+                } else {
+                    return String.format("在您%s方，大约%.1f米处，有一个%s。", nearest.position, nearest.distance, nearest.className);
+                }
             }
             
-            return summary.toString();
+            // 如果没有检测到任何障碍物或物体，不播报
+            return null;
             
         } catch (Exception e) {
             Log.e(TAG, "生成障碍物检测摘要失败", e);
-            return "环境分析报告生成失败，请重试。";
+            return null;
+        }
+    }
+    
+    /**
+     * 障碍物信息内部类
+     */
+    private static class ObstacleInfo {
+        double distance;
+        String position;
+        String className;
+        
+        ObstacleInfo(double distance, String position, String className) {
+            this.distance = distance;
+            this.position = position;
+            this.className = className;
         }
     }
     

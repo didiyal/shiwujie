@@ -26,6 +26,19 @@ import com.swj.shiwujie.data.model.BlindVO;
 public class BlindHomeActivity extends AppCompatActivity {
     private static final String TAG = "BlindHomeActivity";
     private ActivityBlindHomeBinding binding;
+    
+    // 身份校验弹窗状态管理
+    private boolean isIdentityDialogShowing = false;
+    private AlertDialog currentIdentityDialog = null;
+    private AlertDialog currentIdentityReminderDialog = null;
+    
+    // 弹窗类型枚举
+    private enum DialogType {
+        NONE,
+        REMINDER,
+        INPUT
+    }
+    private DialogType currentDialogType = DialogType.NONE;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +100,10 @@ public class BlindHomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        
+        // 检查是否有未销毁的身份校验弹窗，如果有则先清理
+        cleanupAbnormalDialogState();
+        
         // 全局身份校验监听 - 每次都从服务器获取最新状态
         String token = SharedPrefsUtil.getToken();
         Long userId = SharedPrefsUtil.getUserId();
@@ -98,22 +115,72 @@ public class BlindHomeActivity extends AppCompatActivity {
             public void onSuccess(BlindVO data) {
                 boolean isVerified = data.getIsDisabilityCard() != null && data.getIsDisabilityCard();
                 SharedPrefsUtil.setBoolean("isDisabilityCard", isVerified);
-                if (!isVerified) {
+                if (!isVerified && currentDialogType == DialogType.NONE) {
                     showIdentityVerificationReminder();
                 }
             }
             
             @Override
             public void onError(String message) {
-                // 如果获取失败，默认显示校验提醒
-                showIdentityVerificationReminder();
+                // 如果获取失败，默认显示校验提醒，但要检查是否已有弹窗
+                if (currentDialogType == DialogType.NONE) {
+                    showIdentityVerificationReminder();
+                }
             }
         });
+    }
+
+    /**
+     * 销毁所有身份校验弹窗
+     */
+    private void destroyAllIdentityDialogs() {
+        if (currentIdentityReminderDialog != null && currentIdentityReminderDialog.isShowing()) {
+            currentIdentityReminderDialog.dismiss();
+            currentIdentityReminderDialog = null;
+        }
+        if (currentIdentityDialog != null && currentIdentityDialog.isShowing()) {
+            currentIdentityDialog.dismiss();
+            currentIdentityDialog = null;
+        }
+        currentDialogType = DialogType.NONE;
+    }
+    
+    /**
+     * 检查是否有活跃的身份校验弹窗
+     */
+    private boolean hasActiveIdentityDialog() {
+        return currentDialogType != DialogType.NONE;
+    }
+    
+    /**
+     * 清理异常弹窗状态
+     */
+    private void cleanupAbnormalDialogState() {
+        // 检查弹窗状态是否一致
+        boolean hasActiveDialog = false;
+        if (currentIdentityReminderDialog != null && currentIdentityReminderDialog.isShowing()) {
+            hasActiveDialog = true;
+        }
+        if (currentIdentityDialog != null && currentIdentityDialog.isShowing()) {
+            hasActiveDialog = true;
+        }
+        
+        // 如果状态不一致，重置所有状态
+        if (currentDialogType != DialogType.NONE && !hasActiveDialog) {
+            Log.d(TAG, "检测到弹窗状态异常，重置状态");
+            currentDialogType = DialogType.NONE;
+            currentIdentityReminderDialog = null;
+            currentIdentityDialog = null;
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        
+        // 销毁所有身份校验弹窗
+        destroyAllIdentityDialogs();
+        
         binding = null;
         
         // 停止WebSocket前台服务
@@ -123,11 +190,25 @@ public class BlindHomeActivity extends AppCompatActivity {
 
     
     private void showIdentityVerificationReminder() {
-        new AlertDialog.Builder(BlindHomeActivity.this)
+        Log.d(TAG, "=== 显示身份校验提醒弹窗 ===");
+        Log.d(TAG, "当前弹窗类型: " + currentDialogType);
+        
+        // 如果已经有弹窗在显示，直接返回
+        if (currentDialogType != DialogType.NONE) {
+            Log.d(TAG, "身份校验弹窗已显示，跳过重复弹窗");
+            return;
+        }
+        
+        currentDialogType = DialogType.REMINDER;
+        Log.d(TAG, "弹窗类型已更新为: " + currentDialogType);
+        
+        currentIdentityReminderDialog = new AlertDialog.Builder(BlindHomeActivity.this)
             .setTitle("身份校验提醒")
             .setMessage("您还未完成身份校验，请先补全残疾证证件")
             .setCancelable(false)
             .setPositiveButton("去校验", (dialog, which) -> {
+                Log.d(TAG, "用户点击去校验按钮");
+                // 切换到输入弹窗
                 showIdentityVerificationDialog();
             })
             .setNegativeButton("退出APP", (dialog, which) -> {
@@ -137,10 +218,39 @@ public class BlindHomeActivity extends AppCompatActivity {
                 SharedPrefsUtil.clearAll();
                 finishAffinity();
             })
+            .setOnDismissListener(dialog -> {
+                // 弹窗被销毁时重置状态
+                if (currentDialogType == DialogType.REMINDER) {
+                    currentDialogType = DialogType.NONE;
+                }
+                currentIdentityReminderDialog = null;
+            })
             .show();
+            
+        Log.d(TAG, "身份校验提醒弹窗已显示");
     }
 
     private void showIdentityVerificationDialog() {
+        Log.d(TAG, "=== 显示身份校验输入弹窗 ===");
+        Log.d(TAG, "当前弹窗类型: " + currentDialogType);
+        
+        // 允许从提醒弹窗切换到输入弹窗
+        if (currentDialogType == DialogType.INPUT) {
+            Log.d(TAG, "输入弹窗已显示，跳过重复弹窗");
+            return;
+        }
+        
+        // 先销毁提醒弹窗，因为要切换到输入弹窗
+        if (currentIdentityReminderDialog != null && currentIdentityReminderDialog.isShowing()) {
+            Log.d(TAG, "销毁提醒弹窗，准备显示输入弹窗");
+            currentIdentityReminderDialog.dismiss();
+            currentIdentityReminderDialog = null;
+        }
+        
+        // 更新弹窗类型
+        currentDialogType = DialogType.INPUT;
+        Log.d(TAG, "弹窗类型已更新为: " + currentDialogType);
+        
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_id_card_verification, null);
         builder.setView(dialogView);
@@ -161,6 +271,7 @@ public class BlindHomeActivity extends AppCompatActivity {
         //etInput.setMaxLength(20);
 
         AlertDialog dialog = builder.create();
+        currentIdentityDialog = dialog;
 
         btnCancel.setOnClickListener(v -> {
             // 点击取消直接退出APP
@@ -177,6 +288,15 @@ public class BlindHomeActivity extends AppCompatActivity {
             performDisabilityCardVerification(disabilityCard, dialog);
         });
 
+        dialog.setOnDismissListener(dialogInterface -> {
+            // 弹窗被销毁时重置状态
+            if (currentDialogType == DialogType.INPUT) {
+                currentDialogType = DialogType.NONE;
+            }
+            currentIdentityDialog = null;
+        });
+
+        Log.d(TAG, "显示身份校验输入弹窗");
         dialog.show();
     }
 
@@ -221,7 +341,10 @@ public class BlindHomeActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Boolean response) {
                 Toast.makeText(BlindHomeActivity.this, "残疾证校验成功", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
+                
+                // 身份校验成功后，销毁所有身份校验弹窗并重置状态
+                destroyAllIdentityDialogs();
+                
                 // 更新本地存储的认证状态
                 SharedPrefsUtil.setBoolean("isDisabilityCard", true);
             }

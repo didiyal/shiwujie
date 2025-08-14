@@ -70,7 +70,7 @@ public class CameraPreviewManager {
     private void initImageReader() {
         try {
             // 配置图片尺寸和格式（根据需求调整）
-            imageReader = ImageReader.newInstance(1920, 1080, android.graphics.ImageFormat.JPEG, 1);
+            imageReader = ImageReader.newInstance(480, 640, android.graphics.ImageFormat.JPEG, 1);
             Log.d(TAG, "ImageReader初始化成功");
         } catch (Exception e) {
             Log.e(TAG, "ImageReader初始化失败", e);
@@ -182,7 +182,7 @@ public class CameraPreviewManager {
             initImageReader();
             
             SurfaceTexture texture = textureView.getSurfaceTexture();
-            texture.setDefaultBufferSize(1920, 1080);
+            texture.setDefaultBufferSize(480, 640);
             
             Surface surface = new Surface(texture);
             

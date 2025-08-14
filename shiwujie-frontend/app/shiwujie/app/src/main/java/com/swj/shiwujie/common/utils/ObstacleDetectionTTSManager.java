@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import com.swj.shiwujie.data.model.ObstacleDetectionData;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * 障碍物检测TTS管理器
@@ -19,6 +20,8 @@ public class ObstacleDetectionTTSManager {
     public ObstacleDetectionTTSManager(Context context) {
         this.context = context;
         this.ttsManager = new TTSManager(context);
+        // 设置TTS语速为1.5倍速
+        this.ttsManager.setSpeed(75);
     }
     
     /**
@@ -29,6 +32,12 @@ public class ObstacleDetectionTTSManager {
         try {
             if (detectionData == null) {
                 Log.w(TAG, "检测数据为空，跳过TTS播报");
+                return;
+            }
+            
+            // 检查是否有有用的检测信息
+            if (!hasUsefulDetectionInfo(detectionData)) {
+                Log.d(TAG, "没有有用的检测信息，跳过TTS播报");
                 return;
             }
             
@@ -49,15 +58,44 @@ public class ObstacleDetectionTTSManager {
     }
     
     /**
+     * 判断是否有有用的检测信息需要播报
+     * @param data 检测数据
+     * @return true表示有有用信息，false表示没有有用信息
+     */
+    private boolean hasUsefulDetectionInfo(ObstacleDetectionData data) {
+        try {
+            // 检查是否有未知障碍物
+            if (data.getNearestUnknownObstacle() != null) {
+                return true;
+            }
+            
+            // 检查是否有检测到的物体
+            List<ObstacleDetectionData.DetectedObject> detectedObjects = data.getDetectedObjects();
+            if (detectedObjects != null && !detectedObjects.isEmpty()) {
+                return true;
+            }
+            
+            // 如果既没有未知障碍物，也没有检测到物体，则没有有用信息
+            return false;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "判断检测信息是否有用失败", e);
+            return false;
+        }
+    }
+    
+    /**
      * 生成障碍物检测的中文摘要
-     * 参考JavaScript版本的generateSummary函数逻辑
+     * 只播报距离用户最近的1条障碍物信息，避免内容过长
      * @param data 检测数据
      * @return 中文摘要文本
      */
     private String generateSummary(ObstacleDetectionData data) {
         try {
             StringBuilder summary = new StringBuilder();
-            summary.append("环境分析报告，");
+            
+            // 收集所有需要播报的障碍物信息
+            List<String> obstacleInfos = new ArrayList<>();
             
             // 检查是否有未知障碍物
             if (data.getNearestUnknownObstacle() != null) {
@@ -68,8 +106,7 @@ public class ObstacleDetectionTTSManager {
                 if (location != null && location.size() > 0) {
                     double relativeX = location.get(0);
                     String position = getPosition(relativeX);
-                    summary.append("请注意！在您").append(position).append("方，大约");
-                    summary.append(String.format("%.1f", distance)).append("米处，有一个未知障碍物。");
+                    obstacleInfos.add(String.format("在您%s方，大约%.1f米处，有一个未知障碍物", position, distance));
                 }
             }
             
@@ -79,7 +116,6 @@ public class ObstacleDetectionTTSManager {
                 // 按距离排序（距离越近越重要）
                 detectedObjects.sort((a, b) -> Double.compare(a.getDistanceM(), b.getDistanceM()));
                 
-                summary.append("侦测到的物体有，");
                 for (ObstacleDetectionData.DetectedObject obj : detectedObjects) {
                     List<Double> boxCenter = obj.getBoxCenterRelative();
                     if (boxCenter != null && boxCenter.size() > 0) {
@@ -88,18 +124,24 @@ public class ObstacleDetectionTTSManager {
                         String className = obj.getClassName();
                         double distance = obj.getDistanceM();
                         
-                        summary.append("在您的").append(position).append("方，大约");
-                        summary.append(String.format("%.1f", distance)).append("米处，有一个");
-                        summary.append(translateClassName(className)).append("。");
+                        obstacleInfos.add(String.format("在您%s方，大约%.1f米处，有一个%s", position, distance, translateClassName(className)));
                     }
                 }
-            } else {
-                summary.append("未侦测到明确的物体。");
             }
             
-            // 如果没有检测到任何障碍物或物体
-            if (summary.toString().equals("环境分析报告，")) {
-                summary.append("前方似乎是开阔地带，未检测到近距离的物体或障碍物。");
+            // 只选择距离最近的一条障碍物信息
+            if (!obstacleInfos.isEmpty()) {
+                // 按距离排序，选择最近的
+                obstacleInfos.sort((a, b) -> {
+                    double distanceA = extractDistance(a);
+                    double distanceB = extractDistance(b);
+                    return Double.compare(distanceA, distanceB);
+                });
+                
+                summary.append(obstacleInfos.get(0)).append("。");
+            } else {
+                // 如果没有检测到任何障碍物或物体，不播报
+                return null;
             }
             
             return summary.toString();
@@ -108,6 +150,28 @@ public class ObstacleDetectionTTSManager {
             Log.e(TAG, "生成障碍物检测摘要失败", e);
             return "环境分析报告生成失败，请重试。";
         }
+    }
+    
+    /**
+     * 从障碍物信息文本中提取距离数值
+     * @param obstacleInfo 障碍物信息文本
+     * @return 距离数值
+     */
+    private double extractDistance(String obstacleInfo) {
+        try {
+            // 查找"大约X.X米处"的模式
+            int startIndex = obstacleInfo.indexOf("大约");
+            if (startIndex != -1) {
+                int endIndex = obstacleInfo.indexOf("米处", startIndex);
+                if (endIndex != -1) {
+                    String distanceStr = obstacleInfo.substring(startIndex + 2, endIndex);
+                    return Double.parseDouble(distanceStr);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "提取距离数值失败: " + obstacleInfo, e);
+        }
+        return Double.MAX_VALUE; // 如果提取失败，返回最大值
     }
     
     /**

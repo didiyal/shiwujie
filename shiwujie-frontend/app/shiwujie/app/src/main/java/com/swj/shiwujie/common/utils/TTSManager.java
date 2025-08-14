@@ -254,7 +254,7 @@ public class TTSManager {
      */
     private String getSpeedPreference() {
         SharedPreferences prefs = context.getSharedPreferences(PREFER_NAME, Context.MODE_PRIVATE);
-        return prefs.getString("speed_preference", "50");
+        return prefs.getString("speed_preference", "75");  // 修改默认语速为75（1.5倍速）
     }
     
     /**
@@ -338,7 +338,42 @@ public class TTSManager {
         Log.d(TAG, "设置发音人: " + voicer);
     }
     
-
+    /**
+     * 设置语速
+     * @param speed 语速值，范围0-100，50为正常速度，75为1.5倍速
+     */
+    public void setSpeed(int speed) {
+        if (speed < 0 || speed > 100) {
+            Log.w(TAG, "语速值超出范围，使用默认值75");
+            speed = 75;
+        }
+        
+        SharedPreferences prefs = context.getSharedPreferences(PREFER_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("speed_preference", String.valueOf(speed));
+        editor.apply();
+        
+        // 如果TTS已经初始化，立即应用新设置
+        if (mTts != null && isInitialized) {
+            mTts.setParameter(SpeechConstant.SPEED, String.valueOf(speed));
+        }
+        
+        Log.d(TAG, "设置语速: " + speed);
+    }
+    
+    /**
+     * 获取当前语速设置
+     */
+    public int getSpeed() {
+        SharedPreferences prefs = context.getSharedPreferences(PREFER_NAME, Context.MODE_PRIVATE);
+        String speedStr = prefs.getString("speed_preference", "75");
+        try {
+            return Integer.parseInt(speedStr);
+        } catch (NumberFormatException e) {
+            Log.e(TAG, "解析语速值失败，使用默认值75", e);
+            return 75;
+        }
+    }
     
     /**
      * 获取当前发音人

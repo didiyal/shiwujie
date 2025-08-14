@@ -30,8 +30,15 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import android.content.Context;
 import com.swj.shiwujie.common.utils.VolunteerUserInfoManager;
+import android.util.Log;
 
 public class ProfileFragment extends Fragment {
+    private static final String TAG = "ProfileFragment";
+    
+    // 实名认证弹窗状态管理
+    private boolean isIdentityDialogShowing = false;
+    private AlertDialog currentIdentityDialog = null;
+    private AlertDialog currentIdentityReminderDialog = null;
     private TextView tvUsername;
     private TextView tvAccount;
     private TextView tvAuthStatus;
@@ -160,17 +167,45 @@ public class ProfileFragment extends Fragment {
     }
 
     private void showIdCardVerificationDialog() {
-        new AlertDialog.Builder(requireContext())
+        // 如果已经有弹窗在显示，直接返回
+        if (isIdentityDialogShowing) {
+            Log.d(TAG, "实名认证弹窗已显示，跳过重复弹窗");
+            return;
+        }
+        
+        isIdentityDialogShowing = true;
+        currentIdentityReminderDialog = new AlertDialog.Builder(requireContext())
                 .setTitle("身份验证提醒")
                 .setMessage("您还未进行实名认证，是否现在进行认证？")
                 .setPositiveButton("立即认证", (dialog, which) -> {
                     showIdCardInputDialog();
                 })
-                .setNegativeButton("取消", null)
+                .setNegativeButton("取消", (dialog, which) -> {
+                    isIdentityDialogShowing = false;
+                    currentIdentityReminderDialog = null;
+                })
+                .setOnDismissListener(dialog -> {
+                    isIdentityDialogShowing = false;
+                    currentIdentityReminderDialog = null;
+                })
                 .show();
     }
 
     private void showIdCardInputDialog() {
+        // 如果已经有弹窗在显示，直接返回
+        if (isIdentityDialogShowing) {
+            Log.d(TAG, "实名认证弹窗已显示，跳过重复弹窗");
+            return;
+        }
+        
+        // 先销毁提醒弹窗，因为要切换到输入弹窗
+        if (currentIdentityReminderDialog != null && currentIdentityReminderDialog.isShowing()) {
+            currentIdentityReminderDialog.dismiss();
+            currentIdentityReminderDialog = null;
+        }
+        
+        isIdentityDialogShowing = true;
+        
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_id_card_verification, null);
         builder.setView(dialogView);
@@ -180,9 +215,14 @@ public class ProfileFragment extends Fragment {
         Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
 
         AlertDialog dialog = builder.create();
+        currentIdentityDialog = dialog;
         dialog.setCancelable(true); // 允许点击外部取消
 
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnCancel.setOnClickListener(v -> {
+            isIdentityDialogShowing = false;
+            currentIdentityDialog = null;
+            dialog.dismiss();
+        });
 
         btnConfirm.setOnClickListener(v -> {
             String idCard = etIdCard.getText().toString().trim();
@@ -200,6 +240,11 @@ public class ProfileFragment extends Fragment {
 
             // 调用实名认证API
             performIdCardVerification(idCard, dialog);
+        });
+
+        dialog.setOnDismissListener(dialogInterface -> {
+            isIdentityDialogShowing = false;
+            currentIdentityDialog = null;
         });
 
         dialog.show();
@@ -228,6 +273,12 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onSuccess(Boolean response) {
                 Toast.makeText(requireContext(), "实名认证成功", Toast.LENGTH_SHORT).show();
+                
+                // 重置状态
+                isIdentityDialogShowing = false;
+                currentIdentityDialog = null;
+                currentIdentityReminderDialog = null;
+                
                 dialog.dismiss();
                 // 重新获取用户信息以更新UI
                 fetchUserInfo();

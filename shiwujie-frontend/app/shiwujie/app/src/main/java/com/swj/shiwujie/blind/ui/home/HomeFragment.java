@@ -318,6 +318,9 @@ public class HomeFragment extends Fragment {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireContext(), "紧急求助请求已发送", Toast.LENGTH_SHORT).show();
                         
+                        // 设置紧急求助状态为匹配中
+                        isEmergencyHelpMatching = true;
+                        
                         // 强制重新创建悬浮窗，确保状态干净
                         if (emergencyHelpFloatingWindow != null) {
                             emergencyHelpFloatingWindow.destroy();
@@ -343,6 +346,10 @@ public class HomeFragment extends Fragment {
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireContext(), "紧急求助请求失败: " + error, Toast.LENGTH_SHORT).show();
+                        // 重置状态，确保下次可以正常发起求助
+                        isEmergencyHelpMatching = false;
+                        // 确保EmergencyHelpManager状态也重置
+                        emergencyHelpManager.resetEmergencyHelp();
                     });
                 }
             }
@@ -359,6 +366,8 @@ public class HomeFragment extends Fragment {
                         }
                         // 重置状态，确保下次可以正常发起求助
                         isEmergencyHelpMatching = false;
+                        // 确保EmergencyHelpManager状态也重置
+                        emergencyHelpManager.resetEmergencyHelp();
                     });
                 }
             }
@@ -381,6 +390,12 @@ public class HomeFragment extends Fragment {
                         Toast.makeText(requireContext(), "通话已结束", Toast.LENGTH_SHORT).show();
                         // 重置状态，允许重新发起求助
                         isEmergencyHelpMatching = false;
+                        // 确保EmergencyHelpManager状态也重置
+                        emergencyHelpManager.resetEmergencyHelp();
+                        // 隐藏悬浮窗
+                        if (emergencyHelpFloatingWindow != null) {
+                            emergencyHelpFloatingWindow.hide();
+                        }
                     });
                 }
             }
@@ -402,6 +417,13 @@ public class HomeFragment extends Fragment {
      */
     private void startEmergencyHelp() {
         Log.d(TAG, "开始紧急求助");
+        
+        // 检查是否已经在紧急求助中，防止重复点击
+        if (emergencyHelpManager.isInEmergencyHelp()) {
+            Log.d(TAG, "已在紧急求助中，忽略重复请求");
+            Toast.makeText(requireContext(), "已在紧急求助中，请等待响应", Toast.LENGTH_SHORT).show();
+            return;
+        }
         
         // 检查登录状态
         String token = SharedPrefsUtil.getToken();
@@ -433,7 +455,6 @@ public class HomeFragment extends Fragment {
         }
         
         Log.d(TAG, "发起紧急求助，手机号: " + phone);
-        isEmergencyHelpMatching = true;
         // 发起紧急求助请求
         emergencyHelpManager.requestEmergencyHelp(phone);
     }
@@ -456,5 +477,8 @@ public class HomeFragment extends Fragment {
         if (emergencyHelpManager != null) {
             emergencyHelpManager.resetEmergencyHelp();
         }
+        
+        // 重置本地状态
+        isEmergencyHelpMatching = false;
     }
 } 
