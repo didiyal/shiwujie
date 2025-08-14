@@ -3,4 +3,16 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">43.139.38.62</domain>
     </domain-config>
+    
+    <!-- 允许访问本地开发服务器 -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.229.248</domain>
+    </domain-config>
+    
+    <!-- 允许访问本地网络 -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.0.0/16</domain>
+        <domain includeSubdomains="true">10.0.0.0/8</domain>
+        <domain includeSubdomains="true">172.16.0.0/12</domain>
+    </domain-config>
 </network-security-config> 
