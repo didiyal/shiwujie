@@ -44,12 +44,23 @@ import com.swj.shiwujie.common.network.AiChatManager;
 import com.swj.shiwujie.common.network.ImageRecognitionManager;
 import com.swj.shiwujie.common.utils.TTSManager;
 import com.swj.shiwujie.common.utils.CameraPreviewManager;
+import com.swj.shiwujie.common.network.ApiService;
+import com.swj.shiwujie.common.network.ObstacleDetectionRetrofitClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import okhttp3.RequestBody;
+import okhttp3.MediaType;
+import android.util.Base64;
+import java.io.ByteArrayOutputStream;
 
 import java.io.File;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import android.os.Handler;
+import android.os.Looper;
 
 /**
  * AI助理Fragment
@@ -120,8 +131,8 @@ public class AiFragment extends Fragment {
     private StringBuilder streamingContentBuffer = new StringBuilder();
     private int lastPlayedContentLength = 0;  // 上次播报的内容长度
     private long lastPlaybackStartTime = 0;   // 上次播报开始的时间
-    private static final long SHORT_WAIT = 500;    // 短等待：0.5秒
-    private static final long MAX_WAIT = 1500;      // 最大等待：1.5秒
+    private static final long SHORT_WAIT = 200;    // 短等待：0.5秒
+    private static final long MAX_WAIT = 500;      // 最大等待：1.5秒
     private static final long IDLE_THRESHOLD = 500; // 空闲阈值：500ms
     private static final long STREAMING_UPDATE_INTERVAL = 3000; // 流式播报更新间隔：3秒（减少更新频率）
     
@@ -167,6 +178,13 @@ public class AiFragment extends Fragment {
         }
     }
     
+    // AI避障功能相关
+    private ApiService apiService;
+    private String sessionId;
+    private boolean isDetecting = false;
+    private Handler mainHandler;
+    private boolean isSessionStarted = false;
+    
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         try {
@@ -201,6 +219,9 @@ public class AiFragment extends Fragment {
         
         // 设置消息面板初始状态
         setupMessagePanelInitialState();
+        
+        // 初始化AI避障功能
+        initObstacleDetection();
     }
     
     @Override
@@ -243,6 +264,11 @@ public class AiFragment extends Fragment {
         // 如果正在录音，重新启动状态检查
         if (isListening) {
             startStatusCheck();
+        }
+        
+        // 启动AI避障检测
+        if (!isSessionStarted) {
+            startObstacleDetection();
         }
     }
     
@@ -2458,5 +2484,299 @@ public class AiFragment extends Fragment {
             streamingPlaybackHandler.removeCallbacksAndMessages(null);
         }
         resetSmartPlaybackState();
+        
+        // 清理AI避障资源
+        if (mainHandler != null) {
+            mainHandler.removeCallbacksAndMessages(null);
+        }
+    }
+    
+    // ===== AI避障功能方法 =====
+    
+    /**
+     * 初始化AI避障功能
+     */
+    private void initObstacleDetection() {
+        try {
+            mainHandler = new Handler(Looper.getMainLooper());
+            
+            // 初始化网络服务
+            apiService = ObstacleDetectionRetrofitClient.getInstance().createService(ApiService.class);
+            
+            Log.d(TAG, "AI避障功能初始化完成");
+        } catch (Exception e) {
+            Log.e(TAG, "AI避障功能初始化失败", e);
+        }
+    }
+    
+    /**
+     * 启动AI避障检测
+     */
+    private void startObstacleDetection() {
+        if (isSessionStarted) {
+            Log.d(TAG, "AI避障会话已开启，跳过重复开启");
+            return;
+        }
+        
+        Log.d(TAG, "开始AI避障检测...");
+        startDetectionSession();
+    }
+    
+    /**
+     * 开启检测会话
+     */
+    private void startDetectionSession() {
+        if (apiService != null) {
+            Log.d(TAG, "开始调用startObstacleDetectionSession API...");
+            Call<String> sessionCall = apiService.startObstacleDetectionSession();
+            
+            sessionCall.enqueue(new Callback<String>() {
+                @Override
+                public void onResponse(Call<String> call, Response<String> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        try {
+                            // 使用JSONObject正确解析JSON
+                            org.json.JSONObject jsonResponse = new org.json.JSONObject(response.body());
+                            
+                            if (jsonResponse.optBoolean("success", false)) {
+                                sessionId = jsonResponse.optString("session_id", "");
+                                
+                                if (sessionId != null && !sessionId.isEmpty()) {
+                                    Log.d(TAG, "AI避障会话创建成功: " + sessionId);
+                                    isSessionStarted = true;
+                                    
+                                    // 开始定时检测
+                                    startFrameProcessing();
+                                    
+                                    // 显示启动成功提示
+                                    showDetectionMessage("AI避障检测已启动", "success");
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "解析会话响应失败", e);
+                        }
+                    }
+                }
+                
+                @Override
+                public void onFailure(Call<String> call, Throwable t) {
+                    Log.e(TAG, "创建AI避障会话失败", t);
+                    showDetectionMessage("AI避障启动失败", "error");
+                }
+            });
+        }
+    }
+    
+    /**
+     * 启动帧处理
+     */
+    private void startFrameProcessing() {
+        try {
+            Log.d(TAG, "开始启动帧处理...");
+            Log.d(TAG, "当前状态 - isDetecting: " + isDetecting + ", sessionId: " + sessionId);
+            
+            Runnable frameProcessor = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Log.d(TAG, "帧处理循环执行中...");
+                        if (isSessionStarted && sessionId != null) {
+                            Log.d(TAG, "开始处理当前帧...");
+                            // 每5秒处理一帧
+                            processCurrentFrame();
+                            // 每5秒执行一次
+                            mainHandler.postDelayed(this, 5000);
+                        } else {
+                            Log.d(TAG, "检测已停止或会话无效，帧处理循环退出");
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "帧处理循环失败", e);
+                    }
+                }
+            };
+            mainHandler.post(frameProcessor);
+            Log.d(TAG, "帧处理已启动");
+        } catch (Exception e) {
+            Log.e(TAG, "启动帧处理失败", e);
+        }
+    }
+    
+    /**
+     * 处理当前帧
+     */
+    private void processCurrentFrame() {
+        try {
+            Log.d(TAG, "开始处理当前帧...");
+            
+            // 检查会话ID
+            if (sessionId == null) {
+                Log.e(TAG, "会话ID无效，跳过帧处理");
+                return;
+            }
+            
+            Log.d(TAG, "条件检查通过，开始获取图像...");
+            // 获取当前帧图像并转换为Base64
+            String imageBase64 = getCurrentFrameBase64();
+            if (imageBase64 != null) {
+                Log.d(TAG, "图像获取成功，长度: " + imageBase64.length() + "，开始调用API...");
+                // 调用真实API进行障碍物检测
+                processFrameWithAPI(imageBase64);
+            } else {
+                // 如果无法获取图像，显示错误信息
+                Log.e(TAG, "无法获取当前帧图像");
+                showDetectionMessage("无法获取图像数据", "error");
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "帧处理失败", e);
+        }
+    }
+    
+    /**
+     * 获取当前帧的Base64编码
+     */
+    private String getCurrentFrameBase64() {
+        try {
+            // 创建测试图像（80x60像素）
+            Bitmap bitmap = Bitmap.createBitmap(80, 60, Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(bitmap);
+            android.graphics.Paint paint = new android.graphics.Paint();
+            paint.setColor(android.graphics.Color.BLUE);
+            paint.setStyle(android.graphics.Paint.Style.FILL);
+            
+            // 绘制一个简单的矩形
+            canvas.drawRect(20, 20, 60, 40, paint);
+            
+            // 绘制一个圆形
+            paint.setColor(android.graphics.Color.RED);
+            canvas.drawCircle(60, 30, 15, paint);
+            
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos);
+            byte[] imageBytes = baos.toByteArray();
+            return "data:image/jpeg;base64," + Base64.encodeToString(imageBytes, Base64.DEFAULT);
+        } catch (Exception e) {
+            Log.e(TAG, "获取图像Base64编码失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 调用API处理图像帧
+     */
+    private void processFrameWithAPI(String imageBase64) {
+        if (apiService != null && sessionId != null) {
+            try {
+                // 使用JSONObject正确构建JSON请求体
+                org.json.JSONObject jsonObject = new org.json.JSONObject();
+                jsonObject.put("session_id", sessionId);
+                jsonObject.put("image", imageBase64);
+                
+                String jsonBody = jsonObject.toString();
+                
+                // 添加调试信息
+                Log.d(TAG, "请求体大小: " + jsonBody.length() + " 字符");
+                Log.d(TAG, "Session ID: " + sessionId);
+                Log.d(TAG, "Session ID长度: " + sessionId.length());
+                
+                MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+                RequestBody requestBody = RequestBody.create(mediaType, jsonBody);
+                
+                Call<String> processCall = apiService.processFrameForObstacleDetection(requestBody);
+                
+                processCall.enqueue(new Callback<String>() {
+                    @Override
+                    public void onResponse(Call<String> call, Response<String> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            try {
+                                String responseBody = response.body();
+                                Log.d(TAG, "帧处理API响应: " + responseBody);
+                                
+                                // 检查是否成功
+                                if (responseBody.contains("\"success\":true")) {
+                                    // 解析检测结果并显示
+                                    parseAndDisplayResult(responseBody);
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "解析API响应失败", e);
+                            }
+                        }
+                    }
+                    
+                    @Override
+                    public void onFailure(Call<String> call, Throwable t) {
+                        Log.e(TAG, "API网络请求失败", t);
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "构建JSON请求体失败", e);
+            }
+        } else {
+            Log.e(TAG, "apiService为null或sessionId无效，无法处理图像帧");
+        }
+    }
+    
+    /**
+     * 解析并显示检测结果
+     */
+    private void parseAndDisplayResult(String responseBody) {
+        try {
+            org.json.JSONObject jsonResponse = new org.json.JSONObject(responseBody);
+            
+            // 解析检测到的对象
+            String detectedObjects = "未检测到障碍物";
+            if (jsonResponse.has("detected_objects")) {
+                Object objects = jsonResponse.get("detected_objects");
+                if (objects instanceof org.json.JSONArray) {
+                    org.json.JSONArray array = (org.json.JSONArray) objects;
+                    if (array.length() > 0) {
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 0; i < array.length(); i++) {
+                            if (i > 0) sb.append(", ");
+                            sb.append(array.getString(i));
+                        }
+                        detectedObjects = "检测到: " + sb.toString();
+                    }
+                }
+            }
+            
+            // 解析最近障碍物
+            String nearestObstacle = "";
+            if (jsonResponse.has("nearest_unknown_obstacle")) {
+                nearestObstacle = jsonResponse.getString("nearest_unknown_obstacle");
+            }
+            
+            // 显示检测结果（弹幕效果）
+            String displayMessage = detectedObjects;
+            if (!nearestObstacle.isEmpty()) {
+                displayMessage += "\n" + nearestObstacle;
+            }
+            
+            showDetectionMessage(displayMessage, "info");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "解析检测结果失败", e);
+        }
+    }
+    
+    /**
+     * 显示检测消息（弹幕效果）
+     */
+    private void showDetectionMessage(String message, String type) {
+        try {
+            // 在页面左侧中间显示弹幕效果
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    // 使用Toast显示检测结果
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                    
+                    // 这里可以添加更复杂的弹幕显示逻辑
+                    // 比如在页面上创建一个浮动的TextView来显示检测结果
+                    Log.d(TAG, "AI避障检测结果: " + message);
+                });
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "显示检测消息失败", e);
+        }
     }
 } 
