@@ -46,6 +46,8 @@ import com.swj.shiwujie.common.utils.TTSManager;
 import com.swj.shiwujie.common.utils.CameraPreviewManager;
 import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.ObstacleDetectionRetrofitClient;
+import com.swj.shiwujie.common.network.WebSocketManager;
+import com.swj.shiwujie.data.model.SocketDataV0;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -187,6 +189,10 @@ public class AiFragment extends Fragment {
     private Handler mainHandler;
     private boolean isSessionStarted = false;
     private String lastDetectionHash = ""; // 上次检测结果的哈希值，用于去重
+    
+    // WebSocket相关
+    private WebSocketManager webSocketManager;
+    private WebSocketManager.MessageListener webSocketMessageListener;
     
     // 在类中定义一个静态Map，初始化所有类别映射
     private static final Map<String, String> CLASS_NAME_MAP = new HashMap<String, String>() {{
@@ -331,6 +337,9 @@ public class AiFragment extends Fragment {
         
         // 初始化AI避障功能
         initObstacleDetection();
+        
+        // 初始化WebSocket监听
+        initWebSocketListener();
     }
     
     @Override
@@ -2600,6 +2609,16 @@ public class AiFragment extends Fragment {
         if (mainHandler != null) {
             mainHandler.removeCallbacksAndMessages(null);
         }
+        
+        // 清理WebSocket监听器
+        if (webSocketManager != null && webSocketMessageListener != null) {
+            try {
+                webSocketManager.removeMessageListener(webSocketMessageListener);
+                Log.d(TAG, "WebSocket监听器已清理");
+            } catch (Exception e) {
+                Log.e(TAG, "清理WebSocket监听器失败", e);
+            }
+        }
     }
     
     // ===== AI避障功能方法 =====
@@ -3139,6 +3158,194 @@ public class AiFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "生成检测结果哈希失败", e);
             return "error_hash";
+        }
+    }
+    
+    /**
+     * 初始化WebSocket监听
+     */
+    private void initWebSocketListener() {
+        try {
+            webSocketManager = WebSocketManager.getInstance();
+            
+            // 创建WebSocket消息监听器
+            webSocketMessageListener = new WebSocketManager.MessageListener() {
+                @Override
+                public void onMessageReceived(SocketDataV0 data) {
+                    handleWebSocketMessage(data);
+                }
+            };
+            
+            // 添加全局WebSocket消息监听
+            webSocketManager.addMessageListener(webSocketMessageListener);
+            
+            Log.d(TAG, "WebSocket监听器初始化完成");
+        } catch (Exception e) {
+            Log.e(TAG, "WebSocket监听器初始化失败", e);
+        }
+    }
+    
+    /**
+     * 处理WebSocket消息
+     */
+    private void handleWebSocketMessage(SocketDataV0 data) {
+        if (data == null) {
+            Log.w(TAG, "收到空的WebSocket消息");
+            return;
+        }
+        
+        Log.d(TAG, "AI页面收到WebSocket消息: " + data.toString());
+        Log.d(TAG, "消息类型: " + data.getRequestType());
+        
+        // 检查Fragment是否还attached到context
+        if (!isAdded() || getContext() == null) {
+            Log.w(TAG, "Fragment未attached到context，跳过消息处理");
+            return;
+        }
+        
+        // 根据requesttype执行对应操作
+        switch (data.getRequestType()) {
+            case SocketDataV0.REQUEST_TYPE_AI_PHOTO_RECOGNITION:
+                // 5001: 启动AI页面的拍照识别按钮和对应的功能
+                handlePhotoRecognitionRequest();
+                break;
+                
+            case SocketDataV0.REQUEST_TYPE_JUMP_TO_BLINDHOME:
+                // 5002: 跳转到blindhome页面并开启连线志愿者按钮和功能
+                handleJumpToBlindhomeRequest();
+                break;
+                
+            case SocketDataV0.REQUEST_TYPE_APP_JUMP:
+                // 5004: APP跳转
+                handleAppJumpRequest(data);
+                break;
+                
+            case SocketDataV0.REQUEST_TYPE_EDIT_PROFILE:
+                // 5005: 跳转到用户信息修改页面
+                handleEditProfileRequest();
+                break;
+                
+            default:
+                Log.d(TAG, "收到未处理的WebSocket消息类型: " + data.getRequestType());
+                break;
+        }
+    }
+    
+    /**
+     * 处理5001: 启动AI页面的拍照识别按钮和对应的功能
+     */
+    private void handlePhotoRecognitionRequest() {
+        Log.d(TAG, "收到启动AI拍照识别请求");
+        
+        // 确保在主线程中执行UI操作
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                try {
+                    // 启用拍照按钮
+                    if (btnCamera != null) {
+                        btnCamera.setEnabled(true);
+                        btnCamera.setVisibility(View.VISIBLE);
+                        Log.d(TAG, "拍照按钮已启用");
+                    }
+                    
+                    // 启用语音按钮（如果需要的话）
+                    if (btnVoice != null) {
+                        btnVoice.setEnabled(true);
+                        btnVoice.setVisibility(View.VISIBLE);
+                        Log.d(TAG, "语音按钮已启用");
+                    }
+                    
+                    // 初始化摄像头管理器（如果还没有初始化）
+                    if (cameraManager == null) {
+                        initCameraManager();
+                        Log.d(TAG, "摄像头管理器已初始化");
+                    }
+                    
+                    // 启动摄像头预览
+                    if (cameraManager != null && cameraPreview != null) {
+                        try {
+                            cameraManager.startPreview();
+                            Log.d(TAG, "摄像头预览已启动");
+                        } catch (Exception e) {
+                            Log.e(TAG, "启动摄像头预览失败", e);
+                        }
+                    }
+                    
+                    // 显示提示信息
+                    Toast.makeText(requireContext(), "AI拍照识别功能已启动", Toast.LENGTH_SHORT).show();
+                    
+                    // 可以在这里添加其他拍照识别相关的初始化逻辑
+                    Log.d(TAG, "AI拍照识别功能启动完成");
+                } catch (Exception e) {
+                    Log.e(TAG, "启动AI拍照识别功能失败", e);
+                }
+            });
+        }
+    }
+    
+    /**
+     * 处理5002: 跳转到blindhome页面并开启连线志愿者按钮和功能
+     */
+    private void handleJumpToBlindhomeRequest() {
+        Log.d(TAG, "收到跳转blindhome并开启连线志愿者请求");
+        
+        try {
+            // 跳转到blindhome页面
+            Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.BlindHomeActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            
+            // 添加标记，表示需要开启连线志愿者功能
+            intent.putExtra("enable_volunteer_connection", true);
+            
+            startActivity(intent);
+            Log.d(TAG, "已跳转到blindhome页面，连线志愿者功能将自动可用");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "跳转blindhome页面失败", e);
+            Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * 处理5004: APP跳转
+     */
+    private void handleAppJumpRequest(SocketDataV0 data) {
+        Log.d(TAG, "收到APP跳转请求");
+        
+        try {
+            // 这里可以根据data中的其他字段来决定跳转的具体行为
+            // 目前先实现一个通用的跳转逻辑
+            
+            // 可以跳转到主页面
+            Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.BlindHomeActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+            
+            Log.d(TAG, "APP跳转完成");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "APP跳转失败", e);
+            Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * 处理5005: 跳转到用户信息修改页面
+     */
+    private void handleEditProfileRequest() {
+        Log.d(TAG, "收到跳转用户信息修改页面请求");
+        
+        try {
+            // 跳转到用户信息修改页面
+            Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.EditProfileActivity.class);
+            startActivity(intent);
+            
+            Log.d(TAG, "已跳转到用户信息修改页面");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "跳转用户信息修改页面失败", e);
+            Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 } 

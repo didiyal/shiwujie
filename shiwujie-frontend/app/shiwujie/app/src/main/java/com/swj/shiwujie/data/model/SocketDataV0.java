@@ -139,6 +139,12 @@ public class SocketDataV0 {
         return data;
     }
     
+    // 新增的requesttype常量定义
+    public static final int REQUEST_TYPE_AI_PHOTO_RECOGNITION = 5001; // 启动AI页面的拍照识别按钮和功能
+    public static final int REQUEST_TYPE_JUMP_TO_BLINDHOME = 5002;    // 跳转到blindhome页面并开启连线志愿者按钮和功能
+    public static final int REQUEST_TYPE_APP_JUMP = 5004;             // APP跳转
+    public static final int REQUEST_TYPE_EDIT_PROFILE = 5005;         // 跳转到用户信息修改页面
+    
     // Getter和Setter方法
     public int getRequestType() {
         return requestType;

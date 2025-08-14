@@ -58,6 +58,43 @@ public class BlindHomeActivity extends AppCompatActivity {
         // ===== 障碍物检测功能集成 - 严格按照backend_service.py的集成逻辑 =====
         // 改造说明：将Python后端的障碍物检测功能集成到Android原生界面
         setupObstacleDetectionNavigation();
+        
+        // 检查是否需要开启连线志愿者功能
+        checkAndEnableVolunteerConnection();
+    }
+    
+    /**
+     * 检查并开启连线志愿者功能
+     */
+    private void checkAndEnableVolunteerConnection() {
+        try {
+            // 检查是否从AI页面传递了开启连线志愿者的标记
+            boolean enableVolunteerConnection = getIntent().getBooleanExtra("enable_volunteer_connection", false);
+            
+            if (enableVolunteerConnection) {
+                Log.d(TAG, "收到开启连线志愿者功能的标记");
+                
+                // 延迟执行，确保页面完全加载
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    try {
+                        // 导航到home fragment，这里会自动显示连线志愿者按钮
+                        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
+                        if (navController != null) {
+                            navController.navigate(R.id.navigation_home);
+                            Log.d(TAG, "已导航到home fragment，连线志愿者功能可用");
+                        }
+                        
+                    } catch (Exception e) {
+                        Log.e(TAG, "开启连线志愿者功能失败", e);
+                    }
+                }, 500); // 延迟500ms执行
+                
+                // 清除标记，避免重复处理
+                getIntent().removeExtra("enable_volunteer_connection");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "检查连线志愿者功能标记失败", e);
+        }
     }
     
     private void checkPermissions() {
