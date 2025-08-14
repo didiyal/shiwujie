@@ -344,6 +344,13 @@ public class AiFragment extends Fragment {
         if (btnAiAssist != null) {
             btnAiAssist.setOnClickListener(v -> handleAiAssistButtonClick());
         }
+
+        // ===== 临时添加：障碍物检测按钮点击事件 - 跳转到障碍物检测页面 =====
+        // 改造说明：在AI页面添加临时按钮，方便测试障碍物检测功能
+        MaterialButton btnObstacleDetection = view.findViewById(R.id.btn_obstacle_detection);
+        if (btnObstacleDetection != null) {
+            btnObstacleDetection.setOnClickListener(v -> handleObstacleDetectionButtonClick());
+        }
     }
     
     /**
@@ -1119,6 +1126,29 @@ public class AiFragment extends Fragment {
         }
     }
     
+    /**
+     * ===== 临时添加：处理障碍物检测按钮点击 - 跳转到障碍物检测页面 =====
+     * 改造说明：在AI页面添加临时按钮，方便测试障碍物检测功能
+     */
+    private void handleObstacleDetectionButtonClick() {
+        try {
+            // 添加震动反馈
+            if (vibrator != null && vibrator.hasVibrator()) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
+            
+            // 跳转到障碍物检测页面
+            Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.ObstacleDetectionActivity.class);
+            startActivity(intent);
+            
+            Log.d(TAG, "跳转到障碍物检测页面");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "跳转到障碍物检测页面失败", e);
+            Toast.makeText(requireContext(), "无法打开障碍物检测页面", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     /**
      * 使用WebView打开网址
      */

@@ -17,6 +17,9 @@ import com.swj.shiwujie.data.model.Page;
 import com.swj.shiwujie.data.model.HelppostUpdateRequest;
 import com.swj.shiwujie.data.model.AiChatRequest;
 import com.swj.shiwujie.data.model.AiChatResponse;
+import com.swj.shiwujie.data.model.ObstacleDetectionSessionResponse;
+import com.swj.shiwujie.data.model.ObstacleDetectionResultResponse;
+import com.swj.shiwujie.data.model.ObstacleDetectionHealthResponse;
 
 import java.util.List;
 
@@ -30,6 +33,7 @@ import retrofit2.http.Query;
 import retrofit2.http.Body;
 import retrofit2.http.Part;
 import retrofit2.http.Multipart;
+import okhttp3.RequestBody;
 
 /**
  * API接口定义
@@ -688,5 +692,41 @@ public interface ApiService {
             @Header("Authorization") String token,
             @Part okhttp3.MultipartBody.Part imageFile
     );
+
+    // ===== 障碍物检测接口 - 严格按照backend_service.py的API接口实现 =====
+    // 改造说明：将Python后端的图像处理API转换为Android原生接口
+    
+    /**
+     * 开始障碍物检测会话 - 对应原Python代码的start_session接口
+     * 对应原代码：@app.route('/api/start_session', methods=['POST'])
+     * @return 会话创建响应（简单JSON字符串）
+     */
+    @POST("api/start_session")
+    Call<String> startObstacleDetectionSession();
+
+    /**
+     * 处理单帧图像进行障碍物检测 - 对应原Python代码的process_frame接口
+     * 对应原代码：@app.route('/api/process_frame', methods=['POST'])
+     * @param requestBody 包含session_id和image的JSON请求体
+     * @return 检测结果响应（简单JSON字符串）
+     */
+    @POST("api/process_frame")
+    Call<String> processFrameForObstacleDetection(@Body RequestBody requestBody);
+
+    /**
+     * 健康检查接口 - 对应原Python代码的health_check接口
+     * 对应原代码：@app.route('/health', methods=['GET'])
+     * @return 健康状态响应
+     */
+    @GET("health")
+    Call<ObstacleDetectionHealthResponse> getObstacleDetectionHealthStatus();
+
+    /**
+     * 简单健康检查接口 - 对应原Python代码的health_check_simple接口
+     * 对应原代码：@app.route('/health/simple', methods=['GET'])
+     * @return 简单健康状态
+     */
+    @GET("health/simple")
+    Call<String> getObstacleDetectionHealthStatusSimple();
 
 }

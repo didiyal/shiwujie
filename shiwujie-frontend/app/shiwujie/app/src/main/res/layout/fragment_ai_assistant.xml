@@ -432,6 +432,7 @@
                 style="@style/Widget.Material3.Button.Icon"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
                 android:contentDescription="AI 协助"
                 app:backgroundTint="@color/blue_50"
                 app:cornerRadius="14dp"
@@ -441,6 +442,24 @@
                 app:iconSize="22dp"
                 app:iconTint="@color/blue_700"
                 app:rippleColor="@color/blue_100"
+                tools:ignore="PrivateResource" />
+
+            <!-- ===== 临时添加：障碍物检测按钮 - 点击跳转到障碍物检测页面 ===== -->
+            <!-- 改造说明：在AI页面添加临时按钮，方便测试障碍物检测功能 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_obstacle_detection"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="障碍物检测"
+                app:backgroundTint="@color/orange_primary"
+                app:cornerRadius="14dp"
+                app:icon="@drawable/icon_camera_switch"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="22dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/orange_primary"
                 tools:ignore="PrivateResource" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
