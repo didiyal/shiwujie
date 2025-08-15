@@ -191,7 +191,6 @@ public class AiFragment extends Fragment {
     private ApiService apiService;
     private String sessionId;
     private boolean isDetecting = false;
-    private Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isSessionStarted = false;
     private String lastDetectionHash = ""; // 上次检测结果的哈希值，用于去重
     
@@ -353,7 +352,6 @@ public class AiFragment extends Fragment {
                 btnVoice.getBackgroundTintList() == ContextCompat.getColorStateList(requireContext(), R.color.red)) {
                 // 状态不一致，强制重置为正常状态
                 updateVoiceButtonState(false);
-                Log.d(TAG, "检测到按钮状态不一致，已重置");
             }
         } catch (Exception e) {
             Log.e(TAG, "检查按钮状态失败", e);
@@ -365,7 +363,6 @@ public class AiFragment extends Fragment {
      */
     private void startStatusCheck() {
         statusCheckHandler.post(statusCheckRunnable);
-        Log.d(TAG, "启动状态检查定时器");
     }
     
     /**
@@ -373,7 +370,6 @@ public class AiFragment extends Fragment {
      */
     private void stopStatusCheck() {
         statusCheckHandler.removeCallbacks(statusCheckRunnable);
-        Log.d(TAG, "停止状态检查定时器");
     }
     
     /**
@@ -639,7 +635,6 @@ public class AiFragment extends Fragment {
                 cameraManager.startPreview();
                 isCameraInitialized = true;
                 isCameraOpen = true;
-                Log.d(TAG, "摄像头初始化成功");
             }
         } catch (Exception e) {
             Log.e(TAG, "初始化摄像头管理器失败", e);
@@ -656,10 +651,10 @@ public class AiFragment extends Fragment {
             if (cameraManager != null && isCameraOpen) {
                 cameraManager.stopPreview();
                 isCameraOpen = false;
-                Log.d(TAG, "相机已安全停止");
+
             }
         } catch (IllegalStateException e) {
-            Log.w(TAG, "相机已经关闭，无需再次停止", e);
+
             isCameraOpen = false;
         } catch (Exception e) {
             Log.e(TAG, "停止相机失败", e);
@@ -675,14 +670,14 @@ public class AiFragment extends Fragment {
             if (cameraManager != null && cameraPreview != null && isCameraInitialized && !isCameraOpen) {
                 cameraManager.startPreview();
                 isCameraOpen = true;
-                Log.d(TAG, "相机已安全启动");
+
             } else if (!isCameraInitialized) {
                 // 如果相机未初始化，重新初始化
-                Log.d(TAG, "相机未初始化，重新初始化");
+
                 initCameraManager();
             }
         } catch (IllegalStateException e) {
-            Log.w(TAG, "相机状态异常，重新初始化", e);
+
             isCameraOpen = false;
             initCameraManager();
         } catch (Exception e) {
@@ -703,11 +698,11 @@ public class AiFragment extends Fragment {
      */
     private void startAIAvoidance() {
         if (isAIAvoidRunning) {
-            Log.d(TAG, "AI避障已在运行中");
+    
             return;
         }
         
-        Log.d(TAG, "启动AI避障功能...");
+
         isAIAvoidRunning = true;
         
         // 更新按钮状态
@@ -722,11 +717,11 @@ public class AiFragment extends Fragment {
      */
     private void stopAIAvoidance() {
         if (!isAIAvoidRunning) {
-            Log.d(TAG, "AI避障未在运行");
+    
             return;
         }
         
-        Log.d(TAG, "停止AI避障功能...");
+
         isAIAvoidRunning = false;
         
         // 更新按钮状态
@@ -747,7 +742,7 @@ public class AiFragment extends Fragment {
         // 显示停止提示
         showDetectionMessage("AI避障检测已停止", "info");
         
-        Log.d(TAG, "AI避障功能已完全停止");
+
     }
     
     /**
@@ -866,8 +861,6 @@ public class AiFragment extends Fragment {
             
             // 设置初始透明度
             messagePanel.setAlpha(0.9f);
-            
-            Log.d(TAG, "消息面板初始宽度设置为: " + panelWidth);
         } catch (Exception e) {
             Log.e(TAG, "设置消息面板初始状态失败", e);
         }
@@ -1452,25 +1445,19 @@ public class AiFragment extends Fragment {
      */
     private boolean checkCameraPermission() {
         int permissionStatus = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA);
-        Log.d(TAG, "相机权限状态: " + permissionStatus + " (0=已授权, -1=未授权)");
         
         if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "相机权限未授予，开始请求权限");
-            
             // 检查是否应该显示权限说明
             if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.CAMERA)) {
-                Log.d(TAG, "显示相机权限说明对话框");
                 // 用户之前拒绝过权限，显示说明对话框
                 showCameraPermissionExplanationDialog();
             } else {
-                Log.d(TAG, "直接请求相机权限");
                 // 直接请求权限
                 requestCameraPermission();
             }
             return false;
         }
         
-        Log.d(TAG, "相机权限已授予");
         return true;
     }
     
@@ -2446,8 +2433,6 @@ public class AiFragment extends Fragment {
             if (tvConversationTitle != null) {
                 tvConversationTitle.setText("当前对话");
             }
-            
-            Log.d(TAG, "切换到当前对话标签页");
         } catch (Exception e) {
             Log.e(TAG, "显示当前对话失败", e);
         }
@@ -2474,7 +2459,7 @@ public class AiFragment extends Fragment {
                 tvConversationTitle.setText("历史记录");
             }
             
-            Log.d(TAG, "切换到历史记录标签页");
+
         } catch (Exception e) {
             Log.e(TAG, "显示历史对话失败", e);
         }
@@ -2812,8 +2797,6 @@ public class AiFragment extends Fragment {
      */
     private void startAIFrameProcessing() {
         try {
-            Log.d(TAG, "当前状态 - isAIAvoidRunning: " + isAIAvoidRunning + ", mSessionId: " + mSessionId);
-            
             // 确保aiAvoidHandler已初始化
             if (aiAvoidHandler == null) {
                 aiAvoidHandler = new Handler(Looper.getMainLooper());
@@ -2823,19 +2806,13 @@ public class AiFragment extends Fragment {
                 @Override
                 public void run() {
                     try {
-                        Log.d(TAG, "AI避障帧处理循环执行中...");
                         if (isAIAvoidRunning && mSessionId != null) {
-                            Log.d(TAG, "开始处理当前帧...");
                             // 每6.5秒处理一帧
                             processCurrentFrame();
                             // 继续循环
                             if (aiAvoidHandler != null && isAIAvoidRunning) {
                                 aiAvoidHandler.postDelayed(this, 6500);
-                            } else {
-                                Log.d(TAG, "AI避障已停止，帧处理循环退出");
                             }
-                        } else {
-                            Log.d(TAG, "AI避障已停止或会话无效，帧处理循环退出");
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "AI避障帧处理循环失败", e);
@@ -2845,9 +2822,6 @@ public class AiFragment extends Fragment {
             
             if (aiAvoidHandler != null) {
                 aiAvoidHandler.postDelayed(aiAvoidRunnable, 6500);
-                Log.d(TAG, "AI避障帧处理已启动，6.5秒后开始循环");
-            } else {
-                Log.e(TAG, "aiAvoidHandler为null，无法启动帧处理");
             }
         } catch (Exception e) {
             Log.e(TAG, "启动AI避障帧处理失败", e);
@@ -2859,94 +2833,24 @@ public class AiFragment extends Fragment {
      */
     private void stopAIFrameProcessing() {
         try {
-            Log.d(TAG, "停止AI避障帧处理...");
             if (aiAvoidHandler != null && aiAvoidRunnable != null) {
                 aiAvoidHandler.removeCallbacks(aiAvoidRunnable);
                 aiAvoidRunnable = null;
-                Log.d(TAG, "AI避障帧处理已停止");
             }
         } catch (Exception e) {
             Log.e(TAG, "停止AI避障帧处理失败", e);
         }
     }
     
-    /**
-     * 启动帧处理（保留原有方法，但不再使用）
-     */
-    private void startFrameProcessing() {
-        try {
-            Log.d(TAG, "开始启动帧处理...");
-            Log.d(TAG, "当前状态 - isDetecting: " + isDetecting + ", mSessionId: " + mSessionId);
-            
-            // 确保mainHandler已初始化
-            if (mainHandler == null) {
-                Log.e(TAG, "mainHandler未初始化，重新创建");
-                mainHandler = new Handler(Looper.getMainLooper());
-            }
-            
-            // 立即执行一次检测，然后开始8秒循环
-            processCurrentFrame();
-            
-            Runnable frameProcessor = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Log.d(TAG, "帧处理循环执行中...");
-                        if (isSessionStarted && mSessionId != null) {
-                            Log.d(TAG, "开始处理当前帧...");
-                            // 每8秒处理一帧
-                            processCurrentFrame();
-                            // 每8秒执行一次
-                            if (mainHandler != null) {
-                                mainHandler.postDelayed(this, 6500);
-                            } else {
-                                Log.e(TAG, "mainHandler为null，无法继续帧处理循环");
-                            }
-                        } else {
-                            Log.d(TAG, "检测已停止或会话无效，帧处理循环退出");
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "帧处理循环失败", e);
-                    }
-                }
-            };
-            
-            if (mainHandler != null) {
-                mainHandler.postDelayed(frameProcessor, 6500);
-                Log.d(TAG, "帧处理已启动，8秒后开始循环");
-            } else {
-                Log.e(TAG, "mainHandler为null，无法启动帧处理");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "启动帧处理失败", e);
-        }
-    }
-    
-    /**
-     * 停止帧处理
-     */
-    private void stopFrameProcessing() {
-        try {
-            Log.d(TAG, "停止帧处理...");
-            if (mainHandler != null) {
-                mainHandler.removeCallbacksAndMessages(null);
-                Log.d(TAG, "帧处理已停止");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "停止帧处理失败", e);
-        }
-    }
+
     
     /**
      * 处理当前帧
      */
     private void processCurrentFrame() {
         try {
-            Log.d(TAG, "开始处理当前帧...");
-            
             // 检查AI避障是否在运行
             if (!isAIAvoidRunning) {
-                Log.d(TAG, "AI避障未在运行，跳过帧处理");
                 return;
             }
             
@@ -2958,11 +2862,9 @@ public class AiFragment extends Fragment {
             
             // 双重检查：确保状态一致性
             if (!isSessionStarted) {
-                Log.d(TAG, "会话未启动，跳过帧处理");
                 return;
             }
             
-            Log.d(TAG, "条件检查通过，开始获取图像...");
             // 获取当前帧图像并转换为Base64
             String imageBase64 = getCurrentFrameBase64();
             
@@ -2971,7 +2873,6 @@ public class AiFragment extends Fragment {
                 return;
             }
             
-            Log.d(TAG, "图像获取成功，长度: " + imageBase64.length() + "，开始调用API...");
             // 调用真实API进行障碍物检测
             processFrameWithAPI(imageBase64);
             
@@ -2989,20 +2890,17 @@ public class AiFragment extends Fragment {
         try {
             // 检查摄像头状态
             if (!isCameraAvailable()) {
-                Log.w(TAG, "相机不可用，跳过图像获取");
                 return null;
             }
             
             // 检查摄像头管理器是否可用
             if (cameraManager == null || !cameraManager.isPreviewActive()) {
-                Log.w(TAG, "摄像头预览未激活，跳过图像获取");
                 return null;
             }
             
             return takePhotoSync();
             
         } catch (IllegalStateException e) {
-            Log.w(TAG, "相机状态异常，跳过图像获取", e);
             isCameraOpen = false;
             return null;
         } catch (Exception e) {
@@ -3022,7 +2920,6 @@ public class AiFragment extends Fragment {
         try {
             // 再次检查相机状态
             if (!isCameraAvailable()) {
-                Log.w(TAG, "拍照时相机不可用");
                 return null;
             }
             
@@ -3060,12 +2957,10 @@ public class AiFragment extends Fragment {
             if (result[0] != null) {
                 return result[0];
             } else {
-                Log.w(TAG, "拍照失败");
                 return null;
             }
             
         } catch (IllegalStateException e) {
-            Log.w(TAG, "拍照时相机状态异常", e);
             isCameraOpen = false;
             return null;
         } catch (Exception e) {
@@ -3080,7 +2975,6 @@ public class AiFragment extends Fragment {
     private void processFrameWithAPI(String imageBase64) {
         // 再次检查状态，确保在API调用过程中状态没有改变
         if (!isAIAvoidRunning || !isSessionStarted) {
-            Log.d(TAG, "AI避障已停止或会话已结束，取消API调用");
             return;
         }
         
@@ -3093,15 +2987,6 @@ public class AiFragment extends Fragment {
                 
                 String jsonBody = jsonObject.toString();
                 
-                // 添加调试信息
-                Log.d(TAG, "请求体大小: " + jsonBody.length() + " 字符");
-                Log.d(TAG, "Session ID: " + mSessionId);
-                if (mSessionId != null) {
-                    Log.d(TAG, "Session ID长度: " + mSessionId.length());
-                } else {
-                    Log.e(TAG, "Session ID为null");
-                }
-                
                 MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
                 RequestBody requestBody = RequestBody.create(mediaType, jsonBody);
                 
@@ -3112,18 +2997,15 @@ public class AiFragment extends Fragment {
                     public void onResponse(Call<String> call, Response<String> response) {
                         // 检查AI避障是否仍在运行
                         if (!isAIAvoidRunning || !isSessionStarted) {
-                            Log.d(TAG, "AI避障已停止，忽略API响应");
                             return;
                         }
                         
                         if (response.isSuccessful() && response.body() != null) {
                             try {
                                 String responseBody = response.body();
-                                Log.d(TAG, "帧处理API响应: " + responseBody);
                                 
                                 // 再次检查状态
                                 if (!isAIAvoidRunning || !isSessionStarted) {
-                                    Log.d(TAG, "AI避障已停止，不处理API响应");
                                     return;
                                 }
                                 
@@ -3142,7 +3024,6 @@ public class AiFragment extends Fragment {
                     public void onFailure(Call<String> call, Throwable t) {
                         // 检查AI避障是否仍在运行
                         if (!isAIAvoidRunning || !isSessionStarted) {
-                            Log.d(TAG, "AI避障已停止，忽略API失败响应");
                             return;
                         }
                         Log.e(TAG, "API网络请求失败", t);
@@ -3218,11 +3099,8 @@ public class AiFragment extends Fragment {
                 nearestObstacle = jsonResponse.getString("nearest_unknown_obstacle");
             }
             
-            // ===== 直接生成TTS播报文本，只播报距离最近的障碍物 =====
-
-
-            
             // ===== 使用优化版ObstacleDetectionTTSManager =====
+            // 只有在新检测结果时才播报，避免与broadcastRecentUnbroadcastedInfo重复
             if (currentDetectionData != null) {
                 obstacleDetectionTTSManager.processAndSpeak(currentDetectionData);
             }
@@ -3252,13 +3130,9 @@ public class AiFragment extends Fragment {
                 getActivity().runOnUiThread(() -> {
                     // 使用Toast显示检测结果
                     Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-                    
-                    // 这里可以添加更复杂的弹幕显示逻辑
-                    // 比如在页面上创建一个浮动的TextView来显示检测结果
-                    Log.d(TAG, "AI避障检测结果: " + message);
                 });
-                    }
-                } catch (Exception e) {
+            }
+        } catch (Exception e) {
             Log.e(TAG, "显示检测消息失败", e);
         }
     }

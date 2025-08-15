@@ -16,12 +16,58 @@ public class ObstacleDetectionTTSManager {
     
     private Context context;
     private TTSManager ttsManager;
+    private String lastSpokenText = ""; // 记录上次播报的文本，防止重复播报
+    private long lastSpokenTime = 0; // 记录上次播报的时间
+    private boolean isCurrentlySpeaking = false; // 标记当前是否正在播报
     
     public ObstacleDetectionTTSManager(Context context) {
         this.context = context;
         this.ttsManager = new TTSManager(context);
         // 设置TTS语速为1.5倍速
         this.ttsManager.setSpeed(75);
+        
+        // 设置TTS监听器，管理播放状态
+        this.ttsManager.setOnTTSListener(new TTSManager.OnTTSListener() {
+            @Override
+            public void onTTSStart() {
+                isCurrentlySpeaking = true;
+                Log.d(TAG, "TTS播报开始");
+            }
+            
+            @Override
+            public void onTTSProgress(int progress, int beginPos, int endPos) {
+                // 播报进度更新
+            }
+            
+            @Override
+            public void onTTSComplete() {
+                isCurrentlySpeaking = false;
+                Log.d(TAG, "TTS播报完成");
+            }
+            
+            @Override
+            public void onTTSError(String error) {
+                isCurrentlySpeaking = false;
+                Log.e(TAG, "TTS播报出错: " + error);
+            }
+            
+            @Override
+            public void onTTSPause() {
+                isCurrentlySpeaking = false;
+                Log.d(TAG, "TTS播报暂停");
+            }
+            
+            @Override
+            public void onTTSResume() {
+                isCurrentlySpeaking = true;
+                Log.d(TAG, "TTS播报恢复");
+            }
+            
+            @Override
+            public void onTTSBufferProgress(int percent, int beginPos, int endPos, String info) {
+                // 缓冲进度更新
+            }
+        });
     }
     
     /**
@@ -359,14 +405,36 @@ public class ObstacleDetectionTTSManager {
     private void speakSummary(String summary) {
         try {
             if (ttsManager != null && summary != null && !summary.trim().isEmpty()) {
-                // 停止当前正在播放的TTS（如果有）
-                if (ttsManager.isSpeaking()) {
-                    ttsManager.stopSpeaking();
-                    // 实时避障讲究实时信息，立即开始新的播报，不等待
+                // 防重复播报：如果文本相同且时间间隔小于2秒，则跳过
+                long currentTime = System.currentTimeMillis();
+                if (summary.equals(lastSpokenText) && (currentTime - lastSpokenTime) < 2000) {
+                    Log.d(TAG, "检测到重复播报请求，跳过: " + summary);
+                    return;
                 }
+                
+                // 如果当前正在播报，立即停止并释放资源
+                if (isCurrentlySpeaking || ttsManager.isSpeaking()) {
+                    Log.d(TAG, "检测到TTS正在播放，立即停止当前播放并释放资源");
+                    ttsManager.stopSpeaking();
+                    isCurrentlySpeaking = false;
+                    
+                    // 给TTS一点时间完全释放资源，避免语音重叠
+                    try {
+                        Thread.sleep(50); // 等待50毫秒，确保资源完全释放
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                
+                // 标记开始播报
+                isCurrentlySpeaking = true;
                 
                 // 立即开始播报新的检测结果
                 ttsManager.startSpeaking(summary);
+                
+                // 更新记录
+                lastSpokenText = summary;
+                lastSpokenTime = currentTime;
                 
                 Log.d(TAG, "TTS播报已启动: " + summary);
             } else {
@@ -374,6 +442,7 @@ public class ObstacleDetectionTTSManager {
             }
         } catch (Exception e) {
             Log.e(TAG, "TTS播报摘要失败", e);
+            isCurrentlySpeaking = false; // 出错时重置状态
         }
     }
     
@@ -393,9 +462,21 @@ public class ObstacleDetectionTTSManager {
     public void destroy() {
         try {
             if (ttsManager != null) {
+                // 停止当前播放
+                if (isCurrentlySpeaking) {
+                    ttsManager.stopSpeaking();
+                    isCurrentlySpeaking = false;
+                }
+                
                 ttsManager.destroy();
                 ttsManager = null;
             }
+            
+            // 重置状态
+            lastSpokenText = "";
+            lastSpokenTime = 0;
+            isCurrentlySpeaking = false;
+            
         } catch (Exception e) {
             Log.e(TAG, "销毁障碍物检测TTS管理器失败", e);
         }
