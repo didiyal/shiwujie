@@ -47,7 +47,11 @@ import com.swj.shiwujie.common.utils.CameraPreviewManager;
 import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.ObstacleDetectionRetrofitClient;
 import com.swj.shiwujie.common.network.WebSocketManager;
+import com.swj.shiwujie.common.utils.ObstacleDetectionTTSManager;
 import com.swj.shiwujie.data.model.SocketDataV0;
+import com.swj.shiwujie.data.model.ObstacleDetectionData;
+import com.swj.shiwujie.data.model.ObstacleDetectionData.UnknownObstacle;
+import com.swj.shiwujie.data.model.ObstacleDetectionData.DetectedObject;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -63,8 +67,10 @@ import java.util.List;
 import java.util.UUID;
 import android.os.Handler;
 import android.os.Looper;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+
+
 
 /**
  * AI助理Fragment
@@ -186,119 +192,21 @@ public class AiFragment extends Fragment {
     private ApiService apiService;
     private String sessionId;
     private boolean isDetecting = false;
-    private Handler mainHandler;
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isSessionStarted = false;
     private String lastDetectionHash = ""; // 上次检测结果的哈希值，用于去重
+    
+    // 新增：存储历史检测结果的列表，用于在重复检测时播报未播报的信息
+    private List<ObstacleDetectionData> detectionHistory = new ArrayList<>();
+    private Set<String> broadcastedHashes = new HashSet<>(); // 记录已播报的检测结果哈希值
     
     // WebSocket相关
     private WebSocketManager webSocketManager;
     private WebSocketManager.MessageListener webSocketMessageListener;
     
-    // 在类中定义一个静态Map，初始化所有类别映射
-    private static final Map<String, String> CLASS_NAME_MAP = new HashMap<String, String>() {{
-        // 人/交通工具
-        put("person", "人");
-        put("car", "汽车");
-        put("truck", "卡车");
-        put("bus", "公交车");
-        put("motorcycle", "摩托车");
-        put("bicycle", "自行车");
-        put("airplane", "飞机");
-        put("train", "火车");
-        put("boat", "船");
-        put("fire truck", "消防车");
-        put("ambulance", "救护车");
-        put("police car", "警车");
-        
-        // 动物
-        put("dog", "狗");
-        put("cat", "猫");
-        put("bird", "鸟");
-        put("horse", "马");
-        put("sheep", "羊");
-        put("cow", "牛");
-        put("elephant", "大象");
-        put("bear", "熊");
-        put("zebra", "斑马");
-        put("giraffe", "长颈鹿");
-        
-        // 家具/家电
-        put("chair", "椅子");
-        put("table", "桌子");
-        put("refrigerator", "冰箱");
-        put("tv", "电视");
-        put("television", "电视");
-        put("laptop", "笔记本电脑");
-        put("microwave", "微波炉");
-        put("oven", "烤箱");
-        put("toaster", "烤面包机");
-        put("sink", "水槽");
-        put("couch", "沙发");
-        put("sofa", "沙发");
-        put("potted plant", "盆栽植物");
-        put("bed", "床");
-        put("dining table", "餐桌");
-        put("toilet", "马桶");
-        
-        // 日常物品
-        put("cell phone", "手机");
-        put("phone", "手机");
-        put("book", "书");
-        put("cup", "杯子");
-        put("bottle", "瓶子");
-        put("bowl", "碗");
-        put("fork", "叉子");
-        put("knife", "刀子");
-        put("spoon", "勺子");
-        put("clock", "时钟");
-        put("vase", "花瓶");
-        put("scissors", "剪刀");
-        put("teddy bear", "泰迪熊");
-        put("hair drier", "吹风机");
-        put("toothbrush", "牙刷");
-        put("umbrella", "雨伞");
-        put("handbag", "手提包");
-        put("backpack", "背包");
-        put("suitcase", "行李箱");
-        put("remote", "遥控器");
-        put("keyboard", "键盘");
-        put("mouse", "鼠标");
-        
-        // 运动/户外物品
-        put("frisbee", "飞盘");
-        put("skis", "滑雪板");
-        put("snowboard", "滑雪板");
-        put("sports ball", "运动球");
-        put("kite", "风筝");
-        put("baseball bat", "棒球棒");
-        put("baseball glove", "棒球手套");
-        put("skateboard", "滑板");
-        put("surfboard", "冲浪板");
-        put("tennis racket", "网球拍");
-        
-        // 食物
-        put("wine glass", "酒杯");
-        put("banana", "香蕉");
-        put("apple", "苹果");
-        put("sandwich", "三明治");
-        put("orange", "橙子");
-        put("broccoli", "西兰花");
-        put("carrot", "胡萝卜");
-        put("hot dog", "热狗");
-        put("pizza", "披萨");
-        put("donut", "甜甜圈");
-        put("cake", "蛋糕");
-        
-        // 交通设施
-        put("fire hydrant", "消防栓");
-        put("stop sign", "停车标志");
-        put("parking meter", "停车计时器");
-        put("bench", "长凳");
-        put("traffic light", "交通信号灯");
-        
-        // 其他物品
-        put("tie", "领带");
-    }};
+
+    
+    private ObstacleDetectionTTSManager obstacleDetectionTTSManager;
     
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -350,6 +258,9 @@ public class AiFragment extends Fragment {
         // 停止状态检查定时器
         stopStatusCheck();
         
+        // 停止AI避障帧处理
+        stopFrameProcessing();
+        
         // 停止摄像头预览
         if (cameraManager != null) {
             try {
@@ -387,6 +298,9 @@ public class AiFragment extends Fragment {
         // 启动AI避障检测
         if (!isSessionStarted) {
             startObstacleDetection();
+        } else {
+            // 如果会话已启动，重新启动帧处理
+            startFrameProcessing();
         }
     }
     
@@ -2606,9 +2520,7 @@ public class AiFragment extends Fragment {
         resetSmartPlaybackState();
         
         // 清理AI避障资源
-        if (mainHandler != null) {
-            mainHandler.removeCallbacksAndMessages(null);
-        }
+        stopFrameProcessing();
         
         // 清理WebSocket监听器
         if (webSocketManager != null && webSocketMessageListener != null) {
@@ -2617,6 +2529,16 @@ public class AiFragment extends Fragment {
                 Log.d(TAG, "WebSocket监听器已清理");
             } catch (Exception e) {
                 Log.e(TAG, "清理WebSocket监听器失败", e);
+            }
+        }
+        
+        // 清理障碍物检测TTS管理器
+        if (obstacleDetectionTTSManager != null) {
+            try {
+                obstacleDetectionTTSManager.destroy();
+                Log.d(TAG, "障碍物检测TTS管理器已清理");
+            } catch (Exception e) {
+                Log.e(TAG, "清理障碍物检测TTS管理器失败", e);
             }
         }
     }
@@ -2628,14 +2550,15 @@ public class AiFragment extends Fragment {
      */
     private void initObstacleDetection() {
         try {
-            mainHandler = new Handler(Looper.getMainLooper());
-            
-            // 初始化网络服务
+            // 初始化API服务
             apiService = ObstacleDetectionRetrofitClient.getInstance().createService(ApiService.class);
             
-            Log.d(TAG, "AI避障功能初始化完成");
+            // 初始化障碍物检测TTS管理器
+            obstacleDetectionTTSManager = new ObstacleDetectionTTSManager(requireContext());
+            
+            Log.d(TAG, "障碍物检测功能初始化完成");
         } catch (Exception e) {
-            Log.e(TAG, "AI避障功能初始化失败", e);
+            Log.e(TAG, "初始化障碍物检测功能失败", e);
         }
     }
     
@@ -2705,6 +2628,12 @@ public class AiFragment extends Fragment {
             Log.d(TAG, "开始启动帧处理...");
             Log.d(TAG, "当前状态 - isDetecting: " + isDetecting + ", sessionId: " + sessionId);
             
+            // 确保mainHandler已初始化
+            if (mainHandler == null) {
+                Log.e(TAG, "mainHandler未初始化，重新创建");
+                mainHandler = new Handler(Looper.getMainLooper());
+            }
+            
             // 立即执行一次检测，然后开始8秒循环
             processCurrentFrame();
             
@@ -2718,7 +2647,11 @@ public class AiFragment extends Fragment {
                             // 每8秒处理一帧
                             processCurrentFrame();
                             // 每8秒执行一次
-                            mainHandler.postDelayed(this, 5000);
+                            if (mainHandler != null) {
+                                mainHandler.postDelayed(this, 6500);
+                            } else {
+                                Log.e(TAG, "mainHandler为null，无法继续帧处理循环");
+                            }
                         } else {
                             Log.d(TAG, "检测已停止或会话无效，帧处理循环退出");
                         }
@@ -2727,10 +2660,30 @@ public class AiFragment extends Fragment {
                     }
                 }
             };
-            mainHandler.postDelayed(frameProcessor, 5000);
-            Log.d(TAG, "帧处理已启动，8秒后开始循环");
+            
+            if (mainHandler != null) {
+                mainHandler.postDelayed(frameProcessor, 6500);
+                Log.d(TAG, "帧处理已启动，8秒后开始循环");
+            } else {
+                Log.e(TAG, "mainHandler为null，无法启动帧处理");
+            }
         } catch (Exception e) {
             Log.e(TAG, "启动帧处理失败", e);
+        }
+    }
+    
+    /**
+     * 停止帧处理
+     */
+    private void stopFrameProcessing() {
+        try {
+            Log.d(TAG, "停止帧处理...");
+            if (mainHandler != null) {
+                mainHandler.removeCallbacksAndMessages(null);
+                Log.d(TAG, "帧处理已停止");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "停止帧处理失败", e);
         }
     }
     
@@ -2893,12 +2846,35 @@ public class AiFragment extends Fragment {
             
             // ===== 检测结果去重逻辑 =====
             String currentDetectionHash = generateDetectionHash(jsonResponse);
-            if (currentDetectionHash.equals(lastDetectionHash)) {
-                Log.d(TAG, "检测结果与上次相同，跳过TTS播报");
+            
+            // 转换当前检测结果为ObstacleDetectionData对象
+            ObstacleDetectionData currentDetectionData = convertJsonToObstacleDetectionData(jsonResponse);
+            if (currentDetectionData == null) {
+                Log.w(TAG, "无法转换检测结果数据");
                 return;
             }
+            
+            // 将当前检测结果添加到历史记录中
+            detectionHistory.add(currentDetectionData);
+            
+            // 保持历史记录在合理范围内（最多保存10条）
+            if (detectionHistory.size() > 10) {
+                detectionHistory.remove(0);
+            }
+            
+            if (currentDetectionHash.equals(lastDetectionHash)) {
+                Log.d(TAG, "检测结果与上次相同，尝试播报最近两条未播报的信息");
+                
+                // 播报最近两条未播报的信息
+                broadcastRecentUnbroadcastedInfo();
+                return;
+            }
+            
             // 更新上次检测结果哈希
             lastDetectionHash = currentDetectionHash;
+            
+            // 标记当前检测结果已播报
+            broadcastedHashes.add(currentDetectionHash);
             
             // 解析检测到的对象
             String detectedObjects = "未检测到障碍物";
@@ -2924,10 +2900,12 @@ public class AiFragment extends Fragment {
             }
             
             // ===== 直接生成TTS播报文本，只播报距离最近的障碍物 =====
-            String ttsText = generateSimpleObstacleSummary(jsonResponse);
-            if (ttsText != null && !ttsText.trim().isEmpty()) {
-                // 立即启动TTS播报，减少等待时间
-                speakObstacleDetectionResult(ttsText);
+
+
+            
+            // ===== 使用优化版ObstacleDetectionTTSManager =====
+            if (currentDetectionData != null) {
+                obstacleDetectionTTSManager.processAndSpeak(currentDetectionData);
             }
             
         } catch (Exception e) {
@@ -2935,160 +2913,15 @@ public class AiFragment extends Fragment {
         }
     }
     
-    /**
-     * 生成简化的障碍物检测摘要，只播报距离最近的障碍物
-     * @param jsonResponse 检测结果JSON对象
-     * @return 中文摘要文本
-     */
-    private String generateSimpleObstacleSummary(org.json.JSONObject jsonResponse) {
-        try {
-            // 收集所有障碍物信息
-            java.util.List<ObstacleInfo> obstacleInfos = new java.util.ArrayList<>();
-            
-            // 检查是否有未知障碍物
-            if (jsonResponse.has("nearest_unknown_obstacle") && !jsonResponse.isNull("nearest_unknown_obstacle")) {
-                try {
-                    org.json.JSONObject obs = jsonResponse.getJSONObject("nearest_unknown_obstacle");
-                    if (obs.has("distance_m") && obs.has("location_relative")) {
-                        double distance = obs.getDouble("distance_m");
-                        org.json.JSONArray location = obs.getJSONArray("location_relative");
-                        if (location.length() > 0) {
-                            double relativeX = location.getDouble(0);
-                            String position = getPositionDescription(relativeX);
-                            obstacleInfos.add(new ObstacleInfo(distance, position, "未知障碍物"));
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "解析未知障碍物信息失败", e);
-                }
-            }
-            
-            // 检查检测到的物体
-            if (jsonResponse.has("detected_objects") && !jsonResponse.isNull("detected_objects")) {
-                try {
-                    org.json.JSONArray detectedObjects = jsonResponse.getJSONArray("detected_objects");
-                    if (detectedObjects.length() > 0) {
-                        for (int i = 0; i < detectedObjects.length(); i++) {
-                            org.json.JSONObject obj = detectedObjects.getJSONObject(i);
-                            try {
-                                if (obj.has("box_center_relative") && obj.has("class_name") && obj.has("distance_m")) {
-                                    org.json.JSONArray boxCenter = obj.getJSONArray("box_center_relative");
-                                    if (boxCenter.length() > 0) {
-                                        double relativeX = boxCenter.getDouble(0);
-                                        String position = getPositionDescription(relativeX);
-                                        String className = obj.getString("class_name");
-                                        double distance = obj.getDouble("distance_m");
-                                        
-                                        obstacleInfos.add(new ObstacleInfo(distance, position, translateClassName(className)));
-                                    }
-                                }
-                            } catch (Exception e) {
-                                Log.e(TAG, "解析检测物体信息失败", e);
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "解析检测物体列表失败", e);
-                }
-            }
-            
-            // 只选择距离最近的障碍物
-            if (!obstacleInfos.isEmpty()) {
-                obstacleInfos.sort((a, b) -> Double.compare(a.distance, b.distance));
-                ObstacleInfo nearest = obstacleInfos.get(0);
-                
-                if ("未知障碍物".equals(nearest.className)) {
-                    return String.format("在您%s方，大约%.1f米处，有一个未知障碍物。", nearest.position, nearest.distance);
-                } else {
-                    return String.format("在您%s方，大约%.1f米处，有一个%s。", nearest.position, nearest.distance, nearest.className);
-                }
-            }
-            
-            // 如果没有检测到任何障碍物或物体，不播报
-            return null;
-            
-        } catch (Exception e) {
-            Log.e(TAG, "生成障碍物检测摘要失败", e);
-            return null;
-        }
-    }
+
     
-    /**
-     * 障碍物信息内部类
-     */
-    private static class ObstacleInfo {
-        double distance;
-        String position;
-        String className;
-        
-        ObstacleInfo(double distance, String position, String className) {
-            this.distance = distance;
-            this.position = position;
-            this.className = className;
-        }
-    }
+
     
-    /**
-     * 根据相对X坐标获取位置描述
-     * 参考JavaScript版本的getPosition函数逻辑
-     * @param relativeX 相对X坐标（0-1之间）
-     * @return 位置描述（左、正前、右）
-     */
-    private String getPositionDescription(double relativeX) {
-        if (relativeX < 0.33) {
-            return "左";
-        } else if (relativeX > 0.66) {
-            return "右";
-        } else {
-            return "正前";
-        }
-    }
+
     
-    /**
-     * 翻译物体类别名称（优化后）
-     * 将英文类别名翻译为中文
-     * @param className 英文类别名
-     * @return 中文类别名（未匹配时返回"未知物体"）
-     */
-    private String translateClassName(String className) {
-        if (className == null) {
-            return "未知物体";
-        }
-        // 转为小写后查询映射，未找到则返回"未知物体"
-        return CLASS_NAME_MAP.getOrDefault(className.toLowerCase(), "未知物体");
-    }
+
     
-    /**
-     * 使用TTS播报障碍物检测结果（优化版）
-     * @param text 要播报的中文文本
-     */
-    private void speakObstacleDetectionResult(String text) {
-        try {
-            if (ttsManager != null && text != null && !text.trim().isEmpty()) {
-                Log.d(TAG, "开始TTS播报障碍物检测结果: " + text);
-                
-                // 如果TTS正在播报，立即停止并开始新的播报
-                if (ttsManager.isSpeaking()) {
-                    ttsManager.stopSpeaking();
-                    // 减少等待时间，从100ms减少到50ms
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-                
-                // 立即开始播报新的检测结果
-                ttsManager.startSpeaking(text);
-                
-                Log.d(TAG, "TTS播报已启动");
-            } else {
-                Log.w(TAG, "TTS管理器未初始化或播报文本为空");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "TTS播报障碍物检测结果失败", e);
-        }
-    }
+
     
     /**
      * 显示检测消息（弹幕效果）
@@ -3105,8 +2938,8 @@ public class AiFragment extends Fragment {
                     // 比如在页面上创建一个浮动的TextView来显示检测结果
                     Log.d(TAG, "AI避障检测结果: " + message);
                 });
-            }
-        } catch (Exception e) {
+                    }
+                } catch (Exception e) {
             Log.e(TAG, "显示检测消息失败", e);
         }
     }
@@ -3122,16 +2955,16 @@ public class AiFragment extends Fragment {
             
             // 提取关键检测信息
             if (jsonResponse.has("detected_objects")) {
-                org.json.JSONArray detectedObjects = jsonResponse.getJSONArray("detected_objects");
+                    org.json.JSONArray detectedObjects = jsonResponse.getJSONArray("detected_objects");
                 hashBuilder.append("objects:");
-                for (int i = 0; i < detectedObjects.length(); i++) {
+                        for (int i = 0; i < detectedObjects.length(); i++) {
                     try {
                         org.json.JSONObject obj = detectedObjects.getJSONObject(i);
                         String className = obj.optString("class_name", "");
                         double distance = obj.optDouble("distance_m", 0.0);
                         // 距离精度到0.1米，避免微小变化
                         hashBuilder.append(className).append(":").append(String.format("%.1f", distance)).append(",");
-                    } catch (Exception e) {
+                            } catch (Exception e) {
                         // 忽略单个对象解析错误
                     }
                 }
@@ -3143,7 +2976,7 @@ public class AiFragment extends Fragment {
                     double distance = obs.optDouble("distance_m", 0.0);
                     // 距离精度到0.1米
                     hashBuilder.append("unknown:").append(String.format("%.1f", distance));
-                } catch (Exception e) {
+                            } catch (Exception e) {
                     // 忽略解析错误
                 }
             }
@@ -3155,7 +2988,7 @@ public class AiFragment extends Fragment {
             
             return hashBuilder.toString();
             
-        } catch (Exception e) {
+                } catch (Exception e) {
             Log.e(TAG, "生成检测结果哈希失败", e);
             return "error_hash";
         }
@@ -3346,6 +3179,173 @@ public class AiFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "跳转用户信息修改页面失败", e);
             Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * 将JSON响应转换为ObstacleDetectionData对象
+     * @param jsonResponse JSON响应对象
+     * @return ObstacleDetectionData对象，转换失败返回null
+     */
+    private ObstacleDetectionData convertJsonToObstacleDetectionData(org.json.JSONObject jsonResponse) {
+        try {
+            ObstacleDetectionData data = new ObstacleDetectionData();
+            
+            // 转换未知障碍物
+            if (jsonResponse.has("nearest_unknown_obstacle") && !jsonResponse.isNull("nearest_unknown_obstacle")) {
+                try {
+                    org.json.JSONObject obs = jsonResponse.getJSONObject("nearest_unknown_obstacle");
+                    if (obs.has("distance_m") && obs.has("location_relative")) {
+                        UnknownObstacle unknownObs = new UnknownObstacle();
+                        unknownObs.setDistanceM(obs.getDouble("distance_m"));
+                        unknownObs.setLocationRelative(parseLocationArray(obs.getJSONArray("location_relative")));
+                        data.setNearestUnknownObstacle(unknownObs);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "转换未知障碍物数据失败", e);
+                }
+            }
+            
+            // 转换检测到的物体
+            if (jsonResponse.has("detected_objects") && !jsonResponse.isNull("detected_objects")) {
+                try {
+                org.json.JSONArray detectedObjects = jsonResponse.getJSONArray("detected_objects");
+                    if (detectedObjects.length() > 0) {
+                        java.util.List<DetectedObject> objects = new java.util.ArrayList<>();
+                for (int i = 0; i < detectedObjects.length(); i++) {
+                        org.json.JSONObject obj = detectedObjects.getJSONObject(i);
+                            try {
+                                if (obj.has("box_center_relative") && obj.has("class_name") && obj.has("distance_m")) {
+                                    DetectedObject detectedObj = new DetectedObject();
+                                    detectedObj.setClassName(obj.getString("class_name"));
+                                    detectedObj.setDistanceM(obj.getDouble("distance_m"));
+                                    detectedObj.setBoxCenterRelative(parseLocationArray(obj.getJSONArray("box_center_relative")));
+                                    objects.add(detectedObj);
+                                }
+                    } catch (Exception e) {
+                                Log.e(TAG, "转换检测物体数据失败", e);
+                            }
+                        }
+                        data.setDetectedObjects(objects);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "转换检测物体列表失败", e);
+                }
+            }
+            
+            return data;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "转换JSON到ObstacleDetectionData失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 解析位置数组
+     * @param locationArray 位置数组JSON
+     * @return Double列表
+     */
+    private java.util.List<Double> parseLocationArray(org.json.JSONArray locationArray) {
+        java.util.List<Double> location = new java.util.ArrayList<>();
+        try {
+            for (int i = 0; i < locationArray.length(); i++) {
+                location.add(locationArray.getDouble(i));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "解析位置数组失败", e);
+        }
+        return location;
+    }
+    
+    /**
+     * 播报最近两条未播报的检测信息
+     */
+    private void broadcastRecentUnbroadcastedInfo() {
+        try {
+            if (detectionHistory.isEmpty()) {
+                Log.d(TAG, "没有历史检测记录可播报");
+                return;
+            }
+            
+            // 从最近的记录开始，找到未播报的信息
+            List<ObstacleDetectionData> unbroadcastedData = new ArrayList<>();
+            
+            // 从最新到最旧的顺序遍历历史记录
+            for (int i = detectionHistory.size() - 1; i >= 0; i--) {
+                ObstacleDetectionData data = detectionHistory.get(i);
+                String hash = generateDetectionHashFromData(data);
+                
+                if (!broadcastedHashes.contains(hash)) {
+                    unbroadcastedData.add(data);
+                    if (unbroadcastedData.size() >= 2) {
+                        break; // 最多取2条
+                    }
+                }
+            }
+            
+            if (unbroadcastedData.isEmpty()) {
+                Log.d(TAG, "没有未播报的检测信息");
+                return;
+            }
+            
+            Log.d(TAG, "找到 " + unbroadcastedData.size() + " 条未播报的检测信息，开始播报");
+            
+            // 播报未播报的信息
+            for (ObstacleDetectionData data : unbroadcastedData) {
+                String hash = generateDetectionHashFromData(data);
+                broadcastedHashes.add(hash); // 标记为已播报
+                
+                // 使用TTS播报
+                if (obstacleDetectionTTSManager != null) {
+                    obstacleDetectionTTSManager.processAndSpeak(data);
+                }
+                
+                Log.d(TAG, "播报未播报的检测信息: " + hash);
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "播报未播报检测信息失败", e);
+        }
+    }
+    
+    /**
+     * 从ObstacleDetectionData生成哈希值
+     */
+    private String generateDetectionHashFromData(ObstacleDetectionData data) {
+        try {
+            StringBuilder hashBuilder = new StringBuilder();
+            
+            // 提取关键检测信息
+            List<ObstacleDetectionData.DetectedObject> detectedObjects = data.getDetectedObjects();
+            if (detectedObjects != null && !detectedObjects.isEmpty()) {
+                hashBuilder.append("objects:");
+                for (ObstacleDetectionData.DetectedObject obj : detectedObjects) {
+                    String className = obj.getClassName();
+                    double distance = obj.getDistanceM();
+                    // 距离精度到0.1米，避免微小变化
+                    hashBuilder.append(className).append(":").append(String.format("%.1f", distance)).append(",");
+                }
+            }
+            
+            // 处理未知障碍物
+            if (data.getNearestUnknownObstacle() != null) {
+                ObstacleDetectionData.UnknownObstacle obs = data.getNearestUnknownObstacle();
+                double distance = obs.getDistanceM();
+                // 距离精度到0.1米
+                hashBuilder.append("unknown:").append(String.format("%.1f", distance));
+            }
+            
+            // 如果没有检测到任何内容，返回特殊标识
+            if (hashBuilder.length() == 0) {
+                return "no_detection";
+            }
+            
+            return hashBuilder.toString();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "从检测数据生成哈希失败", e);
+            return "error_hash";
         }
     }
 } 

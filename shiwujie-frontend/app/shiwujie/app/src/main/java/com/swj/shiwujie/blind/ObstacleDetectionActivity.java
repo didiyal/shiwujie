@@ -511,7 +511,7 @@ public class ObstacleDetectionActivity extends AppCompatActivity {
                     Log.w(TAG, "警告：5秒内未收到startObstacleDetectionSession API响应");
                     Log.w(TAG, "可能的原因：后端响应慢、网络超时、或后端接口有问题");
                 }
-            }, 5000);
+            }, 6500);
             
         } else {
             Log.e(TAG, "apiService为null，无法创建检测会话");

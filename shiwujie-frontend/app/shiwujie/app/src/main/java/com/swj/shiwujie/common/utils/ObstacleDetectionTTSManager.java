@@ -64,19 +64,15 @@ public class ObstacleDetectionTTSManager {
      */
     private boolean hasUsefulDetectionInfo(ObstacleDetectionData data) {
         try {
-            // 检查是否有未知障碍物
-            if (data.getNearestUnknownObstacle() != null) {
-                return true;
-            }
-            
             // 检查是否有检测到的物体
             List<ObstacleDetectionData.DetectedObject> detectedObjects = data.getDetectedObjects();
             if (detectedObjects != null && !detectedObjects.isEmpty()) {
                 return true;
             }
             
-            // 如果既没有未知障碍物，也没有检测到物体，则没有有用信息
-            return false;
+            // 即使没有检测到物体，也需要播报提示信息
+            // 这样可以提醒用户保持机身平稳
+            return true;
             
         } catch (Exception e) {
             Log.e(TAG, "判断检测信息是否有用失败", e);
@@ -86,7 +82,7 @@ public class ObstacleDetectionTTSManager {
     
     /**
      * 生成障碍物检测的中文摘要
-     * 只播报距离用户最近的1条障碍物信息，避免内容过长
+     * 只播报detected_objects中的已识别物体，选择距离用户最近的2条信息
      * @param data 检测数据
      * @return 中文摘要文本
      */
@@ -94,29 +90,18 @@ public class ObstacleDetectionTTSManager {
         try {
             StringBuilder summary = new StringBuilder();
             
-            // 收集所有需要播报的障碍物信息
-            List<String> obstacleInfos = new ArrayList<>();
-            
-            // 检查是否有未知障碍物
-            if (data.getNearestUnknownObstacle() != null) {
-                ObstacleDetectionData.UnknownObstacle obs = data.getNearestUnknownObstacle();
-                double distance = obs.getDistanceM();
-                List<Double> location = obs.getLocationRelative();
-                
-                if (location != null && location.size() > 0) {
-                    double relativeX = location.get(0);
-                    String position = getPosition(relativeX);
-                    obstacleInfos.add(String.format("在您%s方，大约%.1f米处，有一个未知障碍物", position, distance));
-                }
-            }
-            
-            // 检查检测到的物体
+            // 优先处理detected_objects中的已识别物体
             List<ObstacleDetectionData.DetectedObject> detectedObjects = data.getDetectedObjects();
             if (detectedObjects != null && !detectedObjects.isEmpty()) {
                 // 按距离排序（距离越近越重要）
                 detectedObjects.sort((a, b) -> Double.compare(a.getDistanceM(), b.getDistanceM()));
                 
-                for (ObstacleDetectionData.DetectedObject obj : detectedObjects) {
+                // 选择距离最近的两个物体
+                int count = Math.min(2, detectedObjects.size());
+                String lastPosition = null; // 记录上一个物体的方向
+                
+                for (int i = 0; i < count; i++) {
+                    ObstacleDetectionData.DetectedObject obj = detectedObjects.get(i);
                     List<Double> boxCenter = obj.getBoxCenterRelative();
                     if (boxCenter != null && boxCenter.size() > 0) {
                         double relativeX = boxCenter.get(0);
@@ -124,27 +109,40 @@ public class ObstacleDetectionTTSManager {
                         String className = obj.getClassName();
                         double distance = obj.getDistanceM();
                         
-                        obstacleInfos.add(String.format("在您%s方，大约%.1f米处，有一个%s", position, distance, translateClassName(className)));
+                        String obstacleInfo;
+                        if (i == 0) {
+                            // 第一个物体，完整格式
+                            obstacleInfo = String.format("在您%s方，大约%.1f米处，有一个%s", position, distance, translateClassName(className));
+                            lastPosition = position;
+                        } else {
+                            // 第二个物体，检查是否与第一个同方向
+                            if (position.equals(lastPosition)) {
+                                // 同方向，简化格式
+                                obstacleInfo = String.format("大约%.1f米处，有一个%s", distance, translateClassName(className));
+                            } else {
+                                // 不同方向，完整格式
+                                obstacleInfo = String.format("在您%s方，大约%.1f米处，有一个%s", position, distance, translateClassName(className));
+                                lastPosition = position;
+                            }
+                        }
+                        
+                        if (i == 0) {
+                            summary.append(obstacleInfo);
+                        } else {
+                            summary.append("。").append(obstacleInfo);
+                        }
                     }
+                }
+                
+                // 如果detected_objects中有物体，直接返回，不再处理未知障碍物
+                if (summary.length() > 0) {
+                    summary.append("。");
+                    return summary.toString();
                 }
             }
             
-            // 只选择距离最近的一条障碍物信息
-            if (!obstacleInfos.isEmpty()) {
-                // 按距离排序，选择最近的
-                obstacleInfos.sort((a, b) -> {
-                    double distanceA = extractDistance(a);
-                    double distanceB = extractDistance(b);
-                    return Double.compare(distanceA, distanceB);
-                });
-                
-                summary.append(obstacleInfos.get(0)).append("。");
-            } else {
-                // 如果没有检测到任何障碍物或物体，不播报
-                return null;
-            }
-            
-            return summary.toString();
+            // 如果没有检测到物体，播报提示信息
+            return "实时检测中，请保持机身平稳";
             
         } catch (Exception e) {
             Log.e(TAG, "生成障碍物检测摘要失败", e);
@@ -152,27 +150,7 @@ public class ObstacleDetectionTTSManager {
         }
     }
     
-    /**
-     * 从障碍物信息文本中提取距离数值
-     * @param obstacleInfo 障碍物信息文本
-     * @return 距离数值
-     */
-    private double extractDistance(String obstacleInfo) {
-        try {
-            // 查找"大约X.X米处"的模式
-            int startIndex = obstacleInfo.indexOf("大约");
-            if (startIndex != -1) {
-                int endIndex = obstacleInfo.indexOf("米处", startIndex);
-                if (endIndex != -1) {
-                    String distanceStr = obstacleInfo.substring(startIndex + 2, endIndex);
-                    return Double.parseDouble(distanceStr);
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "提取距离数值失败: " + obstacleInfo, e);
-        }
-        return Double.MAX_VALUE; // 如果提取失败，返回最大值
-    }
+
     
     /**
      * 根据相对X坐标获取位置描述
@@ -384,15 +362,10 @@ public class ObstacleDetectionTTSManager {
                 // 停止当前正在播放的TTS（如果有）
                 if (ttsManager.isSpeaking()) {
                     ttsManager.stopSpeaking();
-                    // 等待一小段时间确保停止完成
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                    // 实时避障讲究实时信息，立即开始新的播报，不等待
                 }
                 
-                // 开始播报新的检测结果
+                // 立即开始播报新的检测结果
                 ttsManager.startSpeaking(summary);
                 
                 Log.d(TAG, "TTS播报已启动: " + summary);
