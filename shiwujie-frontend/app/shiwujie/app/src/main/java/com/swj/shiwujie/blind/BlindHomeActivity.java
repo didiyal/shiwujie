@@ -57,7 +57,7 @@ public class BlindHomeActivity extends AppCompatActivity {
         
         // ===== 障碍物检测功能集成 - 严格按照backend_service.py的集成逻辑 =====
         // 改造说明：将Python后端的障碍物检测功能集成到Android原生界面
-        setupObstacleDetectionNavigation();
+
         
         // 检查是否需要开启连线志愿者功能
         checkAndEnableVolunteerConnection();
@@ -337,24 +337,7 @@ public class BlindHomeActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    /**
-     * 设置障碍物检测导航 - 严格按照原Python代码的集成逻辑
-     * 改造说明：将Python后端的障碍物检测功能集成到Android原生界面
-     */
-    private void setupObstacleDetectionNavigation() {
-        // 这里应该根据实际的布局文件添加障碍物检测按钮
-        // 由于是改造版本，这里使用Toast提示
-        // 实际应该添加按钮到布局文件中
-        
-        // 显示障碍物检测功能提示 - 对应原Python代码的功能说明
-        Toast.makeText(this, "障碍物检测功能已集成，可通过导航菜单访问", Toast.LENGTH_LONG).show();
-        
-        // 记录功能集成日志 - 对应原Python代码的日志输出
-        Log.d(TAG, "=== 障碍物检测功能集成完成 ===");
-        Log.d(TAG, "功能说明: 基于YOLO和深度模型的实时障碍物检测");
-        Log.d(TAG, "对应原Python代码: backend_service.py的process_frame逻辑");
-        Log.d(TAG, "==================================================");
-    }
+
     
     private void performDisabilityCardVerification(String disabilityCard, AlertDialog dialog) {
         String token = SharedPrefsUtil.getToken();

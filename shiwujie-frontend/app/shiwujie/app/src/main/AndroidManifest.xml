@@ -83,11 +83,7 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Shiwujie.Fullscreen" />
         
-        <!-- WebView Activity -->
-        <activity
-            android:name=".blind.ui.ai.WebViewActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Shiwujie" />
+
         
         <!-- 悬浮窗服务 -->
         <service
@@ -102,13 +98,7 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
         
-        <!-- ===== 障碍物检测Activity - 严格按照backend_service.py的集成逻辑 ===== -->
-        <!-- 改造说明：将Python后端的障碍物检测功能注册到Android原生系统 -->
-        <activity
-            android:name=".blind.ObstacleDetectionActivity"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.Shiwujie" />
+
         
     </application>
 
