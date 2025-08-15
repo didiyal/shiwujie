@@ -68,23 +68,23 @@ nacos:
 # 明确指定日志配置
 logging:
   config: classpath:logback-spring.xml
-# springdoc-openapi项目配置
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: alpha
-  api-docs:
-    path: /v3/api-docs
-  group-configs:
-    - group: 'ai'
-      paths-to-match: '/**'
-      packages-to-scan: com.swj.shiwujie.controller
-# knife4j的增强配置，不需要增强可以不配
-knife4j:
-  enable: true
-  setting:
-    language: zh_cn
+## springdoc-openapi项目配置
+#springdoc:
+#  swagger-ui:
+#    path: /swagger-ui.html
+#    tags-sorter: alpha
+#    operations-sorter: alpha
+#  api-docs:
+#    path: /v3/api-docs
+#  group-configs:
+#    - group: 'ai'
+#      paths-to-match: '/**'
+#      packages-to-scan: com.swj.shiwujie.controller
+## knife4j的增强配置，不需要增强可以不配
+#knife4j:
+#  enable: true
+#  setting:
+#    language: zh_cn
 # searchApi
 search-api:
   api-key: 4qkQ96eSGHAbAQKS5wbs8WyT
