@@ -1,5 +1,6 @@
 package com.swj.shiwujie.tools.app;
 
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -40,6 +41,10 @@ public class UserTools {
     public String joinFamily(@ToolParam(description = "家庭创建人的手机号，用于申请加入家庭") String familyVolunteerPhone) {
         try {
             Blind loginBlind = LoginUtils.getLoginBlind();
+            Long familyId = loginBlind.getFamilyId();
+            if(ObjUtil.isNotNull(familyId)){
+                return "您已加入家庭了,无需重复加入家庭";
+            }
             ThrowUtils.throwIf(StrUtil.isBlankIfStr(familyVolunteerPhone), ErrorCode.PARAMS_ERROR, "请输入家庭创建人手机号");
             boolean b = innerFamilyService.joinFamily(familyVolunteerPhone, loginBlind.getBlindId(), null, LoginUtils.getLoginUserPhone());
             if (b) return "正在为您申请加入家庭，申请成功,需要等待家庭创始人审核。";

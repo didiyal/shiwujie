@@ -1,20 +1,14 @@
 package com.swj.shiwujie.app;
 
 
-import cn.hutool.json.JSONObject;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
-import com.swj.shiwujie.advisor.MyLoggerAdvisor;
-import com.swj.shiwujie.chatmemory.MySQLChatMemory;
 import com.swj.shiwujie.chatmemory.RedisChatMemory;
-import com.swj.shiwujie.common.AiToolRequest;
 import com.swj.shiwujie.common.ToolCallRequest;
 import com.swj.shiwujie.tools.app.WorkChooseTool;
 import com.swj.shiwujie.tools.mytools.WebSearchTool;
 import jakarta.annotation.Resource;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.chat.client.ChatClient;
@@ -22,9 +16,6 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
@@ -61,13 +52,14 @@ public class EasyProblemApp {
      * 系统提示词(负责调用工具)
      */
     private final String systemPromptStart = """
-            你是"视无界"App的智能助手，负责调用合适的工具。
+            你是"视无界"App的工具选择助手，只负责调用合适的工具。
                      以下是行为准则：
                      1. 考虑用户是视障人士：回答用户时，要用简洁清晰的语言，避免冗长和特殊字符，方便用户通过语音轻松理解。
                      2. 引导用户操作：有些功能需要用户提供更多信息，请有步骤地引导用户输入所需数据，并在用户输入后进行确认。注意：不要重复要求用户确认或输入。一旦用户确认，直接调用相应的业务工具完成任务。
                      3. 尊重视障用户：牢记用户是视障人士，确保每个操作步骤都简单直观，尽量减少不必要的步骤。
                      4. 特别注意：视障用户无法看到界面上的ID（如活动ID、求助帖ID等）。当需要这些ID时，必须从之前的对话记录中获取，不要要求用户提供这些ID。
                      5. 理解用户意图：不要仅根据关键词机械判断，要结合上下文理解用户真正的需求，然后选择正确的功能。例如，当用户说“我明天下午要去医院，需要志愿者帮助”，即使未直接提到“求助帖”，也应识别为用户想发布求助帖寻求志愿者，并调用相应的工具。
+                     6. 准确判断是否需要工具调用：对于健康咨询、生活常识等通用问题，可以直接回答，无需调用工具。例如，当用户询问“我有点轻微的咳嗽需要注意什么？”时，应判断为无需调用工具。
             
                      系统提供的工具包括：
             
@@ -101,7 +93,7 @@ public class EasyProblemApp {
                        "data": "{\\\\"type\\\\":1,\\\\"data\\\\":\\\\"{\\\\\\\\\\\\"familyVolunteerPhone\\\\\\\\\\\\":\\\\\\\\\\\\"13800138000\\\\\\\\\\\\"}\\\\"}"  // 工具调用的具体参数，格式与上述示例一致
                      }
             
-                     2. 网络搜索工具调用：帮助实现联网搜索查询。
+                     2. 网络搜索工具调用：帮助实现联网搜索查询(若上下文中有之前的网络搜索结果,则不调用网络搜索工具)。
                      重要说明：当需要调用网络搜索工具时，请严格按照以下格式返回 JSON 字符串，不要添加其他内容：
                      {
                        "type": -2,  // -2 表示网络查询调用
@@ -113,6 +105,13 @@ public class EasyProblemApp {
                        "type": -3,  // -3 表示无需调用工具
                        "data": ""
                      }
+            
+                     4. 当你认为需要询问用户信息时,请返回以下内容：
+                     {
+                       "type": -4,  // -4 表示需要询问用户信息
+                       "data": "要询问的信息内容"
+                     }
+                     
             """;
 
 
@@ -120,56 +119,22 @@ public class EasyProblemApp {
      * 系统提示词(负责工具调用后流式输出)
      */
     private final String systemPromptEnd = """
-            你是"视无界"App的智能助手，负责使用工具调用的结果来整理信息，并清晰地反馈给用户。
+            你是"视无界"App的智能助手，负责根据工具调用结果生成简洁明了的回复，帮助视障用户轻松理解信息。
             
-            以下是行为准则：
-            1. 考虑用户是视障人士：请用简洁、清晰的语言来描述结果，避免使用 (、*、^、$、# 等) 特殊字符，以确保用户通过语音可以轻松理解。
-            2. 尊重视障用户：牢记用户的视障身份，确保反馈步骤简单明了，避免让用户执行重复或不必要的操作。
-            3. 回复时不要使用 Markdown 格式，用纯文本直接呈现结果，保证信息清楚明了。
-            4. 引导式反馈：如果工具调用结果显示操作失败或需要额外信息，不要直接生硬地告知错误。应明确说明失败原因，并友好地引导用户提供缺失的信息。举例来说，如果发布求助帖失败且提示“缺少求助内容”，不要只说“操作失败，缺少内容”。可以这样回应：“发布求助帖需要提供求助的时间和内容，请告诉我具体时间和内容，我会帮您完成发布。” 通过这样的引导语气，帮助用户理解并继续下一步操作。
+            请遵循以下准则：
+            1. 使用简单、清晰的语言，避免特殊符号（如*、#、^等），确保语音播报清晰易懂。
+            2. 回复内容应直接明了，不使用Markdown格式，以纯文本形式呈现,比如"**西陵峡**"应该是"西陵峡"。
+            3. 若工具执行成功，请总结关键信息并告知用户。
+            4. 若工具执行失败或缺少必要信息，请友善地说明原因，并引导用户提供所需内容。
+               例如：若发布求助帖失败提示“缺少内容”，可回复：“发布求助帖需要您提供具体的内容和地点，能告诉我吗？”
             
-            系统提供的工具包括：
+            可调用的工具包括：
+            1. 核心业务工具：处理家庭、社区、活动、求助帖等操作。
+            2. 网络搜索工具：用于联网查询信息。
+            3. 无需工具调用：问题已可直接回答。
+            4. 需要更多信息：需向用户询问详情。
             
-            1. 核心业务工具调用：用于处理用户、家庭、社区、活动和求助帖等相关操作。
-               可用功能列表如下：
-               1 - 申请加入家庭/加入家庭/我要加入家庭（需要提供家庭创建人手机号）
-               2 - 查看家庭信息/家庭里有几个人/家庭成员信息
-               3 - 退出家庭/离开家庭
-               4 - 获取用户的社区信息/我的社区信息/我有加入社区吗/我社区叫什么名字
-               5 - 获取社区活动信息/查看活动
-               6 - 添加活动报名/报名活动（需要提供活动 ID - activityId）
-               7 - 获取用户报名的活动信息/查看我报名的活动/我报名了哪些活动
-               8 - 获取自己发布的求助帖/我的求助帖/查看我的求助帖
-               9 - 删除求助帖（需要提供求助帖 ID - helppostId）
-               10 - 修改求助帖（需要提供求助帖 ID - helppostId、新内容 - helpContent 和新地点 - helpLocation）
-               11 - 我要发布求助帖/发布求助帖（需要提供内容 - helpContent 和地点 - helpLocation）
-               12 - 加入社区/退出社区
-               13 - 修改个人信息 (名字、手机号、密码等)
-               14 - 图像识别
-               15 - 视频求助/志愿者视频求助/我要志愿者帮助
-               16 - 紧急求助/家属视频求助/家属紧急帮助
-               17 - 跳转到其它软件
-            
-            2. 网络搜索工具调用：用于通过互联网查询信息。
-            
-            你的任务是根据工具返回的结果，结合用户最初的提问进行回答。确保回答准确且易于理解，尽量将答案控制在 100 字以内。 
-            如果工具调用失败，请清楚告知用户失败的原因和缺少的信息，并以礼貌的方式引导用户提供这些信息，以便继续操作。
-            """;
-
-
-    /**
-     * 系统提示词(负责知识库调用后流式输出)
-     */
-    private final String systemPromptRag = """
-            你是"视无界"App的智能助手，负责根据知识库中的信息为用户提供准确、简洁的回答。
-            
-            以下是行为准则：
-            1. 考虑用户是视障人士：回答要简明清晰，避免使用 (、*、^、$、# 等) 特殊字符，以确保用户通过语音能够轻松理解。
-            2. 尊重视障用户：牢记用户的视障身份，确保回答简明直观，避免提供冗长或重复的信息。
-            3. 回答时不要使用 Markdown 格式，而应采用纯文本形式，确保信息传达直接明了。
-            4. 回答要结合知识库提供的信息，保证内容准确可靠，同时尽量将回答控制在 100 字以内，避免信息过多让用户难以理解。
-            5. 语气亲切自然：用友好、有温度的语气回答用户的问题，使回复更有人情味，让用户感到被尊重和关怀。在保证信息准确的前提下，让回答听起来像与用户对话而非机械背诵。
-            
+            请根据工具返回结果和用户原始问题进行精准回答，控制在100字以内。若失败，请礼貌引导用户补充信息。
             """;
 
 
@@ -231,30 +196,44 @@ public class EasyProblemApp {
             try {
                 // 第一阶段：使用非流式调用获取AI响应
                 String aiResponse = doChatWithTextStart(text, blindId);
-
+                log.info("工具分析AI返回: {}", aiResponse);
                 // 检查AI是否要求调用工具，直接根据type判断
                 ToolCallRequest toolCallRequest = parseToolCallRequest(aiResponse);
-                if (toolCallRequest != null) {
-                    // 执行工具调用
-                    String toolResult = executeToolByRequest(toolCallRequest);
-                    if ("执行成功".equals(toolResult)) {
-                        return stringToFlux("执行成功");
-                    }
 
-                    // 第二阶段：将工具结果反馈给AI并流式输出最终结果
-                    String finalPrompt = String.format(
-                            "用户的问题是：%s\n工具执行结果是：%s\n请参考工具执行结果，回答用户最初的问题。",
-                            text, toolResult);
 
-                    return doChatWithTextEnd(blindId, finalPrompt);
-                } else {
-//                    // 没有工具调用请求，直接流式输出AI响应
-//                    log.info("无需工具调用，直接流式输出结果");
-//                    return stringToFlux(aiResponse);
-                    // 没有工具调用请求，使用RAG功能直接流式输出AI响应
-                    log.info("无需工具调用，直接流式输出结果");
-                    return doChatWithTextRag(blindId, text);
+                String content = null;
+                switch (toolCallRequest.getType()) {
+                    case -1:// 执行业务工具调用
+                        log.info("执行业务工具调用{}", toolCallRequest);
+                        content = workChooseTool.questionChoose(toolCallRequest.getData());
+                        break;
+                    case -2:// 网页搜索
+                        log.info("开始执行web搜索,{}", toolCallRequest);
+                        content = webSearchTool.searchWeb(toolCallRequest.getData());
+                        // 第二阶段：将工具结果反馈给AI并流式输出最终结果
+                        String finalPrompt = String.format(
+                                "用户的问题是：%s\n工具执行结果是：%s\n若执行了工具,请参考工具执行结果，回答用户最初的问题。",
+                                text, content);
+
+                        return doChatWithTextEnd(blindId, finalPrompt);
+                    case -3:// 不执行工具调用
+                        log.info("不执行工具调用,{}", toolCallRequest);
+                        content = "程序认为无需执行工具调用";
+                        break;
+                    case -4:// 需要获取用户输入信息
+                        log.info("需要获取用户输入信息,{}", toolCallRequest);
+                        content = toolCallRequest.getData();
+                        break;
                 }
+
+
+                // 第二阶段：将工具结果反馈给AI并流式输出最终结果
+                String finalPrompt = String.format(
+                        "用户的问题是：%s\n工具执行结果是：%s\n若执行了工具,请参考工具执行结果，回答用户最初的问题。",
+                        text, content);
+
+                return doChatWithTextEndRAG(blindId, finalPrompt);
+
             } catch (Exception e) {
                 log.error("Error in tool-aware SSE processing: ", e);
                 return stringToFlux("系统发生错误，请稍后再试。");
@@ -275,7 +254,6 @@ public class EasyProblemApp {
         ChatResponse chatResponse = chatClient.prompt(systemPromptStart)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-//                .advisors(myRagCloudAdvisor)
                 .user(text)
                 .call()
                 .chatResponse();
@@ -291,7 +269,7 @@ public class EasyProblemApp {
      * @return
      */
     @NotNull
-    private Flux<String> doChatWithTextEnd(Long blindId, String finalPrompt) {
+    private Flux<String> doChatWithTextEndRAG(Long blindId, String finalPrompt) {
         return chatClient.prompt(systemPromptEnd)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
@@ -309,18 +287,17 @@ public class EasyProblemApp {
 
 
     /**
-     * 通过知识库信息与大模型文字交流(流式输出)
+     * 与大模型文字交流(流式输出)
      *
      * @param blindId
      * @param finalPrompt
      * @return
      */
     @NotNull
-    private Flux<String> doChatWithTextRag(Long blindId, String finalPrompt) {
-        return chatClient.prompt(systemPromptRag)
+    private Flux<String> doChatWithTextEnd(Long blindId, String finalPrompt) {
+        return chatClient.prompt(systemPromptEnd)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                .advisors(myRagCloudAdvisor)
                 .user(finalPrompt)
                 .stream()
                 .content()
@@ -364,8 +341,7 @@ public class EasyProblemApp {
                 Integer type = jsonObject.getInt("type");
                 String data = jsonObject.getStr("data");
 
-                // 根据type判断是否为工具调用请求
-                if ((type == -1 || type == -2) && data != null) {
+                if ((ObjUtil.isNotNull(type)) && data != null) {
                     return new ToolCallRequest(type, data);
                 }
             }
@@ -373,28 +349,6 @@ public class EasyProblemApp {
             log.warn("解析工具调用请求失败，响应内容: {}，错误: {}", aiResponse, e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * 根据请求执行工具调用
-     */
-    private String executeToolByRequest(ToolCallRequest request) {
-        try {
-            if (request.getType() == -1) {
-                // 业务工具调用
-//                log.info("执行业务工具调用，参数: {}", request.getData());
-                return workChooseTool.questionChoose(request.getData());
-            } else if (request.getType() == -2) {
-                // 网络搜索工具调用
-                log.info("执行网络搜索工具调用，参数: {}", request.getData());
-                return webSearchTool.searchWeb(request.getData());
-            } else {
-                return "未知工具类型: " + request.getType();
-            }
-        } catch (Exception e) {
-            log.error("执行工具调用失败: ", e);
-            return "工具执行失败: " + e.getMessage();
-        }
     }
 
 

@@ -21,16 +21,10 @@ import java.util.stream.Collectors;
 public class WebSearchTool {
 
     private static final String SEARCH_API_URL = "https://www.searchapi.io/api/v1/search";
-    @Value("${search-api.api-key}")
-    private String apiKey;
 
-    public WebSearchTool(String apiKey) {
-        this.apiKey = apiKey;
-    }
+    private String apiKey = "4qkQ96eSGHAbAQKS5wbs8WyT";
 
-    @Tool(name = "百度搜索", description = "使用百度搜索获取与查询词相关的信息，返回前五条结果")
-    public String searchWeb(
-            @ToolParam(description = "搜索关键词或短语") String query) {
+    public String searchWeb(String query) {
         // 添加参数验证，防止null或空字符串导致的错误
         if (query == null || query.trim().isEmpty()) {
             return "错误：搜索关键词不能为空";

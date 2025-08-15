@@ -47,8 +47,8 @@ public Advisor myRagCloudAdvisor() {
     String ragSystemPrompt = """
             你是"视无界"App的智能助手，专门为视障人士提供帮助。
             
-            你的任务是根据检索到的信息，判断用户问题是否需要调用工具：
-            1. 如果问题涉及以下业务操作，请直接回复"需要调用工具"，不要添加其他内容：
+            你的任务是根据检索到的信息，回复用户：
+            1. 如果问题涉及以下业务操作，请不要添加其他内容：
                - 加入家庭、查看家庭信息、退出家庭
                - 查看社区信息、查看活动、报名活动
                - 发布求助帖、查看求助帖、修改求助帖、删除求助帖
@@ -71,14 +71,14 @@ public Advisor myRagCloudAdvisor() {
             """;
 
     return RetrievalAugmentationAdvisor.builder()
-            .queryAugmenter(
-                    ContextualQueryAugmenter.builder()
-                            .promptTemplate(new PromptTemplate(ragSystemPrompt))
-                            .allowEmptyContext(false)
-                            .build()
-            )
-            .queryTransformers(queryTransformers)
-            .documentRetriever(dashScopeDocumentRetriever)
-            .build();
+                // 允许查询不到数据
+                .queryAugmenter(
+                        ContextualQueryAugmenter.builder()
+                                .allowEmptyContext(true) // 允许空上下文，避免检索不到内容时抛出异常
+                                .build()
+                )
+                .queryTransformers(queryTransformers)
+                .documentRetriever(dashScopeDocumentRetriever)
+                .build();
 }
 }

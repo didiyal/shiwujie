@@ -34,33 +34,7 @@ public class WorkChooseTool {
      * @param toolRequest 工具请求JSON字符串，包含type(问题索引1-11)和data(传入数据，可为空)
      * @return 执行结果
      */
-    @Tool(name = "核心业务工具调用", description =
-            "该工具处理所有与用户、家庭和社区相关的操作。当用户需要执行具体业务操作时，必须调用此工具。" +
-                    "可用功能列表如下：" +
-                    " 1 - 申请加入家庭/加入家庭/我要加入家庭（需要提供家庭创建人手机号）格式示例：{ \"type\":1, \"data\":\"{\\\"familyVolunteerPhone\\\":\\\"13800138000\\\"}\" }\n" +
-                    " 2 - 查看家庭信息/家庭里有几个人/家庭成员信息 格式示例：{ \"type\":2 }\n" +
-                    " 3 - 退出家庭/离开家庭 格式示例：{ \"type\":3 }\n" +
-                    " 4 - 获取用户的社区信息/我的社区信息/我有加入社区吗/我社区叫什么名字 格式示例：{ \"type\":4 }\n" +
-                    " 5 - 获取社区活动信息/查看活动 格式示例：{ \"type\":5 }\n" +
-                    " 6 - 添加活动报名/报名活动/（需要提供活动ID - activityId）格式示例：{ \"type\":6, \"data\":\"{\\\"activityId\\\":123}\" }\n" +
-                    " 7 - 获取用户报名的活动信息/查看我报名的活动/我报名了哪些活动 格式示例：{ \"type\":7 }\n" +
-                    " 8 - 获取自己发布的求助帖/我的求助帖/查看我的求助帖 格式示例：{ \"type\":8 }\n" +
-                    " 9 - 删除求助帖（需要提供求助帖ID - helppostId）格式示例：{ \"type\":9, \"data\":\"{\\\"helppostId\\\":456}\" }\n" +
-                    " 10 - 修改求助帖（需要提供求助帖ID - helppostId、新内容 - helpContent 和新地点 - helpLocation）格式示例：{ \"type\":10, \"data\":\"{\\\"helppostId\\\":456,\\\"helpContent\\\":\\\"修改后的内容\\\",\\\"helpLocation\\\":\\\"修改后的地点\\\"}\" }\n" +
-                    " 11 - 添加求助帖/发布求助帖/（需要提供内容 - helpContent 和地点 - helpLocation）格式示例：{ \"type\":11, \"data\":\"{\\\"helpContent\\\":\\\"新的求助内容\\\",\\\"helpLocation\\\":\\\"新的求助地点\\\"}\" }\n" +
-                    " 12 - 加入社区/退出社区 格式示例：{ \"type\":12 }\n" +
-                    " 13 - 修改个人信息(名字,手机号,密码等) 格式示例：{ \"type\":13 }\n" +
-                    " 14 - 图像识别 格式示例：{ \"type\":14 }\n" +
-                    " 15 - 视频求助/志愿者视频求助/我要志愿者帮助 格式示例：{ \"type\":15 }\n" +
-                    " 16 - 紧急求助/家属视频求助/家属紧急帮助 格式示例：{ \"type\":16 }\n" +
-                    " 17 - 跳转到其它软件 格式示例：{ \"type\":17 }" +
-                    "使用说明：调用时需要严格遵守JSON格式，传入工具类型（type：1-17）及数据（data）。" +
-                    "注意：此工具是执行业务操作的唯一途径，AI只能在需要时调用此工具，并且仅在工具类型（type）有效时执行。" +
-                    "例如，若用户请求'加入家庭'，则需要传入包含家主手机号的JSON格式请求。" +
-                    "重要：在流式调用模式下，AI不应直接调用此工具，而应按照系统提示词中的格式返回工具调用请求。")
-    public String questionChoose(@ToolParam(description = "工具请求JSON字符串，必须严格遵守格式要求: {\"type\":数字, \"data\":\"JSON字符串\"}") String toolRequest) {
-//        log.info("WorkChooseTool 被调用，接收到的参数: {}", toolRequest);
-
+    public String questionChoose(String toolRequest) {
         // 添加对null或空字符串的处理，防止流式调用中出现空参数导致异常
         if (toolRequest == null || toolRequest.trim().isEmpty()) {
             log.warn("工具调用参数为空");
@@ -182,7 +156,7 @@ public class WorkChooseTool {
                 case 13:// 修改个人信息功能
 
                     frontendTools.noticeJumpToUserUpdate();
-                    return "执行成功";
+                    return "此功能暂不支持自动操作，请您手动操作,我已帮您跳转到修改页面,请你手动操作";
 
                 case 14:// 图像识别功能
 
@@ -192,11 +166,11 @@ public class WorkChooseTool {
 
                 case 15:// 志愿者视频求助功能
                     frontendTools.noticeVideoHelp();
-                    return "执行成功";
+                    return "执行成功,已帮您开启视频求助";
 
                 case 16:// 家属视频求助功能
                     frontendTools.noticeUrgentHelp();
-                    return "执行成功";
+                    return "执行成功,已帮您开启视频求助";
 
                 case 17:// 跳转到其它软件功能
 

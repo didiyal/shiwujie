@@ -219,7 +219,7 @@ public class CommunityTools {
             Long blindId = loginBlind.getBlindId();
             Long communityId = loginBlind.getCommunityId();
             if (ObjUtil.isNull(communityId)) {
-                return "您未加入任何社区！";
+                return "您未加入任何社区！请加入社区后重试";
             }
 
             HelppostQueryRequest helppostQueryRequest = new HelppostQueryRequest();
