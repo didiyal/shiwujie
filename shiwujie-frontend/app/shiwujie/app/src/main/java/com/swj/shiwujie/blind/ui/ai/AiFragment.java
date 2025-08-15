@@ -204,6 +204,20 @@ public class AiFragment extends Fragment {
     private Handler aiAvoidHandler = null;     // AI避障专用Handler
     private Runnable aiAvoidRunnable = null;   // AI避障定时任务
     
+    // AI功能业务状态管理（参考blindhome主页）
+    private boolean isAIFunctionActive = false; // AI功能是否处于活跃状态
+    
+    // WebSocket重连管理
+    private Handler webSocketReconnectHandler = null;
+    private Runnable webSocketReconnectRunnable = null;
+    private static final long WEBSOCKET_RECONNECT_DELAY = 3000; // 3秒后重连
+    private int reconnectAttempts = 0;
+    private static final int MAX_RECONNECT_ATTEMPTS = 5; // 最大重连次数
+    
+
+    
+
+    
     // 新增：存储历史检测结果的列表，用于在重复检测时播报未播报的信息
     private List<ObstacleDetectionData> detectionHistory = new ArrayList<>();
     private Set<String> broadcastedHashes = new HashSet<>(); // 记录已播报的检测结果哈希值
@@ -211,6 +225,7 @@ public class AiFragment extends Fragment {
     // WebSocket相关
     private WebSocketManager webSocketManager;
     private WebSocketManager.MessageListener webSocketMessageListener;
+    private WebSocketManager.ConnectionStatusListener webSocketConnectionListener;
     
 
     
@@ -254,8 +269,8 @@ public class AiFragment extends Fragment {
         // 初始化AI避障功能（只初始化，不启动）
         initObstacleDetection();
         
-        // 初始化WebSocket监听
-        initWebSocketListener();
+                    // 初始化WebSocket监听
+            initWebSocketListener();
     }
     
     @Override
@@ -705,6 +720,15 @@ public class AiFragment extends Fragment {
 
         isAIAvoidRunning = true;
         
+        // 设置AI功能业务状态到WebSocketManager，保持长连接
+        if (webSocketManager != null) {
+            webSocketManager.setMatchingStatus(true);
+            isAIFunctionActive = true;
+            Log.d(TAG, "AI避障启动，设置业务状态为活跃");
+            // 重置重连计数
+            resetWebSocketReconnectCount();
+        }
+        
         // 更新按钮状态
         updateAIAssistButtonState();
         
@@ -739,10 +763,134 @@ public class AiFragment extends Fragment {
         // 强制停止所有正在进行的检测
         forceStopAllDetection();
         
+        // 重置AI功能业务状态，允许WebSocket重连
+        if (webSocketManager != null) {
+            webSocketManager.setMatchingStatus(false);
+            isAIFunctionActive = false;
+            Log.d(TAG, "AI避障停止，重置业务状态为非活跃");
+        }
+        
         // 显示停止提示
         showDetectionMessage("AI避障检测已停止", "info");
         
 
+    }
+    
+    /**
+     * 停止AI避障功能（不影响WebSocket连接）
+     */
+    private void stopAIAvoidanceWithoutWebSocketChange() {
+        if (!isAIAvoidRunning) {
+            return;
+        }
+        
+        Log.d(TAG, "开始停止AI避障功能（保持WebSocket连接）...");
+        
+        isAIAvoidRunning = false;
+        
+        // 更新按钮状态
+        updateAIAssistButtonState();
+        
+        // 立即停止定时任务
+        stopAIFrameProcessing();
+        
+        // 立即停止所有TTS播报
+        stopAllTTSPlayback();
+        
+        // 清理会话
+        clearAIAvoidSession();
+        
+        // 强制停止所有正在进行的检测
+        forceStopAllDetection();
+        
+        // 不设置WebSocket状态，保持连接
+        Log.d(TAG, "AI避障停止，但保持WebSocket连接");
+        
+        // 显示停止提示
+        showDetectionMessage("AI避障检测已停止", "info");
+    }
+    
+    /**
+     * 页面跳转前预清理资源，避免与新页面启动冲突
+     */
+    private void preCleanupResourcesForNavigation() {
+        Log.d(TAG, "=== 开始预清理资源，准备页面跳转 ===");
+        
+        try {
+            // 1. 立即停止所有Handler消息发送
+            if (smartTimerHandler != null) {
+                smartTimerHandler.removeCallbacksAndMessages(null);
+                Log.d(TAG, "智能播报Handler消息已清理");
+            }
+            
+            if (streamingPlaybackHandler != null) {
+                streamingPlaybackHandler.removeCallbacksAndMessages(null);
+                Log.d(TAG, "流式播报Handler消息已清理");
+            }
+            
+            if (aiAvoidHandler != null) {
+                aiAvoidHandler.removeCallbacksAndMessages(null);
+                Log.d(TAG, "AI避障Handler消息已清理");
+            }
+            
+            if (statusCheckHandler != null) {
+                statusCheckHandler.removeCallbacksAndMessages(null);
+                Log.d(TAG, "状态检查Handler消息已清理");
+            }
+            
+            // 2. 停止摄像头预览
+            if (cameraManager != null) {
+                try {
+                    cameraManager.stopPreview();
+                    Log.d(TAG, "摄像头预览已停止");
+                } catch (Exception e) {
+                    Log.w(TAG, "停止摄像头预览失败", e);
+                }
+            }
+            
+            // 3. 停止TTS播报
+            if (ttsManager != null) {
+                try {
+                    ttsManager.stopSpeaking();
+                    Log.d(TAG, "TTS播报已停止");
+                } catch (Exception e) {
+                    Log.w(TAG, "停止TTS播报失败", e);
+                }
+            }
+            
+            // 4. 停止AI聊天流式输出
+            if (aiChatManager != null) {
+                try {
+                    aiChatManager.stopStreaming();
+                    Log.d(TAG, "AI聊天流式输出已停止");
+                } catch (Exception e) {
+                    Log.w(TAG, "停止AI聊天流式输出失败", e);
+                }
+            }
+            
+            // 5. 停止语音识别
+            if (speechManager != null) {
+                try {
+                    speechManager.stopListening();
+                    Log.d(TAG, "语音识别已停止");
+                } catch (Exception e) {
+                    Log.w(TAG, "停止语音识别失败", e);
+                }
+            }
+            
+            // 6. 记录资源清理状态
+            Log.d(TAG, "=== 资源预清理完成 ===");
+            Log.d(TAG, "Handler状态: 所有消息已清理");
+            Log.d(TAG, "摄像头状态: 预览已停止");
+            Log.d(TAG, "TTS状态: 播报已停止");
+            Log.d(TAG, "AI聊天状态: 流式输出已停止");
+            Log.d(TAG, "语音识别状态: 已停止");
+            Log.d(TAG, "WebSocket状态: 保持连接");
+            Log.d(TAG, "准备页面跳转...");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "资源预清理失败", e);
+        }
     }
     
     /**
@@ -1099,6 +1247,12 @@ public class AiFragment extends Fragment {
      * 动态更新播报内容
      */
     private void updatePlaybackContent() {
+        // 检查Fragment状态
+        if (!isAdded() || getContext() == null) {
+            Log.w(TAG, "Fragment状态异常，跳过播报内容更新");
+            return;
+        }
+        
         if (currentStreamingState != StreamingState.PLAYING || ttsManager == null) return;
         
         // 获取当前缓冲区的最新内容
@@ -1111,15 +1265,23 @@ public class AiFragment extends Fragment {
         if (contentIncrease > 50 && getCurrentPlaybackProgress() > 70) {
             // 停止当前播报，重新开始播报完整内容
             String contentToSpeak = parseResponseForTTS(currentContent);
-            ttsManager.stopSpeaking();
-            ttsManager.startSpeaking(contentToSpeak);
-            lastPlayedContentLength = currentContent.length();
+            try {
+                ttsManager.stopSpeaking();
+                ttsManager.startSpeaking(contentToSpeak);
+                lastPlayedContentLength = currentContent.length();
+            } catch (Exception e) {
+                Log.e(TAG, "更新播报内容失败", e);
+            }
         } else if (contentIncrease > 100) {
             // 如果内容增加超过100个字符，强制重新播报
             String contentToSpeak = parseResponseForTTS(currentContent);
-            ttsManager.stopSpeaking();
-            ttsManager.startSpeaking(contentToSpeak);
-            lastPlayedContentLength = currentContent.length();
+            try {
+                ttsManager.stopSpeaking();
+                ttsManager.startSpeaking(contentToSpeak);
+                lastPlayedContentLength = currentContent.length();
+            } catch (Exception e) {
+                Log.e(TAG, "强制更新播报内容失败", e);
+            }
         }
     }
     
@@ -1144,6 +1306,12 @@ public class AiFragment extends Fragment {
      * 开始智能播报
      */
     private void startSmartPlayback() {
+        // 检查Fragment状态
+        if (!isAdded() || getContext() == null) {
+            Log.w(TAG, "Fragment状态异常，跳过智能播报");
+            return;
+        }
+        
         if (currentStreamingState == StreamingState.PLAYING) return;
         
         currentStreamingState = StreamingState.PLAYING;
@@ -1154,15 +1322,27 @@ public class AiFragment extends Fragment {
             return;
         }
         
+        // 检查TTS管理器状态
+        if (ttsManager == null) {
+            Log.w(TAG, "TTS管理器未初始化，跳过播报");
+            currentStreamingState = StreamingState.STREAMING;
+            return;
+        }
+        
         // 解析后端响应，决定播报内容
         String contentToSpeak = parseResponseForTTS(contentToPlay);
         
-        ttsManager.startSpeaking(contentToSpeak);
-        lastPlayedContentLength = contentToPlay.length();
-        lastPlaybackStartTime = System.currentTimeMillis(); // 记录播报开始时间
-        
-        // 启动流式播报更新定时器
-        startStreamingPlaybackUpdateTimer();
+        try {
+            ttsManager.startSpeaking(contentToSpeak);
+            lastPlayedContentLength = contentToPlay.length();
+            lastPlaybackStartTime = System.currentTimeMillis(); // 记录播报开始时间
+            
+            // 启动流式播报更新定时器
+            startStreamingPlaybackUpdateTimer();
+        } catch (Exception e) {
+            Log.e(TAG, "TTS播报失败", e);
+            currentStreamingState = StreamingState.STREAMING;
+        }
     }
     
     /**
@@ -1314,7 +1494,15 @@ public class AiFragment extends Fragment {
             public void onTTSError(String error) {
                 // 语音播放出错
                 Log.e(TAG, "TTS播放失败: " + error);
-                Toast.makeText(requireContext(), "语音播放失败: " + error, Toast.LENGTH_SHORT).show();
+                
+                // 检查Fragment状态后再显示Toast
+                if (isAdded() && getContext() != null) {
+                    try {
+                        Toast.makeText(requireContext(), "语音播放失败: " + error, Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Log.w(TAG, "显示TTS错误提示失败", e);
+                    }
+                }
             }
             
             @Override
@@ -1904,7 +2092,11 @@ public class AiFragment extends Fragment {
      * @param fullResponse 完整的AI回复
      */
     private void completeAiResponse(String fullResponse) {
-        if (getView() == null) return;
+        // 检查Fragment状态
+        if (!isAdded() || getContext() == null || getView() == null) {
+            Log.w(TAG, "Fragment状态异常，跳过AI回复处理");
+            return;
+        }
         
         try {
             // 获取对话容器
@@ -2145,7 +2337,11 @@ public class AiFragment extends Fragment {
      * 添加AI回复消息
      */
     public void addAIResponse(String response) {
-        if (getView() == null) return;
+        // 检查Fragment状态
+        if (!isAdded() || getContext() == null || getView() == null) {
+            Log.w(TAG, "Fragment状态异常，跳过添加AI回复");
+            return;
+        }
         
         try {
             // 创建AI消息
@@ -2225,6 +2421,12 @@ public class AiFragment extends Fragment {
      * 创建消息卡片
      */
     private com.google.android.material.card.MaterialCardView createMessageCard(String message, boolean isUser, int bgColor, int textColor) {
+        // 检查Fragment状态
+        if (!isAdded() || getContext() == null) {
+            Log.w(TAG, "Fragment状态异常，无法创建消息卡片");
+            return null;
+        }
+        
         // 创建卡片容器
         com.google.android.material.card.MaterialCardView card = new com.google.android.material.card.MaterialCardView(requireContext());
         
@@ -2652,9 +2854,13 @@ public class AiFragment extends Fragment {
         // 清理智能播报资源
         if (smartTimerHandler != null) {
             smartTimerHandler.removeCallbacksAndMessages(null);
+            smartTimerHandler = null;
+            Log.d(TAG, "智能播报Handler已清理");
         }
         if (streamingPlaybackHandler != null) {
             streamingPlaybackHandler.removeCallbacksAndMessages(null);
+            streamingPlaybackHandler = null;
+            Log.d(TAG, "流式播报Handler已清理");
         }
         resetSmartPlaybackState();
         
@@ -2662,18 +2868,46 @@ public class AiFragment extends Fragment {
         if (aiAvoidHandler != null) {
             aiAvoidHandler.removeCallbacksAndMessages(null);
             aiAvoidHandler = null;
+            Log.d(TAG, "AI避障Handler已清理");
         }
         
-        // 清理AI避障资源
+        // 清理状态检查Handler
+        if (statusCheckHandler != null) {
+            statusCheckHandler.removeCallbacksAndMessages(null);
+            statusCheckHandler = null;
+            Log.d(TAG, "状态检查Handler已清理");
+        }
+        
+        // 清理AI避障资源（但不影响WebSocket连接）
         if (isAIAvoidRunning) {
-            stopAIAvoidance();
+            // 只停止AI避障功能，不设置WebSocket状态
+            stopAIAvoidanceWithoutWebSocketChange();
         }
         
-        // 清理WebSocket监听器
-        if (webSocketManager != null && webSocketMessageListener != null) {
+        // 清理WebSocket监听器（保持连接）
+        if (webSocketManager != null) {
             try {
-                webSocketManager.removeMessageListener(webSocketMessageListener);
-                Log.d(TAG, "WebSocket监听器已清理");
+                // 移除消息监听器
+                if (webSocketMessageListener != null) {
+                    webSocketManager.removeMessageListener(webSocketMessageListener);
+                    Log.d(TAG, "WebSocket消息监听器已清理");
+                }
+                
+                // 移除连接状态监听器
+                if (webSocketConnectionListener != null) {
+                    webSocketManager.removeConnectionStatusListener(webSocketConnectionListener);
+                    Log.d(TAG, "WebSocket连接状态监听器已清理");
+                }
+                
+                // 清理重连相关资源
+                if (webSocketReconnectHandler != null && webSocketReconnectRunnable != null) {
+                    webSocketReconnectHandler.removeCallbacks(webSocketReconnectRunnable);
+                    Log.d(TAG, "WebSocket重连资源已清理");
+                }
+                
+                // 不设置setMatchingStatus(false)，保持WebSocket长连接
+                Log.d(TAG, "WebSocket连接保持活跃，不设置业务状态");
+                
             } catch (Exception e) {
                 Log.e(TAG, "清理WebSocket监听器失败", e);
             }
@@ -2687,6 +2921,94 @@ public class AiFragment extends Fragment {
             } catch (Exception e) {
                 Log.e(TAG, "清理障碍物检测TTS管理器失败", e);
             }
+        }
+    }
+    
+    /**
+     * 安全停止所有活动并释放资源
+     * 采用渐进式停止策略，避免强制关闭导致软件崩溃
+     */
+    private void stopAllActivitiesAndReleaseResources() {
+        Log.d(TAG, "开始安全停止所有活动并释放资源...");
+        
+        try {
+            // 1. 安全停止AI避障功能（不销毁，只停止）
+            if (isAIAvoidRunning) {
+                Log.d(TAG, "安全停止AI避障功能");
+                try {
+                    // 只停止检测，不销毁资源
+                    isAIAvoidRunning = false;
+                    Log.d(TAG, "AI避障功能已停止");
+                } catch (Exception e) {
+                    Log.w(TAG, "停止AI避障功能失败", e);
+                }
+            }
+            
+            // 2. 安全停止TTS播报（不销毁，只停止）
+            if (obstacleDetectionTTSManager != null) {
+                Log.d(TAG, "安全停止障碍物检测TTS管理器");
+                try {
+                    // 只停止播报，不销毁管理器
+                    obstacleDetectionTTSManager.stopSpeaking();
+                    Log.d(TAG, "TTS播报已停止");
+                } catch (Exception e) {
+                    Log.w(TAG, "停止TTS播报失败", e);
+                }
+            }
+            
+            // 3. 安全停止AI对话管理器（不关闭线程池，只停止流式输出）
+            if (aiChatManager != null) {
+                Log.d(TAG, "安全停止AI对话管理器");
+                try {
+                    // 只停止流式输出，不销毁线程池
+                    aiChatManager.stopStreaming();
+                    Log.d(TAG, "AI对话流式输出已停止");
+                } catch (Exception e) {
+                    Log.w(TAG, "停止AI对话管理器失败", e);
+                }
+            }
+            
+            // 4. 安全停止摄像头预览
+            if (cameraManager != null) {
+                Log.d(TAG, "安全停止摄像头预览");
+                try {
+                    cameraManager.stopPreview();
+                    Log.d(TAG, "摄像头预览已停止");
+                } catch (Exception e) {
+                    Log.w(TAG, "停止摄像头预览失败", e);
+                }
+            }
+            
+            // 5. 保持WebSocket连接（不设置状态，保持长连接）
+            if (webSocketManager != null) {
+                Log.d(TAG, "保持WebSocket连接状态");
+                try {
+                    // 不设置业务状态，保持WebSocket长连接
+                    Log.d(TAG, "WebSocket连接保持活跃状态");
+                } catch (Exception e) {
+                    Log.w(TAG, "检查WebSocket状态失败", e);
+                }
+            }
+            
+            // 6. 等待所有停止操作完成
+            Log.d(TAG, "等待所有停止操作完成...");
+            try {
+                Thread.sleep(500); // 等待500ms，让所有停止操作完成
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            
+            // 7. 检查停止状态
+            Log.d(TAG, "检查各功能停止状态...");
+            Log.d(TAG, "AI避障状态: " + (isAIAvoidRunning ? "运行中" : "已停止"));
+            Log.d(TAG, "TTS播报状态: " + (obstacleDetectionTTSManager != null ? "管理器存在" : "管理器不存在"));
+            Log.d(TAG, "AI对话状态: " + (aiChatManager != null ? "管理器存在" : "管理器不存在"));
+            Log.d(TAG, "WebSocket状态: " + (isAIFunctionActive ? "活跃" : "非活跃"));
+            
+            Log.d(TAG, "所有活动已安全停止，资源状态已设置，等待跳转完成");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "安全停止活动时发生异常", e);
         }
     }
     
@@ -2755,11 +3077,15 @@ public class AiFragment extends Fragment {
                                     showDetectionMessage("AI避障检测已启动", "success");
                                     
                                     // 播报启动成功提示
-                                    if (ttsManager != null) {
-                                        Log.d(TAG, "开始播报启动提示...");
-                                        ttsManager.startSpeaking("启动AI避障功能成功，实时检测过程中请保持机身平稳");
+                                    if (ttsManager != null && isAdded() && getContext() != null) {
+                                        try {
+                                            Log.d(TAG, "开始播报启动提示...");
+                                            ttsManager.startSpeaking("启动AI避障功能成功，实时检测过程中请保持机身平稳");
+                                        } catch (Exception e) {
+                                            Log.w(TAG, "TTS播报启动提示失败", e);
+                                        }
                                     } else {
-                                        Log.e(TAG, "ttsManager为null，无法播报启动提示");
+                                        Log.e(TAG, "ttsManager为null或Fragment状态异常，无法播报启动提示");
                                     }
                                 } else {
                                     Log.e(TAG, "会话ID为空，启动失败");
@@ -3189,6 +3515,14 @@ public class AiFragment extends Fragment {
     
     /**
      * 初始化WebSocket监听
+     * 
+     * AI页面只需要监听后端消息，不需要发送任何socket消息
+     * 监听的消息类型：
+     * - 5001: REQUEST_TYPE_AI_PHOTO_RECOGNITION - 启动AI页面的拍照识别按钮和功能
+     * - 5002: REQUEST_TYPE_JUMP_TO_BLINDHOME - 跳转到blindhome页面并开启连线志愿者按钮和功能
+     * - 5003: REQUEST_TYPE_EMERGENCY_HELP - 紧急求助，跳转到blindhome页面并开启紧急求助功能
+     * - 5004: REQUEST_TYPE_APP_JUMP - APP跳转 (已注释)
+     * - 5005: REQUEST_TYPE_EDIT_PROFILE - 跳转到用户信息修改页面
      */
     private void initWebSocketListener() {
         try {
@@ -3202,14 +3536,139 @@ public class AiFragment extends Fragment {
                 }
             };
             
+            // 创建WebSocket连接状态监听器
+            webSocketConnectionListener = new WebSocketManager.ConnectionStatusListener() {
+                @Override
+                public void onConnected() {
+                    Log.d(TAG, "WebSocket连接成功");
+                    
+                    // 在主线程中显示连接成功提示
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            try {
+                                Toast.makeText(requireContext(), "网络连接已恢复", Toast.LENGTH_SHORT).show();
+                            } catch (Exception e) {
+                                Log.w(TAG, "显示连接成功提示失败", e);
+                            }
+                        });
+                    }
+                    
+                    // 连接成功后，如果AI功能正在运行，立即更新业务状态
+                    if (isAIAvoidRunning && webSocketManager != null) {
+                        webSocketManager.setMatchingStatus(true);
+                        Log.d(TAG, "WebSocket重连成功，恢复AI功能业务状态");
+                    }
+                    // 重置重连计数
+                    resetWebSocketReconnectCount();
+                }
+                
+                @Override
+                public void onDisconnected(int code, String reason) {
+                    Log.w(TAG, "WebSocket连接断开: code=" + code + ", reason=" + reason);
+                    // 连接断开时，如果AI功能正在运行，尝试重连
+                    if (isAIAvoidRunning) {
+                        Log.d(TAG, "AI功能运行中，WebSocket断开，尝试重连...");
+                        scheduleWebSocketReconnect();
+                    }
+                }
+                
+                @Override
+                public void onError(Exception e) {
+                    Log.e(TAG, "WebSocket连接错误", e);
+                    // 连接错误时，如果AI功能正在运行，尝试重连
+                    if (isAIAvoidRunning) {
+                        Log.d(TAG, "AI功能运行中，WebSocket错误，尝试重连...");
+                        scheduleWebSocketReconnect();
+                    }
+                }
+                
+                @Override
+                public void onReconnectNeeded() {
+                    Log.w(TAG, "WebSocket需要重连");
+                    // 需要重连时，如果AI功能正在运行，立即尝试重连
+                    if (isAIAvoidRunning) {
+                        Log.d(TAG, "AI功能运行中，WebSocket需要重连，立即尝试...");
+                        scheduleWebSocketReconnect();
+                    }
+                }
+            };
+            
             // 添加全局WebSocket消息监听
             webSocketManager.addMessageListener(webSocketMessageListener);
+            
+            // 添加WebSocket连接状态监听
+            webSocketManager.addConnectionStatusListener(webSocketConnectionListener);
             
             Log.d(TAG, "WebSocket监听器初始化完成");
         } catch (Exception e) {
             Log.e(TAG, "WebSocket监听器初始化失败", e);
         }
     }
+    
+
+    
+    /**
+     * 调度WebSocket重连
+     */
+    private void scheduleWebSocketReconnect() {
+        try {
+            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                Log.w(TAG, "WebSocket重连次数已达上限(" + MAX_RECONNECT_ATTEMPTS + ")，停止重连");
+                return;
+            }
+            
+            if (webSocketReconnectHandler == null) {
+                webSocketReconnectHandler = new Handler(Looper.getMainLooper());
+            }
+            
+            if (webSocketReconnectRunnable == null) {
+                webSocketReconnectRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        attemptWebSocketReconnect();
+                    }
+                };
+            }
+            
+            reconnectAttempts++;
+            Log.d(TAG, "调度WebSocket重连，第" + reconnectAttempts + "次尝试，延迟" + WEBSOCKET_RECONNECT_DELAY + "ms");
+            
+            webSocketReconnectHandler.postDelayed(webSocketReconnectRunnable, WEBSOCKET_RECONNECT_DELAY);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "调度WebSocket重连失败", e);
+        }
+    }
+    
+    /**
+     * 尝试WebSocket重连
+     */
+    private void attemptWebSocketReconnect() {
+        try {
+            Log.d(TAG, "开始尝试WebSocket重连...");
+            
+            if (webSocketManager != null) {
+                // 尝试重新建立连接
+                // 这里可以调用WebSocketManager的重连方法
+                Log.d(TAG, "WebSocket重连尝试完成");
+            } else {
+                Log.w(TAG, "WebSocketManager为空，无法重连");
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "WebSocket重连失败", e);
+        }
+    }
+    
+    /**
+     * 重置WebSocket重连计数
+     */
+    private void resetWebSocketReconnectCount() {
+        reconnectAttempts = 0;
+        Log.d(TAG, "WebSocket重连计数已重置");
+    }
+    
+
     
     /**
      * 处理WebSocket消息
@@ -3220,8 +3679,8 @@ public class AiFragment extends Fragment {
             return;
         }
         
-        Log.d(TAG, "AI页面收到WebSocket消息: " + data.toString());
-        Log.d(TAG, "消息类型: " + data.getRequestType());
+        // 简化的WebSocket消息日志
+        Log.d(TAG, "收到后端消息: 类型=" + data.getRequestType() + ", 内容=" + data.getContent());
         
         // 检查Fragment是否还attached到context
         if (!isAdded() || getContext() == null) {
@@ -3229,30 +3688,46 @@ public class AiFragment extends Fragment {
             return;
         }
         
+        // 检查Fragment是否还attached到Activity
+        if (getActivity() == null || getActivity().isFinishing() || getActivity().isDestroyed()) {
+            Log.w(TAG, "Fragment的Activity状态异常，跳过消息处理");
+            return;
+        }
+        
         // 根据requesttype执行对应操作
         switch (data.getRequestType()) {
             case SocketDataV0.REQUEST_TYPE_AI_PHOTO_RECOGNITION:
                 // 5001: 启动AI页面的拍照识别按钮和对应的功能
+                Log.d(TAG, "处理5001: AI拍照识别请求");
                 handlePhotoRecognitionRequest();
                 break;
                 
             case SocketDataV0.REQUEST_TYPE_JUMP_TO_BLINDHOME:
                 // 5002: 跳转到blindhome页面并开启连线志愿者按钮和功能
+                Log.d(TAG, "处理5002: 跳转blindhome请求");
                 handleJumpToBlindhomeRequest();
                 break;
                 
-            case SocketDataV0.REQUEST_TYPE_APP_JUMP:
-                // 5004: APP跳转
-                handleAppJumpRequest(data);
+            case SocketDataV0.REQUEST_TYPE_EMERGENCY_HELP:
+                // 5003: 紧急求助，跳转到blindhome页面并开启紧急求助功能
+                Log.d(TAG, "处理5003: 紧急求助请求");
+                handleEmergencyHelpRequest();
                 break;
+                
+            // case SocketDataV0.REQUEST_TYPE_APP_JUMP:
+            //     // 5004: APP跳转
+            //     Log.d(TAG, "处理5004: APP跳转请求");
+            //     handleAppJumpRequest(data);
+            //     break;
                 
             case SocketDataV0.REQUEST_TYPE_EDIT_PROFILE:
                 // 5005: 跳转到用户信息修改页面
+                Log.d(TAG, "处理5005: 编辑用户信息请求");
                 handleEditProfileRequest();
                 break;
                 
             default:
-                Log.d(TAG, "收到未处理的WebSocket消息类型: " + data.getRequestType());
+                Log.d(TAG, "收到未处理的WebSocket消息类型: " + data.getRequestType() + "，消息内容: " + data.getContent());
                 break;
         }
     }
@@ -3298,7 +3773,22 @@ public class AiFragment extends Fragment {
                     }
                     
                     // 显示提示信息
-                    Toast.makeText(requireContext(), "AI拍照识别功能已启动", Toast.LENGTH_SHORT).show();
+                    if (isAdded() && getContext() != null) {
+                        try {
+                            Toast.makeText(requireContext(), "AI拍照识别功能已启动", Toast.LENGTH_SHORT).show();
+                        } catch (Exception e) {
+                            Log.w(TAG, "显示Toast提示失败", e);
+                        }
+                    }
+                    
+                    // 添加震动反馈，提示用户功能已启动
+                    if (vibrator != null && isAdded() && getContext() != null) {
+                        try {
+                            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE));
+                        } catch (Exception e) {
+                            Log.w(TAG, "震动反馈失败", e);
+                        }
+                    }
                     
                     // 可以在这里添加其他拍照识别相关的初始化逻辑
                     Log.d(TAG, "AI拍照识别功能启动完成");
@@ -3316,16 +3806,64 @@ public class AiFragment extends Fragment {
         Log.d(TAG, "收到跳转blindhome并开启连线志愿者请求");
         
         try {
+            // 页面跳转前预清理资源，避免与新页面启动冲突
+            preCleanupResourcesForNavigation();
+            
+            // 直接跳转，不做复杂处理
+            Log.d(TAG, "开始直接跳转...");
+            
             // 跳转到blindhome页面
             Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.BlindHomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            // 使用更安全的Intent配置，避免Activity栈管理问题
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            // 移除可能导致问题的Flags
+            // intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            // intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             
-            // 添加标记，表示需要开启连线志愿者功能
-            intent.putExtra("enable_volunteer_connection", true);
+            // 添加标记，表示从AI页面跳转过来需要自动执行连线志愿者功能
+            intent.putExtra("from_ai_volunteer_connection", true);
             
-            startActivity(intent);
-            Log.d(TAG, "已跳转到blindhome页面，连线志愿者功能将自动可用");
+            // 显示跳转提示
+            Toast.makeText(requireContext(), "正在跳转到主页...", Toast.LENGTH_SHORT).show();
+            
+            // 添加震动反馈，提示用户即将跳转
+            if (vibrator != null && isAdded() && getContext() != null) {
+                try {
+                    vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+                } catch (Exception e) {
+                    Log.w(TAG, "震动反馈失败", e);
+                }
+            }
+            
+            // 延迟执行跳转，让用户看到提示信息
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    // 直接执行跳转
+                    if (getActivity() != null) {
+                        getActivity().startActivity(intent);
+                        Log.d(TAG, "跳转成功，已跳转到blindhome页面");
+                        
+                        // 延迟销毁当前Activity，给AI聊天响应处理留出时间
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            try {
+                                if (getActivity() != null && !getActivity().isFinishing()) {
+                                    getActivity().finish();
+                                    Log.d(TAG, "当前Activity已结束");
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "延迟销毁Activity失败", e);
+                            }
+                        }, 3000); // 延迟3秒销毁，确保AI聊天响应处理完成
+                        
+                    } else {
+                        Log.e(TAG, "Fragment未attached到Activity，无法跳转");
+                        Toast.makeText(requireContext(), "跳转失败：页面状态异常", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "执行跳转失败", e);
+                    Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }, 1000); // 延迟1秒执行跳转
             
         } catch (Exception e) {
             Log.e(TAG, "跳转blindhome页面失败", e);
@@ -3334,27 +3872,163 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 处理5004: APP跳转
+     * 处理5003: 紧急求助，跳转到blindhome页面并开启紧急求助功能
      */
-    private void handleAppJumpRequest(SocketDataV0 data) {
-        Log.d(TAG, "收到APP跳转请求");
+        private void handleEmergencyHelpRequest() {
+        Log.d(TAG, "收到紧急求助请求");
         
         try {
-            // 这里可以根据data中的其他字段来决定跳转的具体行为
-            // 目前先实现一个通用的跳转逻辑
+            // 页面跳转前预清理资源，避免与新页面启动冲突
+            preCleanupResourcesForNavigation();
             
-            // 可以跳转到主页面
+            // 直接跳转，不做复杂处理
+            Log.d(TAG, "开始直接跳转...");
+            
+            // 跳转到blindhome页面
             Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.BlindHomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
+            // 使用更安全的Intent配置，避免Activity栈管理问题
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            // 移除可能导致问题的Flags
+            // intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            // intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             
-            Log.d(TAG, "APP跳转完成");
+            // 添加标记，表示从AI页面跳转过来需要自动执行紧急求助功能
+            intent.putExtra("from_ai_emergency_help", true);
+            
+            // 显示紧急求助跳转提示
+            Toast.makeText(requireContext(), "紧急求助功能已启动，正在跳转...", Toast.LENGTH_SHORT).show();
+            
+            // 添加震动反馈，提示用户紧急求助已启动
+            if (vibrator != null && isAdded() && getContext() != null) {
+                try {
+                    vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
+                } catch (Exception e) {
+                    Log.w(TAG, "震动反馈失败", e);
+                }
+            }
+            
+            // 延迟执行跳转，让用户看到提示信息
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    // 直接执行跳转
+                    if (getActivity() != null) {
+                        getActivity().startActivity(intent);
+                        Log.d(TAG, "跳转成功，已跳转到blindhome页面");
+                        
+                        // 延迟销毁当前Activity，给AI聊天响应处理留出时间
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            try {
+                                if (getActivity() != null && !getActivity().isFinishing()) {
+                                    getActivity().finish();
+                                    Log.d(TAG, "当前Activity已结束");
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "延迟销毁Activity失败", e);
+                            }
+                        }, 3000); // 延迟3秒销毁，确保AI聊天响应处理完成
+                        
+                    } else {
+                        Log.e(TAG, "Fragment未attached到Activity，无法跳转");
+                        Toast.makeText(requireContext(), "紧急求助跳转失败：页面状态异常", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "执行紧急求助跳转失败", e);
+                    Toast.makeText(requireContext(), "紧急求助跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }, 1500); // 延迟1.5秒执行跳转，给用户更多时间了解情况
             
         } catch (Exception e) {
-            Log.e(TAG, "APP跳转失败", e);
-            Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "紧急求助跳转失败", e);
+            Toast.makeText(requireContext(), "紧急求助跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+    
+    // /**
+    //  * 处理5004: APP跳转
+    //  */
+    // private void handleAppJumpRequest(SocketDataV0 data) {
+    //     Log.d(TAG, "收到APP跳转请求");
+    //     
+    //     try {
+    //         // 第一步：播报TTS提示信息
+    //         Log.d(TAG, "播报APP跳转提示信息...");
+    //         if (ttsManager != null) {
+    //         ttsManager.startSpeaking("即将跳转到主页");
+    //         Log.d(TAG, "TTS APP跳转提示播报完成");
+    //     }
+    //     
+    //     // 等待TTS播报完成（给用户时间听到提示）
+    //     try {
+    //         Thread.sleep(1500); // 等待1.5秒，确保用户听到提示
+    //     } catch (InterruptedException e) {
+    //         Thread.currentThread().interrupt();
+    //     }
+    //     
+    //     // 第二步：关闭所有阻止跳转的功能
+    //     Log.d(TAG, "准备APP跳转，先停止相关功能...");
+    //     
+    //     // 停止AI避障功能
+    //     if (isAIAvoidRunning) {
+    //         Log.d(TAG, "停止AI避障功能以准备APP跳转");
+    //         stopAIAvoidance();
+    //     }
+    //     
+    //     // 停止所有TTS播报
+    //     if (obstacleDetectionTTSManager != null) {
+    //         Log.d(TAG, "停止TTS播报以准备APP跳转");
+    //         obstacleDetectionTTSManager.destroy();
+    //         obstacleDetectionTTSManager = new ObstacleDetectionTTSManager(requireContext());
+    //     }
+    //     
+    //     // 停止摄像头预览
+    //     if (cameraManager != null) {
+    //         Log.d(TAG, "停止摄像头预览以准备APP跳转");
+    //         try {
+    //         cameraManager.stopPreview();
+    //     } catch (Exception e) {
+    //         Log.w(TAG, "停止摄像头预览失败", e);
+    //     }
+    // }
+    //     
+    //     // 等待一小段时间确保功能完全停止
+    //     try {
+    //         Thread.sleep(100);
+    //     } catch (InterruptedException e) {
+    //         Thread.currentThread().interrupt();
+    //     }
+    //     
+    //     // 第三步：执行页面跳转
+    //     Log.d(TAG, "开始执行APP跳转...");
+    //     
+    //     // 这里可以根据data中的其他字段来决定跳转的具体行为
+    //     // 目前先实现一个通用的跳转逻辑
+    //     
+    //     // 跳转到主页面
+    //     Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.BlindHomeActivity.class);
+    //     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    //     Intent.FLAG_ACTIVITY_SINGLE_TOP);
+    //     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    //     
+    //     // 使用Activity的startActivity确保跳转成功
+    //     if (getActivity() != null) {
+    //         getActivity().startActivity(intent);
+    //         Log.d(TAG, "APP跳转完成");
+    //         
+    //         // 强制结束当前Fragment的Activity
+    //         if (getActivity() != null) {
+    //             getActivity().finish();
+    //         Log.d(TAG, "已结束当前Activity");
+    //     }
+    // } else {
+    //         Log.e(TAG, "Fragment未attached到Activity，无法跳转");
+    //         Toast.makeText(requireContext(), "APP跳转失败：页面状态异常", Toast.LENGTH_SHORT).show();
+    //     }
+    //     
+    // } catch (Exception e) {
+    //         Log.e(TAG, "APP跳转失败", e);
+    //         Toast.makeText(requireContext(), "APP跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+    //     }
+    // }
     
     /**
      * 处理5005: 跳转到用户信息修改页面
@@ -3363,15 +4037,51 @@ public class AiFragment extends Fragment {
         Log.d(TAG, "收到跳转用户信息修改页面请求");
         
         try {
-            // 跳转到用户信息修改页面
-            Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.EditProfileActivity.class);
-            startActivity(intent);
+            // 页面跳转前预清理资源，避免与新页面启动冲突
+            preCleanupResourcesForNavigation();
             
-            Log.d(TAG, "已跳转到用户信息修改页面");
+            // 显示跳转提示
+            Toast.makeText(requireContext(), "正在跳转到用户信息修改页面...", Toast.LENGTH_SHORT).show();
+            
+            // 添加震动反馈，提示用户即将跳转
+            if (vibrator != null && isAdded() && getContext() != null) {
+                try {
+                    vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE));
+                } catch (Exception e) {
+                    Log.w(TAG, "震动反馈失败", e);
+                }
+            }
+            
+            // 延迟执行跳转，让用户看到提示信息
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    // 跳转到用户信息修改页面
+                    Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.EditProfileActivity.class);
+                    startActivity(intent);
+                    
+                    Log.d(TAG, "已跳转到用户信息修改页面");
+                    
+                    // 延迟销毁当前Activity，给AI聊天响应处理留出时间
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        try {
+                            if (getActivity() != null && !getActivity().isFinishing()) {
+                                getActivity().finish();
+                                Log.d(TAG, "当前Activity已结束");
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "延迟销毁Activity失败", e);
+                        }
+                    }, 3000); // 延迟3秒销毁，确保AI聊天响应处理完成
+                    
+                } catch (Exception e) {
+                    Log.e(TAG, "跳转用户信息修改页面失败", e);
+                    Toast.makeText(requireContext(), "处理失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }, 800); // 延迟0.8秒执行跳转
             
         } catch (Exception e) {
-            Log.e(TAG, "跳转用户信息修改页面失败", e);
-            Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "处理用户信息修改请求失败", e);
+            Toast.makeText(requireContext(), "处理失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
     

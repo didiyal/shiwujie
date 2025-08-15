@@ -178,6 +178,23 @@ public class AiChatManager {
         }
         
         // 在后台线程中处理流式响应
+        // 提交任务前检查线程池状态
+        if (executorService == null || executorService.isShutdown() || executorService.isTerminated()) {
+            Log.w(TAG, "线程池不可用，使用主线程处理流式响应");
+            // 线程池不可用时，使用主线程Handler处理
+            mainHandler.post(() -> {
+                try {
+                    processStreamingResponseOnMainThread(responseBody, listener);
+                } catch (Exception e) {
+                    Log.e(TAG, "主线程处理流式响应失败", e);
+                    if (listener != null) {
+                        listener.onStreamingError("处理响应失败: " + e.getMessage());
+                    }
+                }
+            });
+            return;
+        }
+        
         executorService.execute(() -> {
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(responseBody.byteStream()));
@@ -414,10 +431,37 @@ public class AiChatManager {
      * 释放资源
      */
     public void destroy() {
+        Log.d(TAG, "开始销毁AiChatManager资源...");
+        
+        // 1. 先停止流式输出
         stopStreaming();
+        
+        // 2. 等待所有任务完成，然后安全关闭线程池
         if (executorService != null && !executorService.isShutdown()) {
-            executorService.shutdown();
+            try {
+                Log.d(TAG, "等待线程池任务完成...");
+                executorService.shutdown();
+                
+                // 等待最多2秒让任务完成
+                if (!executorService.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                    Log.w(TAG, "线程池任务未在2秒内完成，强制关闭");
+                    executorService.shutdownNow();
+                    
+                    // 再次等待强制关闭完成
+                    if (!executorService.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS)) {
+                        Log.e(TAG, "线程池强制关闭失败");
+                    }
+                } else {
+                    Log.d(TAG, "线程池已安全关闭");
+                }
+            } catch (InterruptedException e) {
+                Log.w(TAG, "等待线程池关闭时被中断", e);
+                Thread.currentThread().interrupt();
+                executorService.shutdownNow();
+            }
         }
+        
+        Log.d(TAG, "AiChatManager资源销毁完成");
     }
     
     /**
@@ -444,6 +488,42 @@ public class AiChatManager {
      */
     public int getTypingSpeed() {
         return typingSpeed;
+    }
+    
+    /**
+     * 在主线程中处理流式响应（线程池不可用时的降级方案）
+     */
+    private void processStreamingResponseOnMainThread(ResponseBody responseBody, OnStreamingListener listener) {
+        try {
+            Log.d(TAG, "在主线程中处理流式响应");
+            
+            // 设置流式输出状态
+            isStreaming = true;
+            currentResponse = "";
+            
+            // 通知开始流式输出
+            if (listener != null) {
+                listener.onStreamingStart();
+            }
+            
+            // 读取响应内容
+            String fullResponse = responseBody.string();
+            Log.d(TAG, "流式响应处理完成,总长度:" + fullResponse.length());
+            
+            // 直接完成，不模拟打字机效果（避免阻塞主线程）
+            if (listener != null) {
+                listener.onStreamingComplete(fullResponse);
+            }
+            
+            isStreaming = false;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "主线程处理流式响应失败", e);
+            isStreaming = false;
+            if (listener != null) {
+                listener.onStreamingError("处理响应失败: " + e.getMessage());
+            }
+        }
     }
     
 }

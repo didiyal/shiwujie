@@ -36,8 +36,25 @@ public class MyApplication extends Application {
                 
                 // 可以在这里添加崩溃日志上报逻辑
                 
-                // 确保应用能够正常退出
-                System.exit(1);
+                // 对于Fragment生命周期相关的异常，不强制退出APP
+                if (throwable instanceof IllegalStateException && 
+                    throwable.getMessage() != null && 
+                    throwable.getMessage().contains("Fragment")) {
+                    Log.w(TAG, "检测到Fragment生命周期异常，不强制退出APP");
+                    return;
+                }
+                
+                // 对于其他严重异常，仍然退出APP
+                Log.e(TAG, "检测到严重异常，准备退出APP");
+                try {
+                    // 延迟退出，给日志记录一些时间
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        System.exit(1);
+                    }, 1000);
+                } catch (Exception e) {
+                    Log.e(TAG, "延迟退出失败，立即退出", e);
+                    System.exit(1);
+                }
             }
         });
         

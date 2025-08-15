@@ -142,6 +142,7 @@ public class SocketDataV0 {
     // 新增的requesttype常量定义
     public static final int REQUEST_TYPE_AI_PHOTO_RECOGNITION = 5001; // 启动AI页面的拍照识别按钮和功能
     public static final int REQUEST_TYPE_JUMP_TO_BLINDHOME = 5002;    // 跳转到blindhome页面并开启连线志愿者按钮和功能
+    public static final int REQUEST_TYPE_EMERGENCY_HELP = 5003;       // 紧急求助，跳转到blindhome页面并开启紧急求助功能
     public static final int REQUEST_TYPE_APP_JUMP = 5004;             // APP跳转
     public static final int REQUEST_TYPE_EDIT_PROFILE = 5005;         // 跳转到用户信息修改页面
     
@@ -224,6 +225,20 @@ public class SocketDataV0 {
     
     public void setMessage(String message) {
         this.message = message;
+    }
+    
+    /**
+     * 获取消息内容（兼容性方法，与message字段相同）
+     */
+    public String getContent() {
+        return message;
+    }
+    
+    /**
+     * 设置消息内容（兼容性方法，与message字段相同）
+     */
+    public void setContent(String content) {
+        this.message = content;
     }
     
     // 更新连接状态的方法

@@ -39,6 +39,9 @@ public class WebSocketManager {
     // 全局消息监听器列表
     private java.util.List<MessageListener> globalMessageListeners = new java.util.ArrayList<>();
     
+    // 全局连接状态监听器列表
+    private java.util.List<ConnectionStatusListener> globalConnectionStatusListeners = new java.util.ArrayList<>();
+    
     // 定时器，用于定期检查连接状态
     private ScheduledExecutorService connectionChecker;
     private Handler mainHandler;
@@ -81,7 +84,20 @@ public class WebSocketManager {
     private void showToast(String message) {
         if (context != null) {
             mainHandler.post(() -> {
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                try {
+                    // 检查Context是否还有效
+                    if (context instanceof android.app.Activity) {
+                        android.app.Activity activity = (android.app.Activity) context;
+                        if (activity.isFinishing() || activity.isDestroyed()) {
+                            Log.w(TAG, "Activity已销毁，跳过Toast显示: " + message);
+                            return;
+                        }
+                    }
+                    
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Log.w(TAG, "显示Toast失败: " + message, e);
+                }
             });
         }
     }
@@ -142,10 +158,14 @@ public class WebSocketManager {
                     // 显示连接成功提示
                     showToast("WebSocket连接成功");
                     
-                    // 通知监听器
+                    // 通知所有全局连接状态监听器
                     mainHandler.post(() -> {
-                        if (connectionStatusListener != null) {
-                            connectionStatusListener.onConnected();
+                        for (ConnectionStatusListener listener : globalConnectionStatusListeners) {
+                            try {
+                                listener.onConnected();
+                            } catch (Exception e) {
+                                Log.e(TAG, "通知连接状态监听器失败", e);
+                            }
                         }
                     });
                 }
@@ -166,12 +186,17 @@ public class WebSocketManager {
                     isConnected = false;
                     socketData.updateConnectionStatus(false);
                     
-                    // 显示连接关闭提示
-                    showToast("WebSocket连接已关闭: " + reason);
+                    // 删除Toast提示，避免在页面跳转时显示不必要的提示
+                    // 只在日志中记录连接关闭信息
+                    Log.d(TAG, "WebSocket连接已关闭，代码: " + code + ", 原因: " + reason);
                     
                     mainHandler.post(() -> {
-                        if (connectionStatusListener != null) {
-                            connectionStatusListener.onDisconnected(code, reason);
+                        for (ConnectionStatusListener listener : globalConnectionStatusListeners) {
+                            try {
+                                listener.onDisconnected(code, reason);
+                            } catch (Exception e) {
+                                Log.e(TAG, "通知连接状态监听器失败", e);
+                            }
                         }
                     });
                     
@@ -192,12 +217,17 @@ public class WebSocketManager {
                     isConnected = false;
                     socketData.updateConnectionStatus(false);
                     
-                    // 显示连接错误提示
-                    showToast("WebSocket连接失败: " + ex.getMessage());
+                    // 删除Toast提示，避免显示不必要的错误信息
+                    // 只在日志中记录连接错误信息
+                    Log.w(TAG, "WebSocket连接错误: " + ex.getMessage());
                     
                     mainHandler.post(() -> {
-                        if (connectionStatusListener != null) {
-                            connectionStatusListener.onError(ex);
+                        for (ConnectionStatusListener listener : globalConnectionStatusListeners) {
+                            try {
+                                listener.onError(ex);
+                            } catch (Exception e) {
+                                Log.e(TAG, "通知连接状态监听器失败", e);
+                            }
                         }
                     });
                 }
@@ -470,10 +500,14 @@ public class WebSocketManager {
                 // 连接状态变为已连接，只更新状态，不发送任何消息
                 Log.d(TAG, "连接状态恢复，仅更新状态");
                 
-                // 通知连接状态变化
+                // 通知所有全局连接状态监听器
                 mainHandler.post(() -> {
-                    if (connectionStatusListener != null) {
-                        connectionStatusListener.onConnected();
+                    for (ConnectionStatusListener listener : globalConnectionStatusListeners) {
+                        try {
+                            listener.onConnected();
+                        } catch (Exception e) {
+                            Log.e(TAG, "通知连接状态监听器失败", e);
+                        }
                     }
                 });
             } else {
@@ -485,10 +519,14 @@ public class WebSocketManager {
                     Log.d(TAG, "业务活动进行中，跳过连接状态检查重连");
                 }
                 
-                // 通知连接状态变化
+                // 通知所有全局连接状态监听器
                 mainHandler.post(() -> {
-                    if (connectionStatusListener != null) {
-                        connectionStatusListener.onDisconnected(-1, "连接状态检查失败");
+                    for (ConnectionStatusListener listener : globalConnectionStatusListeners) {
+                        try {
+                            listener.onDisconnected(-1, "连接状态检查失败");
+                        } catch (Exception e) {
+                            Log.e(TAG, "通知连接状态监听器失败", e);
+                        }
                     }
                 });
             }
@@ -514,14 +552,22 @@ public class WebSocketManager {
                         connect(phone, isVolunteer);
                     } else {
                         Log.w(TAG, "无法自动重连：用户信息为空");
-                        if (connectionStatusListener != null) {
-                            connectionStatusListener.onReconnectNeeded();
+                        for (ConnectionStatusListener listener : globalConnectionStatusListeners) {
+                            try {
+                                listener.onReconnectNeeded();
+                            } catch (Exception e) {
+                                Log.e(TAG, "通知连接状态监听器失败", e);
+                            }
                         }
                     }
                 } else {
                     Log.w(TAG, "无法自动重连：context为空");
-                    if (connectionStatusListener != null) {
-                        connectionStatusListener.onReconnectNeeded();
+                    for (ConnectionStatusListener listener : globalConnectionStatusListeners) {
+                        try {
+                            listener.onReconnectNeeded();
+                        } catch (Exception e) {
+                            Log.e(TAG, "通知连接状态监听器失败", e);
+                        }
                     }
                 }
             } else if (!canReconnect()) {
@@ -584,6 +630,26 @@ public class WebSocketManager {
      */
     public void removeMessageListener(MessageListener listener) {
         globalMessageListeners.remove(listener);
+    }
+    
+    /**
+     * 添加全局连接状态监听器
+     */
+    public void addConnectionStatusListener(ConnectionStatusListener listener) {
+        if (listener != null && !globalConnectionStatusListeners.contains(listener)) {
+            globalConnectionStatusListeners.add(listener);
+            Log.d(TAG, "添加全局连接状态监听器，当前监听器数量: " + globalConnectionStatusListeners.size());
+        }
+    }
+    
+    /**
+     * 移除全局连接状态监听器
+     */
+    public void removeConnectionStatusListener(ConnectionStatusListener listener) {
+        if (listener != null) {
+            globalConnectionStatusListeners.remove(listener);
+            Log.d(TAG, "移除全局连接状态监听器，当前监听器数量: " + globalConnectionStatusListeners.size());
+        }
     }
     
     /**

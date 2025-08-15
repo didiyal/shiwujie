@@ -144,7 +144,7 @@ public class SpeechRecognitionManager {
                 if (mListener != null) {
                     mListener.onVolumeChanged(volume);
                 }
-                Log.d(TAG, "音量变化: " + volume);
+
             }
             
             @Override

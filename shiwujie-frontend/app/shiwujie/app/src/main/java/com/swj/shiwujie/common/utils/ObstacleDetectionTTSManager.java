@@ -447,6 +447,27 @@ public class ObstacleDetectionTTSManager {
     }
     
     /**
+     * 停止当前TTS播报（不销毁资源）
+     */
+    public void stopSpeaking() {
+        try {
+            if (ttsManager != null && isCurrentlySpeaking) {
+                Log.d(TAG, "停止当前TTS播报");
+                ttsManager.stopSpeaking();
+                isCurrentlySpeaking = false;
+                
+                // 重置播报状态
+                lastSpokenText = "";
+                lastSpokenTime = 0;
+                
+                Log.d(TAG, "TTS播报已停止");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "停止TTS播报失败", e);
+        }
+    }
+    
+    /**
      * 设置TTS监听器
      * @param listener TTS监听器
      */
