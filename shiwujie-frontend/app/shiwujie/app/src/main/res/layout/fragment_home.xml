@@ -58,7 +58,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_blue_button"
+                    android:background="@color/primary_blue"
                     android:gravity="center"
                     android:text="连线志愿者"
                     android:textColor="@android:color/white"
@@ -80,7 +80,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_button_primary"
+                    android:background="@color/red"
                     android:gravity="center"
                     android:text="紧急求助"
                     android:textColor="@android:color/white"

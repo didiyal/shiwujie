@@ -72,8 +72,8 @@ public class FamilyFragment extends Fragment {
         btnLeaveFamily.setVisibility(View.GONE);
         tvFamilyName = root.findViewById(R.id.tvFamilyName);
         tvFamilyDescription = root.findViewById(R.id.tvFamilyDescription);
-        rvBlindMembers = root.findViewById(R.id.rvFamilyMembers);
-        rvVolunteerMembers = root.findViewById(R.id.rvFamilyRequests);
+        rvBlindMembers = root.findViewById(R.id.rvBlindMembers);
+        rvVolunteerMembers = root.findViewById(R.id.rvVolunteerMembers);
 
         // 盲人端不需要显示加入申请卡片，始终隐藏
         CardView cardFamilyRequests = root.findViewById(R.id.cardFamilyRequests);
@@ -216,6 +216,27 @@ public class FamilyFragment extends Fragment {
 
             tvFamilyName.setText(family.getFamilyName() != null ? family.getFamilyName() : "未命名家庭");
             tvFamilyDescription.setText(family.getFamilyDescription() != null ? family.getFamilyDescription() : "暂无描述");
+
+            // 计算总成员数量
+            int totalMembers = 0;
+            int blindCount = 0;
+            int volunteerCount = 0;
+            
+            if (family.getBlindVOList() != null) {
+                blindCount = family.getBlindVOList().size();
+                totalMembers += blindCount;
+            }
+            
+            if (family.getVolunteerVOList() != null) {
+                volunteerCount = family.getVolunteerVOList().size();
+                totalMembers += volunteerCount;
+            }
+            
+            // 更新成员数量显示
+            TextView tvMemberCount = root.findViewById(R.id.tvMemberCount);
+            if (tvMemberCount != null) {
+                tvMemberCount.setText(totalMembers + "人");
+            }
 
             // 更新盲人成员列表
             if (family.getBlindVOList() != null) {

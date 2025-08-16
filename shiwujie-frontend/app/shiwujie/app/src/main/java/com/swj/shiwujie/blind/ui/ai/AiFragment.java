@@ -234,6 +234,10 @@ public class AiFragment extends Fragment {
     
     private ObstacleDetectionTTSManager obstacleDetectionTTSManager;
     
+
+    
+
+    
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         try {
@@ -420,6 +424,22 @@ public class AiFragment extends Fragment {
         btnCollapseMessage.setOnClickListener(v -> collapseMessagePanel());
         btnExpandMessage.setOnClickListener(v -> expandMessagePanel());
         
+        // 返回主页按钮点击事件
+        MaterialButton btnBack = view.findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                // 使用Navigation导航到主页
+                try {
+                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                    navController.navigate(R.id.navigation_home);
+                } catch (Exception e) {
+                    Log.e(TAG, "导航到主页失败", e);
+                    // 如果导航失败，显示提示
+                    Toast.makeText(requireContext(), "返回主页失败，请重试", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        
         // AI协助按钮 - 控制AI避障功能
         MaterialButton btnAiAssist = view.findViewById(R.id.btn_ai_assist);
         if (btnAiAssist != null) {
@@ -599,8 +619,7 @@ public class AiFragment extends Fragment {
             // 切换到当前对话标签页
             switchToCurrentTab();
             
-            // 显示提示
-            Toast.makeText(requireContext(), "已返回到当前对话", Toast.LENGTH_SHORT).show();
+            
         });
         
         return itemView;
@@ -1501,7 +1520,7 @@ public class AiFragment extends Fragment {
                 // 检查Fragment状态后再显示Toast
                 if (isAdded() && getContext() != null) {
                     try {
-                        Toast.makeText(requireContext(), "语音播放失败: " + error, Toast.LENGTH_SHORT).show();
+                        // Toast.makeText(requireContext(), "语音播放失败: " + error, Toast.LENGTH_SHORT).show();
                     } catch (Exception e) {
                         Log.w(TAG, "显示TTS错误提示失败", e);
                     }
@@ -1686,7 +1705,7 @@ public class AiFragment extends Fragment {
                     startActivity(intent);
                 } catch (Exception e) {
                     Log.e(TAG, "跳转设置页面失败", e);
-                    Toast.makeText(requireContext(), "无法跳转设置页面，请手动开启" + permissionName, Toast.LENGTH_LONG).show();
+                
                 }
             })
             .setNegativeButton("取消", null)
@@ -1721,7 +1740,7 @@ public class AiFragment extends Fragment {
             })
             .setNegativeButton("取消", (dialog, which) -> {
                 // 用户取消，显示提示
-                Toast.makeText(requireContext(), "没有摄像头权限无法使用拍照功能", Toast.LENGTH_LONG).show();
+                // Toast.makeText(requireContext(), "没有摄像头权限无法使用拍照功能", Toast.LENGTH_LONG).show();
             })
             .setCancelable(false)
             .show();
@@ -1738,13 +1757,13 @@ public class AiFragment extends Fragment {
         
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(requireContext(), "录音权限已授予", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(requireContext(), "录音权限已授予", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(requireContext(), "录音权限被拒绝，无法使用语音识别功能", Toast.LENGTH_LONG).show();
+                // Toast.makeText(requireContext(), "录音权限被拒绝，无法使用语音识别功能", Toast.LENGTH_LONG).show();
             }
         } else if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(requireContext(), "摄像头权限已授予", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(requireContext(), "摄像头权限已授予", Toast.LENGTH_SHORT).show();
                 // 权限授予后启动摄像头预览
                 if (cameraManager != null) {
                     cameraManager.startPreview();
@@ -1787,23 +1806,23 @@ public class AiFragment extends Fragment {
     private void takePhotoDirectly() {
         if (cameraManager == null) {
             Log.e(TAG, "CameraPreviewManager未初始化");
-            Toast.makeText(requireContext(), "相机管理器未初始化", Toast.LENGTH_SHORT).show();
+            // Toast.makeText(requireContext(), "相机管理器未初始化", Toast.LENGTH_SHORT).show();
             return;
         }
         
         if (!cameraManager.isPreviewActive()) {
             Log.e(TAG, "相机预览未激活");
-            Toast.makeText(requireContext(), "相机预览未激活，请稍后再试", Toast.LENGTH_SHORT).show();
+            // Toast.makeText(requireContext(), "相机预览未激活，请稍后再试", Toast.LENGTH_SHORT).show();
             return;
         }
         
         if (cameraManager.isTakingPhoto()) {
-            Toast.makeText(requireContext(), "正在拍照中，请稍候", Toast.LENGTH_SHORT).show();
+            // Toast.makeText(requireContext(), "正在拍照中，请稍候", Toast.LENGTH_SHORT).show();
             return;
         }
         
         // 显示拍照提示
-        Toast.makeText(requireContext(), "正在拍照...", Toast.LENGTH_SHORT).show();
+        // Toast.makeText(requireContext(), "正在拍照...", Toast.LENGTH_SHORT).show();
         
         // 调用CameraPreviewManager的直接拍照方法
         cameraManager.takePhoto(new com.swj.shiwujie.common.utils.CameraPreviewManager.TakePhotoCallback() {
@@ -1821,7 +1840,7 @@ public class AiFragment extends Fragment {
                 
                 // 在主线程中显示错误
                 requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(), "拍照失败: " + error, Toast.LENGTH_SHORT).show();
+                    // Toast.makeText(requireContext(), "拍照失败: " + error, Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -1851,7 +1870,7 @@ public class AiFragment extends Fragment {
             
         } catch (Exception e) {
             Log.e(TAG, "处理照片数据失败", e);
-            Toast.makeText(requireContext(), "处理照片失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            // Toast.makeText(requireContext(), "处理照片失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -1863,7 +1882,7 @@ public class AiFragment extends Fragment {
      */
     private void handleSpeechResult(String result) {
         if (result == null || result.trim().isEmpty()) {
-            Toast.makeText(requireContext(), "语音识别结果为空", Toast.LENGTH_SHORT).show();
+            // Toast.makeText(requireContext(), "语音识别结果为空", Toast.LENGTH_SHORT).show();
             return;
         }
         
@@ -2251,7 +2270,7 @@ public class AiFragment extends Fragment {
         if (listening) {
             btnVoice.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.red));
         } else {
-            btnVoice.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.blue_50));
+            btnVoice.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.primary_blue));
         }
     }
     
@@ -4022,23 +4041,14 @@ public class AiFragment extends Fragment {
             // 延迟执行跳转，让用户看到提示信息
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 try {
-                    // 跳转到用户信息修改页面
-                    Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.EditProfileActivity.class);
-                    startActivity(intent);
-                    
-                    Log.d(TAG, "已跳转到用户信息修改页面");
-                    
-                    // 延迟销毁当前Activity，给AI聊天响应处理留出时间
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        try {
-                            if (getActivity() != null && !getActivity().isFinishing()) {
-                                getActivity().finish();
-                                Log.d(TAG, "当前Activity已结束");
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "延迟销毁Activity失败", e);
-                        }
-                    }, 3000); // 延迟3秒销毁，确保AI聊天响应处理完成
+                    // 直接跳转到编辑页面，不需要先切换到个人中心Fragment
+                    if (getActivity() != null) {
+                        Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.EditProfileActivity.class);
+                        intent.putExtra("source", "ai");
+                        startActivity(intent);
+                        
+                        Log.d(TAG, "已直接跳转到编辑页面");
+                    }
                     
                 } catch (Exception e) {
                     Log.e(TAG, "跳转用户信息修改页面失败", e);
@@ -4218,4 +4228,6 @@ public class AiFragment extends Fragment {
             return "error_hash";
         }
     }
+    
+
 } 

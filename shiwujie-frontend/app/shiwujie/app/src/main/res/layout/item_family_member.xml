@@ -11,17 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-    android:padding="12dp">
-
-        <!-- 头像 -->
-        <ImageView
-            android:id="@+id/ivAvatar"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_member_avatar"
-            android:contentDescription="成员头像"
-            android:padding="8dp"
-            android:src="@drawable/ic_family" />
+        android:padding="12dp">
 
         <!-- 成员信息 -->
         <LinearLayout
@@ -31,32 +21,33 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/tvMemberName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+            <TextView
+                android:id="@+id/tvMemberName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:textColor="@android:color/black"
-        android:textSize="16sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/tvMemberId"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="#757575"
+            <TextView
+                android:id="@+id/tvMemberId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="#757575"
                 android:textSize="10sp" />
         </LinearLayout>
 
         <!-- 角色标签 -->
-    <TextView
-        android:id="@+id/tvMemberRole"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        <TextView
+            android:id="@+id/tvMemberRole"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:background="@drawable/bg_role_tag"
             android:paddingHorizontal="12dp"
             android:paddingVertical="4dp"
             android:textColor="@color/primary_blue"
             android:textSize="12sp" />
-</LinearLayout> 
+
+    </LinearLayout>
 </androidx.cardview.widget.CardView> 

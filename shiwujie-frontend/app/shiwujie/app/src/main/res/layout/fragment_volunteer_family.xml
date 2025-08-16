@@ -128,7 +128,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
                             android:text="家庭ID: "
-                            android:textColor="#757575"
+                            android:textColor="#163AAC"
                             android:textSize="14sp" />
 
                         <!-- 家庭名称和修改按钮的容器 -->
@@ -145,7 +145,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="家庭名称"
-                                android:textColor="#2196F3"
+                                android:textColor="#163AAC"
                                 android:textSize="24sp"
                                 android:textStyle="bold" />
 
@@ -171,6 +171,33 @@
                             android:textColor="#757575"
                             android:textSize="16sp" />
 
+                        <!-- 成员数量信息 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:background="@drawable/bg_creator_info"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="成员数量"
+                                android:textColor="#163AAC"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvMemberCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="0人"
+                                android:textColor="#757575"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
                         <!-- 创建者信息 -->
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -184,7 +211,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="创建者"
-                                android:textColor="#2196F3"
+                                android:textColor="#163AAC"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
 
@@ -210,7 +237,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="盲人成员"
-                            android:textColor="#2196F3"
+                            android:textColor="#163AAC"
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
@@ -229,7 +256,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="24dp"
                             android:text="志愿者成员"
-                            android:textColor="#2196F3"
+                            android:textColor="#163AAC"
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
@@ -250,7 +277,7 @@
                         android:layout_height="wrap_content"
                         android:text="解散家庭"
                         android:textColor="@android:color/white"
-                        android:background="@drawable/bg_button_primary"
+                        android:background="@color/red"
                         android:layout_marginTop="16dp"
                         android:visibility="gone" />
 
@@ -264,15 +291,18 @@
                         android:layout_marginTop="8dp"
                         android:visibility="gone" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnLeaveFamily"
-                        android:layout_width="match_parent"
+                        android:layout_width="205dp"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:paddingHorizontal="30dp"
+                        android:paddingVertical="12dp"
                         android:text="退出家庭"
                         android:textColor="@android:color/white"
-                        android:background="@drawable/bg_button_primary"
-                        android:layout_marginTop="8dp"
-                        android:visibility="gone" />
+                        android:textSize="12sp"
+                        app:backgroundTint="@color/red"
+                        app:cornerRadius="8dp" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

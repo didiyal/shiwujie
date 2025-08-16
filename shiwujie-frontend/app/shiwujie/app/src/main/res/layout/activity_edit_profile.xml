@@ -10,7 +10,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:background="@android:color/white"
+        android:background="#163AAC"
         android:elevation="2dp">
 
         <ImageButton
@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="修改信息"
-            android:textColor="@android:color/black"
+            android:textColor="@color/white"
             android:textSize="18sp"/>
     </RelativeLayout>
 
@@ -44,7 +44,7 @@
             android:id="@+id/ivAvatar"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:src="@drawable/ic_launcher_foreground"
+            android:src="@drawable/touxiang"
             android:background="@drawable/bg_member_avatar"
             android:scaleType="centerCrop"/>
 

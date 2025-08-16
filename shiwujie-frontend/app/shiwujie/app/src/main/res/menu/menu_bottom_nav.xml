@@ -6,19 +6,22 @@
         android:title="主页" />
 
     <item
-        android:id="@+id/navigation_community"
-        android:icon="@drawable/community"
-        android:title="社区" />
-
-    <item
         android:id="@+id/navigation_ai"
         android:icon="@drawable/ai"
         android:title="AI" />
+
 
     <item
         android:id="@+id/navigation_family"
         android:icon="@drawable/family1"
         android:title="家庭" />
+
+    <item
+        android:id="@+id/navigation_community"
+        android:icon="@drawable/community"
+        android:title="社区" />
+
+
 
     <item
         android:id="@+id/navigation_profile"

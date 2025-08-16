@@ -302,6 +302,27 @@ public class FamilyFragment extends Fragment {
                 btnLeaveFamily.setOnClickListener(v -> showLeaveFamilyDialog());
             }
 
+            // 计算并显示成员数量
+            int totalMembers = 0;
+            int blindCount = 0;
+            int volunteerCount = 0;
+            
+            if (family.getBlindVOList() != null) {
+                blindCount = family.getBlindVOList().size();
+                totalMembers += blindCount;
+            }
+            
+            if (family.getVolunteerVOList() != null) {
+                volunteerCount = family.getVolunteerVOList().size();
+                totalMembers += volunteerCount;
+            }
+            
+            // 更新成员数量显示
+            TextView tvMemberCount = requireView().findViewById(R.id.tvMemberCount);
+            if (tvMemberCount != null) {
+                tvMemberCount.setText(totalMembers + "人");
+            }
+
             // 更新成员列表
             updateMemberLists(family);
         });
@@ -529,7 +550,7 @@ public class FamilyFragment extends Fragment {
         }
         volunteerMemberAdapter.updateMembers(volunteerMembers);
         
-        android.util.Log.d("FamilyFragment", "成员列表更新完成");
+        android.util.Log.d("FamilyFragment", "成员列表更新完成，盲人: " + blindMembers.size() + "人，志愿者: " + volunteerMembers.size() + "人");
     }
 
     private static class MemberInfo {

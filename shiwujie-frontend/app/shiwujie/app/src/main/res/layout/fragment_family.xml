@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="家庭"
-            android:textColor="@android:color/black"
+            android:textColor="@color/black"
             android:textSize="24sp"
             android:textStyle="bold"
             app:layout_constraintLeft_toLeftOf="parent"
@@ -128,15 +128,16 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="我的家庭"
-                                android:textColor="@android:color/black"
+                                android:textColor="#163AAC"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
 
-                            <Button
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnLeaveFamily"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:background="@drawable/bg_button_red"
+                                app:backgroundTint="@color/red"
+                                app:cornerRadius="8dp"
                                 android:paddingHorizontal="16dp"
                                 android:paddingVertical="8dp"
                                 android:text="退出家庭"
@@ -214,27 +215,61 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="3人"
+                                android:text="0人"
                                 android:textColor="@android:color/black"
                                 android:textSize="14sp" />
 
                         </LinearLayout>
 
-                        <!-- 家庭成员列表 -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
-                            android:text="家庭成员"
-                            android:textColor="@android:color/black"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/rvFamilyMembers"
+                        <!-- 盲人成员列表 -->
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:nestedScrollingEnabled="false" />
+                            android:layout_marginBottom="16dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:text="盲人成员"
+                                android:textColor="#163AAC"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/rvBlindMembers"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_member_list"
+                                android:nestedScrollingEnabled="false" />
+
+                        </LinearLayout>
+
+                        <!-- 志愿者成员列表 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:text="志愿者成员"
+                                android:textColor="#163AAC"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/rvVolunteerMembers"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_member_list"
+                                android:nestedScrollingEnabled="false" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
@@ -261,7 +296,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp"
                             android:text="加入申请"
-                            android:textColor="@android:color/black"
+                            android:textColor="#163AAC"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 

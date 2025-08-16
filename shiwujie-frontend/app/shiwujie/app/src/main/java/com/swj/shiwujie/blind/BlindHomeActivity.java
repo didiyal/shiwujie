@@ -14,6 +14,7 @@ import com.swj.shiwujie.common.utils.PermissionManager;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -48,6 +49,26 @@ public class BlindHomeActivity extends AppCompatActivity {
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupWithNavController(binding.navView, navController);
+        
+        // 添加导航监听器，实现TalkBack焦点转移
+        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            // 延迟一点时间确保页面加载完成
+            new android.os.Handler().postDelayed(() -> {
+                // 获取当前页面的根布局
+                View currentFragmentView = findViewById(R.id.nav_host_fragment_activity_main);
+                if (currentFragmentView != null) {
+                    // 找到当前Fragment的根视图
+                    ViewGroup fragmentContainer = (ViewGroup) currentFragmentView;
+                    if (fragmentContainer.getChildCount() > 0) {
+                        View fragmentRoot = fragmentContainer.getChildAt(0);
+                        // 强制聚焦到页面根布局
+                        fragmentRoot.requestFocus();
+                        // 可选：引导焦点向下移动
+                        fragmentRoot.setNextFocusDownId(fragmentRoot.getId());
+                    }
+                }
+            }, 300); // 延迟300毫秒
+        });
         
         // 检查权限
         checkPermissions();

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:fitsSystemWindows="true"
-    android:background="@color/primary_blue">
+    android:background="@color/white">
 
     <!-- 顶部状态栏占位区域，占页面高度的3% -->
     <View
@@ -25,13 +25,13 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="我的社区"
-            android:textSize="24sp"
-            android:textColor="@color/text_primary"
-            android:textStyle="bold"
+            android:background="@color/primary_blue"
             android:gravity="center"
             android:padding="20dp"
-            android:background="@color/white" />
+            android:text="我的社区"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <!-- 导航标签 -->
         <LinearLayout

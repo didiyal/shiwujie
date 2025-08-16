@@ -34,6 +34,10 @@ import android.content.Context;
 import com.swj.shiwujie.common.utils.UserInfoManager;
 
 import java.util.List;
+import android.os.Handler;
+import android.os.Looper;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
 public class ProfileFragment extends Fragment {
     private TextView tvUsername;
@@ -55,6 +59,34 @@ public class ProfileFragment extends Fragment {
         initListeners();
         fetchUserInfo(); // 改为主动获取用户信息
         return root;
+    }
+    
+    @Override
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        
+        // 检查是否需要自动跳转到编辑页面
+        if (getArguments() != null && "edit_profile".equals(getArguments().getString("action"))) {
+            // 获取来源标记
+            String source = getArguments().getString("source", "normal");
+            
+            // 立即跳转到编辑页面，不需要延迟
+            if ("ai".equals(source)) {
+                // 来自AI页面，传递特殊标记
+                Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.EditProfileActivity.class);
+                intent.putExtra("source", "ai");
+                startActivity(intent);
+            } else {
+                // 常规跳转，使用NavigationHelper
+                NavigationHelper.toBlindEditProfile(requireContext());
+            }
+            
+            // 立即清理参数，避免重复跳转
+            if (getArguments() != null) {
+                getArguments().remove("action");
+                getArguments().remove("source");
+            }
+        }
     }
 
     private void initViews(View root) {

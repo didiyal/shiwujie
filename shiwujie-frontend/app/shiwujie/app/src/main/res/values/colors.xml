@@ -7,15 +7,15 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="primary_blue">#1677FF</color>
+    <color name="primary_blue">#163AAC</color>
     <color name="gray">#F5F5F5</color>
-    <color name="blue">#2196F3</color>
+    <color name="blue">#0A3D91</color>
     <color name="green">#4CAF50</color>
-    <color name="red">#F44336</color>
-    <color name="blue_500">#2196F3</color>
+    <color name="red">#D32F2F</color>
+    <color name="blue_500">#0A3D91</color>
     <color name="gray_400">#BDBDBD</color>
     <color name="gray_600">#757575</color>
-    <color name="blue_primary">#1677FF</color>
+    <color name="blue_primary">#163AAC</color>
     <color name="blue_light">#E3F2FD</color>
     <color name="red_primary">#F44336</color>
     <color name="orange_primary">#FF9800</color>
@@ -28,7 +28,7 @@
    <!-- 蓝色系（简洁清爽）-->
     <color name="blue_50">#EEF5FF</color>
     <color name="blue_100">#D9E8FF</color>
-    <color name="blue_600">#1677FF</color>
-    <color name="blue_700">#0F6AE5</color>
+    <color name="blue_600">#163AAC</color>
+    <color name="blue_700">#0A3D91</color>
     <color name="blue_900">#0A3D91</color>
 </resources>

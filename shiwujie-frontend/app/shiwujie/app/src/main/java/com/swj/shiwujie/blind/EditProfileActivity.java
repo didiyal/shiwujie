@@ -77,7 +77,18 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void initListeners() {
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> {
+            // 检查来源标记
+            String source = getIntent().getStringExtra("source");
+            
+            if ("ai".equals(source)) {
+                // 来自AI页面，需要特殊处理
+                handleBackFromAI();
+            } else {
+                // 常规返回逻辑，保持不变
+                finish();
+            }
+        });
 
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
 
@@ -331,5 +342,14 @@ public class EditProfileActivity extends AppCompatActivity {
         });
 
         dialog.show();
+    }
+    
+    /**
+     * 处理来自AI页面的返回逻辑
+     */
+    private void handleBackFromAI() {
+        // 来自AI页面，直接返回到AI页面
+        // 通过Activity的finish()返回到上一个页面，即AI页面
+        finish();
     }
 } 
