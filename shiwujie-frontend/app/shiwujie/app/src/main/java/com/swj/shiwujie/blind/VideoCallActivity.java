@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.network.VideoCallManager;
 import com.swj.shiwujie.common.network.WebSocketManager;
+import com.swj.shiwujie.common.network.EmergencyHelpManager;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.common.utils.PermissionManager;
 import com.swj.shiwujie.data.model.SocketDataV0;
@@ -50,7 +51,8 @@ public class VideoCallActivity extends AppCompatActivity {
     
     // 静态标志，防止多个实例同时存在
     private static boolean isActivityRunning = false;
-    
+
+
     // UI组件
     private FrameLayout localVideoContainer;
     private FrameLayout remoteVideoContainer;
@@ -524,24 +526,18 @@ public class VideoCallActivity extends AppCompatActivity {
     private void hangupCall() {
         Log.d(TAG, "用户主动挂断通话");
         boolean isEmergencyHelp = getIntent().getBooleanExtra("isEmergencyHelp", false);
-        String token = SharedPrefsUtil.getToken();
-        if (token != null && !token.isEmpty()) {
-            String authToken = "Bearer " + token;
-            ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
-            if (isEmergencyHelp) {
-                // 紧急求助挂断
-                apiService.hangupUrgenthelp(authToken).enqueue(new Callback<BaseResponse<Boolean>>() {
-                    @Override
-                    public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
-                        Log.d(TAG, "紧急求助挂断API响应 - HTTP状态码: " + response.code());
-                    }
-                    @Override
-                    public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
-                        Log.e(TAG, "紧急求助挂断API调用失败", t);
-                    }
-                });
-            } else {
-                // 普通视频挂断
+        
+        if (isEmergencyHelp) {
+            // 紧急求助挂断 - 使用EmergencyHelpManager处理
+           
+            EmergencyHelpManager emergencyHelpManager = EmergencyHelpManager.getInstance();
+            emergencyHelpManager.hangupEmergencyHelp();
+        } else {
+            // 普通视频挂断
+            String token = SharedPrefsUtil.getToken();
+            if (token != null && !token.isEmpty()) {
+                String authToken = "Bearer " + token;
+                ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
                 apiService.hangupVideohelp(authToken).enqueue(new Callback<BaseResponse<Boolean>>() {
                     @Override
                     public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
@@ -552,14 +548,19 @@ public class VideoCallActivity extends AppCompatActivity {
                         Log.e(TAG, "挂断API调用失败", t);
                     }
                 });
+            } else {
+                Log.e(TAG, "Token为空，无法调用挂断API");
             }
-        } else {
-            Log.e(TAG, "Token为空，无法调用挂断API");
         }
+        
         // 结束通话
         endCall();
     }
-    
+
+
+
+
+
     private void toggleMute() {
         if (mRtcEngine != null) {
             isMuted = !isMuted;

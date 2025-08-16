@@ -460,6 +460,42 @@ public class HomeFragment extends Fragment {
     }
     
     @Override
+    public void onResume() {
+        super.onResume();
+        
+        // 检查是否有从AI页面传递过来的参数
+        if (getArguments() != null) {
+            Bundle args = getArguments();
+            
+            // 检查是否来自AI页面的连线志愿者请求
+            if (args.getBoolean("from_ai_volunteer_connection", false)) {
+                Log.d(TAG, "收到来自AI页面的连线志愿者请求，自动启动连线功能");
+                // 清除参数，避免重复处理
+                args.remove("from_ai_volunteer_connection");
+                // 延迟启动连线功能，确保页面完全加载
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    if (isAdded() && !isVideoCallStarted) {
+                        startVideoHelpMatching();
+                    }
+                }, 500);
+            }
+            
+            // 检查是否来自AI页面的紧急求助请求
+            if (args.getBoolean("from_ai_emergency_help", false)) {
+                Log.d(TAG, "收到来自AI页面的紧急求助请求，自动启动紧急求助功能");
+                // 清除参数，避免重复处理
+                args.remove("from_ai_emergency_help");
+                // 延迟启动紧急求助功能，确保页面完全加载
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    if (isAdded() && !emergencyHelpManager.isInEmergencyHelp()) {
+                        startEmergencyHelp();
+                    }
+                }, 500);
+            }
+        }
+    }
+    
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         // 移除Socket消息监听

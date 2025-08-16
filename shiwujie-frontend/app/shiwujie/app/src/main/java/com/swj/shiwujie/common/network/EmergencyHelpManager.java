@@ -333,7 +333,7 @@ public class EmergencyHelpManager {
                             BaseResponse<Boolean> baseResponse = response.body();
                             Log.d(TAG, "响应数据: " + baseResponse.toString());
                             
-                            if (baseResponse.getCode() == 0 && Boolean.TRUE.equals(baseResponse.getData())) {
+                            if (baseResponse.getCode() == 1 && Boolean.TRUE.equals(baseResponse.getData())) {
                                 Log.d(TAG, "挂断紧急求助成功");
                                 showToast("通话已结束");
                                 

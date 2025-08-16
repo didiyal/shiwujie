@@ -69,6 +69,9 @@ import android.os.Looper;
 import java.util.HashSet;
 import java.util.Set;
 
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+
 
 
 /**
@@ -3703,13 +3706,13 @@ public class AiFragment extends Fragment {
                 break;
                 
             case SocketDataV0.REQUEST_TYPE_JUMP_TO_BLINDHOME:
-                // 5002: 跳转到blindhome页面并开启连线志愿者按钮和功能
-                Log.d(TAG, "处理5002: 跳转blindhome请求");
+                // 5002: 切换到主页Fragment并开启连线志愿者按钮和功能
+                Log.d(TAG, "处理5002: 切换到主页并开启连线志愿者请求");
                 handleJumpToBlindhomeRequest();
                 break;
                 
             case SocketDataV0.REQUEST_TYPE_EMERGENCY_HELP:
-                // 5003: 紧急求助，跳转到blindhome页面并开启紧急求助功能
+                // 5003: 紧急求助，切换到主页Fragment并开启紧急求助功能
                 Log.d(TAG, "处理5003: 紧急求助请求");
                 handleEmergencyHelpRequest();
                 break;
@@ -3800,146 +3803,110 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 处理5002: 跳转到blindhome页面并开启连线志愿者按钮和功能
+     * 处理5002: 切换到主页Fragment并开启连线志愿者按钮和功能
      */
     private void handleJumpToBlindhomeRequest() {
-        Log.d(TAG, "收到跳转blindhome并开启连线志愿者请求");
+        Log.d(TAG, "收到切换到主页并开启连线志愿者请求");
         
         try {
-            // 页面跳转前预清理资源，避免与新页面启动冲突
+            // 页面切换前预清理资源，避免与新页面启动冲突
             preCleanupResourcesForNavigation();
             
-            // 直接跳转，不做复杂处理
-            Log.d(TAG, "开始直接跳转...");
+            // 直接切换到底部导航的主页Fragment，不做复杂处理
+            Log.d(TAG, "开始切换到底部导航主页...");
             
-            // 跳转到blindhome页面
-            Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.BlindHomeActivity.class);
-            // 使用更安全的Intent配置，避免Activity栈管理问题
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            // 移除可能导致问题的Flags
-            // intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            // intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            
-            // 添加标记，表示从AI页面跳转过来需要自动执行连线志愿者功能
-            intent.putExtra("from_ai_volunteer_connection", true);
-            
-            // 显示跳转提示
-            Toast.makeText(requireContext(), "正在跳转到主页...", Toast.LENGTH_SHORT).show();
-            
-            // 添加震动反馈，提示用户即将跳转
-            if (vibrator != null && isAdded() && getContext() != null) {
-                try {
-                    vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
-                } catch (Exception e) {
-                    Log.w(TAG, "震动反馈失败", e);
+            // 获取导航控制器，切换到主页Fragment
+            if (getActivity() != null) {
+                NavController navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                if (navController != null) {
+                    // 使用Bundle传递参数，然后导航到主页Fragment
+                    Bundle args = new Bundle();
+                    args.putBoolean("from_ai_volunteer_connection", true);
+                    args.putString("businessType", "volunteer_connection");
+                    
+                    // 导航到主页Fragment并传递参数
+                    navController.navigate(R.id.navigation_home, args);
+                    
+                    Log.d(TAG, "切换成功，已切换到主页Fragment，并传递了连线志愿者参数");
+                    
+                    // 显示切换提示
+                    Toast.makeText(requireContext(), "已切换到主页，连线志愿者功能已启动", Toast.LENGTH_SHORT).show();
+                    
+                    // 添加震动反馈，提示用户已切换
+                    if (vibrator != null && isAdded() && getContext() != null) {
+                        try {
+                            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+                        } catch (Exception e) {
+                            Log.w(TAG, "震动反馈失败", e);
+                        }
+                    }
+                    
+                } else {
+                    Log.e(TAG, "无法获取导航控制器");
+                    Toast.makeText(requireContext(), "页面切换失败：导航控制器异常", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                Log.e(TAG, "Fragment未attached到Activity，无法切换");
+                Toast.makeText(requireContext(), "页面切换失败：页面状态异常", Toast.LENGTH_SHORT).show();
             }
             
-            // 延迟执行跳转，让用户看到提示信息
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                try {
-                    // 直接执行跳转
-                    if (getActivity() != null) {
-                        getActivity().startActivity(intent);
-                        Log.d(TAG, "跳转成功，已跳转到blindhome页面");
-                        
-                        // 延迟销毁当前Activity，给AI聊天响应处理留出时间
-                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                            try {
-                                if (getActivity() != null && !getActivity().isFinishing()) {
-                                    getActivity().finish();
-                                    Log.d(TAG, "当前Activity已结束");
-                                }
-                            } catch (Exception e) {
-                                Log.e(TAG, "延迟销毁Activity失败", e);
-                            }
-                        }, 3000); // 延迟3秒销毁，确保AI聊天响应处理完成
-                        
-                    } else {
-                        Log.e(TAG, "Fragment未attached到Activity，无法跳转");
-                        Toast.makeText(requireContext(), "跳转失败：页面状态异常", Toast.LENGTH_SHORT).show();
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "执行跳转失败", e);
-                    Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            }, 1000); // 延迟1秒执行跳转
-            
         } catch (Exception e) {
-            Log.e(TAG, "跳转blindhome页面失败", e);
-            Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "切换主页Fragment失败", e);
+            Toast.makeText(requireContext(), "页面切换失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
     
     /**
-     * 处理5003: 紧急求助，跳转到blindhome页面并开启紧急求助功能
+     * 处理5003: 紧急求助，切换到主页Fragment并开启紧急求助功能
      */
-        private void handleEmergencyHelpRequest() {
+    private void handleEmergencyHelpRequest() {
         Log.d(TAG, "收到紧急求助请求");
         
         try {
-            // 页面跳转前预清理资源，避免与新页面启动冲突
+            // 页面切换前预清理资源，避免与新页面启动冲突
             preCleanupResourcesForNavigation();
             
-            // 直接跳转，不做复杂处理
-            Log.d(TAG, "开始直接跳转...");
+            // 直接切换到底部导航的主页Fragment，不做复杂处理
+            Log.d(TAG, "开始切换到底部导航主页...");
             
-            // 跳转到blindhome页面
-            Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.BlindHomeActivity.class);
-            // 使用更安全的Intent配置，避免Activity栈管理问题
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            // 移除可能导致问题的Flags
-            // intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            // intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            
-            // 添加标记，表示从AI页面跳转过来需要自动执行紧急求助功能
-            intent.putExtra("from_ai_emergency_help", true);
-            
-            // 显示紧急求助跳转提示
-            Toast.makeText(requireContext(), "紧急求助功能已启动，正在跳转...", Toast.LENGTH_SHORT).show();
-            
-            // 添加震动反馈，提示用户紧急求助已启动
-            if (vibrator != null && isAdded() && getContext() != null) {
-                try {
-                    vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
-                } catch (Exception e) {
-                    Log.w(TAG, "震动反馈失败", e);
+            // 获取导航控制器，切换到主页Fragment
+            if (getActivity() != null) {
+                NavController navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                if (navController != null) {
+                    // 使用Bundle传递参数，然后导航到主页Fragment
+                    Bundle args = new Bundle();
+                    args.putBoolean("from_ai_emergency_help", true);
+                    args.putString("businessType", "emergency_help");
+                    
+                    // 导航到主页Fragment并传递参数
+                    navController.navigate(R.id.navigation_home, args);
+                    
+                    Log.d(TAG, "切换成功，已切换到主页Fragment");
+                    
+                    // 显示紧急求助切换提示
+                    Toast.makeText(requireContext(), "紧急求助功能已启动，已切换到主页", Toast.LENGTH_SHORT).show();
+                    
+                    // 添加震动反馈，提示用户已切换
+                    if (vibrator != null && isAdded() && getContext() != null) {
+                        try {
+                            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+                        } catch (Exception e) {
+                            Log.w(TAG, "震动反馈失败", e);
+                        }
+                    }
+                    
+                } else {
+                    Log.e(TAG, "无法获取导航控制器");
+                    Toast.makeText(requireContext(), "页面切换失败：导航控制器异常", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                Log.e(TAG, "Fragment未attached到Activity，无法切换");
+                Toast.makeText(requireContext(), "页面切换失败：页面状态异常", Toast.LENGTH_SHORT).show();
             }
             
-            // 延迟执行跳转，让用户看到提示信息
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                try {
-                    // 直接执行跳转
-                    if (getActivity() != null) {
-                        getActivity().startActivity(intent);
-                        Log.d(TAG, "跳转成功，已跳转到blindhome页面");
-                        
-                        // 延迟销毁当前Activity，给AI聊天响应处理留出时间
-                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                            try {
-                                if (getActivity() != null && !getActivity().isFinishing()) {
-                                    getActivity().finish();
-                                    Log.d(TAG, "当前Activity已结束");
-                                }
-                            } catch (Exception e) {
-                                Log.e(TAG, "延迟销毁Activity失败", e);
-                            }
-                        }, 3000); // 延迟3秒销毁，确保AI聊天响应处理完成
-                        
-                    } else {
-                        Log.e(TAG, "Fragment未attached到Activity，无法跳转");
-                        Toast.makeText(requireContext(), "紧急求助跳转失败：页面状态异常", Toast.LENGTH_SHORT).show();
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "执行紧急求助跳转失败", e);
-                    Toast.makeText(requireContext(), "紧急求助跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            }, 1500); // 延迟1.5秒执行跳转，给用户更多时间了解情况
-            
         } catch (Exception e) {
-            Log.e(TAG, "紧急求助跳转失败", e);
-            Toast.makeText(requireContext(), "紧急求助跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "切换主页Fragment失败", e);
+            Toast.makeText(requireContext(), "页面切换失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
     
