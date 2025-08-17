@@ -23,6 +23,9 @@ import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ApiCallback;
 import com.swj.shiwujie.data.model.BlindVO;
+import com.swj.shiwujie.common.utils.AppListManager;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class BlindHomeActivity extends AppCompatActivity {
     private static final String TAG = "BlindHomeActivity";
@@ -40,6 +43,10 @@ public class BlindHomeActivity extends AppCompatActivity {
         INPUT
     }
     private DialogType currentDialogType = DialogType.NONE;
+    
+    // 应用列表管理相关
+    private AppListManager appListManager;
+    private ExecutorService appListExecutor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +82,9 @@ public class BlindHomeActivity extends AppCompatActivity {
         
         // 检查登录状态并建立WebSocket连接
         initWebSocketConnection();
+        
+        // 初始化应用列表管理器
+        initAppListManager();
         
         // ===== 障碍物检测功能集成 - 严格按照backend_service.py的集成逻辑 =====
         // 改造说明：将Python后端的障碍物检测功能集成到Android原生界面
@@ -117,6 +127,39 @@ public class BlindHomeActivity extends AppCompatActivity {
             Log.e(TAG, "初始化WebSocket连接失败", e);
         }
     }
+    
+    /**
+     * 初始化应用列表管理器
+     * 在独立的子线程中执行，避免影响主线程和现有功能
+     */
+    private void initAppListManager() {
+        try {
+            Log.d(TAG, "开始初始化应用列表管理器...");
+            
+            // 创建专用的线程池，与现有功能完全隔离
+            appListExecutor = Executors.newSingleThreadExecutor();
+            appListManager = new AppListManager(this);
+            
+            // 在子线程中获取应用列表，避免阻塞主线程
+            appListExecutor.execute(() -> {
+                try {
+                    Log.d(TAG, "在子线程中开始获取应用列表...");
+                    appListManager.loadInstalledApps();
+                    Log.d(TAG, "应用列表获取完成，缓存数量: " + appListManager.getCachedAppCount());
+                } catch (Exception e) {
+                    Log.e(TAG, "在子线程中获取应用列表失败", e);
+                    Log.e(TAG, "错误详情: " + e.getMessage());
+                }
+            });
+            
+            Log.d(TAG, "应用列表管理器初始化完成");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "初始化应用列表管理器失败", e);
+            Log.e(TAG, "错误详情: " + e.getMessage());
+            // 即使失败也不影响其他功能，继续正常运行
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -149,6 +192,15 @@ public class BlindHomeActivity extends AppCompatActivity {
                 }
             }
         });
+        
+        // 测试应用列表管理器功能（延迟执行，确保初始化完成）
+        new android.os.Handler().postDelayed(() -> {
+            if (appListManager != null && appListManager.isInitialized()) {
+                testAppListManager();
+            } else {
+                Log.d(TAG, "应用列表管理器尚未初始化完成，跳过测试");
+            }
+        }, 3000); // 延迟3秒执行，确保应用列表加载完成
     }
 
     /**
@@ -206,6 +258,9 @@ public class BlindHomeActivity extends AppCompatActivity {
         
         // 停止WebSocket前台服务
         com.swj.shiwujie.common.network.WebSocketService.stopService(this);
+        
+        // 清理应用列表管理器资源
+        cleanupAppListManager();
     }
 
 
@@ -358,6 +413,88 @@ public class BlindHomeActivity extends AppCompatActivity {
                 Toast.makeText(BlindHomeActivity.this, "残疾证校验失败：" + message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    
+    /**
+     * 清理应用列表管理器资源
+     * 确保在Activity销毁时正确关闭线程池
+     */
+    private void cleanupAppListManager() {
+        try {
+            Log.d(TAG, "开始清理应用列表管理器资源...");
+            
+            // 清理应用列表缓存
+            if (appListManager != null) {
+                appListManager.clearCache();
+                appListManager = null;
+                Log.d(TAG, "应用列表缓存已清理");
+            }
+            
+            // 安全关闭线程池
+            if (appListExecutor != null && !appListExecutor.isShutdown()) {
+                Log.d(TAG, "正在关闭应用列表线程池...");
+                appListExecutor.shutdown();
+                
+                try {
+                    // 等待最多1秒让任务完成
+                    if (!appListExecutor.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS)) {
+                        Log.w(TAG, "线程池任务未在1秒内完成，强制关闭");
+                        appListExecutor.shutdownNow();
+                        
+                        // 再次等待强制关闭完成
+                        if (!appListExecutor.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS)) {
+                            Log.e(TAG, "线程池强制关闭失败");
+                        } else {
+                            Log.d(TAG, "线程池强制关闭成功");
+                        }
+                    } else {
+                        Log.d(TAG, "线程池已安全关闭");
+                    }
+                } catch (InterruptedException e) {
+                    Log.w(TAG, "等待线程池关闭时被中断", e);
+                    Thread.currentThread().interrupt();
+                    appListExecutor.shutdownNow();
+                }
+                
+                appListExecutor = null;
+            }
+            
+            Log.d(TAG, "应用列表管理器资源清理完成");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "清理应用列表管理器资源失败", e);
+            Log.e(TAG, "错误详情: " + e.getMessage());
+            // 即使清理失败也不影响其他功能
+        }
+    }
+    
+    /**
+     * 测试应用列表管理器功能
+     * 用于验证应用列表获取是否正常工作
+     */
+    private void testAppListManager() {
+        if (appListManager == null) {
+            Log.w(TAG, "应用列表管理器未初始化，无法测试");
+            return;
+        }
+        
+        Log.d(TAG, "=== 开始测试应用列表管理器 ===");
+        Log.d(TAG, "应用列表管理器状态: " + (appListManager.isInitialized() ? "已初始化" : "未初始化"));
+        Log.d(TAG, "缓存中的应用总数: " + appListManager.getCachedAppCount());
+        
+        // 测试一些常见应用
+        String[] testApps = {"微信", "QQ", "支付宝", "高德地图", "百度地图"};
+        
+        for (String appName : testApps) {
+            boolean isInstalled = appListManager.isAppInstalled(appName);
+            String packageName = appListManager.getPackageName(appName);
+            
+            Log.d(TAG, "测试应用: " + appName + 
+                      " | 已安装: " + (isInstalled ? "是" : "否") + 
+                      " | 包名: " + (packageName != null ? packageName : "未找到"));
+        }
+        
+        Log.d(TAG, "=== 应用列表管理器测试完成 ===");
     }
     
     /**

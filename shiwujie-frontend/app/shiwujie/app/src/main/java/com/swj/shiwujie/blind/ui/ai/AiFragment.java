@@ -45,6 +45,7 @@ import com.swj.shiwujie.common.network.ApiService;
 import com.swj.shiwujie.common.network.ObstacleDetectionRetrofitClient;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.ObstacleDetectionTTSManager;
+import com.swj.shiwujie.common.utils.AppListManager;
 import com.swj.shiwujie.data.model.ObstacleDetectionData;
 import com.swj.shiwujie.data.model.ObstacleDetectionData.UnknownObstacle;
 import com.swj.shiwujie.data.model.ObstacleDetectionData.DetectedObject;
@@ -197,6 +198,9 @@ public class AiFragment extends Fragment {
     private boolean isSessionStarted = false;
     private String lastDetectionHash = ""; // 上次检测结果的哈希值，用于去重
     
+    // 应用列表管理器
+    private AppListManager appListManager;
+    
     // 相机状态管理
     private boolean isCameraOpen = false;
     private boolean isCameraInitialized = false;
@@ -276,8 +280,11 @@ public class AiFragment extends Fragment {
         // 初始化AI避障功能（只初始化，不启动）
         initObstacleDetection();
         
-                    // 初始化WebSocket监听
-            initWebSocketListener();
+        // 初始化应用列表管理器
+        initAppListManager();
+        
+        // 初始化WebSocket监听
+        initWebSocketListener();
     }
     
     @Override
@@ -3736,11 +3743,11 @@ public class AiFragment extends Fragment {
                 handleEmergencyHelpRequest();
                 break;
                 
-            // case SocketDataV0.REQUEST_TYPE_APP_JUMP:
-            //     // 5004: APP跳转
-            //     Log.d(TAG, "处理5004: APP跳转请求");
-            //     handleAppJumpRequest(data);
-            //     break;
+            case SocketDataV0.REQUEST_TYPE_APP_JUMP:
+                // 5004: APP跳转
+                Log.d(TAG, "处理5004: APP跳转请求");
+                handleAppJumpRequest(data);
+                break;
                 
             case SocketDataV0.REQUEST_TYPE_EDIT_PROFILE:
                 // 5005: 跳转到用户信息修改页面
@@ -3902,8 +3909,8 @@ public class AiFragment extends Fragment {
                     
                     Log.d(TAG, "切换成功，已切换到主页Fragment");
                     
-                    // 显示紧急求助切换提示
-                    Toast.makeText(requireContext(), "紧急求助功能已启动，已切换到主页", Toast.LENGTH_SHORT).show();
+                    // 显示切换提示
+                    Toast.makeText(requireContext(), "已切换到主页，紧急求助功能已启动", Toast.LENGTH_SHORT).show();
                     
                     // 添加震动反馈，提示用户已切换
                     if (vibrator != null && isAdded() && getContext() != null) {
@@ -3929,92 +3936,78 @@ public class AiFragment extends Fragment {
         }
     }
     
-    // /**
-    //  * 处理5004: APP跳转
-    //  */
-    // private void handleAppJumpRequest(SocketDataV0 data) {
-    //     Log.d(TAG, "收到APP跳转请求");
-    //     
-    //     try {
-    //         // 第一步：播报TTS提示信息
-    //         Log.d(TAG, "播报APP跳转提示信息...");
-    //         if (ttsManager != null) {
-    //         ttsManager.startSpeaking("即将跳转到主页");
-    //         Log.d(TAG, "TTS APP跳转提示播报完成");
-    //     }
-    //     
-    //     // 等待TTS播报完成（给用户时间听到提示）
-    //     try {
-    //         Thread.sleep(1500); // 等待1.5秒，确保用户听到提示
-    //     } catch (InterruptedException e) {
-    //         Thread.currentThread().interrupt();
-    //     }
-    //     
-    //     // 第二步：关闭所有阻止跳转的功能
-    //     Log.d(TAG, "准备APP跳转，先停止相关功能...");
-    //     
-    //     // 停止AI避障功能
-    //     if (isAIAvoidRunning) {
-    //         Log.d(TAG, "停止AI避障功能以准备APP跳转");
-    //         stopAIAvoidance();
-    //     }
-    //     
-    //     // 停止所有TTS播报
-    //     if (obstacleDetectionTTSManager != null) {
-    //         Log.d(TAG, "停止TTS播报以准备APP跳转");
-    //         obstacleDetectionTTSManager.destroy();
-    //         obstacleDetectionTTSManager = new ObstacleDetectionTTSManager(requireContext());
-    //     }
-    //     
-    //     // 停止摄像头预览
-    //     if (cameraManager != null) {
-    //         Log.d(TAG, "停止摄像头预览以准备APP跳转");
-    //         try {
-    //         cameraManager.stopPreview();
-    //     } catch (Exception e) {
-    //         Log.w(TAG, "停止摄像头预览失败", e);
-    //     }
-    // }
-    //     
-    //     // 等待一小段时间确保功能完全停止
-    //     try {
-    //         Thread.sleep(100);
-    //     } catch (InterruptedException e) {
-    //         Thread.currentThread().interrupt();
-    //     }
-    //     
-    //     // 第三步：执行页面跳转
-    //     Log.d(TAG, "开始执行APP跳转...");
-    //     
-    //     // 这里可以根据data中的其他字段来决定跳转的具体行为
-    //     // 目前先实现一个通用的跳转逻辑
-    //     
-    //     // 跳转到主页面
-    //     Intent intent = new Intent(requireContext(), com.swj.shiwujie.blind.BlindHomeActivity.class);
-    //     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    //     Intent.FLAG_ACTIVITY_SINGLE_TOP);
-    //     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    //     
-    //     // 使用Activity的startActivity确保跳转成功
-    //     if (getActivity() != null) {
-    //         getActivity().startActivity(intent);
-    //         Log.d(TAG, "APP跳转完成");
-    //         
-    //         // 强制结束当前Fragment的Activity
-    //         if (getActivity() != null) {
-    //             getActivity().finish();
-    //         Log.d(TAG, "已结束当前Activity");
-    //     }
-    // } else {
-    //         Log.e(TAG, "Fragment未attached到Activity，无法跳转");
-    //         Toast.makeText(requireContext(), "APP跳转失败：页面状态异常", Toast.LENGTH_SHORT).show();
-    //     }
-    //     
-    // } catch (Exception e) {
-    //         Log.e(TAG, "APP跳转失败", e);
-    //         Toast.makeText(requireContext(), "APP跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-    //     }
-    // }
+    /**
+     * 处理5004: APP跳转
+     */
+    private void handleAppJumpRequest(SocketDataV0 data) {
+        Log.d(TAG, "收到APP跳转请求");
+        
+        try {
+            // 获取目标应用名称
+            String targetAppName = data.getVolunteerPhone();
+            if (targetAppName == null || targetAppName.trim().isEmpty()) {
+                Log.w(TAG, "APP跳转请求中volunteerPhone字段为空");
+                Toast.makeText(requireContext(), "APP跳转请求参数错误", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            Log.d(TAG, "目标应用名称: " + targetAppName);
+            
+            // 检查应用列表管理器是否已初始化
+            if (appListManager == null || !appListManager.isInitialized()) {
+                Log.w(TAG, "应用列表管理器未初始化，无法检查应用");
+                Toast.makeText(requireContext(), "应用列表未准备好，请稍后重试", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // 检查应用是否已安装
+            boolean isAppInstalled = appListManager.isAppInstalled(targetAppName);
+            Log.d(TAG, "应用 '" + targetAppName + "' 是否已安装: " + (isAppInstalled ? "是" : "否"));
+            
+            if (isAppInstalled) {
+                // 应用已安装，执行跳转
+                Log.d(TAG, "开始跳转到应用: " + targetAppName);
+                
+                // 播报跳转提示
+                if (ttsManager != null) {
+                    ttsManager.startSpeaking("正在打开" + targetAppName);
+                }
+                
+                // 等待TTS播报完成
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                // 执行应用跳转
+                boolean jumpSuccess = appListManager.launchApp(targetAppName);
+                if (jumpSuccess) {
+                    Log.d(TAG, "应用跳转成功: " + targetAppName);
+                    Toast.makeText(requireContext(), "已打开" + targetAppName, Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.e(TAG, "应用跳转失败: " + targetAppName);
+                    Toast.makeText(requireContext(), "打开" + targetAppName + "失败", Toast.LENGTH_SHORT).show();
+                }
+                
+            } else {
+                // 应用未安装，显示提示
+                Log.d(TAG, "应用未安装: " + targetAppName);
+                
+                // 播报提示信息
+                if (ttsManager != null) {
+                    ttsManager.startSpeaking("当前未下载" + targetAppName + "，无法执行跳转");
+                }
+                
+                // 显示弹窗提示
+                showAppNotInstalledDialog(targetAppName);
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "APP跳转失败", e);
+            Toast.makeText(requireContext(), "APP跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
     
     /**
      * 处理5005: 跳转到用户信息修改页面
@@ -4226,6 +4219,86 @@ public class AiFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "从检测数据生成哈希失败", e);
             return "error_hash";
+        }
+    }
+    
+    /**
+     * 初始化应用列表管理器
+     */
+    private void initAppListManager() {
+        try {
+            Log.d(TAG, "开始初始化应用列表管理器...");
+            appListManager = new AppListManager(requireContext());
+            
+            // 在子线程中加载应用列表
+            new Thread(() -> {
+                try {
+                    Log.d(TAG, "在子线程中开始获取应用列表...");
+                    appListManager.loadInstalledApps();
+                    Log.d(TAG, "应用列表获取完成，缓存数量: " + appListManager.getCachedAppCount());
+                } catch (Exception e) {
+                    Log.e(TAG, "在子线程中获取应用列表失败", e);
+                    Log.e(TAG, "错误详情: " + e.getMessage());
+                }
+            }).start();
+            
+            Log.d(TAG, "应用列表管理器初始化完成");
+        } catch (Exception e) {
+            Log.e(TAG, "初始化应用列表管理器失败", e);
+            Log.e(TAG, "错误详情: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 显示应用未安装的提示对话框
+     */
+    private void showAppNotInstalledDialog(String appName) {
+        try {
+            if (getActivity() == null || !isAdded()) {
+                Log.w(TAG, "Fragment未attached到Activity，无法显示对话框");
+                return;
+            }
+            
+            // 在主线程中显示对话框
+            getActivity().runOnUiThread(() -> {
+                try {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+                    builder.setTitle("应用未安装")
+                           .setMessage("当前未下载" + appName + "，无法执行跳转。\n\n是否前往应用商店下载？")
+                           .setPositiveButton("前往下载", (dialog, which) -> {
+                               // 获取应用商店链接
+                               String packageName = appListManager.getPackageName(appName);
+                               if (packageName != null) {
+                                   String storeLink = appListManager.getAppStoreLink(packageName);
+                                   if (storeLink != null) {
+                                       try {
+                                           Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(storeLink));
+                                           startActivity(intent);
+                                       } catch (Exception e) {
+                                           Log.e(TAG, "打开应用商店失败", e);
+                                           Toast.makeText(requireContext(), "打开应用商店失败", Toast.LENGTH_SHORT).show();
+                                       }
+                                   }
+                               } else {
+                                   Toast.makeText(requireContext(), "无法获取应用下载链接", Toast.LENGTH_SHORT).show();
+                               }
+                           })
+                           .setNegativeButton("取消", (dialog, which) -> {
+                               dialog.dismiss();
+                           })
+                           .setCancelable(true);
+                    
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                    
+                } catch (Exception e) {
+                    Log.e(TAG, "显示应用未安装对话框失败", e);
+                    Toast.makeText(requireContext(), "显示提示对话框失败", Toast.LENGTH_SHORT).show();
+                }
+            });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "准备显示应用未安装对话框失败", e);
         }
     }
     
