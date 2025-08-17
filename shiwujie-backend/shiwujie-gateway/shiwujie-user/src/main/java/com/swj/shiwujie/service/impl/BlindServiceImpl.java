@@ -453,9 +453,9 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         jwtMap.put("blindId", blind.getBlindId());
         jwtMap.put("isBlind", true);
         jwtMap.put("phone", blind.getPhone());
-        String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
+        String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(90, ChronoUnit.DAYS));
 
-        redisUtils.setToRedis(REDIS_SECRETKEY + "-blind-" + blind.getBlindId(), token, 1L);
+        redisUtils.setToRedis(REDIS_SECRETKEY + "-blind-" + blind.getBlindId(), token, 90L);
         return token;
     }
 

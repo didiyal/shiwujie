@@ -40,7 +40,6 @@ public class RedisChatMemory implements ChatMemory {
      */
     @Override
     public void add(String conversationId, Message message) {
-        // 与InMemoryChatMemory保持一致的行为，允许添加null消息
         add(conversationId, List.of(message));
     }
 

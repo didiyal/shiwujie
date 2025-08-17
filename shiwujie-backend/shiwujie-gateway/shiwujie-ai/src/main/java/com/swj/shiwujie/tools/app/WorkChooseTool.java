@@ -173,8 +173,12 @@ public class WorkChooseTool {
                     return "执行成功,已帮您开启视频求助";
 
                 case 17:// 跳转到其它软件功能
-
-                    return "此功能暂不支持自动操作，请您手动操作";
+                    String appName = parseJsonParam(jsonStr, "appName");
+                    if (appName == null) {
+                        return "缺少必要参数：软件名称";
+                    }
+                    frontendTools.noticeJumpSoftware(appName);
+                    return "处理成功";
 
 
                 default:

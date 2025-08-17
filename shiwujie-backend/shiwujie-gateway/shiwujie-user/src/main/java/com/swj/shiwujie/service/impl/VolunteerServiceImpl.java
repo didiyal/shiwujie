@@ -551,9 +551,9 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
             }
         }
 
-        String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(30, ChronoUnit.DAYS));
+        String token = JwtUtils.generateToken(jwtMap, TOKEN_SECRETKEY, Duration.of(90, ChronoUnit.DAYS));
 
-        redisUtils.setToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId(), token, 1L);
+        redisUtils.setToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteer.getVolunteerId(), token, 90L);
 
         return token;
     }

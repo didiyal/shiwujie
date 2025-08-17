@@ -61,11 +61,13 @@ public class FrontendTools {
      * 通知前端进行跳转到其它软件
 
      */
-    public void noticeJumpSoftware() {
+    public void noticeJumpSoftware(String appName) {
         String loginUserPhone = LoginUtils.getLoginUserPhone();
         SocketData socketData = new SocketData();
         socketData.setBlindPhone(loginUserPhone);
         socketData.setRequestType(5004);
+        // 这里短暂用这个代替
+        socketData.setVolunteerPhone(appName);
         innerSocket.noticeJumpSoftware(socketData);
 
     }
