@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.VibrationEffect;
@@ -46,6 +47,7 @@ import com.swj.shiwujie.common.network.ObstacleDetectionRetrofitClient;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.ObstacleDetectionTTSManager;
 import com.swj.shiwujie.common.utils.AppListManager;
+import com.swj.shiwujie.common.service.AIFloatingBallService;
 import com.swj.shiwujie.data.model.ObstacleDetectionData;
 import com.swj.shiwujie.data.model.ObstacleDetectionData.UnknownObstacle;
 import com.swj.shiwujie.data.model.ObstacleDetectionData.DetectedObject;
@@ -201,6 +203,9 @@ public class AiFragment extends Fragment {
     // 应用列表管理器
     private AppListManager appListManager;
     
+    // AI悬浮球服务
+    private boolean isAIFloatingBallServiceRunning = false;
+    
     // 相机状态管理
     private boolean isCameraOpen = false;
     private boolean isCameraInitialized = false;
@@ -302,6 +307,9 @@ public class AiFragment extends Fragment {
         
         // 安全停止摄像头预览
         safeStopCamera();
+        
+        // 在AI页面暂停时显示悬浮球
+        showAIFloatingBall();
     }
     
     @Override
@@ -325,7 +333,8 @@ public class AiFragment extends Fragment {
         // 更新AI协助按钮状态
         updateAIAssistButtonState();
         
-
+        // 在AI页面时隐藏悬浮球
+        hideAIFloatingBall();
     }
     
 
@@ -4230,6 +4239,14 @@ public class AiFragment extends Fragment {
             Log.d(TAG, "开始初始化应用列表管理器...");
             appListManager = new AppListManager(requireContext());
             
+            // 设置应用列表准备完成的监听器
+            appListManager.setOnAppListReadyListener(new AppListManager.OnAppListReadyListener() {
+                @Override
+                public void onAppListReady() {
+                    Log.d(TAG, "应用列表准备完成");
+                }
+            });
+            
             // 在子线程中加载应用列表
             new Thread(() -> {
                 try {
@@ -4246,6 +4263,58 @@ public class AiFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "初始化应用列表管理器失败", e);
             Log.e(TAG, "错误详情: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 启动AI悬浮球服务
+     */
+    private void startAIFloatingBallService() {
+        try {
+            if (!isAIFloatingBallServiceRunning) {
+                Intent serviceIntent = new Intent(requireContext(), AIFloatingBallService.class);
+                
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    requireContext().startForegroundService(serviceIntent);
+                } else {
+                    requireContext().startService(serviceIntent);
+                }
+                
+                isAIFloatingBallServiceRunning = true;
+                Log.d(TAG, "AI悬浮球服务启动成功");
+            } else {
+                Log.d(TAG, "AI悬浮球服务已在运行中");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "启动AI悬浮球服务失败", e);
+        }
+    }
+    
+    /**
+     * 显示AI悬浮球
+     */
+    private void showAIFloatingBall() {
+        try {
+            Log.d(TAG, "显示AI悬浮球");
+            // 通过广播通知悬浮球服务显示悬浮球
+            Intent intent = new Intent("com.swj.shiwujie.SHOW_AI_FLOATING_BALL");
+            requireContext().sendBroadcast(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "显示AI悬浮球失败", e);
+        }
+    }
+    
+    /**
+     * 隐藏AI悬浮球
+     */
+    private void hideAIFloatingBall() {
+        try {
+            Log.d(TAG, "隐藏AI悬浮球");
+            // 通过广播通知悬浮球服务隐藏悬浮球
+            Intent intent = new Intent("com.swj.shiwujie.HIDE_AI_FLOATING_BALL");
+            requireContext().sendBroadcast(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "隐藏AI悬浮球失败", e);
         }
     }
     

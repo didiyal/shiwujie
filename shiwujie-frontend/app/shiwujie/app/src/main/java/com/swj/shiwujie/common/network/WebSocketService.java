@@ -40,12 +40,22 @@ public class WebSocketService extends Service {
         Log.d(TAG, "WebSocketService onCreate");
         
         try {
+            // 先创建通知渠道，确保渠道存在
+            createNotificationChannel();
+            
             // 尝试启动前台服务
             boolean foregroundStarted = false;
             try {
-                startForeground(NOTIFICATION_ID, createNotification());
-                Log.d(TAG, "前台服务启动成功");
-                foregroundStarted = true;
+                Notification notification = createNotification();
+                if (notification != null) {
+                    startForeground(NOTIFICATION_ID, notification);
+                    Log.d(TAG, "前台服务启动成功");
+                    foregroundStarted = true;
+                } else {
+                    Log.e(TAG, "通知创建失败，无法启动前台服务");
+                    stopSelf();
+                    return;
+                }
             } catch (Exception e) {
                 Log.e(TAG, "前台服务启动失败，将作为普通服务运行", e);
             }
@@ -58,11 +68,6 @@ public class WebSocketService extends Service {
                 return;
             }
             webSocketManager.setContext(this);
-            
-            // 创建通知渠道（仅在前台服务模式下）
-            if (foregroundStarted) {
-                createNotificationChannel();
-            }
             
             // 初始化心跳包
             initHeartbeat();
@@ -147,7 +152,7 @@ public class WebSocketService extends Service {
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("视无界")
                 .setContentText("保持连接中...")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ai)  // 使用确定存在的图标资源
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true);
@@ -164,7 +169,7 @@ public class WebSocketService extends Service {
             return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("视无界")
                 .setContentText("保持连接中...")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ai)  // 使用确定存在的图标资源
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
                 .build();
@@ -257,7 +262,8 @@ public class WebSocketService extends Service {
                         Log.d(TAG, "用户已登录，建立WebSocket连接 - 手机号: " + phone);
                         webSocketManager.connect(phone, isVolunteer);
                     } else {
-                        Log.d(TAG, "WebSocket已连接，跳过重复连接");
+                        Log.d(TAG, "WebSocket已连接，跳过重复连接，但保持服务运行");
+                        // 即使已连接，也保持服务运行，不要销毁服务
                     }
                 } else {
                     Log.w(TAG, "用户已登录但手机号为空");

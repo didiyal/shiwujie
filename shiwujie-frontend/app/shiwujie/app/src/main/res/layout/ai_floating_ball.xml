@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="100dp"
+    android:layout_height="100dp"
+    android:background="@drawable/bg_ai_floating_ball_circle"
+    android:clickable="true"
+    android:focusable="true"
+    android:elevation="8dp">
+
+    <ImageView
+        android:id="@+id/iv_ai_ball"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ai"
+        android:contentDescription="AI悬浮球"
+        android:scaleType="fitCenter"
+        android:tint="@color/white"
+        android:clickable="false"
+        android:focusable="false" />
+
+</FrameLayout>

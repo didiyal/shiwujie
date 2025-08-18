@@ -1,8 +1,10 @@
 package com.swj.shiwujie.blind;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
@@ -57,8 +59,47 @@ public class BlindHomeActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupWithNavController(binding.navView, navController);
         
-        // 添加导航监听器，实现TalkBack焦点转移
+        // 检查是否需要直接跳转到AI页面，如果是则延迟导航到AI页面
+        Intent intent = getIntent();
+        if (intent != null && intent.getBooleanExtra("direct_to_ai", false)) {
+            Log.d(TAG, "检测到直接跳转AI页面标记，延迟导航到AI页面");
+            // 延迟导航，确保导航状态完全初始化
+            new android.os.Handler().postDelayed(() -> {
+                try {
+                    Log.d(TAG, "=== AI悬浮球跳转调试 ===");
+                    Log.d(TAG, "开始执行导航到AI页面...");
+                    
+                    // 获取当前页面信息
+                    int currentDestinationId = navController.getCurrentDestination() != null ? 
+                        navController.getCurrentDestination().getId() : -1;
+                    Log.d(TAG, "导航前当前页面ID: " + currentDestinationId);
+                    
+                    // 执行导航
+                    navController.navigate(R.id.navigation_ai);
+                    Log.d(TAG, "导航命令已执行，目标页面: navigation_ai");
+                    
+                    // 同步更新底部导航栏状态
+                    binding.navView.setSelectedItemId(R.id.navigation_ai);
+                    Log.d(TAG, "底部导航栏状态已更新为AI页面");
+                    
+                    Log.d(TAG, "=== AI悬浮球跳转完成 ===");
+                } catch (Exception e) {
+                    Log.e(TAG, "导航到AI页面失败", e);
+                }
+            }, 200); // 延迟200ms，确保导航状态稳定
+            // 清除标记
+            intent.removeExtra("direct_to_ai");
+        }
+        
+        // 添加导航监听器，实现TalkBack焦点转移和调试日志
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            // 打印当前页面信息
+            String currentPageName = destination.getLabel() != null ? destination.getLabel().toString() : "未知页面";
+            int currentPageId = destination.getId();
+            Log.d(TAG, "=== 页面切换监听器 ===");
+            Log.d(TAG, "当前页面: " + currentPageName + " (ID: " + currentPageId + ")");
+            Log.d(TAG, "页面参数: " + (arguments != null ? arguments.toString() : "无"));
+            
             // 延迟一点时间确保页面加载完成
             new android.os.Handler().postDelayed(() -> {
                 // 获取当前页面的根布局
@@ -77,33 +118,138 @@ public class BlindHomeActivity extends AppCompatActivity {
             }, 300); // 延迟300毫秒
         });
         
-        // 检查权限
-        checkPermissions();
+        // 添加底部导航栏点击监听器，记录用户点击行为
+        binding.navView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            String itemTitle = item.getTitle() != null ? item.getTitle().toString() : "未知";
+            
+            Log.d(TAG, "=== 底部导航栏点击事件 ===");
+            Log.d(TAG, "用户点击了: " + itemTitle + " (ID: " + itemId + ")");
+            
+            // 获取当前选中的页面
+            int currentSelectedId = binding.navView.getSelectedItemId();
+            String currentSelectedTitle = "";
+            for (int i = 0; i < binding.navView.getMenu().size(); i++) {
+                if (binding.navView.getMenu().getItem(i).getItemId() == currentSelectedId) {
+                    currentSelectedTitle = binding.navView.getMenu().getItem(i).getTitle().toString();
+                    break;
+                }
+            }
+            Log.d(TAG, "点击前当前页面: " + currentSelectedTitle + " (ID: " + currentSelectedId + ")");
+            
+            // 直接使用navController.navigate确保页面跳转
+            try {
+                Log.d(TAG, "开始执行页面跳转: " + itemTitle + " (ID: " + itemId + ")");
+                navController.navigate(itemId);
+                Log.d(TAG, "页面跳转命令已执行");
+            } catch (Exception e) {
+                Log.e(TAG, "页面跳转失败: " + e.getMessage(), e);
+            }
+            
+            return true; // 返回true表示已处理点击事件
+        });
         
-        // 检查登录状态并建立WebSocket连接
-        initWebSocketConnection();
-        
-        // 初始化应用列表管理器
-        initAppListManager();
+        // 检查权限，如果权限不足则延迟初始化
+        if (checkPermissions()) {
+            // 权限充足，延迟初始化确保页面完全加载完成
+            Log.d(TAG, "权限充足，延迟初始化确保页面完全加载");
+            new android.os.Handler().postDelayed(() -> {
+                try {
+                    initializeAfterPermissions();
+                } catch (Exception e) {
+                    Log.e(TAG, "延迟初始化失败", e);
+                }
+            }, 1000); // 延迟1秒，确保页面完全加载
+        } else {
+            // 权限不足，等待权限授权后再初始化
+            Log.d(TAG, "权限不足，等待权限授权后再初始化");
+        }
         
         // ===== 障碍物检测功能集成 - 严格按照backend_service.py的集成逻辑 =====
         // 改造说明：将Python后端的障碍物检测功能集成到Android原生界面
 
     }
     
-    private void checkPermissions() {
+    /**
+     * 处理权限请求结果
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        Log.d(TAG, "=== 权限请求结果回调 ===");
+        Log.d(TAG, "请求码: " + requestCode);
+        Log.d(TAG, "权限数量: " + permissions.length);
+        
+        if (requestCode == PermissionManager.PERMISSION_REQUEST_CODE) {
+            boolean success = PermissionManager.handlePermissionResult(requestCode, permissions, grantResults);
+            
+            if (success) {
+                Log.d(TAG, "权限授权成功，开始初始化...");
+                // 权限授权成功，延迟更长时间确保权限状态和系统资源完全稳定
+                new android.os.Handler().postDelayed(() -> {
+                    try {
+                        Log.d(TAG, "延迟初始化开始，权限状态应该已稳定");
+                        initializeAfterPermissions();
+                    } catch (Exception e) {
+                        Log.e(TAG, "权限授权后初始化失败", e);
+                    }
+                }, 1500); // 延迟1.5秒，确保权限状态和系统资源完全稳定
+            } else {
+                Log.w(TAG, "权限授权失败或被拒绝");
+                // 权限被拒绝，显示提示或退出
+                Toast.makeText(this, "权限不足，应用无法正常运行", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+    
+    private boolean checkPermissions() {
         // 检查视频通话所需的所有权限（包括蓝牙权限）
         if (!PermissionManager.hasVideoCallPermissions(this)) {
             PermissionManager.showPermissionRequiredDialog(this, 
                 "需要摄像头、麦克风和蓝牙权限才能使用视频通话功能。请在设置中开启相关权限。");
-            return;
+            return false;
         }
         
         // 检查悬浮窗权限
         if (!PermissionManager.hasOverlayPermission(this)) {
             PermissionManager.showPermissionRequiredDialog(this, 
                 "需要悬浮窗权限才能使用完整功能。请在设置中开启悬浮窗权限。");
-            return;
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * 权限充足后的初始化方法
+     */
+    private void initializeAfterPermissions() {
+        try {
+            Log.d(TAG, "权限充足，开始初始化...");
+            
+            // 检查登录状态并建立WebSocket连接
+            initWebSocketConnection();
+            
+            // 初始化应用列表管理器
+            initAppListManager();
+            
+            // 检查是否需要跳转到AI页面
+            checkNavigateToAI();
+            
+            // 延迟启动AI悬浮球服务，确保其他初始化完成且系统稳定
+            new android.os.Handler().postDelayed(() -> {
+                try {
+                    Log.d(TAG, "延迟启动AI悬浮球服务，系统应该已稳定");
+                    startAIFloatingBallService();
+                } catch (Exception e) {
+                    Log.e(TAG, "延迟启动AI悬浮球服务失败", e);
+                }
+            }, 1000); // 再延迟1秒启动前台服务
+            
+            Log.d(TAG, "权限充足后的初始化完成（前台服务将在1秒后启动）");
+        } catch (Exception e) {
+            Log.e(TAG, "权限充足后的初始化失败", e);
         }
     }
     
@@ -125,6 +271,62 @@ public class BlindHomeActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             Log.e(TAG, "初始化WebSocket连接失败", e);
+        }
+    }
+    
+    /**
+     * 检查是否需要跳转到AI页面
+     */
+    private void checkNavigateToAI() {
+        try {
+            Intent intent = getIntent();
+            if (intent != null && intent.getBooleanExtra("navigate_to_ai", false)) {
+                Log.d(TAG, "检测到跳转标记，准备跳转到AI页面");
+                
+                // 检查是否是直接跳转，如果是则立即跳转，避免中间过渡页面
+                boolean isDirectToAI = intent.getBooleanExtra("direct_to_ai", false);
+                long delay = isDirectToAI ? 100 : 1000; // 直接跳转延迟100ms，普通跳转延迟1秒
+                
+                new android.os.Handler().postDelayed(() -> {
+                    try {
+                        // 使用Navigation跳转到AI页面
+                        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
+                        navController.navigate(R.id.navigation_ai);
+                        
+                        // 清除跳转标记
+                        intent.removeExtra("navigate_to_ai");
+                        intent.removeExtra("direct_to_ai");
+                        
+                        Log.d(TAG, "成功跳转到AI页面");
+                    } catch (Exception e) {
+                        Log.e(TAG, "跳转到AI页面失败", e);
+                    }
+                }, delay);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "检查跳转标记失败", e);
+        }
+    }
+    
+    /**
+     * 启动AI悬浮球服务
+     */
+    private void startAIFloatingBallService() {
+        try {
+            Log.d(TAG, "启动AI悬浮球服务（全局显示）");
+            
+            Intent serviceIntent = new Intent(this, com.swj.shiwujie.common.service.AIFloatingBallService.class);
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+            
+            Log.d(TAG, "AI悬浮球服务启动成功");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "启动AI悬浮球服务失败", e);
         }
     }
     
