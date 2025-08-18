@@ -61,6 +61,14 @@ public class BlindHomeActivity extends AppCompatActivity {
         
         // 检查是否需要直接跳转到AI页面，如果是则延迟导航到AI页面
         Intent intent = getIntent();
+        
+        // 验证用户身份：只有盲人端用户才能访问此页面
+        if (intent != null && "volunteer".equals(intent.getStringExtra("user_type"))) {
+            Log.w(TAG, "志愿者端用户尝试访问盲人端页面，拒绝访问");
+            finish();
+            return;
+        }
+        
         if (intent != null && intent.getBooleanExtra("direct_to_ai", false)) {
             Log.d(TAG, "检测到直接跳转AI页面标记，延迟导航到AI页面");
             // 延迟导航，确保导航状态完全初始化
@@ -237,10 +245,10 @@ public class BlindHomeActivity extends AppCompatActivity {
             // 检查是否需要跳转到AI页面
             checkNavigateToAI();
             
-            // 延迟启动AI悬浮球服务，确保其他初始化完成且系统稳定
+            // 延迟启动AI悬浮球服务（盲人端专属），确保其他初始化完成且系统稳定
             new android.os.Handler().postDelayed(() -> {
                 try {
-                    Log.d(TAG, "延迟启动AI悬浮球服务，系统应该已稳定");
+                    Log.d(TAG, "延迟启动AI悬浮球服务（盲人端专属），系统应该已稳定");
                     startAIFloatingBallService();
                 } catch (Exception e) {
                     Log.e(TAG, "延迟启动AI悬浮球服务失败", e);

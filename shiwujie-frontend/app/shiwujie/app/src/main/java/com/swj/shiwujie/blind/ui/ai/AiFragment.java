@@ -10,7 +10,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.MediaStore;
@@ -150,6 +149,11 @@ public class AiFragment extends Fragment {
     private static final long MAX_WAIT = 500;      // 最大等待：1.5秒
     private static final long IDLE_THRESHOLD = 500; // 空闲阈值：500ms
     private static final long STREAMING_UPDATE_INTERVAL = 3000; // 流式播报更新间隔：3秒（减少更新频率）
+    
+    // 优化后的AI回复管理
+    private com.google.android.material.card.MaterialCardView currentAiResponseCard = null;
+    private TextView currentAiResponseTextView = null;
+    private boolean isAiResponseStreaming = false;
     
     // 对话管理
     private List<Message> currentConversation;
@@ -1155,6 +1159,8 @@ public class AiFragment extends Fragment {
                 handleAiResponseError(error);
                 // 重置智能播报状态
                 resetSmartPlaybackState();
+                // 重置AI回复状态
+                resetAiResponseState();
             }
         });
     }
@@ -1205,6 +1211,8 @@ public class AiFragment extends Fragment {
                 handleImageRecognitionError(error);
                 // 重置智能播报状态
                 resetSmartPlaybackState();
+                // 重置AI回复状态
+                resetAiResponseState();
             }
         });
     }
@@ -1503,6 +1511,15 @@ public class AiFragment extends Fragment {
             streamingPlaybackHandler.removeCallbacks(streamingPlaybackRunnable);
             streamingPlaybackRunnable = null;
         }
+    }
+    
+    /**
+     * 重置AI回复状态
+     */
+    private void resetAiResponseState() {
+        isAiResponseStreaming = false;
+        currentAiResponseCard = null;
+        currentAiResponseTextView = null;
     }
     
     /**
@@ -1986,14 +2003,15 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 显示AI正在思考的状态
+     * 显示AI正在思考的状态 - 优化版本
+     * 直接创建AI回复卡片，避免后续重复创建
      */
     private void showAiThinkingStatus() {
         if (getView() == null) return;
         
         try {
-            // 创建AI思考状态的消息卡片
-            com.google.android.material.card.MaterialCardView thinkingCard = createMessageCard(
+            // 直接创建AI回复卡片，初始显示"正在思考..."
+            currentAiResponseCard = createMessageCard(
                 "正在思考...", 
                 false,  // AI消息
                 R.color.blue_50,  // AI消息背景色
@@ -2003,14 +2021,19 @@ public class AiFragment extends Fragment {
             // 获取对话容器
             LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
             if (chatContainer != null) {
-                // 添加思考状态卡片
-                chatContainer.addView(thinkingCard);
+                // 添加AI回复卡片
+                chatContainer.addView(currentAiResponseCard);
+                
+                // 保存文本视图引用，用于流式更新
+                if (currentAiResponseCard.getChildCount() > 0) {
+                    currentAiResponseTextView = (TextView) currentAiResponseCard.getChildAt(0);
+                }
                 
                 // 滚动到底部
                 scrollToBottom();
                 
-                // 保存思考状态卡片的引用，用于后续更新
-                thinkingCard.setTag("thinking_card");
+                // 标记为流式状态
+                isAiResponseStreaming = true;
             }
         } catch (Exception e) {
             Log.e(TAG, "显示AI思考状态失败: " + e.getMessage(), e);
@@ -2018,14 +2041,15 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 显示图片识别状态
+     * 显示图片识别状态 - 优化版本
+     * 直接创建AI回复卡片，避免后续重复创建
      */
     private void showImageRecognitionStatus() {
         if (getView() == null) return;
         
         try {
-            // 创建图片识别状态的消息卡片
-            com.google.android.material.card.MaterialCardView recognitionCard = createMessageCard(
+            // 直接创建AI回复卡片，初始显示"正在识别图片..."
+            currentAiResponseCard = createMessageCard(
                 "正在识别图片...", 
                 false,  // AI消息
                 R.color.blue_50,  // AI消息背景色
@@ -2035,14 +2059,19 @@ public class AiFragment extends Fragment {
             // 获取对话容器
             LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
             if (chatContainer != null) {
-                // 添加识别状态卡片
-                chatContainer.addView(recognitionCard);
+                // 添加AI回复卡片
+                chatContainer.addView(currentAiResponseCard);
+                
+                // 保存文本视图引用，用于流式更新
+                if (currentAiResponseCard.getChildCount() > 0) {
+                    currentAiResponseTextView = (TextView) currentAiResponseCard.getChildAt(0);
+                }
                 
                 // 滚动到底部
                 scrollToBottom();
                 
-                // 保存识别状态卡片的引用，用于后续更新
-                recognitionCard.setTag("recognition_card");
+                // 标记为流式状态
+                isAiResponseStreaming = true;
             }
         } catch (Exception e) {
             Log.e(TAG, "显示图片识别状态失败: " + e.getMessage(), e);
@@ -2050,34 +2079,17 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 更新AI回复的流式输出
+     * 更新AI回复的流式输出 - 优化版本
+     * 直接在现有的AI回复卡片上更新内容，避免重复查找
      * @param text 当前流式输出的文本
      */
     private void updateAiResponseStreaming(String text) {
-        if (getView() == null) return;
+        if (getView() == null || !isAiResponseStreaming) return;
         
         try {
-            // 获取对话容器
-            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
-            if (chatContainer == null) return;
-            
-            // 查找思考状态卡片
-            com.google.android.material.card.MaterialCardView thinkingCard = null;
-            for (int i = 0; i < chatContainer.getChildCount(); i++) {
-                View child = chatContainer.getChildAt(i);
-                if (child instanceof com.google.android.material.card.MaterialCardView && 
-                    "thinking_card".equals(child.getTag())) {
-                    thinkingCard = (com.google.android.material.card.MaterialCardView) child;
-                    break;
-                }
-            }
-            
-            if (thinkingCard != null) {
-                // 更新思考状态卡片的内容为流式输出
-                TextView textView = (TextView) thinkingCard.getChildAt(0);
-                if (textView != null) {
-                    textView.setText(text);
-                }
+            // 直接使用保存的文本视图引用进行更新
+            if (currentAiResponseTextView != null) {
+                currentAiResponseTextView.setText(text);
                 
                 // 滚动到底部
                 scrollToBottom();
@@ -2088,34 +2100,17 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 更新图片识别结果的流式输出
+     * 更新图片识别结果的流式输出 - 优化版本
+     * 直接在现有的AI回复卡片上更新内容，避免重复查找
      * @param text 当前流式输出的文本
      */
     private void updateImageRecognitionStreaming(String text) {
-        if (getView() == null) return;
+        if (getView() == null || !isAiResponseStreaming) return;
         
         try {
-            // 获取对话容器
-            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
-            if (chatContainer == null) return;
-            
-            // 查找识别状态卡片
-            com.google.android.material.card.MaterialCardView recognitionCard = null;
-            for (int i = 0; i < chatContainer.getChildCount(); i++) {
-                View child = chatContainer.getChildAt(i);
-                if (child instanceof com.google.android.material.card.MaterialCardView && 
-                    "recognition_card".equals(child.getTag())) {
-                    recognitionCard = (com.google.android.material.card.MaterialCardView) child;
-                    break;
-                }
-            }
-            
-            if (recognitionCard != null) {
-                // 更新识别状态卡片的内容为流式输出
-                TextView textView = (TextView) recognitionCard.getChildAt(0);
-                if (textView != null) {
-                    textView.setText(text);
-                }
+            // 直接使用保存的文本视图引用进行更新
+            if (currentAiResponseTextView != null) {
+                currentAiResponseTextView.setText(text);
                 
                 // 滚动到底部
                 scrollToBottom();
@@ -2126,7 +2121,8 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 完成AI回复
+     * 完成AI回复 - 优化版本
+     * 直接在现有的AI回复卡片上更新为最终内容，避免重复创建
      * @param fullResponse 完整的AI回复
      */
     private void completeAiResponse(String fullResponse) {
@@ -2137,29 +2133,25 @@ public class AiFragment extends Fragment {
         }
         
         try {
-            // 获取对话容器
-            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
-            if (chatContainer == null) return;
-            
-            // 查找思考状态卡片
-            com.google.android.material.card.MaterialCardView thinkingCard = null;
-            int thinkingCardIndex = -1;
-            for (int i = 0; i < chatContainer.getChildCount(); i++) {
-                View child = chatContainer.getChildAt(i);
-                if (child instanceof com.google.android.material.card.MaterialCardView && 
-                    "thinking_card".equals(child.getTag())) {
-                    thinkingCard = (com.google.android.material.card.MaterialCardView) child;
-                    thinkingCardIndex = i;
-                    break;
-                }
-            }
-            
-            if (thinkingCard != null && thinkingCardIndex >= 0) {
-                // 移除思考状态卡片
-                chatContainer.removeViewAt(thinkingCardIndex);
+            // 直接使用现有的AI回复卡片，更新为最终内容
+            if (currentAiResponseTextView != null && isAiResponseStreaming) {
+                currentAiResponseTextView.setText(fullResponse);
                 
-                // 添加完整的AI回复消息
-                addAIResponse(fullResponse);
+                // 更新文字颜色为最终状态
+                currentAiResponseTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+                
+                // 标记流式状态结束
+                isAiResponseStreaming = false;
+                
+                // 创建AI消息对象并添加到对话历史
+                Message aiMsg = new Message(fullResponse, false);
+                currentConversation.add(aiMsg);
+                
+                // 保存对话到历史记录
+                saveCurrentConversationToHistory();
+                
+                // 重置AI回复状态
+                resetAiResponseState();
             }
         } catch (Exception e) {
             Log.e(TAG, "完成AI回复失败: " + e.getMessage(), e);
@@ -2167,36 +2159,33 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 完成图片识别
+     * 完成图片识别 - 优化版本
+     * 直接在现有的AI回复卡片上更新为最终内容，避免重复创建
      * @param fullResponse 完整的识别结果
      */
     private void completeImageRecognition(String fullResponse) {
         if (getView() == null) return;
         
         try {
-            // 获取对话容器
-            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
-            if (chatContainer == null) return;
-            
-            // 查找识别状态卡片
-            com.google.android.material.card.MaterialCardView recognitionCard = null;
-            int recognitionCardIndex = -1;
-            for (int i = 0; i < chatContainer.getChildCount(); i++) {
-                View child = chatContainer.getChildAt(i);
-                if (child instanceof com.google.android.material.card.MaterialCardView && 
-                    "recognition_card".equals(child.getTag())) {
-                    recognitionCard = (com.google.android.material.card.MaterialCardView) child;
-                    recognitionCardIndex = i;
-                    break;
-                }
-            }
-            
-            if (recognitionCard != null && recognitionCardIndex >= 0) {
-                // 移除识别状态卡片
-                chatContainer.removeViewAt(recognitionCardIndex);
+            // 直接使用现有的AI回复卡片，更新为最终内容
+            if (currentAiResponseTextView != null && isAiResponseStreaming) {
+                currentAiResponseTextView.setText(fullResponse);
                 
-                // 添加完整的AI识别结果消息
-                addAIResponse(fullResponse);
+                // 更新文字颜色为最终状态
+                currentAiResponseTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+                
+                // 标记流式状态结束
+                isAiResponseStreaming = false;
+                
+                // 创建AI消息对象并添加到对话历史
+                Message aiMsg = new Message(fullResponse, false);
+                currentConversation.add(aiMsg);
+                
+                // 保存对话到历史记录
+                saveCurrentConversationToHistory();
+                
+                // 重置AI回复状态
+                resetAiResponseState();
             }
         } catch (Exception e) {
             Log.e(TAG, "完成图片识别失败: " + e.getMessage(), e);
@@ -2204,36 +2193,34 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 处理AI回复错误
+     * 处理AI回复错误 - 优化版本
+     * 直接在现有的AI回复卡片上显示错误信息，避免重复创建
      * @param error 错误信息
      */
     private void handleAiResponseError(String error) {
         if (getView() == null) return;
         
         try {
-            // 获取对话容器
-            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
-            if (chatContainer == null) return;
-            
-            // 查找思考状态卡片
-            com.google.android.material.card.MaterialCardView thinkingCard = null;
-            int thinkingCardIndex = -1;
-            for (int i = 0; i < chatContainer.getChildCount(); i++) {
-                View child = chatContainer.getChildAt(i);
-                if (child instanceof com.google.android.material.card.MaterialCardView && 
-                    "thinking_card".equals(child.getTag())) {
-                    thinkingCard = (com.google.android.material.card.MaterialCardView) child;
-                    thinkingCardIndex = i;
-                    break;
-                }
-            }
-            
-            if (thinkingCard != null && thinkingCardIndex >= 0) {
-                // 移除思考状态卡片
-                chatContainer.removeViewAt(thinkingCardIndex);
+            // 直接使用现有的AI回复卡片，显示错误信息
+            if (currentAiResponseTextView != null && isAiResponseStreaming) {
+                String errorMessage = "抱歉，AI回复出现错误：" + error;
+                currentAiResponseTextView.setText(errorMessage);
                 
-                // 显示错误消息
-                Toast.makeText(requireContext(), "AI回复失败: " + error, Toast.LENGTH_LONG).show();
+                // 更新文字颜色为错误状态
+                currentAiResponseTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.red));
+                
+                // 标记流式状态结束
+                isAiResponseStreaming = false;
+                
+                // 创建错误消息对象并添加到对话历史
+                Message errorMsg = new Message(errorMessage, false);
+                currentConversation.add(errorMsg);
+                
+                // 保存对话到历史记录
+                saveCurrentConversationToHistory();
+                
+                // 重置AI回复状态
+                resetAiResponseState();
             }
         } catch (Exception e) {
             Log.e(TAG, "处理AI回复错误失败: " + e.getMessage(), e);
@@ -2244,33 +2231,35 @@ public class AiFragment extends Fragment {
      * 处理图片识别错误
      * @param error 错误信息
      */
+    /**
+     * 处理图片识别错误 - 优化版本
+     * 直接在现有的AI回复卡片上显示错误信息，避免重复创建
+     * @param error 错误信息
+     */
     private void handleImageRecognitionError(String error) {
         if (getView() == null) return;
         
         try {
-            // 获取对话容器
-            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
-            if (chatContainer == null) return;
-            
-            // 查找识别状态卡片
-            com.google.android.material.card.MaterialCardView recognitionCard = null;
-            int recognitionCardIndex = -1;
-            for (int i = 0; i < chatContainer.getChildCount(); i++) {
-                View child = chatContainer.getChildAt(i);
-                if (child instanceof com.google.android.material.card.MaterialCardView && 
-                    "recognition_card".equals(child.getTag())) {
-                    recognitionCard = (com.google.android.material.card.MaterialCardView) child;
-                    recognitionCardIndex = i;
-                    break;
-                }
-            }
-            
-            if (recognitionCard != null && recognitionCardIndex >= 0) {
-                // 移除识别状态卡片
-                chatContainer.removeViewAt(recognitionCardIndex);
+            // 直接使用现有的AI回复卡片，显示错误信息
+            if (currentAiResponseTextView != null && isAiResponseStreaming) {
+                String errorMessage = "抱歉，图片识别出现错误：" + error;
+                currentAiResponseTextView.setText(errorMessage);
                 
-                // 显示错误消息
-                Toast.makeText(requireContext(), "图片识别失败: " + error, Toast.LENGTH_LONG).show();
+                // 更新文字颜色为错误状态
+                currentAiResponseTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.red));
+                
+                // 标记流式状态结束
+                isAiResponseStreaming = false;
+                
+                // 创建错误消息对象并添加到对话历史
+                Message errorMsg = new Message(errorMessage, false);
+                currentConversation.add(errorMsg);
+                
+                // 保存对话到历史记录
+                saveCurrentConversationToHistory();
+                
+                // 重置AI回复状态
+                resetAiResponseState();
             }
         } catch (Exception e) {
             Log.e(TAG, "处理图片识别错误失败: " + e.getMessage(), e);

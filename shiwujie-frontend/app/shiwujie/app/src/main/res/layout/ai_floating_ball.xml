@@ -13,7 +13,7 @@
         android:layout_height="64dp"
         android:layout_gravity="center"
         android:src="@drawable/ai"
-        android:contentDescription="AI悬浮球"
+        android:contentDescription="AI悬浮球：点击进入AI页面"
         android:scaleType="fitCenter"
         android:tint="@color/white"
         android:clickable="false"

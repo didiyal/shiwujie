@@ -55,6 +55,13 @@ public class AIFloatingBallService extends Service {
         Log.d(TAG, "AI悬浮球服务创建");
         
         try {
+            // 验证用户身份：只有盲人端用户才能启动AI悬浮球服务
+            if (!isBlindUser()) {
+                Log.w(TAG, "非盲人端用户，停止AI悬浮球服务");
+                stopSelf();
+                return;
+            }
+            
             // 创建通知渠道（Android 8.0+）
             createNotificationChannel();
             
@@ -112,6 +119,28 @@ public class AIFloatingBallService extends Service {
     }
     
     /**
+     * 验证用户是否为盲人端用户
+     */
+    private boolean isBlindUser() {
+        try {
+            // 检查用户登录状态和身份
+            if (!com.swj.shiwujie.common.utils.SharedPrefsUtil.isLoggedIn()) {
+                Log.w(TAG, "用户未登录");
+                return false;
+            }
+            
+            // 检查是否为盲人端用户
+            boolean isBlind = com.swj.shiwujie.common.utils.SharedPrefsUtil.isBlind();
+            Log.d(TAG, "用户身份验证: " + (isBlind ? "盲人端" : "志愿者端"));
+            return isBlind;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "验证用户身份失败", e);
+            return false;
+        }
+    }
+    
+    /**
      * 创建通知渠道
      */
     private void createNotificationChannel() {
@@ -138,9 +167,11 @@ public class AIFloatingBallService extends Service {
      */
     private Notification createNotification() {
         try {
-            // 创建点击事件，返回应用主界面
+            // 创建点击事件，返回盲人端主界面
             Intent intent = new Intent(this, BlindHomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            // 添加身份验证标记，确保只能跳转到盲人端
+            intent.putExtra("user_type", "blind");
             PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, intent, 
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
