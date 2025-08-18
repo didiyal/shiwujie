@@ -357,19 +357,27 @@
     </LinearLayout>
 
     <!-- 侧边栏展开按钮 (当消息面板收起时显示) -->
-    <ImageView
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_expand_message"
+        style="@style/Widget.Material3.Button.Icon"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:layout_marginEnd="16dp"
-        android:background="@drawable/button_primary"
-        android:clickable="true"
         android:contentDescription="展开消息面板按钮，点击显示对话内容"
-        android:focusable="true"
         android:src="@drawable/ic_history"
         android:visibility="gone"
+        app:backgroundTint="@color/primary_blue"
+        app:cornerRadius="20dp"
+        app:icon="@drawable/ic_history"
+        app:iconGravity="textTop"
+        app:iconPadding="0dp"
+        app:iconSize="24dp"
+        app:iconTint="@color/white"
+        app:rippleColor="@color/primary_blue"
+        app:strokeWidth="2dp"
+        app:strokeColor="@color/white"
         tools:visibility="visible" />
 
     <!-- 录音状态提示 -->

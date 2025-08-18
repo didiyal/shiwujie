@@ -58,6 +58,12 @@ public class ChooseIdentityActivity extends AppCompatActivity {
         Log.d(TAG, "fromLogout: " + fromLogout);
         
         if (fromLogout) {
+            // 退出登录入口：兜底停止AI悬浮球服务，避免跨身份残留
+            try {
+                stopService(new Intent(this, com.swj.shiwujie.common.service.AIFloatingBallService.class));
+            } catch (Exception e) {
+                Log.w(TAG, "停止AI悬浮球服务失败", e);
+            }
             // 如果是从退出登录来的，直接显示选择身份页面
             showIdentityChoicePage();
         } else {
@@ -83,7 +89,7 @@ public class ChooseIdentityActivity extends AppCompatActivity {
             checkAndRequestPermissions();
         } catch (Exception e) {
             Log.e(TAG, "显示身份选择页面失败", e);
-            Toast.makeText(this, "页面加载失败：" + e.getMessage(), Toast.LENGTH_SHORT).show();
+            // Toast.makeText(this, "页面加载失败：" + e.getMessage(), Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -120,7 +126,7 @@ public class ChooseIdentityActivity extends AppCompatActivity {
                 // token无效，清除本地存储的登录信息
                 SharedPrefsUtil.clearAll();
                 showIdentityChoicePage();
-                Toast.makeText(ChooseIdentityActivity.this, message, Toast.LENGTH_SHORT).show();
+                // Toast.makeText(ChooseIdentityActivity.this, message, Toast.LENGTH_SHORT).show();
             }
         });
     }

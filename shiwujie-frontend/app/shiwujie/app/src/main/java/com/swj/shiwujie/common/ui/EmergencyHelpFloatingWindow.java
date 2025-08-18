@@ -145,7 +145,7 @@ public class EmergencyHelpFloatingWindow {
                 
             } catch (Exception e2) {
                 Log.e(TAG, "使用TYPE_APPLICATION_PANEL也失败", e2);
-                Toast.makeText(context, "显示悬浮窗失败: " + e2.getMessage(), Toast.LENGTH_SHORT).show();
+                // Toast.makeText(context, "显示悬浮窗失败: " + e2.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
     }

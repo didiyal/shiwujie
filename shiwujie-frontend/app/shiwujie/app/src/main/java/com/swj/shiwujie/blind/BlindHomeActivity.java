@@ -99,6 +99,9 @@ public class BlindHomeActivity extends AppCompatActivity {
             intent.removeExtra("direct_to_ai");
         }
         
+        // 检查是否需要跳转到AI页面
+        checkNavigateToAI();
+        
         // 添加导航监听器，实现TalkBack焦点转移和调试日志
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             // 打印当前页面信息
@@ -178,6 +181,50 @@ public class BlindHomeActivity extends AppCompatActivity {
 
     }
     
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d(TAG, "onNewIntent被调用，处理AI悬浮球跳转");
+        
+        // 设置新的Intent
+        setIntent(intent);
+        
+        // 检查是否需要跳转到AI页面
+        if (intent != null && intent.getBooleanExtra("navigate_to_ai", false)) {
+            Log.d(TAG, "检测到onNewIntent中的跳转标记，准备跳转到AI页面");
+            
+            // 延迟导航，确保导航状态完全初始化
+            new android.os.Handler().postDelayed(() -> {
+                try {
+                    Log.d(TAG, "=== onNewIntent AI悬浮球跳转调试 ===");
+                    
+                    NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
+                    
+                    // 获取当前页面信息
+                    int currentDestinationId = navController.getCurrentDestination() != null ? 
+                        navController.getCurrentDestination().getId() : -1;
+                    Log.d(TAG, "onNewIntent导航前当前页面ID: " + currentDestinationId);
+                    
+                    // 执行导航
+                    navController.navigate(R.id.navigation_ai);
+                    Log.d(TAG, "onNewIntent导航命令已执行，目标页面: navigation_ai");
+                    
+                    // 同步更新底部导航栏状态
+                    binding.navView.setSelectedItemId(R.id.navigation_ai);
+                    Log.d(TAG, "onNewIntent底部导航栏状态已更新为AI页面");
+                    
+                    // 清除跳转标记
+                    intent.removeExtra("navigate_to_ai");
+                    intent.removeExtra("direct_to_ai");
+                    
+                    Log.d(TAG, "=== onNewIntent AI悬浮球跳转完成 ===");
+                } catch (Exception e) {
+                    Log.e(TAG, "onNewIntent导航到AI页面失败", e);
+                }
+            }, 200); // 延迟200ms，确保导航状态稳定
+        }
+    }
+    
     /**
      * 处理权限请求结果
      */
@@ -206,7 +253,7 @@ public class BlindHomeActivity extends AppCompatActivity {
             } else {
                 Log.w(TAG, "权限授权失败或被拒绝");
                 // 权限被拒绝，显示提示或退出
-                Toast.makeText(this, "权限不足，应用无法正常运行", Toast.LENGTH_LONG).show();
+                // Toast.makeText(this, "权限不足，应用无法正常运行", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -248,10 +295,16 @@ public class BlindHomeActivity extends AppCompatActivity {
             // 延迟启动AI悬浮球服务（盲人端专属），确保其他初始化完成且系统稳定
             new android.os.Handler().postDelayed(() -> {
                 try {
-                    Log.d(TAG, "延迟启动AI悬浮球服务（盲人端专属），系统应该已稳定");
-                    startAIFloatingBallService();
+                    // 仅在已登录且为盲人端时启动；否则兜底停止
+                    if (SharedPrefsUtil.isLoggedIn() && SharedPrefsUtil.isBlind()) {
+                        Log.d(TAG, "延迟启动AI悬浮球服务（盲人端专属），系统应该已稳定");
+                        startAIFloatingBallService();
+                    } else {
+                        Log.d(TAG, "当前非盲人端或未登录，停止AI悬浮球服务（兜底）");
+                        stopService(new Intent(this, com.swj.shiwujie.common.service.AIFloatingBallService.class));
+                    }
                 } catch (Exception e) {
-                    Log.e(TAG, "延迟启动AI悬浮球服务失败", e);
+                    Log.e(TAG, "延迟启动/停止AI悬浮球服务失败", e);
                 }
             }, 1000); // 再延迟1秒启动前台服务
             
@@ -609,7 +662,7 @@ public class BlindHomeActivity extends AppCompatActivity {
         ).enqueue(new ApiCallback<Boolean>(this) {
             @Override
             public void onSuccess(Boolean response) {
-                Toast.makeText(BlindHomeActivity.this, "残疾证校验成功", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(BlindHomeActivity.this, "残疾证校验成功", Toast.LENGTH_SHORT).show();
                 
                 // 身份校验成功后，销毁所有身份校验弹窗并重置状态
                 destroyAllIdentityDialogs();
@@ -620,7 +673,7 @@ public class BlindHomeActivity extends AppCompatActivity {
 
             @Override
             public void onError(String message) {
-                Toast.makeText(BlindHomeActivity.this, "残疾证校验失败：" + message, Toast.LENGTH_SHORT).show();
+                // Toast.makeText(BlindHomeActivity.this, "残疾证校验失败：" + message, Toast.LENGTH_SHORT).show();
             }
         });
     }

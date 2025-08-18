@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.content.Intent;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
@@ -45,6 +46,13 @@ public class VolunteerHomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityVolunteerHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // 志愿者端主页兜底：进入即停止AI悬浮球服务，避免盲人端残留
+        try {
+            stopService(new Intent(this, com.swj.shiwujie.common.service.AIFloatingBallService.class));
+        } catch (Exception e) {
+            Log.w(TAG, "停止AI悬浮球服务失败", e);
+        }
 
         setupViews();
         

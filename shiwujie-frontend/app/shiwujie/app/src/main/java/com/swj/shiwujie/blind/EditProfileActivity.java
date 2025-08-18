@@ -217,7 +217,7 @@ public class EditProfileActivity extends AppCompatActivity {
         ).enqueue(new ApiCallback<Boolean>(this) {
             @Override
             public void onSuccess(Boolean response) {
-                Toast.makeText(EditProfileActivity.this, "更新成功", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(EditProfileActivity.this, "更新成功", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
@@ -271,7 +271,7 @@ public class EditProfileActivity extends AppCompatActivity {
             ).enqueue(new ApiCallback<Boolean>(this) {
                 @Override
                 public void onSuccess(Boolean response) {
-                    Toast.makeText(EditProfileActivity.this, "密码修改成功", Toast.LENGTH_SHORT).show();
+                    // Toast.makeText(EditProfileActivity.this, "密码修改成功", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
                 }
 
@@ -328,7 +328,7 @@ public class EditProfileActivity extends AppCompatActivity {
             ).enqueue(new ApiCallback<Boolean>(this) {
                 @Override
                 public void onSuccess(Boolean response) {
-                    Toast.makeText(EditProfileActivity.this, "手机号修改成功", Toast.LENGTH_SHORT).show();
+                    // Toast.makeText(EditProfileActivity.this, "手机号修改成功", Toast.LENGTH_SHORT).show();
                     // 更新界面显示的手机号
                     tvPhone.setText(newPhone);
                     dialog.dismiss();

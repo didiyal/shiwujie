@@ -100,7 +100,7 @@ public class PermissionSettingsActivity extends AppCompatActivity {
         if (requestCode == PermissionManager.PERMISSION_REQUEST_CODE) {
             boolean success = PermissionManager.handlePermissionResult(requestCode, permissions, grantResults);
             if (success) {
-                Toast.makeText(this, "权限请求成功", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(this, "权限请求成功", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, "部分权限被拒绝，请在设置中手动开启", Toast.LENGTH_LONG).show();
             }

@@ -92,7 +92,20 @@ public class AIFloatingBallService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "AI悬浮球服务启动");
-        return START_STICKY; // 服务被杀死后自动重启
+        // 启动时再次校验用户身份，防止被误启动
+        try {
+            if (!isBlindUser()) {
+                Log.w(TAG, "非盲人或未登录，停止AI悬浮球服务");
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "启动时身份校验异常，停止服务", e);
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        // 返回非粘性，避免在不满足条件时被系统自动重启
+        return START_NOT_STICKY;
     }
     
     @Override
@@ -259,6 +272,21 @@ public class AIFloatingBallService extends Service {
                 }
             });
             
+            // 为无障碍模式添加点击监听器
+            floatingView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d(TAG, "无障碍模式点击事件触发");
+                    onAIBallClick();
+                }
+            });
+            
+            // 设置无障碍模式下的必要属性
+            floatingView.setClickable(true);
+            floatingView.setFocusable(true);
+            floatingView.setFocusableInTouchMode(true);
+            floatingView.setContentDescription("AI助手悬浮球，点击进入AI功能页面");
+            
             // 显示悬浮球
             showFloatingBall();
             
@@ -302,7 +330,7 @@ public class AIFloatingBallService extends Service {
             
         } catch (Exception e) {
             Log.e(TAG, "显示AI悬浮球失败", e);
-            Toast.makeText(this, "显示AI悬浮球失败", Toast.LENGTH_SHORT).show();
+            // Toast.makeText(this, "显示AI悬浮球失败", Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -350,7 +378,7 @@ public class AIFloatingBallService extends Service {
             
             // 直接跳转到AI页面，避免中间过渡页面
             Intent intent = new Intent(this, BlindHomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             intent.putExtra("navigate_to_ai", true);
             intent.putExtra("direct_to_ai", true);  // 添加直接跳转标志
             startActivity(intent);
@@ -359,7 +387,7 @@ public class AIFloatingBallService extends Service {
             
         } catch (Exception e) {
             Log.e(TAG, "跳转失败", e);
-            Toast.makeText(this, "跳转失败", Toast.LENGTH_SHORT).show();
+            // Toast.makeText(this, "跳转失败", Toast.LENGTH_SHORT).show();
         }
     }
     

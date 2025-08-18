@@ -97,14 +97,14 @@ public class AiFragment extends Fragment {
     private MaterialButton btnVoice;
     private MaterialButton btnCamera;
     private ImageView btnCollapseMessage;
-    private ImageView btnExpandMessage;
+    private com.google.android.material.button.MaterialButton btnExpandMessage;
     private LinearLayout messagePanel;
     private TextureView cameraPreview;
     private TextView tabCurrentConversation;
     private TextView tabHistory;
     private TextView tvConversationTitle;
     private boolean isListening = false;
-    private boolean isMessagePanelExpanded = true;
+    private boolean isMessagePanelExpanded = false;
     private boolean isCurrentTabSelected = true;
     
     // 图片相关
@@ -406,6 +406,8 @@ public class AiFragment extends Fragment {
     private void startStatusCheck() {
         statusCheckHandler.post(statusCheckRunnable);
     }
+    
+
     
     /**
      * 停止状态检查定时器
@@ -1041,16 +1043,28 @@ public class AiFragment extends Fragment {
         if (messagePanel == null) return;
         
         try {
-            // 设置初始宽度为屏幕宽度的80%
-            int screenWidth = getResources().getDisplayMetrics().widthPixels;
-            int panelWidth = (int) (screenWidth * 0.8);
-            
-            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) messagePanel.getLayoutParams();
-            params.width = panelWidth;
-            messagePanel.setLayoutParams(params);
-            
-            // 设置初始透明度
-            messagePanel.setAlpha(0.9f);
+            if (isMessagePanelExpanded) {
+                // 如果面板应该展开，设置初始宽度为屏幕宽度的80%
+                int screenWidth = getResources().getDisplayMetrics().widthPixels;
+                int panelWidth = (int) (screenWidth * 0.8);
+                
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) messagePanel.getLayoutParams();
+                params.width = panelWidth;
+                messagePanel.setLayoutParams(params);
+                
+                // 设置初始透明度
+                messagePanel.setAlpha(0.9f);
+                messagePanel.setVisibility(View.VISIBLE);
+                btnExpandMessage.setVisibility(View.GONE);
+            } else {
+                // 如果面板应该收起，设置宽度为0并隐藏
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) messagePanel.getLayoutParams();
+                params.width = 0;
+                messagePanel.setLayoutParams(params);
+                
+                messagePanel.setVisibility(View.GONE);
+                btnExpandMessage.setVisibility(View.VISIBLE);
+            }
         } catch (Exception e) {
             Log.e(TAG, "设置消息面板初始状态失败", e);
         }
@@ -1822,6 +1836,9 @@ public class AiFragment extends Fragment {
      * 按照官方文档要求调用startListening
      */
     private void startVoiceRecognition() {
+        // 在启动语音识别前，先停止正在进行的TTS播报，避免干扰语音识别
+        stopAllTTSPlayback();
+        
         speechManager.startListening();
     }
     
@@ -1832,6 +1849,8 @@ public class AiFragment extends Fragment {
     private void stopVoiceRecognition() {
         speechManager.stopListening();
     }
+    
+
     
     /**
      * 直接拍照（使用Camera2 API，无需启动系统相机）
@@ -3573,7 +3592,7 @@ public class AiFragment extends Fragment {
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             try {
-                                Toast.makeText(requireContext(), "网络连接已恢复", Toast.LENGTH_SHORT).show();
+                              /*  Toast.makeText(requireContext(), "网络连接已恢复", Toast.LENGTH_SHORT).show();*/
                             } catch (Exception e) {
                                 Log.w(TAG, "显示连接成功提示失败", e);
                             }
@@ -4260,21 +4279,8 @@ public class AiFragment extends Fragment {
      */
     private void startAIFloatingBallService() {
         try {
-            if (!isAIFloatingBallServiceRunning) {
-                Intent serviceIntent = new Intent(requireContext(), AIFloatingBallService.class);
-                
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    requireContext().startForegroundService(serviceIntent);
-                } else {
-                    requireContext().startService(serviceIntent);
-                }
-                
-                isAIFloatingBallServiceRunning = true;
-                Log.d(TAG, "AI悬浮球服务启动成功");
-            } else {
-                Log.d(TAG, "AI悬浮球服务已在运行中");
-            }
-        } catch (Exception e) {
+            // 移除Fragment内的服务启动，交由首页统一管理，避免重复与跨身份
+      } catch (Exception e) {
             Log.e(TAG, "启动AI悬浮球服务失败", e);
         }
     }

@@ -172,12 +172,12 @@ public class FloatingWindowService extends Service {
                 if (response.isSuccessful() && response.body() != null) {
                     BaseResponse<Boolean> result = response.body();
                     if (result.getCode() == 1 && Boolean.TRUE.equals(result.getData())) {
-                        Toast.makeText(FloatingWindowService.this, "已取消匹配", Toast.LENGTH_SHORT).show();
+                        // Toast.makeText(FloatingWindowService.this, "已取消匹配", Toast.LENGTH_SHORT).show();
                     } else {
                         Toast.makeText(FloatingWindowService.this, "取消匹配失败: " + result.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Toast.makeText(FloatingWindowService.this, "网络请求失败", Toast.LENGTH_SHORT).show();
+                    // Toast.makeText(FloatingWindowService.this, "网络请求失败", Toast.LENGTH_SHORT).show();
                 }
                 // 无论成功失败都要停止服务
                 stopSelf();
@@ -185,7 +185,7 @@ public class FloatingWindowService extends Service {
             
             @Override
             public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
-                Toast.makeText(FloatingWindowService.this, "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                // Toast.makeText(FloatingWindowService.this, "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 // 网络失败也要停止服务
                 stopSelf();
             }
