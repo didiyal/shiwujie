@@ -292,6 +292,20 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
         }
     }
 
+    /**
+     * 通知前端导航 5006
+     */
+    public void noticeNavigation(SocketData socketData){
+        if (cmap.containsKey(socketData.getBlindPhone())) {
+            Channel channel = cmap.get(socketData.getBlindPhone());
+            String response = this.getResponse(0, "开启导航", socketData);
+            channel.writeAndFlush(new TextWebSocketFrame(response));
+            log.info("通知前端开启导航 - 5006" );
+        }else{
+            this.getResponse(1, "系统错误", socketData);
+        }
+
+    }
 
     //endregion
 

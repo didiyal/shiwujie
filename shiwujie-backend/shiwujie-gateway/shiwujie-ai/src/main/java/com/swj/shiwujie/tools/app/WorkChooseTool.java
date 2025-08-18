@@ -179,10 +179,16 @@ public class WorkChooseTool {
                     }
                     frontendTools.noticeJumpSoftware(appName);
                     return "处理成功";
-
+                case 18:// 导航
+                    String destination = parseJsonParam(jsonStr, "destination");
+                    if(destination == null){
+                        return "缺少必要参数：目的地";
+                    }
+                    frontendTools.noticeNavigation(destination);
+                    return "处理成功";
 
                 default:
-                    return "无效的工具类型，请输入1-17之间的数字";
+                    return "无效的工具类型，请输入1-18之间的数字";
             }
         } catch (Exception e) {
             log.error("执行业务工具调用时发生错误", e);

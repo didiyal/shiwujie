@@ -86,6 +86,17 @@ public class FrontendTools {
 
     }
 
-
-
+    /**
+     * 通知前端进行导航
+     * @param destination 目标
+     */
+    public void noticeNavigation(String destination) {
+        String loginUserPhone = LoginUtils.getLoginUserPhone();
+        SocketData socketData = new SocketData();
+        socketData.setBlindPhone(loginUserPhone);
+        socketData.setRequestType(5006);
+        // 这里短暂用这个代替
+        socketData.setVolunteerPhone(destination);
+        innerSocket.noticeNavigation(socketData);
+    }
 }

@@ -39,4 +39,10 @@ public interface InnerSocket {
     void noticeJumpToUserUpdate(SocketData socketData);
 
 
+    /**
+     * 通知前端进行导航
+     */
+    void noticeNavigation(SocketData socketData);
+
+
 }

@@ -83,8 +83,9 @@ public class EasyProblemApp {
                         15 - 视频求助/志愿者视频求助/我要志愿者帮助 格式示例：{ "type":15 }
                         16 - 紧急求助/家属视频求助/家属紧急帮助 格式示例：{ "type":16 }
                         17 - 跳转到其它软件（需要提供跳转的软件名字 - appName） 格式示例：{ "type":17 , "data":"{\\"appName\\": \\"要跳转的软件名称\\"}" }
+                        18 - 导航/我要去*** (需要提供用户的目的地 - destination) 格式示例: { "type":18 , "data":"{\\"destination\\": \\"要去的位置\\"}" }
 
-                        使用说明：调用工具时必须严格遵守 JSON 格式，传入工具类型 (type: 1-17) 及相应的数据 (data)。
+                        使用说明：调用工具时必须严格遵守 JSON 格式，传入工具类型 (type: 1-18) 及相应的数据 (data)。
                         注意：该核心业务工具是执行业务操作的唯一途径，AI 仅在确有需要时才能调用此工具，并且必须使用有效的功能类型。
                         重要说明：对于需要 ID 的操作（如活动报名、删除求助帖等），请从之前的对话记录中获取所需 ID，切勿让用户提供这些 ID。
 
@@ -126,7 +127,7 @@ public class EasyProblemApp {
             1. 使用简单、清晰的语言，避免特殊符号（如*、#、^等），确保语音播报清晰易懂。
             2. 回复内容应直接明了，使用txt格式，以纯文本形式呈现,比如"**西陵峡**"应该是"西陵峡"。
             3. 若工具执行成功，请总结关键信息并告知用户。
-            4. 若工具执行失败或缺少必要信息，请友善地说明原因，并引导用户提供所需内容。
+            4. 若工具执行失败或缺少必要信息，请友善地说明原因，并引导用户提供所需内容,若是系统错误,则告诉用户是网络问题。
                例如：若发布求助帖失败提示“缺少内容”，可回复：“发布求助帖需要您提供具体的内容和地点，能告诉我吗？”
             
             可调用的工具包括：
@@ -179,7 +180,7 @@ public class EasyProblemApp {
         return chatClient.prompt()
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 20))
-                .user(u -> u.text("请描述这张图片，语言简洁明了，适合视障人士语音收听，100字以内，避免使用标点符号")
+                .user(u -> u.text("请描述这张图片，语言简洁明了，适合视障人士语音收听，100字以内")
                         .media(MimeTypeUtils.IMAGE_PNG, new FileSystemResource(imageUrl)))
                 .stream()
                 .content();

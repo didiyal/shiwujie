@@ -48,8 +48,16 @@ public class InnerSocketImpl implements InnerSocket {
 
     @Override
     public void noticeJumpToUserUpdate(SocketData socketData) {
-        log.info("内部socket - 跳转到用户修改页面");
+        log.info("内部socket - 跳转到用户修改页面:"+socketData.getVolunteerPhone());
         coordinationSocketHandler.noticeJumpToUserUpdate(socketData);
+
+    }
+
+
+    @Override
+    public void noticeNavigation(SocketData socketData) {
+        log.info("内部socket - 导航:" + socketData.getVolunteerPhone());
+        coordinationSocketHandler.noticeNavigation(socketData);
 
     }
 }
