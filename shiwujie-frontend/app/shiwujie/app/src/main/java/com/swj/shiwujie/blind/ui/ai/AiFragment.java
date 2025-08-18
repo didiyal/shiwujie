@@ -107,6 +107,9 @@ public class AiFragment extends Fragment {
     private boolean isMessagePanelExpanded = false;
     private boolean isCurrentTabSelected = true;
     
+    // 返回主页TTS优先级控制
+    private boolean isReturningToHome = false;
+    
     // 图片相关
     private Uri photoUri;
     private File photoFile;
@@ -434,6 +437,12 @@ public class AiFragment extends Fragment {
             if (isAIAvoidRunning) {
                 stopAIAvoidance(); // 停止AI避障
             }
+            
+            // 震动提示：开始录音
+            if (vibrator != null && vibrator.hasVibrator()) {
+                vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
+            
             handleVoiceButtonClick();
         });
         
@@ -441,6 +450,12 @@ public class AiFragment extends Fragment {
             if (isAIAvoidRunning) {
                 stopAIAvoidance(); // 停止AI避障
             }
+            
+            // TTS播报：正在拍照
+            if (ttsManager != null) {
+                ttsManager.startSpeaking("正在拍照");
+            }
+            
             handleCameraButtonClick();
         });
         btnCollapseMessage.setOnClickListener(v -> collapseMessagePanel());
@@ -450,14 +465,34 @@ public class AiFragment extends Fragment {
         MaterialButton btnBack = view.findViewById(R.id.btn_back);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
+                // 设置返回主页TTS优先级标志
+                isReturningToHome = true;
+                
+                // TTS播报：正在返回主页
+                if (ttsManager != null) {
+                    ttsManager.startSpeaking("正在返回主页");
+                }
+                
                 // 使用Navigation导航到主页
                 try {
                     NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
                     navController.navigate(R.id.navigation_home);
+                    
+                    // 延迟播报：已返回主页
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        if (ttsManager != null) {
+                            ttsManager.startSpeaking("已返回主页");
+                        }
+                        // 清除优先级标志
+                        isReturningToHome = false;
+                    }, 500); // 延迟500ms，确保导航完成
+                    
                 } catch (Exception e) {
                     Log.e(TAG, "导航到主页失败", e);
                     // 如果导航失败，显示提示
                     Toast.makeText(requireContext(), "返回主页失败，请重试", Toast.LENGTH_SHORT).show();
+                    // 清除优先级标志
+                    isReturningToHome = false;
                 }
             });
         }
@@ -1021,13 +1056,11 @@ public class AiFragment extends Fragment {
                 MaterialButton btnAiAssist = getView().findViewById(R.id.btn_ai_assist);
                 if (btnAiAssist != null) {
                     if (isAIAvoidRunning) {
-                        // AI避障运行中，按钮显示停止状态
+                        // AI避障运行中，按钮显示停止状态（仅更新图标，不改动无障碍标签，避免与TTS冲突）
                         btnAiAssist.setIcon(ContextCompat.getDrawable(requireContext(), R.drawable.ic_stop_24));
-                        btnAiAssist.setContentDescription("停止AI避障");
                     } else {
-                        // AI避障未运行，按钮显示启动状态
+                        // AI避障未运行，按钮显示启动状态（仅更新图标，不改动无障碍标签，避免与TTS冲突）
                         btnAiAssist.setIcon(ContextCompat.getDrawable(requireContext(), R.drawable.ai));
-                        btnAiAssist.setContentDescription("启动AI避障");
                     }
                 }
             }
@@ -1108,6 +1141,11 @@ public class AiFragment extends Fragment {
                 // 确保按钮状态更新
                 updateVoiceButtonState(false);
                 hideRecordingStatus();
+                
+                // TTS播报：语音输入已结束
+                if (ttsManager != null) {
+                    ttsManager.startSpeaking("语音输入已结束");
+                }
             }
             
             @Override
@@ -1326,6 +1364,12 @@ public class AiFragment extends Fragment {
             // 停止当前播报，重新开始播报完整内容
             String contentToSpeak = parseResponseForTTS(currentContent);
             try {
+                // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
+                if (isReturningToHome) {
+                    Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
+                    return;
+                }
+                
                 ttsManager.stopSpeaking();
                 ttsManager.startSpeaking(contentToSpeak);
                 lastPlayedContentLength = currentContent.length();
@@ -1336,6 +1380,12 @@ public class AiFragment extends Fragment {
             // 如果内容增加超过100个字符，强制重新播报
             String contentToSpeak = parseResponseForTTS(currentContent);
             try {
+                // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
+                if (isReturningToHome) {
+                    Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
+                    return;
+                }
+                
                 ttsManager.stopSpeaking();
                 ttsManager.startSpeaking(contentToSpeak);
                 lastPlayedContentLength = currentContent.length();
@@ -1393,6 +1443,13 @@ public class AiFragment extends Fragment {
         String contentToSpeak = parseResponseForTTS(contentToPlay);
         
         try {
+            // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
+            if (isReturningToHome) {
+                Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
+                currentStreamingState = StreamingState.STREAMING;
+                return;
+            }
+            
             ttsManager.startSpeaking(contentToSpeak);
             lastPlayedContentLength = contentToPlay.length();
             lastPlaybackStartTime = System.currentTimeMillis(); // 记录播报开始时间
@@ -1487,6 +1544,13 @@ public class AiFragment extends Fragment {
      * 完成智能播报
      */
     private void completeSmartPlayback(String fullResponse) {
+        // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
+        if (isReturningToHome) {
+            Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
+            resetSmartPlaybackState();
+            return;
+        }
+        
         // 解析后端响应，决定播报内容
         String contentToSpeak = parseResponseForTTS(fullResponse);
         
@@ -1848,6 +1912,11 @@ public class AiFragment extends Fragment {
      */
     private void stopVoiceRecognition() {
         speechManager.stopListening();
+        
+        // TTS播报：语音输入已结束
+        if (ttsManager != null) {
+            ttsManager.startSpeaking("语音输入已结束");
+        }
     }
     
 
@@ -1914,6 +1983,11 @@ public class AiFragment extends Fragment {
             
             // 显示拍摄的图片到对话界面
             addImageMessage(photoFile);
+            
+            // TTS播报：照片已上传，正在执行图像分析
+            if (ttsManager != null) {
+                ttsManager.startSpeaking("拍照完成，正在执行图像分析");
+            }
             
             // 延迟发送图片识别请求，确保图片完全显示后再发送
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
