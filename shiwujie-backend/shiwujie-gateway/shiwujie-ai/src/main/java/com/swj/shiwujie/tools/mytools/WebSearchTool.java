@@ -7,6 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -22,7 +23,8 @@ public class WebSearchTool {
     private static final String SEARCH_API_URL = "https://www.searchapi.io/api/v1/search";
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-    private String apiKey = "4qkQ96eSGHAbAQKS5wbs8WyT";
+    @Value("${search-api.api-key}")
+    private String apiKey;
 
     /**
      * 搜索网页内容并自动获取详细信息
