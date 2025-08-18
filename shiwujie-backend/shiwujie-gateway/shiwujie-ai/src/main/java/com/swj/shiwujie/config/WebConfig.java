@@ -48,6 +48,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOriginPatterns(
                         "http://*:*",     // 允许所有 http 端口
                         "https://*:*",    // 允许所有 https 端口
+                        "https://www.shi-wu-jie.xyz", // 特定域名
                         "file://*"        // 允许本地文件
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE")
