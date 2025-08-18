@@ -203,29 +203,31 @@ public class EasyProblemApp {
 
 
                 String content = null;
-                switch (toolCallRequest.getType()) {
-                    case -1:// 执行业务工具调用
-                        log.info("执行业务工具调用{}", toolCallRequest);
-                        content = workChooseTool.questionChoose(toolCallRequest.getData());
-                        break;
-                    case -2:// 网页搜索
-                        log.info("开始执行web搜索,{}", toolCallRequest);
-                        content = webSearchTool.searchWeb(toolCallRequest.getData());
-                        log.info("web搜索结果: {}", content);
-                        // 第二阶段：将工具结果反馈给AI并流式输出最终结果
-                        String finalPrompt = String.format(
-                                "用户的问题是：%s\n工具执行结果是：%s\n若执行了工具,请参考工具执行结果，回答用户最初的问题。",
-                                text, content);
+                if (toolCallRequest != null) {
+                    switch (toolCallRequest.getType()) {
+                        case -1:// 执行业务工具调用
+                            log.info("执行业务工具调用{}", toolCallRequest);
+                            content = workChooseTool.questionChoose(toolCallRequest.getData());
+                            break;
+                        case -2:// 网页搜索
+                            log.info("开始执行web搜索,{}", toolCallRequest);
+                            content = webSearchTool.searchWeb(toolCallRequest.getData());
+                            log.info("web搜索结果: {}", content);
+                            // 第二阶段：将工具结果反馈给AI并流式输出最终结果
+                            String finalPrompt = String.format(
+                                    "用户的问题是：%s\n工具执行结果是：%s\n若执行了工具,请参考工具执行结果，回答用户最初的问题。",
+                                    text, content);
 
-                        return doChatWithTextEnd(blindId, finalPrompt);
-                    case -3:// 不执行工具调用
-                        log.info("不执行工具调用,{}", toolCallRequest);
-                        content = "程序认为无需执行工具调用";
-                        break;
-                    case -4:// 需要获取用户输入信息
-                        log.info("需要获取用户输入信息,{}", toolCallRequest);
-                        content = toolCallRequest.getData();
-                        break;
+                            return doChatWithTextEnd(blindId, finalPrompt);
+                        case -3:// 不执行工具调用
+                            log.info("不执行工具调用,{}", toolCallRequest);
+                            content = "程序认为无需执行工具调用";
+                            break;
+                        case -4:// 需要获取用户输入信息
+                            log.info("需要获取用户输入信息,{}", toolCallRequest);
+                            content = toolCallRequest.getData();
+                            break;
+                    }
                 }
 
 
