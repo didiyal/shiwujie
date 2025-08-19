@@ -4,7 +4,7 @@ package com.swj.shiwujie.controller;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.swj.shiwujie.app.EasyProblemApp;
-import com.swj.shiwujie.app.GatewayApp;
+import com.swj.shiwujie.app.ToolChooseApp;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -37,7 +37,7 @@ public class AiController {
 
 
     @Resource
-    private GatewayApp gatewayApp;
+    private ToolChooseApp toolChooseApp;
 
     @Resource
     private EasyProblemApp easyProblemApp;
@@ -66,7 +66,7 @@ public class AiController {
             Flux<String> stringFlux = easyProblemApp.doChatWithImageSSE(filePath, blindId);
 
             // 使用doOnNext记录每个响应片段，避免重复订阅
-            log.info("AI返回:");
+            log.info("图片分析AI返回:");
             return stringFlux.doOnNext(System.out::print);
 
         } catch (Exception e) {
@@ -90,9 +90,10 @@ public class AiController {
         // 判断参数是否合法
         ThrowUtils.throwIf(ObjUtil.hasEmpty(text), ErrorCode.PARAMS_ERROR,"参数不合法");
 
+        log.info("文字消息:{}",text);
         Flux<String> stringFlux = easyProblemApp.doChatWithTextSSE(text, blindId);
         // 使用doOnNext记录每个响应片段，避免重复订阅
-        log.info("AI返回:");
+        log.info("文字消息AI返回:");
         return stringFlux
                 .onBackpressureBuffer(5000) // 增加缓冲区
                 .doOnNext(System.out::print)

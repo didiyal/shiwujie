@@ -1,8 +1,6 @@
 package com.swj.shiwujie.chatmemory;
 
-import com.swj.shiwujie.constant.AiConstants;
 import com.swj.shiwujie.utils.LightweightMessageSerializer;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -11,23 +9,18 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
- * 基于 Redis 的对话记忆存储实现
+ * (用于工具选择app)的redis存储实现(只读)
  */
 @Service
 @Slf4j
-public class RedisChatMemory implements ChatMemory {
+public class WorkChooseAppRedisChatMemory implements ChatMemory {
     // Redis 键前缀，避免键冲突
     private static final String KEY_PREFIX = "chat:memory:";
     private final RedisTemplate<String, Object> redisTemplate;
-    
-    @Resource
-    private MySQLChatMemoryStore mySQLChatMemoryStore;
 
-    public RedisChatMemory(RedisTemplate<String, Object> redisTemplate) {
+    public WorkChooseAppRedisChatMemory(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -39,7 +32,7 @@ public class RedisChatMemory implements ChatMemory {
      */
     @Override
     public void add(String conversationId, Message message) {
-        add(conversationId, List.of(message));
+        // 不允许存入数据,只读
     }
 
     /**
@@ -50,23 +43,6 @@ public class RedisChatMemory implements ChatMemory {
      */
     @Override
     public void add(String conversationId, List<Message> messages) {
-        // 获取现有消息列表
-        List<Message> existingMessages = getFromRedis(conversationId);
-        // 合并消息
-        existingMessages.addAll(messages);
-        // 保存更新后的消息列表
-        setToRedis(conversationId, existingMessages);
-        
-        // 异步存储到MySQL数据库
-        mySQLChatMemoryStore.storeMessages(conversationId, messages);
-        
-        // 检查消息数量，如果超过最大条则删除多余部分，只保留最新的
-        if (existingMessages.size() > AiConstants.CONVERSATION_ROUND*2) {
-            trimConversation(conversationId);
-        }
-        
-        log.debug("已向对话 [{}] 添加 {} 条消息，当前总消息数: {}",
-                conversationId, messages.size(), Math.min(existingMessages.size(), AiConstants.CONVERSATION_ROUND*2));
     }
 
     /**
@@ -92,25 +68,8 @@ public class RedisChatMemory implements ChatMemory {
      */
     @Override
     public void clear(String conversationId) {
-        String key = getRedisKey(conversationId);
-        redisTemplate.delete(key);
-        log.debug("已清空对话 [{}] 的历史消息", conversationId);
     }
-    
-    /**
-     * 清理对话历史，只保留最新的10条消息
-     *
-     * @param conversationId 对话 ID
-     */
-    public void trimConversation(String conversationId) {
-        List<Message> allMessages = getFromRedis(conversationId);
-        if (allMessages.size() >AiConstants.CONVERSATION_ROUND*2) {
-            // 只保留最新的消息
-            List<Message> recentMessages = allMessages.subList(allMessages.size() - AiConstants.CONVERSATION_ROUND*2, allMessages.size());
-            setToRedis(conversationId, recentMessages);
-            log.debug("已清理对话 [{}] 的历史消息，从 {} 条减少到 {} 条", conversationId, allMessages.size(),AiConstants.CONVERSATION_ROUND*2);
-        }
-    }
+
 
     /**
      * 从 Redis 获取消息列表
@@ -147,23 +106,6 @@ public class RedisChatMemory implements ChatMemory {
             }
         }
         return messages;
-    }
-
-    /**
-     * 将消息列表存入 Redis
-     */
-    private void setToRedis(String conversationId, List<Message> messages) {
-        String key = getRedisKey(conversationId);
-        List<String> serializedMessages = new ArrayList<>(messages.size());
-        for (Message message : messages) {
-            try {
-                String serialized = LightweightMessageSerializer.serialize(message);
-                serializedMessages.add(serialized);
-            } catch (Exception e) {
-                log.error("序列化消息失败，跳过该消息: {}", message, e);
-            }
-        }
-        redisTemplate.opsForValue().set(key, serializedMessages, 5, TimeUnit.MINUTES);
     }
 
     /**

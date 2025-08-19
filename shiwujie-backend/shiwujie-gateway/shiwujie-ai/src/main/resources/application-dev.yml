@@ -12,6 +12,10 @@ spring:
     username: shiwujieAi
     password: PbEbzPLk6XEDj3aC
     url: jdbc:mysql://43.139.38.62:3306/shiwujieai
+#修改spring ai 日志级别
+logging:
+  level:
+    org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor: debug
 #  #数据库连接 - pgSQL
 #  datasource:
 #    driver-class-name: org.postgresql.Driver
