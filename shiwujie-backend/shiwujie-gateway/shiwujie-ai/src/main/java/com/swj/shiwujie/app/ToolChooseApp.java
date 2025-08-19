@@ -45,29 +45,29 @@ public class ToolChooseApp {
 
             系统工具：
             1. 核心业务工具(1-18)：处理用户、家庭、社区、活动、求助帖相关操作。
-               1 - 申请加入家庭（提供创建人手机号）示例：{"type":1,"data":"{\"familyVolunteerPhone\":\"13800138000\"}"}
-               2 - 查看家庭信息 示例：{"type":2}
-               3 - 退出家庭 示例：{"type":3}
-               4 - 获取社区信息 示例：{"type":4}
-               5 - 获取活动信息 示例：{"type":5}
-               6 - 报名活动（需activityId）示例：{"type":6,"data":"{\"activityId\":123}"}
-               7 - 查看已报名活动 示例：{"type":7}
-               8 - 查看我的求助帖 示例：{"type":8}
-               9 - 删除求助帖（需helppostId）示例：{"type":9,"data":"{\"helppostId\":456}"}
-               10 - 修改求助帖（需helppostId等）示例：{"type":10,"data":"{\"helppostId\":456,\"helpContent\":\"内容\",\"helpLocation\":\"地点\"}"}
-               11 - 发布求助帖（需helpContent等）示例：{"type":11,"data":"{\"helpContent\":\"内容\",\"helpLocation\":\"地点\"}"}
-               12 - 加入/退出社区 示例：{"type":12}
-               13 - 修改个人信息 示例：{"type":13}
-               14 - 图像识别 示例：{"type":14}
-               15 - 视频求助/我要到主页联系志愿者/志愿者视频帮助 示例：{"type":15}
-               16 - 紧急求助/家属帮助/家属视频帮助 示例：{"type":16}
-               17 - 跳转软件（需appName）示例：{"type":17,"data":"{\"appName\":\"软件名\"}"}
-               18 - 导航/我要去***（需destination）示例：{"type":18,"data":"{\"destination\":\"目的地\"}"}
+               1 - 申请加入家庭（提供创建人手机号）示例：{"type":-1,"data":"{"type":1,"data":"{\"familyVolunteerPhone\":\"13800138000\"}"}"}
+               2 - 查看家庭信息 示例：{"type":-1,"data":"{"type":2}"}
+               3 - 退出家庭 示例：{"type":-1,"data":"{"type":3}"}
+               4 - 获取社区信息 示例：{"type":-1,"data":"{"type":4}"}
+               5 - 获取活动信息 示例：{"type":-1,"data":"{"type":5}"}
+               6 - 报名活动（需activityId）示例：{"type":-1,"data":"{"type":6,"data":"{\\\"activityId\\\":123}"}"}
+               7 - 查看已报名活动 示例：{"type":-1,"data":"{"type":7}"}
+               8 - 查看我的求助帖 示例：{"type":-1,"data":"{"type":8}"}
+               9 - 删除求助帖（需helppostId）示例：{"type":-1,"data":"{"type":9,"data":"{\\\"helppostId\\\":456}"}"}
+               10 - 修改求助帖（需helppostId等）示例：{"type":-1,"data":"{"type":10,"data":"{\\\"helppostId\\\":456,\\\"helpContent\\\":\\\"内容\\\",\\\"helpLocation\\\":\\\"地点\\\"}"}"}
+               11 - 发布求助帖（需helpContent等）示例：{"type":-1,"data":"{"type":11,"data":"{\\\"helpContent\\\":\\\"内容\\\",\\\"helpLocation\\\":\\\"地点\\\"}"}"}
+               12 - 加入/退出社区 示例：{"type":-1,"data":"{"type":12}"}
+               13 - 修改个人信息 示例：{"type":-1,"data":"{"type":13}"}
+               14 - 图像识别 示例：{"type":-1,"data":"{"type":14}"}
+               15 - 视频求助/我要到主页联系志愿者/志愿者视频帮助 示例：{"type":-1,"data":"{"type":15}"}
+               16 - 紧急求助/家属帮助/家属视频帮助 示例：{"type":-1,"data":"{"type":16}"}
+               17 - 跳转软件（需appName）示例：{"type":-1,"data":"{"type":17,"data":"{\\\"appName\\\":\\\"软件名\\\"}"}"}
+               18 - 导航/我要去***（需destination）示例：{"type":-1,"data":"{"type":18,"data":"{\\\"destination\\\":\\\"目的地\\\"}"}"}
                
                使用说明：严格遵守JSON格式，仅在确需时调用，ID从对话获取。
 
             返回格式要求(你只能返回以下格式内容,你不直接面向用户,你的返回结果将由其它助手处理返回)：
-            1. 业务工具调用：{"type":-1,"data":"{\\\"type\\\":1,\\\"data\\\":\\\"{\\\\\\\"familyVolunteerPhone\\\\\\\":\\\\\\\"13800138000\\\\\\\"}\\\"}"}
+            1. 业务工具调用：{"type":-1,"data":"业务工具调用里面的示例1-18"}
             2. 网络搜索：{"type":-2,"data":"{\"query\":\"关键词\"}"}
             3. 无需工具/图片追问：{"type":-3,"data":""}
             4. 需要询问：{"type":-4,"data":"询问内容"}
