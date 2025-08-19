@@ -22,7 +22,7 @@ public class NavigationManager {
     
     /**
      * 导航到指定目的地
-     * 直接跳转到高德地图导航页面，目的地已填好，用户只需点击开始导航
+     * 智能选择已安装的地图应用进行导航
      * @param context 上下文
      * @param destinationName 目的地名称
      */
@@ -30,14 +30,13 @@ public class NavigationManager {
         Log.d(TAG, "开始导航到目的地: " + destinationName);
         
         try {
-            // 直接使用优化的导航URI，不需要先获取定位
-            // 高德地图会自动使用当前位置作为起点
-            openAmapNavigation(context, destinationName, null);
+            // 智能选择地图应用进行导航
+            openMapNavigation(context, destinationName);
             
         } catch (Exception e) {
             Log.e(TAG, "导航失败", e);
-            // 降级方案：直接搜索
-            openAmapSearch(context, destinationName);
+            // 降级方案：使用高德地图
+            openAmapNavigation(context, destinationName, null);
         }
     }
     
@@ -105,8 +104,42 @@ public class NavigationManager {
     }
     
     /**
+     * 智能选择地图应用进行导航
+     * 优先选择已安装的地图应用，按优先级：高德 > 百度 > 腾讯
+     * @param context 上下文
+     * @param destinationName 目的地名称
+     */
+    private static void openMapNavigation(Context context, String destinationName) {
+        Log.d(TAG, "智能选择地图应用进行导航");
+        
+        // 检查已安装的地图应用
+        boolean isGaodeInstalled = isAmapInstalled(context);
+        boolean isBaiduInstalled = isBaiduMapInstalled(context);
+        boolean isTencentInstalled = isTencentMapInstalled(context);
+        
+        Log.d(TAG, "地图应用检测结果 - 高德: " + isGaodeInstalled + 
+                   ", 百度: " + isBaiduInstalled + 
+                   ", 腾讯: " + isTencentInstalled);
+        
+        // 按优先级选择地图应用
+        if (isGaodeInstalled) {
+            Log.d(TAG, "选择高德地图进行导航");
+            openAmapNavigation(context, destinationName, null);
+        } else if (isBaiduInstalled) {
+            Log.d(TAG, "选择百度地图进行导航");
+            openBaiduMapNavigation(context, destinationName);
+        } else if (isTencentInstalled) {
+            Log.d(TAG, "选择腾讯地图进行导航");
+            openTencentMapNavigation(context, destinationName);
+        } else {
+            Log.d(TAG, "未检测到地图应用，使用高德地图网页版");
+            openAmapWebNavigation(context, destinationName);
+        }
+    }
+    
+    /**
      * 打开高德地图进行路径规划
-     * 直接跳转到导航页面，目的地已填好，用户只需点击开始导航
+     * 使用您提供的API格式，t=2表示步行模式
      * @param context 上下文
      * @param destinationName 目的地名称
      * @param currentLocation 当前位置（已废弃，保留参数兼容性）
@@ -115,25 +148,23 @@ public class NavigationManager {
         try {
             Log.d(TAG, "打开高德地图导航页面");
             
-            // 使用最简洁的URI，直接跳转到导航页面
-            // 高德地图会自动识别当前位置作为起点
-            // 用户只需要点击"开始导航"按钮即可
-            String amapUri = "androidamap://route?" +
-                           "sourceApplication=视物界" +
-                           "&dname=" + destinationName +
-                           "&navi=1";
+            // 使用您提供的API格式：amapuri://route/plan/
+            // t=2 表示步行模式，sourceApplication=视物界
+            String routeUri = "amapuri://route/plan/?" +
+                            "sourceApplication=视物界" +
+                            "&dname=" + destinationName +
+                            "&t=2";
             
-            Log.d(TAG, "高德地图导航URI: " + amapUri);
+            Log.d(TAG, "高德地图导航URI: " + routeUri);
             
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(amapUri));
-            intent.setPackage("com.autonavi.minimap");
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(routeUri));
             
-            // 检查高德地图是否安装
-            if (intent.resolveActivity(context.getPackageManager()) != null) {
+            // 直接启动，让系统自动选择合适的应用
+            try {
                 context.startActivity(intent);
                 Log.d(TAG, "成功打开高德地图导航页面");
-            } else {
-                Log.w(TAG, "高德地图未安装，尝试打开应用商店");
+            } catch (Exception e) {
+                Log.w(TAG, "无法打开导航URI，尝试降级方案", e);
                 openAmapDownload(context);
             }
             
@@ -145,36 +176,37 @@ public class NavigationManager {
     }
     
     /**
-     * 打开高德地图搜索
-     * 根据高德URI API官方文档，使用POI搜索功能
+     * 打开高德地图路径规划（步行模式）
+     * 使用您提供的API格式，t=2表示步行模式
      * @param context 上下文
      * @param destinationName 目的地名称
      */
     private static void openAmapSearch(Context context, String destinationName) {
         try {
-            Log.d(TAG, "打开高德地图搜索");
+            Log.d(TAG, "打开高德地图路径规划（步行模式）");
             
-            // 根据高德URI API官方文档，正确的POI搜索URI格式
-            // 参考：https://lbs.amap.com/api/uri-api/summary
-            String searchUri = "androidamap://poi?" +
-                             "sourceApplication=视物界" +
-                             "&keywords=" + destinationName;
+            // 使用您提供的API格式：amapuri://route/plan/
+            // t=2 表示步行模式，sourceApplication=视物界
+            String routeUri = "amapuri://route/plan/?" +
+                            "sourceApplication=视物界" +
+                            "&dname=" + destinationName +
+                            "&t=2";
             
-            Log.d(TAG, "高德地图搜索URI: " + searchUri);
+            Log.d(TAG, "高德地图路径规划URI: " + routeUri);
             
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(searchUri));
-            intent.setPackage("com.autonavi.minimap");
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(routeUri));
             
-            if (intent.resolveActivity(context.getPackageManager()) != null) {
+            // 直接启动，让系统自动选择合适的应用
+            try {
                 context.startActivity(intent);
-                Log.d(TAG, "成功打开高德地图搜索");
-            } else {
-                Log.w(TAG, "高德地图未安装，打开应用商店");
+                Log.d(TAG, "成功打开高德地图路径规划");
+            } catch (Exception e) {
+                Log.w(TAG, "无法打开路径规划URI，尝试应用商店", e);
                 openAmapDownload(context);
             }
             
         } catch (Exception e) {
-            Log.e(TAG, "打开高德地图搜索失败", e);
+            Log.e(TAG, "打开高德地图路径规划失败", e);
             openAmapDownload(context);
         }
     }
@@ -222,4 +254,194 @@ public class NavigationManager {
             Log.e(TAG, "打开浏览器下载页面失败", e);
         }
     }
+    
+    /**
+     * 检查高德地图是否安装
+     * @param context 上下文
+     * @return 是否安装
+     */
+    private static boolean isAmapInstalled(Context context) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            pm.getPackageInfo("com.autonavi.minimap", PackageManager.GET_ACTIVITIES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * 检查百度地图是否安装
+     * @param context 上下文
+     * @return 是否安装
+     */
+    private static boolean isBaiduMapInstalled(Context context) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            pm.getPackageInfo("com.baidu.BaiduMap", PackageManager.GET_ACTIVITIES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * 检查腾讯地图是否安装
+     * @param context 上下文
+     * @return 是否安装
+     */
+    private static boolean isTencentMapInstalled(Context context) {
+        try {
+            PackageManager pm = context.getPackageManager();
+            pm.getPackageInfo("com.tencent.map", PackageManager.GET_ACTIVITIES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * 打开百度地图进行导航
+     * 使用您提供的API格式，mode=walking表示步行模式
+     * @param context 上下文
+     * @param destinationName 目的地名称
+     */
+    private static void openBaiduMapNavigation(Context context, String destinationName) {
+        try {
+            Log.d(TAG, "打开百度地图进行导航");
+            
+            // 使用您提供的API格式：baidumap://map/direction
+            // mode=walking 表示步行模式，coord_type=wgs84，src=视物界
+            String baiduUri = "baidumap://map/direction?" +
+                             "destination=name:" + destinationName +
+                             "&mode=walking" +
+                             "&coord_type=wgs84" +
+                             "&src=视物界";
+            
+            Log.d(TAG, "百度地图导航URI: " + baiduUri);
+            
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(baiduUri));
+            intent.setPackage("com.baidu.BaiduMap");
+            
+            try {
+                context.startActivity(intent);
+                Log.d(TAG, "成功打开百度地图导航");
+            } catch (Exception e) {
+                Log.w(TAG, "无法打开百度地图，尝试网页版", e);
+                openBaiduWebNavigation(context, destinationName);
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "打开百度地图导航失败", e);
+            openBaiduWebNavigation(context, destinationName);
+        }
+    }
+    
+    /**
+     * 打开腾讯地图进行导航
+     * 使用您提供的API格式，type=walk表示步行模式
+     * @param context 上下文
+     * @param destinationName 目的地名称
+     */
+    private static void openTencentMapNavigation(Context context, String destinationName) {
+        try {
+            Log.d(TAG, "打开腾讯地图进行导航");
+            
+            // 使用您提供的API格式：qqmap://map/routeplan
+            // type=walk 表示步行模式
+            String tencentUri = "qqmap://map/routeplan?" +
+                               "type=walk" +
+                               "&to=" + destinationName;
+            
+            Log.d(TAG, "腾讯地图导航URI: " + tencentUri);
+            
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(tencentUri));
+            intent.setPackage("com.tencent.map");
+            
+            try {
+                context.startActivity(intent);
+                Log.d(TAG, "成功打开腾讯地图导航");
+            } catch (Exception e) {
+                Log.w(TAG, "无法打开腾讯地图，尝试网页版", e);
+                openTencentWebNavigation(context, destinationName);
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "打开腾讯地图导航失败", e);
+            openTencentWebNavigation(context, destinationName);
+        }
+    }
+    
+    /**
+     * 打开高德地图网页版导航
+     * 使用您提供的网页版API格式
+     * @param context 上下文
+     * @param destinationName 目的地名称
+     */
+    private static void openAmapWebNavigation(Context context, String destinationName) {
+        try {
+            Log.d(TAG, "打开高德地图网页版导航");
+            
+            // 使用您提供的网页版API：http://wap.amap.com/
+            String webUri = "http://wap.amap.com/";
+            
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(webUri));
+            context.startActivity(intent);
+            
+            Log.d(TAG, "成功打开高德地图网页版");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "打开高德地图网页版失败", e);
+        }
+    }
+    
+    /**
+     * 打开百度地图网页版导航
+     * 使用您提供的网页版API格式
+     * @param context 上下文
+     * @param destinationName 目的地名称
+     */
+    private static void openBaiduWebNavigation(Context context, String destinationName) {
+        try {
+            Log.d(TAG, "打开百度地图网页版导航");
+            
+            // 使用您提供的网页版API：http://map.baidu.com/zt/qudao/newfengchao/1012337a/html/slide.html
+            String webUri = "http://map.baidu.com/zt/qudao/newfengchao/1012337a/html/slide.html";
+            
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(webUri));
+            context.startActivity(intent);
+            
+            Log.d(TAG, "成功打开百度地图网页版");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "打开百度地图网页版失败", e);
+        }
+    }
+    
+    /**
+     * 打开腾讯地图网页版导航
+     * 使用您提供的网页版API格式
+     * @param context 上下文
+     * @param destinationName 目的地名称
+     */
+    private static void openTencentWebNavigation(Context context, String destinationName) {
+        try {
+            Log.d(TAG, "打开腾讯地图网页版导航");
+            
+            // 使用您提供的网页版API：https://apis.map.qq.com/uri/v1/routeplan
+            // type=walk 表示步行模式，policy=1
+            String webUri = "https://apis.map.qq.com/uri/v1/routeplan?" +
+                           "type=walk" +
+                           "&to=" + destinationName +
+                           "&policy=1";
+            
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(webUri));
+            context.startActivity(intent);
+            
+            Log.d(TAG, "成功打开腾讯地图网页版");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "打开腾讯地图网页版失败", e);
+        }
+        }
 }
