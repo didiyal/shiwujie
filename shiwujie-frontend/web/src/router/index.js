@@ -44,6 +44,11 @@ const routes = [
         component: () => import('@/views/activity/ActivitySign.vue')
       },
       {
+        path: 'activity-sign-detail',
+        name: 'activity-sign-detail',
+        component: () => import('@/views/activity/ActivitySignDetail.vue')
+      },
+      {
         path: 'helppost-list',
         name: 'helppost-list',
         component: () => import('@/views/helppost/HelpPostList.vue')
