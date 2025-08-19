@@ -73,7 +73,7 @@ public class VideoCallActivity extends AppCompatActivity {
     
     // 状态标志
     private boolean isMuted = false;
-    private boolean isFrontCamera = true;
+    private boolean isFrontCamera = false; // 盲人端默认使用后置摄像头
     private boolean isSpeakerOn = true; // 默认开启扬声器
     private long callStartTime = 0;
     private android.os.Handler callDurationHandler;
@@ -230,6 +230,14 @@ public class VideoCallActivity extends AppCompatActivity {
             // 启用本地预览
             mRtcEngine.startPreview();
             
+            // 盲人端默认使用后置摄像头 - 延迟切换确保摄像头已启动
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (mRtcEngine != null) {
+                    mRtcEngine.switchCamera();
+                    Log.d(TAG, "盲人端延迟切换到后置摄像头成功");
+                }
+            }, 500); // 延迟500ms确保摄像头完全启动
+            
             // 设置音频初始状态
             mRtcEngine.adjustRecordingSignalVolume(100);
             mRtcEngine.adjustPlaybackSignalVolume(100);
@@ -260,6 +268,14 @@ public class VideoCallActivity extends AppCompatActivity {
                 SharedPrefsUtil.getUserId().toString()
             );
             mRtcEngine.setupLocalVideo(videoCanvas);
+            
+            // 盲人端：在本地视频设置完成后，再次确保使用后置摄像头
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (mRtcEngine != null && !isFrontCamera) {
+                    mRtcEngine.switchCamera();
+                    Log.d(TAG, "本地视频设置完成后，再次切换到后置摄像头");
+                }
+            }, 300); // 延迟300ms确保本地视频设置完成
             
             Log.d(TAG, "本地视频设置完成");
         } catch (Exception e) {
@@ -574,9 +590,15 @@ public class VideoCallActivity extends AppCompatActivity {
     
     private void switchCamera() {
         if (mRtcEngine != null) {
-            isFrontCamera = !isFrontCamera;
-            mRtcEngine.switchCamera();
-            
+            try {
+                mRtcEngine.switchCamera();
+                isFrontCamera = !isFrontCamera;
+                Log.d(TAG, "摄像头切换成功，当前状态: " + (isFrontCamera ? "前置" : "后置"));
+            } catch (Exception e) {
+                Log.e(TAG, "摄像头切换失败: " + e.getMessage());
+                // 切换失败时回滚状态
+                isFrontCamera = !isFrontCamera;
+            }
         }
     }
     
