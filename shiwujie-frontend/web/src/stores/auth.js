@@ -58,10 +58,18 @@ export const useAuthStore = defineStore('auth', {
         
         localStorage.setItem('token', loginModel.token)
         
-                 // 保存社区ID到localStorage - 使用安全的大数字处理工具
-         if (loginModel.volunteer.communityId) {
-           addSafeIdToList('userCommunities', loginModel.volunteer.communityId)
-         }
+        // 保存社区ID到localStorage - 使用安全的大数字处理工具
+        if (loginModel.volunteer.communityId) {
+          addSafeIdToList('userCommunities', loginModel.volunteer.communityId)
+        }
+        
+        // 确保用户信息被正确存储和更新
+        console.log('✅ 用户信息已更新:', {
+          volunteerId: this.volunteer.volunteerId,
+          communityId: this.volunteer.communityId,
+          name: this.volunteer.name,
+          phone: this.volunteer.phone
+        })
         
         return loginModel
       } catch (error) {
@@ -89,10 +97,18 @@ export const useAuthStore = defineStore('auth', {
         this.volunteer = new VolunteerModel(response)
         this.isLoggedIn = true
         
-                 // 保存社区ID到localStorage - 使用安全的大数字处理工具
-         if (response && response.communityId) {
-           addSafeIdToList('userCommunities', response.communityId)
-         }
+        // 保存社区ID到localStorage - 使用安全的大数字处理工具
+        if (response && response.communityId) {
+          addSafeIdToList('userCommunities', response.communityId)
+        }
+        
+        // 确保用户信息被正确更新
+        console.log('✅ 登录状态检查完成，用户信息已更新:', {
+          volunteerId: this.volunteer.volunteerId,
+          communityId: this.volunteer.communityId,
+          name: this.volunteer.name,
+          phone: this.volunteer.phone
+        })
         
         return true
       } catch (error) {

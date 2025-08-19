@@ -148,11 +148,12 @@
 
     <!-- 创建活动弹窗 -->
     <a-modal
-      v-model:open="createModalVisible"
+      :open="createModalVisible"
       title="创建活动"
       width="800px"
       @ok="handleCreate"
       @cancel="handleCancel"
+      @update:open="createModalVisible = $event"
       :confirm-loading="createLoading"
     >
       <div class="create-form">
@@ -274,11 +275,12 @@
 
      <!-- 编辑活动弹窗 -->
      <a-modal
-       v-model:open="editModalVisible"
+       :open="editModalVisible"
        title="编辑活动"
        width="800px"
        @ok="handleUpdate"
        @cancel="handleEditCancel"
+       @update:open="editModalVisible = $event"
        :confirm-loading="createLoading"
      >
        <div class="create-form">
@@ -403,6 +405,7 @@
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
 import { 
   SearchOutlined, 
   PlusOutlined,
@@ -426,6 +429,7 @@ export default {
     DeleteOutlined
   },
   setup() {
+    const router = useRouter()
     const authStore = useAuthStore()
     const loading = ref(false)
     const createLoading = ref(false)
@@ -925,7 +929,14 @@ export default {
 
     // 查看报名列表
     const viewSignList = (record) => {
-      // 这里可以跳转到报名管理页面
+      // 跳转到报名管理页面，并传递活动ID参数
+      router.push({
+        name: 'activity-sign',
+        query: { 
+          activityId: record.activityId,
+          activityName: record.activityName 
+        }
+      })
     }
 
     // 删除活动

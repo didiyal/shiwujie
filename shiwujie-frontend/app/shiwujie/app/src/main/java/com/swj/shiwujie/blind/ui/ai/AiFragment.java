@@ -46,6 +46,7 @@ import com.swj.shiwujie.common.network.ObstacleDetectionRetrofitClient;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.ObstacleDetectionTTSManager;
 import com.swj.shiwujie.common.utils.AppListManager;
+import com.swj.shiwujie.common.utils.NavigationManager;
 import com.swj.shiwujie.common.service.AIFloatingBallService;
 import com.swj.shiwujie.data.model.ObstacleDetectionData;
 import com.swj.shiwujie.data.model.ObstacleDetectionData.UnknownObstacle;
@@ -3643,6 +3644,7 @@ public class AiFragment extends Fragment {
      * - 5003: REQUEST_TYPE_EMERGENCY_HELP - 紧急求助，跳转到blindhome页面并开启紧急求助功能
      * - 5004: REQUEST_TYPE_APP_JUMP - APP跳转 (已注释)
      * - 5005: REQUEST_TYPE_EDIT_PROFILE - 跳转到用户信息修改页面
+     * - 5006: REQUEST_TYPE_NAVIGATION_REQUEST - 导航请求，跳转到高德地图进行导航
      */
     private void initWebSocketListener() {
         try {
@@ -3844,6 +3846,11 @@ public class AiFragment extends Fragment {
                 // 5005: 跳转到用户信息修改页面
                 Log.d(TAG, "处理5005: 编辑用户信息请求");
                 handleEditProfileRequest();
+                break;
+                
+            case SocketDataV0.REQUEST_TYPE_NAVIGATION_REQUEST:
+                // 5006: 导航请求
+                handleNavigationRequest(data);
                 break;
                 
             default:
@@ -4437,6 +4444,126 @@ public class AiFragment extends Fragment {
             
         } catch (Exception e) {
             Log.e(TAG, "准备显示应用未安装对话框失败", e);
+        }
+    }
+    
+    /**
+     * 处理5006: 导航请求
+     */
+    private void handleNavigationRequest(SocketDataV0 data) {
+        Log.d(TAG, "收到导航请求");
+        
+        try {
+            // 从volunteerPhone字段获取目的地信息
+            String destination = data.getVolunteerPhone();
+            
+            if (destination == null || destination.trim().isEmpty()) {
+                Log.w(TAG, "目的地信息为空，无法执行导航");
+                return;
+            }
+            
+            Log.d(TAG, "目的地: " + destination);
+            
+            // 确保在主线程中执行UI操作
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    try {
+                        // 显示导航确认对话框
+                        showNavigationConfirmDialog(destination);
+                        
+                    } catch (Exception e) {
+                        Log.e(TAG, "显示导航确认对话框失败", e);
+                        Toast.makeText(requireContext(), "显示导航确认失败，请重试", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "处理导航请求失败", e);
+        }
+    }
+    
+    /**
+     * 显示导航确认对话框
+     * @param destination 目的地名称
+     */
+    private void showNavigationConfirmDialog(String destination) {
+        try {
+            if (getActivity() == null || !isAdded()) {
+                Log.w(TAG, "Fragment未attached到Activity，无法显示对话框");
+                return;
+            }
+            
+            // 创建确认对话框
+            AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+            builder.setTitle("导航确认")
+                   .setMessage("正在为您导航到：\n\n" + destination + "\n\n是否确认开始导航？")
+                   .setPositiveButton("确认导航", (dialog, which) -> {
+                       // 用户确认，执行导航
+                       executeNavigation(destination);
+                       dialog.dismiss();
+                   })
+                   .setNegativeButton("取消", (dialog, which) -> {
+                       // 用户取消，不执行导航
+                       Log.d(TAG, "用户取消导航到: " + destination);
+                       dialog.dismiss();
+                       
+                       // 可选：显示取消提示
+                       Toast.makeText(requireContext(), "已取消导航", Toast.LENGTH_SHORT).show();
+                   })
+                   .setCancelable(true)
+                   .setOnCancelListener(dialog -> {
+                       // 用户点击对话框外部取消
+                       Log.d(TAG, "用户取消导航到: " + destination);
+                       Toast.makeText(requireContext(), "已取消导航", Toast.LENGTH_SHORT).show();
+                   });
+            
+            AlertDialog dialog = builder.create();
+            dialog.show();
+            
+            // 添加震动反馈，提示用户有新的导航请求
+            if (vibrator != null) {
+                vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
+            
+            Log.d(TAG, "导航确认对话框已显示");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "显示导航确认对话框失败", e);
+            // 如果对话框显示失败，直接执行导航作为降级方案
+            executeNavigation(destination);
+        }
+    }
+    
+    /**
+     * 执行导航操作
+     * @param destination 目的地名称
+     */
+    private void executeNavigation(String destination) {
+        try {
+            Log.d(TAG, "开始执行导航到: " + destination);
+            
+            // 调用导航管理器执行导航
+            NavigationManager.navigateToDestination(requireContext(), destination);
+            
+            // 显示详细的导航指导提示
+            String guidance = "已跳转到高德地图，目的地：" + destination + 
+                             "。点击屏幕右下角的'开始步行导航'按钮即可开始导航。";
+            
+            Toast.makeText(requireContext(), guidance, Toast.LENGTH_LONG).show();
+            
+          
+            
+            // 添加震动反馈
+            if (vibrator != null) {
+                vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
+            
+            Log.d(TAG, "导航请求处理完成");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "执行导航失败", e);
+            Toast.makeText(requireContext(), "导航启动失败，请重试", Toast.LENGTH_SHORT).show();
         }
     }
     

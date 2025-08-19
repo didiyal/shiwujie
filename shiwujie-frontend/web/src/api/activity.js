@@ -110,6 +110,21 @@ class ActivityApiService {
   getActivityStats(activityId) {
     return http.get('/community/activity/stats', { activityId })
   }
+
+  /**
+   * 分页查询活动下的报名签到VO
+   * @param {object} params 查询参数
+   * @param {number|string} params.communityId 社区ID
+   * @param {number|string} params.activityId 活动ID (可选)
+   * @param {number|string} params.volunteerId 志愿者ID (可选)
+   * @param {number|string} params.blindId 盲人ID (可选)
+   * @param {number} params.current 当前页
+   * @param {number} params.pageSize 每页大小
+   * @returns {Promise<Page<ActivitySignVO>>}
+   */
+  getActivitySignListPageVO(params) {
+    return http.get('/community/activitysign/list/page/vo', params)
+  }
 }
 
 // 创建单例实例

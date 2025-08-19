@@ -145,6 +145,7 @@ public class SocketDataV0 {
     public static final int REQUEST_TYPE_EMERGENCY_HELP = 5003;       // 紧急求助，跳转到blindhome页面并开启紧急求助功能
     public static final int REQUEST_TYPE_APP_JUMP = 5004;             // APP跳转
     public static final int REQUEST_TYPE_EDIT_PROFILE = 5005;         // 跳转到用户信息修改页面
+    public static final int REQUEST_TYPE_NAVIGATION_REQUEST = 5006;   // 导航请求
     
     // Getter和Setter方法
     public int getRequestType() {
