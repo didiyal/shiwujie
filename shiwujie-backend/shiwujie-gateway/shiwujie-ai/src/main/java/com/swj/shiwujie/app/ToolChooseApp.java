@@ -2,17 +2,12 @@ package com.swj.shiwujie.app;
 
 
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
-import com.swj.shiwujie.chatmemory.RedisChatMemory;
 import com.swj.shiwujie.chatmemory.WorkChooseAppRedisChatMemory;
 import com.swj.shiwujie.constant.AiConstants;
-import com.swj.shiwujie.tools.app.WorkChooseTool;
-import com.swj.shiwujie.tools.mytools.WebSearchTool;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
@@ -64,10 +59,10 @@ public class ToolChooseApp {
                12 - 加入/退出社区 示例：{"type":12}
                13 - 修改个人信息 示例：{"type":13}
                14 - 图像识别 示例：{"type":14}
-               15 - 视频求助 示例：{"type":15}
-               16 - 紧急求助 示例：{"type":16}
+               15 - 视频求助/我要到主页联系志愿者/志愿者视频帮助 示例：{"type":15}
+               16 - 紧急求助/家属帮助/家属视频帮助 示例：{"type":16}
                17 - 跳转软件（需appName）示例：{"type":17,"data":"{\"appName\":\"软件名\"}"}
-               18 - 导航（需destination）示例：{"type":18,"data":"{\"destination\":\"目的地\"}"}
+               18 - 导航/我要去***（需destination）示例：{"type":18,"data":"{\"destination\":\"目的地\"}"}
                
                使用说明：严格遵守JSON格式，仅在确需时调用，ID从对话获取。
 

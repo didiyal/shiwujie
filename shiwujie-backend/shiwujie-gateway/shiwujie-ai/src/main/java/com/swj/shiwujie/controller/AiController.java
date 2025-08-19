@@ -4,6 +4,7 @@ package com.swj.shiwujie.controller;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.swj.shiwujie.app.EasyProblemApp;
+import com.swj.shiwujie.app.ImageApp;
 import com.swj.shiwujie.app.ToolChooseApp;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
@@ -37,10 +38,11 @@ public class AiController {
 
 
     @Resource
-    private ToolChooseApp toolChooseApp;
+    private ImageApp imageApp;
 
     @Resource
     private EasyProblemApp easyProblemApp;
+
     
     @Value("${upload.image-path:${user.home}/shiwujie/images}")
     private String imageUploadPath;
@@ -63,7 +65,7 @@ public class AiController {
             String filePath = this.saveImageAndgetPath(imageFile, blindId);
 
             // 传递给AI时使用文件系统路径
-            Flux<String> stringFlux = easyProblemApp.doChatWithImageSSE(filePath, blindId);
+            Flux<String> stringFlux = imageApp.doChatWithImageSSE(filePath, blindId);
 
             // 使用doOnNext记录每个响应片段，避免重复订阅
             log.info("图片分析AI返回:");

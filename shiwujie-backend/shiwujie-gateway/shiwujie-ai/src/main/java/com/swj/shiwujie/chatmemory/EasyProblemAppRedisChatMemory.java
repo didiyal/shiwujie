@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 @Slf4j
-public class RedisChatMemory implements ChatMemory {
+public class EasyProblemAppRedisChatMemory implements ChatMemory {
     // Redis 键前缀，避免键冲突
     private static final String KEY_PREFIX = "chat:memory:";
     private final RedisTemplate<String, Object> redisTemplate;
@@ -27,7 +26,7 @@ public class RedisChatMemory implements ChatMemory {
     @Resource
     private MySQLChatMemoryStore mySQLChatMemoryStore;
 
-    public RedisChatMemory(RedisTemplate<String, Object> redisTemplate) {
+    public EasyProblemAppRedisChatMemory(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

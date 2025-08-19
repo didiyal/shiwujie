@@ -4,7 +4,7 @@ package com.swj.shiwujie.app;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
-import com.swj.shiwujie.chatmemory.RedisChatMemory;
+import com.swj.shiwujie.chatmemory.EasyProblemAppRedisChatMemory;
 import com.swj.shiwujie.common.ToolCallRequest;
 import com.swj.shiwujie.constant.AiConstants;
 import com.swj.shiwujie.tools.app.WorkChooseTool;
@@ -16,10 +16,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Flux;
 
 import java.time.Duration;
@@ -85,10 +82,10 @@ public class EasyProblemApp {
     private Advisor myRagCloudAdvisor;
 
 
-    public EasyProblemApp(DashScopeChatModel chatModel, RedisChatMemory redisChatMemory) {
+    public EasyProblemApp(DashScopeChatModel chatModel, EasyProblemAppRedisChatMemory easyProblemAppRedisChatMemory) {
 
         //基于内存存储的ChatMemory
-        this.chatMemory = redisChatMemory;
+        this.chatMemory = easyProblemAppRedisChatMemory;
 
         // 模型名
         String model = chatModel.getDefaultOptions().getModel();
@@ -104,23 +101,6 @@ public class EasyProblemApp {
                 .build();
     }
 
-
-    /**
-     * 与大模型图片识别
-     *
-     * @param imageUrl 图片地址
-     * @return 大模型回复
-     */
-    public Flux<String> doChatWithImageSSE(String imageUrl, Long blindId) {
-        return chatClient.prompt()
-                // 取消图片的上下文存储
-//                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, blindId.toString())
-//                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, AiConstants.CONVERSATION_ROUND))
-                .user(u -> u.text("请描述这张图片，语言简洁明了，适合视障人士语音收听，100字以内")
-                        .media(MimeTypeUtils.IMAGE_PNG, new FileSystemResource(imageUrl)))
-                .stream()
-                .content();
-    }
 
     /**
      * 与大模型文字交流（流式）
