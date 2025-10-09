@@ -156,7 +156,7 @@ public class WebSocketManager {
                     sendLoginMessage(phone, isVolunteer);
                     
                     // 显示连接成功提示
-                    showToast("WebSocket连接成功");
+                   /* showToast("WebSocket连接成功");*/
                     
                     // 通知所有全局连接状态监听器
                     mainHandler.post(() -> {

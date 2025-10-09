@@ -834,6 +834,9 @@ public class AiFragment extends Fragment {
         // 立即停止定时任务
         stopAIFrameProcessing();
         
+        // 立即停止震动提示定时器
+        stopVibrationTimer();
+        
         // 立即停止所有TTS播报
         stopAllTTSPlayback();
         
@@ -873,6 +876,9 @@ public class AiFragment extends Fragment {
         
         // 立即停止定时任务
         stopAIFrameProcessing();
+        
+        // 立即停止震动提示定时器
+        stopVibrationTimer();
         
         // 立即停止所有TTS播报
         stopAllTTSPlayback();
@@ -2075,8 +2081,7 @@ public class AiFragment extends Fragment {
             aiChatManager.sendMessage(userMessage);
         } else {
             Log.e(TAG, "AiChatManager未初始化");
-            Toast.makeText(requireContext(), "AI对话管理器未初始化", Toast.LENGTH_SHORT).show();
-        }
+            }
     }
     
     /**
@@ -2092,8 +2097,7 @@ public class AiFragment extends Fragment {
             imageRecognitionManager.sendImage(imageFile);
         } else {
             Log.e(TAG, "ImageRecognitionManager未初始化");
-            Toast.makeText(requireContext(), "图片识别管理器未初始化", Toast.LENGTH_SHORT).show();
-        }
+               }
     }
     
     /**
@@ -3268,10 +3272,51 @@ public class AiFragment extends Fragment {
             };
             
             if (aiAvoidHandler != null) {
+                // 启动震动提示定时器，每6.5秒震动一次
+                startVibrationTimer();
+                // 启动拍照处理循环
                 aiAvoidHandler.postDelayed(aiAvoidRunnable, 6500);
             }
         } catch (Exception e) {
             Log.e(TAG, "启动AI避障帧处理失败", e);
+        }
+    }
+    
+    /**
+     * 启动震动提示定时器
+     * 在每次拍照前1秒（即拍照后间隔5.5秒）给用户震动提示
+     */
+    private void startVibrationTimer() {
+        try {
+            if (vibrator != null && vibrator.hasVibrator()) {
+                // 延迟5.5秒后开始震动提示（即拍照后间隔5.5秒）
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    if (isAIAvoidRunning) {
+                        // 震动提示：即将拍照
+                        vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE));
+                        
+                        // 继续震动循环，每6.5秒震动一次
+                        if (isAIAvoidRunning) {
+                            startVibrationTimer();
+                        }
+                    }
+                }, 5000);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "启动震动提示定时器失败", e);
+        }
+    }
+    
+    /**
+     * 停止震动提示定时器
+     */
+    private void stopVibrationTimer() {
+        try {
+            // 震动定时器使用递归调用，通过设置isAIAvoidRunning为false来停止
+            // 这里不需要额外的Handler清理，因为startVibrationTimer会检查isAIAvoidRunning状态
+            Log.d(TAG, "震动提示定时器已停止");
+        } catch (Exception e) {
+            Log.e(TAG, "停止震动提示定时器失败", e);
         }
     }
     
@@ -3967,16 +4012,14 @@ public class AiFragment extends Fragment {
                     
                 } else {
                     Log.e(TAG, "无法获取导航控制器");
-                    Toast.makeText(requireContext(), "页面切换失败：导航控制器异常", Toast.LENGTH_SHORT).show();
-                }
+                      }
             } else {
                 Log.e(TAG, "Fragment未attached到Activity，无法切换");
-                Toast.makeText(requireContext(), "页面切换失败：页面状态异常", Toast.LENGTH_SHORT).show();
-            }
+                }
             
         } catch (Exception e) {
             Log.e(TAG, "切换主页Fragment失败", e);
-            Toast.makeText(requireContext(), "页面切换失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
         }
     }
     
@@ -4021,16 +4064,16 @@ public class AiFragment extends Fragment {
                     
                 } else {
                     Log.e(TAG, "无法获取导航控制器");
-                    Toast.makeText(requireContext(), "页面切换失败：导航控制器异常", Toast.LENGTH_SHORT).show();
+                  /*  Toast.makeText(requireContext(), "页面切换失败：导航控制器异常", Toast.LENGTH_SHORT).show();*/
                 }
             } else {
                 Log.e(TAG, "Fragment未attached到Activity，无法切换");
-                Toast.makeText(requireContext(), "页面切换失败：页面状态异常", Toast.LENGTH_SHORT).show();
+              /*  Toast.makeText(requireContext(), "页面切换失败：页面状态异常", Toast.LENGTH_SHORT).show();*/
             }
             
         } catch (Exception e) {
             Log.e(TAG, "切换主页Fragment失败", e);
-            Toast.makeText(requireContext(), "页面切换失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+          /*  Toast.makeText(requireContext(), "页面切换失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();*/
         }
     }
     
@@ -4045,7 +4088,7 @@ public class AiFragment extends Fragment {
             String targetAppName = data.getVolunteerPhone();
             if (targetAppName == null || targetAppName.trim().isEmpty()) {
                 Log.w(TAG, "APP跳转请求中volunteerPhone字段为空");
-                Toast.makeText(requireContext(), "APP跳转请求参数错误", Toast.LENGTH_SHORT).show();
+               /* Toast.makeText(requireContext(), "APP跳转请求参数错误", Toast.LENGTH_SHORT).show();*/
                 return;
             }
             
@@ -4054,7 +4097,7 @@ public class AiFragment extends Fragment {
             // 检查应用列表管理器是否已初始化
             if (appListManager == null || !appListManager.isInitialized()) {
                 Log.w(TAG, "应用列表管理器未初始化，无法检查应用");
-                Toast.makeText(requireContext(), "应用列表未准备好，请稍后重试", Toast.LENGTH_SHORT).show();
+              /*  Toast.makeText(requireContext(), "应用列表未准备好，请稍后重试", Toast.LENGTH_SHORT).show();*/
                 return;
             }
             
@@ -4085,7 +4128,7 @@ public class AiFragment extends Fragment {
                     Toast.makeText(requireContext(), "已打开" + targetAppName, Toast.LENGTH_SHORT).show();
                 } else {
                     Log.e(TAG, "应用跳转失败: " + targetAppName);
-                    Toast.makeText(requireContext(), "打开" + targetAppName + "失败", Toast.LENGTH_SHORT).show();
+                 /*   Toast.makeText(requireContext(), "打开" + targetAppName + "失败", Toast.LENGTH_SHORT).show();*/
                 }
                 
             } else {
@@ -4103,7 +4146,7 @@ public class AiFragment extends Fragment {
             
         } catch (Exception e) {
             Log.e(TAG, "APP跳转失败", e);
-            Toast.makeText(requireContext(), "APP跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+           /* Toast.makeText(requireContext(), "APP跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();*/
         }
     }
     
@@ -4143,13 +4186,13 @@ public class AiFragment extends Fragment {
                     
                 } catch (Exception e) {
                     Log.e(TAG, "跳转用户信息修改页面失败", e);
-                    Toast.makeText(requireContext(), "处理失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
                 }
             }, 800); // 延迟0.8秒执行跳转
             
         } catch (Exception e) {
             Log.e(TAG, "处理用户信息修改请求失败", e);
-            Toast.makeText(requireContext(), "处理失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
         }
     }
     
@@ -4421,11 +4464,11 @@ public class AiFragment extends Fragment {
                                            startActivity(intent);
                                        } catch (Exception e) {
                                            Log.e(TAG, "打开应用商店失败", e);
-                                           Toast.makeText(requireContext(), "打开应用商店失败", Toast.LENGTH_SHORT).show();
+
                                        }
                                    }
                                } else {
-                                   Toast.makeText(requireContext(), "无法获取应用下载链接", Toast.LENGTH_SHORT).show();
+
                                }
                            })
                            .setNegativeButton("取消", (dialog, which) -> {
@@ -4438,7 +4481,7 @@ public class AiFragment extends Fragment {
                     
                 } catch (Exception e) {
                     Log.e(TAG, "显示应用未安装对话框失败", e);
-                    Toast.makeText(requireContext(), "显示提示对话框失败", Toast.LENGTH_SHORT).show();
+                    
                 }
             });
             
@@ -4473,7 +4516,7 @@ public class AiFragment extends Fragment {
                         
                     } catch (Exception e) {
                         Log.e(TAG, "显示导航确认对话框失败", e);
-                        Toast.makeText(requireContext(), "显示导航确认失败，请重试", Toast.LENGTH_SHORT).show();
+                     
                     }
                 });
             }
@@ -4511,12 +4554,8 @@ public class AiFragment extends Fragment {
                        // 可选：显示取消提示
                        Toast.makeText(requireContext(), "已取消导航", Toast.LENGTH_SHORT).show();
                    })
-                   .setCancelable(true)
-                   .setOnCancelListener(dialog -> {
-                       // 用户点击对话框外部取消
-                       Log.d(TAG, "用户取消导航到: " + destination);
-                       Toast.makeText(requireContext(), "已取消导航", Toast.LENGTH_SHORT).show();
-                   });
+                   .setCancelable(false)  // 设置为false，禁止点击外部取消
+                   .setOnCancelListener(null);  // 移除取消监听器
             
             AlertDialog dialog = builder.create();
             dialog.show();
@@ -4548,7 +4587,7 @@ public class AiFragment extends Fragment {
             
             // 显示详细的导航指导提示
             String guidance = "已跳转到高德地图，目的地：" + destination + 
-                             "。点击屏幕右下角的'开始步行导航'按钮即可开始导航。";
+                             "。点击屏幕右下角的'开始步行导航'即可开始。";
             
             Toast.makeText(requireContext(), guidance, Toast.LENGTH_LONG).show();
             
@@ -4563,7 +4602,7 @@ public class AiFragment extends Fragment {
             
         } catch (Exception e) {
             Log.e(TAG, "执行导航失败", e);
-            Toast.makeText(requireContext(), "导航启动失败，请重试", Toast.LENGTH_SHORT).show();
+         /*   Toast.makeText(requireContext(), "导航启动失败，请重试", Toast.LENGTH_SHORT).show();*/
         }
     }
     

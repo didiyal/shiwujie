@@ -6,7 +6,7 @@
     
     <!-- 允许访问本地开发服务器 -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">192.168.229.248</domain>
+        <domain includeSubdomains="true">192.168.100.248</domain>
     </domain-config>
     
     <!-- 允许访问本地网络 -->

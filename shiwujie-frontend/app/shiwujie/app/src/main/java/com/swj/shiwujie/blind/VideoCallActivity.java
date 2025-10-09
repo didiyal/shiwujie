@@ -310,6 +310,15 @@ public class VideoCallActivity extends AppCompatActivity {
             
             runOnUiThread(() -> {
                 Log.d(TAG, "远程视频设置成功 - 用户ID: " + uid);
+                
+                // 远程视频加载完毕后，自动切换一次摄像头，确保使用后置摄像头
+                // 延迟500ms执行，确保视频设置完全完成
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    if (mRtcEngine != null && !isFinishing()) {
+                        Log.d(TAG, "远程视频加载完毕，自动切换摄像头到后置");
+                        mRtcEngine.switchCamera();
+                    }
+                }, 500);
             });
         } catch (Exception e) {
             Log.e(TAG, "设置远程视频失败: " + e.getMessage(), e);

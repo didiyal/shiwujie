@@ -19,7 +19,7 @@ import javax.net.ssl.SSLSession;
  * 配置SSL证书信任，解决HTTPS自签名证书问题
  */
 public class ObstacleDetectionRetrofitClient {
-    private static final String BASE_URL = "https://192.168.202.248:9989/";
+    private static final String BASE_URL = "https://192.168.100.248:9989/";
     private static ObstacleDetectionRetrofitClient instance;
     private final Retrofit retrofit;
 
