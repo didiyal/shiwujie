@@ -421,7 +421,7 @@ public class HomeFragment extends Fragment {
         // 检查是否已经在紧急求助中，防止重复点击
         if (emergencyHelpManager.isInEmergencyHelp()) {
             Log.d(TAG, "已在紧急求助中，忽略重复请求");
-            Toast.makeText(requireContext(), "已在紧急求助中，请等待响应", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(requireContext(), "已在紧急求助中，请等待响应", Toast.LENGTH_SHORT).show();
             return;
         }
         

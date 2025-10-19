@@ -651,7 +651,7 @@ public class AiFragment extends Fragment {
         itemView.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.bg_card_round_white));
         itemView.setClickable(true);
         itemView.setFocusable(true);
-        itemView.setForeground(ContextCompat.getDrawable(requireContext(), android.R.attr.selectableItemBackground));
+        itemView.setForeground(ContextCompat.getDrawable(requireContext(), android.R.drawable.ic_menu_more));
         
         // 预览文本
         TextView previewText = new TextView(requireContext());
