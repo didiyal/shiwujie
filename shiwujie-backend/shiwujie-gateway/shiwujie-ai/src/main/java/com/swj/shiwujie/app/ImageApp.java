@@ -55,5 +55,20 @@ public class ImageApp {
     }
 
 
+    /**
+     * 与大模型图片识别
+     *
+     * @param imageUrl 图片地址
+     * @return 大模型回复
+     */
+    public String doChatWithImage(String imageUrl, Long blindId) {
+        return chatClient.prompt()
+                .user(u -> u.text("请描述这张图片，语言简洁明了，适合视障人士语音收听，100字以内")
+                        .media(MimeTypeUtils.IMAGE_JPEG, new FileSystemResource(imageUrl)))
+                .call()
+                .content();
+    }
+
+
 
 }

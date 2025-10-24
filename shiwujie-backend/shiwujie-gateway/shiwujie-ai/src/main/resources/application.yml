@@ -91,3 +91,6 @@ search-api:
 # 图片上传路径配置
 upload:
   image-path: ${user.home}/shiwujie/images
+mqtt:
+  server:
+    uri: tcp://localhost:1883
