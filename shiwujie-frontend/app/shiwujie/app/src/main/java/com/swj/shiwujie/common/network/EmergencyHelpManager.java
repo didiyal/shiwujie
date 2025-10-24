@@ -133,14 +133,14 @@ public class EmergencyHelpManager {
                             
                             if (baseResponse.getCode() == 1 && Boolean.TRUE.equals(baseResponse.getData())) {
                                 Log.d(TAG, "紧急求助请求成功");
-                                showToast("紧急求助请求已发送");
+                            /*    showToast("紧急求助请求已发送");*/
                                 
                                 if (callback != null) {
                                     callback.onHelpRequestSuccess();
                                 }
                             } else {
                                 Log.e(TAG, "紧急求助请求失败: " + baseResponse.getMessage());
-                                showToast("紧急求助请求失败: " + baseResponse.getMessage());
+                              /*  showToast("紧急求助请求失败: " + baseResponse.getMessage());*/
                                 
                                 // 重置状态
                                 currentHelpData = null;
@@ -152,7 +152,7 @@ public class EmergencyHelpManager {
                             }
                         } else {
                             Log.e(TAG, "紧急求助请求失败，响应码: " + response.code());
-                            showToast("网络请求失败，请检查网络连接");
+                          /*  showToast("网络请求失败，请检查网络连接");*/
                             
                             // 重置状态
                             currentHelpData = null;
@@ -167,7 +167,7 @@ public class EmergencyHelpManager {
                     @Override
                     public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
                         Log.e(TAG, "紧急求助请求异常", t);
-                        showToast("网络请求异常: " + t.getMessage());
+                     /*   showToast("网络请求异常: " + t.getMessage());*/
                         
                         // 重置状态
                         currentHelpData = null;
@@ -195,7 +195,7 @@ public class EmergencyHelpManager {
         String token = SharedPrefsUtil.getToken();
         if (token == null || token.isEmpty()) {
             Log.e(TAG, "Token为空，无法取消紧急求助");
-            showToast("登录状态异常，请重新登录");
+           /* showToast("登录状态异常，请重新登录");*/
             return;
         }
         
@@ -223,18 +223,18 @@ public class EmergencyHelpManager {
                                 }
                             } else {
                                 Log.e(TAG, "取消紧急求助失败: " + baseResponse.getMessage());
-                                showToast("取消紧急求助失败: " + baseResponse.getMessage());
+                               /* showToast("取消紧急求助失败: " + baseResponse.getMessage());*/
                             }
                         } else {
                             Log.e(TAG, "取消紧急求助失败，响应码: " + response.code());
-                            showToast("网络请求失败，请检查网络连接");
+                            /*showToast("网络请求失败，请检查网络连接");*/
                         }
                     }
                     
                     @Override
                     public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
                         Log.e(TAG, "取消紧急求助异常", t);
-                        showToast("网络请求异常: " + t.getMessage());
+                       /* showToast("网络请求异常: " + t.getMessage());*/
                     }
                 });
     }

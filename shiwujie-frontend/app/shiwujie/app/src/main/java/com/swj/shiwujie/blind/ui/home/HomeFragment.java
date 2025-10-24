@@ -141,12 +141,12 @@ public class HomeFragment extends Fragment {
                         startVideoHelpMatchingRequest(token);
                     } else {
                         Log.e(TAG, "登录状态无效: " + result.getMessage());
-                        Toast.makeText(requireContext(), "登录状态异常: " + result.getMessage(), Toast.LENGTH_SHORT).show();
+                     /*   Toast.makeText(requireContext(), "登录状态异常: " + result.getMessage(), Toast.LENGTH_SHORT).show();*/
                         isMatching = false;
                     }
                 } else {
                     Log.e(TAG, "登录状态检查失败");
-                    Toast.makeText(requireContext(), "登录状态检查失败", Toast.LENGTH_SHORT).show();
+                 /*   Toast.makeText(requireContext(), "登录状态检查失败", Toast.LENGTH_SHORT).show();*/
                     isMatching = false;
                 }
             }
@@ -154,7 +154,7 @@ public class HomeFragment extends Fragment {
             @Override
             public void onFailure(Call<BaseResponse<Void>> call, Throwable t) {
                 Log.e(TAG, "登录状态检查网络失败", t);
-                Toast.makeText(requireContext(), "登录状态检查失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+              /*  Toast.makeText(requireContext(), "登录状态检查失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();*/
                 isMatching = false;
             }
         });
@@ -195,7 +195,7 @@ public class HomeFragment extends Fragment {
                         }
                     } else {
                         Log.e(TAG, "响应体为空");
-                        Toast.makeText(requireContext(), "服务器响应异常", Toast.LENGTH_SHORT).show();
+                       /* Toast.makeText(requireContext(), "服务器响应异常", Toast.LENGTH_SHORT).show();*/
                         // 重置匹配状态
                         isMatching = false;
                         webSocketManager.setMatchingStatus(false);
@@ -208,7 +208,7 @@ public class HomeFragment extends Fragment {
                     } catch (Exception e) {
                         Log.e(TAG, "读取错误响应体失败", e);
                     }
-                    Toast.makeText(requireContext(), "网络请求失败 - HTTP " + response.code(), Toast.LENGTH_SHORT).show();
+                  /*  Toast.makeText(requireContext(), "网络请求失败 - HTTP " + response.code(), Toast.LENGTH_SHORT).show();*/
                     // 重置匹配状态
                     isMatching = false;
                     webSocketManager.setMatchingStatus(false);
@@ -221,7 +221,7 @@ public class HomeFragment extends Fragment {
                 Log.e(TAG, "请求URL: " + call.request().url());
                 Log.e(TAG, "请求方法: " + call.request().method());
                 Log.e(TAG, "请求头: " + call.request().headers());
-                Toast.makeText(requireContext(), "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+           /*     Toast.makeText(requireContext(), "网络请求失败: " + t.getMessage(), Toast.LENGTH_SHORT).show();*/
                 // 重置匹配状态
                 isMatching = false;
                 webSocketManager.setMatchingStatus(false);
@@ -316,7 +316,7 @@ public class HomeFragment extends Fragment {
                 Log.d(TAG, "紧急求助请求成功");
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
-                        Toast.makeText(requireContext(), "紧急求助请求已发送", Toast.LENGTH_SHORT).show();
+                    /*    Toast.makeText(requireContext(), "紧急求助请求已发送", Toast.LENGTH_SHORT).show();*/
                         
                         // 设置紧急求助状态为匹配中
                         isEmergencyHelpMatching = true;
@@ -387,7 +387,7 @@ public class HomeFragment extends Fragment {
                 Log.d(TAG, "紧急求助通话已结束");
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
-                        Toast.makeText(requireContext(), "通话已结束", Toast.LENGTH_SHORT).show();
+                       /* Toast.makeText(requireContext(), "通话已结束", Toast.LENGTH_SHORT).show();*/
                         // 重置状态，允许重新发起求助
                         isEmergencyHelpMatching = false;
                         // 确保EmergencyHelpManager状态也重置
@@ -405,7 +405,7 @@ public class HomeFragment extends Fragment {
                 Log.e(TAG, "紧急求助挂断失败: " + error);
                 if (isAdded()) {
                     requireActivity().runOnUiThread(() -> {
-                        Toast.makeText(requireContext(), "挂断失败: " + error, Toast.LENGTH_SHORT).show();
+                    /*    Toast.makeText(requireContext(), "挂断失败: " + error, Toast.LENGTH_SHORT).show();*/
                     });
                 }
             }
@@ -429,7 +429,7 @@ public class HomeFragment extends Fragment {
         String token = SharedPrefsUtil.getToken();
         if (token == null || token.isEmpty()) {
             Log.e(TAG, "Token为空，无法发起紧急求助");
-            Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
+          /*  Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();*/
             return;
         }
         
@@ -437,7 +437,7 @@ public class HomeFragment extends Fragment {
         String phone = SharedPrefsUtil.getPhone();
         if (phone == null || phone.isEmpty()) {
             Log.e(TAG, "手机号为空，无法发起紧急求助");
-            Toast.makeText(requireContext(), "用户信息异常，请重新登录", Toast.LENGTH_SHORT).show();
+          /*  Toast.makeText(requireContext(), "用户信息异常，请重新登录", Toast.LENGTH_SHORT).show();*/
             return;
         }
         

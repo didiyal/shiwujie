@@ -131,7 +131,7 @@ public class VideoCallManager {
     private void handleSocketLogin(SocketDataV0 data) {
         Log.e(TAG, "=== 收到Socket登录消息 ===");
         Log.e(TAG, "Socket登录成功");
-        showToast("Socket登录成功");
+     /*   showToast("Socket登录成功");*/
     }
     
     /**
@@ -154,7 +154,7 @@ public class VideoCallManager {
     private void handleVideoInitSuccess(SocketDataV0 data) {
         Log.e(TAG, "=== 收到视频初始化成功通知 ===");
         Log.e(TAG, "视频初始化成功: " + data.getCallId());
-        showToast("视频初始化成功");
+       /* showToast("视频初始化成功");*/
     }
     
     /**
@@ -176,7 +176,7 @@ public class VideoCallManager {
                 message = "通话状态：通话结束";
                 break;
         }
-        showToast(message);
+       /* showToast(message);*/
     }
     
     /**
