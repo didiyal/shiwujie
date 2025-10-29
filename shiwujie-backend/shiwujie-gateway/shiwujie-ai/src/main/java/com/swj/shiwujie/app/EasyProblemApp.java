@@ -2,6 +2,7 @@ package com.swj.shiwujie.app;
 
 
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import com.swj.shiwujie.chatmemory.EasyProblemAppRedisChatMemory;
@@ -242,7 +243,7 @@ public class EasyProblemApp {
                 cleanedResponse = cleanedResponse.substring(jsonStart, jsonEnd + 1);
 
                 // 使用Hutool解析JSON
-                cn.hutool.json.JSONObject jsonObject = JSONUtil.parseObj(cleanedResponse);
+                JSONObject jsonObject = JSONUtil.parseObj(cleanedResponse);
                 Integer type = jsonObject.getInt("type");
                 String data = jsonObject.getStr("data");
 

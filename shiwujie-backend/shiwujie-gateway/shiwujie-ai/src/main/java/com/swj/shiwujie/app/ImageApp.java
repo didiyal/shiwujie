@@ -4,7 +4,6 @@ package com.swj.shiwujie.app;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
@@ -28,7 +27,7 @@ public class ImageApp {
 
         // 模型名
         String model = chatModel.getDefaultOptions().getModel();
-        log.info(model);
+        log.info("图片处理模型" + model);
 
         this.chatClient = ChatClient.builder(chatModel)
                 .defaultAdvisors(

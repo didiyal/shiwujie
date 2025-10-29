@@ -5,7 +5,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.swj.shiwujie.app.EasyProblemApp;
 import com.swj.shiwujie.app.ImageApp;
-import com.swj.shiwujie.app.ToolChooseApp;
+import com.swj.shiwujie.test.NewApp;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -43,6 +43,9 @@ public class AiController {
     @Resource
     private EasyProblemApp easyProblemApp;
 
+    @Resource
+    private NewApp newApp;
+
     
     @Value("${upload.image-path:${user.home}/shiwujie/images}")
     private String imageUploadPath;
@@ -52,7 +55,7 @@ public class AiController {
      * @param imageFile 图片文件
      * @return 图片识别结果
      */
-    @PostMapping(path = "/doChatByImage",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(path = "/doChatByImage", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "图片识别(流式)")
     @SecurityRequirement(name = "Authorization")
     public Flux<String> doChatByImageStream(@RequestParam("imageFile") MultipartFile imageFile) {
@@ -60,7 +63,7 @@ public class AiController {
             Blind loginBlind = LoginUtils.getLoginBlind();
             Long blindId = loginBlind.getBlindId();
             // 判断参数是否合法
-            ThrowUtils.throwIf(ObjUtil.isNull(imageFile), ErrorCode.PARAMS_ERROR,"参数不合法");
+            ThrowUtils.throwIf(ObjUtil.isNull(imageFile), ErrorCode.PARAMS_ERROR, "参数不合法");
 
             String filePath = this.saveImageAndgetPath(imageFile, blindId);
 
@@ -69,13 +72,19 @@ public class AiController {
 
             // 使用doOnNext记录每个响应片段，避免重复订阅
             log.info("图片分析AI返回:");
-            return stringFlux.doOnNext(System.out::print);
+            return stringFlux
+                    .doOnNext(System.out::print)
+                    .onErrorResume(throwable -> {
+                        log.error("处理图片识别流时发生错误", throwable);
+                        return Flux.just("处理图片时发生错误，请稍后重试");
+                    });
 
         } catch (Exception e) {
             log.error("处理图片识别请求时发生错误", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "处理图片识别请求时发生错误");
         }
     }
+
 
     /**
      * 文本对话
@@ -145,6 +154,30 @@ public class AiController {
         return filePath;
     }
 
+
+    /**
+     * 新app测试
+     */
+    @PostMapping(path = "/NewApp",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "新app测试")
+    @SecurityRequirement(name = "Authorization")
+    public Flux<String> NewAppWithText(String text){
+        Blind loginBlind = LoginUtils.getLoginBlind();
+        Long blindId = loginBlind.getBlindId();
+
+        // 判断参数是否合法
+        ThrowUtils.throwIf(ObjUtil.hasEmpty(text), ErrorCode.PARAMS_ERROR,"参数不合法");
+
+        log.info("文字消息:{}",text);
+        Flux<String> stringFlux = newApp.doChatWithTextSSE(text,blindId);
+        // 使用doOnNext记录每个响应片段，避免重复订阅
+        log.info("文字消息AI返回:");
+        return stringFlux
+                .onBackpressureBuffer(5000) // 增加缓冲区
+                .doOnNext(System.out::print)
+                .doOnError(e -> log.error("流式输出发生错误", e)) // 添加错误日志
+                .doOnComplete(() -> log.info("流式输出完成")); // 添加完成日志
+    }
 
 
 }

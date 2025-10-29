@@ -7,6 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +32,8 @@ public class WebSearchTool {
      * @param query 搜索关键词
      * @return 搜索结果及详细内容的简化版本
      */
-    public String searchWeb(String query) {
+    @Tool(name = "Search web content and get detailed information automatically")
+    public String searchWeb(@ToolParam(description = "search_for_keywords") String query) {
         // 添加参数验证，防止null或空字符串导致的错误
         if (query == null || query.trim().isEmpty()) {
             return "错误：搜索关键词不能为空";
