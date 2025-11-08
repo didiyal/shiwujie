@@ -11,6 +11,12 @@ spring:
       connection-test-query: SELECT 1
       idle-timeout: 30000
       connection-timeout: 30000
+  # 在关闭时不等待 Lettuce 连接优雅退出，避免阻塞
+  redis:
+    lettuce:
+      shutdown-timeout: 0ms
+    # 设置合理超时时间，防止连接验证阻塞
+    timeout: 2s
 server:
   servlet:
     context-path: /api/user   # 确保这里没有设置特殊的context-path
@@ -30,7 +36,6 @@ dubbo:
     name: shiwujie-user
     logger: slf4j
     serialize-check-status: DISABLE
-    qos-port: 33320
   protocol:
     name: dubbo
     port: 50020

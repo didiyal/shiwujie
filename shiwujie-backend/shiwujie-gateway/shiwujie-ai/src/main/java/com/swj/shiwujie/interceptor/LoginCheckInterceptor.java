@@ -46,8 +46,18 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         log.info("请求的url: {}", url);
         // 获取Authorization请求头中的令牌（token）
         String header = req.getHeader("Authorization");
-        ThrowUtils.throwIf(header == null || !header.startsWith("Bearer "), ErrorCode.NOT_LOGIN, "未登录");
+//        ThrowUtils.throwIf(header == null || !header.startsWith("Bearer "), ErrorCode.NOT_LOGIN, "未登录");
 
+        // 默认用户登录
+        if(header == null || !header.startsWith("Bearer ")){
+            Blind blind = new Blind();
+            // 默认用户登录
+            blind.setBlindId(1L);
+            blind.setPhone("19872250169");
+            req.setAttribute("loginBlind", blind);
+            req.setAttribute("phone",blind.getPhone());
+            return true;
+        }
         // 提取 token 如果token为空，返回未登录信息
         String token = header.replace("Bearer ", "");
         ThrowUtils.throwIf(!StringUtils.hasLength(token), ErrorCode.NOT_LOGIN, "未登录");

@@ -65,7 +65,7 @@ public class EasyProblemAppRedisChatMemory implements ChatMemory {
         }
         
         log.debug("已向对话 [{}] 添加 {} 条消息，当前总消息数: {}",
-                conversationId, messages.size(), Math.min(existingMessages.size(), AiConstants.CONVERSATION_ROUND*2));
+                conversationId, messages.size(), existingMessages.size());
     }
 
     /**

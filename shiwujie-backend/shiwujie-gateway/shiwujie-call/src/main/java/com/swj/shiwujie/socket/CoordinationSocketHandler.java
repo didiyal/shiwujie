@@ -225,6 +225,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             channel.writeAndFlush(new TextWebSocketFrame(response));
             log.info("通知前端拍照识别 - 5001" );
         }else{
+            log.info("拍照识别找不到用户socket连接：{}", socketData.getBlindPhone());
             this.getResponse(1, "系统错误", socketData);
         }
     }
@@ -240,6 +241,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             channel.writeAndFlush(new TextWebSocketFrame(response));
             log.info("通知前端视频求助 - 5002" );
         }else{
+            log.info("视频求助找不到用户{}socket连接：", socketData.getBlindPhone());
             this.getResponse(1, "系统错误", socketData);
         }
 
@@ -256,6 +258,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             channel.writeAndFlush(new TextWebSocketFrame(response));
             log.info("通知前端紧急求助 - 5003" );
         }else{
+            log.info("紧急求助找不到用户{}socket连接：", socketData.getBlindPhone());
             this.getResponse(1, "系统错误", socketData);
         }
 
@@ -272,6 +275,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             channel.writeAndFlush(new TextWebSocketFrame(response));
             log.info("通知前端跳转软件 - 5004" );
         }else{
+            log.info("跳转软件找不到用户{}socket连接：", socketData.getBlindPhone());
             this.getResponse(1, "系统错误", socketData);
         }
 
@@ -288,6 +292,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             channel.writeAndFlush(new TextWebSocketFrame(response));
             log.info("通知前端跳转到用户修改页面 - 5005" );
         }else{
+            log.info("跳转到用户修改页面找不到用户{}socket连接：", socketData.getBlindPhone());
             this.getResponse(1, "系统错误", socketData);
         }
     }
@@ -302,6 +307,7 @@ public class CoordinationSocketHandler extends SimpleChannelInboundHandler<TextW
             channel.writeAndFlush(new TextWebSocketFrame(response));
             log.info("通知前端开启导航 - 5006" );
         }else{
+            log.info("导航找不到用户{}socket连接：", socketData.getBlindPhone());
             this.getResponse(1, "系统错误", socketData);
         }
 
