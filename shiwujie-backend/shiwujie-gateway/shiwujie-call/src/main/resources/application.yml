@@ -42,4 +42,6 @@ dubbo:
   registry:
     address: nacos://${nacos.address:127.0.0.1}:8848?username=nacos&password=nacos
     timeout: 5000
+    parameters:
+      empty-protection: true   # 关键：开启空保护
 
