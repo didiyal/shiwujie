@@ -12,13 +12,6 @@ spring:
     username: shiwujieAi
     password: PbEbzPLk6XEDj3aC
     url: jdbc:mysql://127.0.0.1:3306/shiwujieai
-#  #数据库连接 - pgSQL
-#  datasource:
-#    driver-class-name: org.postgresql.Driver
-#    username: shiwujieAiPg
-#    password: z4MEZxxxYGjrND7m
-#    url: jdbc:postgresql://127.0.0.1:5432/shiwujieaipg
-
 
 
 
