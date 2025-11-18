@@ -3,6 +3,7 @@ package com.swj.shiwujie.tools.mytools;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,6 +20,7 @@ import java.util.Map;
  * 网页搜索工具
  */
 @Component
+@Slf4j
 public class WebSearchTool {
 
     private static final String SEARCH_API_URL = "https://www.searchapi.io/api/v1/search";
@@ -34,40 +36,40 @@ public class WebSearchTool {
      */
     @Tool(name = "Search web content and get detailed information automatically")
     public String searchWeb(@ToolParam(description = "search_for_keywords") String query) {
+        log.info("用户搜索：{}", query);
         // 添加参数验证，防止null或空字符串导致的错误
         if (query == null || query.trim().isEmpty()) {
             return "错误：搜索关键词不能为空";
         }
-        
         try {
             Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("q", query);
             paramMap.put("api_key", apiKey);
             paramMap.put("engine", "baidu");
-            
+
             String response = cn.hutool.http.HttpUtil.get(SEARCH_API_URL, paramMap);
             JSONObject jsonObject = JSONUtil.parseObj(response);
             JSONArray organicResults = jsonObject.getJSONArray("organic_results");
-            
+
             if (organicResults == null || organicResults.isEmpty()) {
                 return "未找到相关搜索结果";
             }
-            
+
             // 取前3个结果以避免内容过多
             int resultCount = Math.min(3, organicResults.size());
-            
+
             StringBuilder result = new StringBuilder();
             result.append("关于 \"").append(query).append("\" 的搜索结果:\n\n");
-            
+
             for (int i = 0; i < resultCount; i++) {
                 JSONObject item = (JSONObject) organicResults.get(i);
                 String title = item.getStr("title", "无标题");
                 String link = item.getStr("link", "");
                 String snippet = item.getStr("snippet", "无描述");
-                
+
                 result.append("结果 ").append(i + 1).append(":\n");
                 result.append("标题: ").append(title).append("\n");
-                
+
                 // 尝试获取网页详细内容
                 String content = getWebPageSummary(link);
                 if (!content.startsWith("获取失败")) {
@@ -78,7 +80,7 @@ public class WebSearchTool {
                 }
                 result.append("\n");
             }
-            
+
             return result.toString();
         } catch (Exception e) {
             return "搜索失败: " + e.getMessage();

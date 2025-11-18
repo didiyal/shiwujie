@@ -3,18 +3,17 @@ package com.swj.shiwujie.tools.app;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.swj.shiwujie.common.ErrorCode;
-import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.family.FamilyVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.service.user.InnerFamilyService;
 import com.swj.shiwujie.utils.LoginUtils;
+import com.swj.shiwujie.utils.ThrowUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -37,9 +36,10 @@ public class UserTools {
      * @param familyVolunteerPhone 家庭创建人手机号
      * @return 申请结果
      */
-    @Tool(name = "申请加入家庭", description = "帮助用户完成加入家庭的操作，在用户提供家庭创建人手机号并确认后调用此工具")
-    public String joinFamily(@ToolParam(description = "家庭创建人的手机号，用于申请加入家庭") String familyVolunteerPhone) {
+    @Tool(name = "Apply to join family", description = "Help users complete the process of joining a family. This tool is called after the user provides the family creator's phone number and confirms.")
+    public String joinFamily(@ToolParam(description = "Family creator's phone number, used to apply to join the family") String familyVolunteerPhone) {
         try {
+            log.info("用户申请加入家庭");
             Blind loginBlind = LoginUtils.getLoginBlind();
             Long familyId = loginBlind.getFamilyId();
             if(ObjUtil.isNotNull(familyId)){
@@ -61,9 +61,10 @@ public class UserTools {
      *
      * @return 退出结果
      */
-    @Tool(name = "退出家庭", description = "帮助用户退出当前所在的家庭")
+    @Tool(name = "Leave family", description = "Help users leave their current family")
     public String leaveFromFamily() {
         try {
+            log.info("用户退出家庭");
             Blind loginBlind = LoginUtils.getLoginBlind();
             boolean b = innerFamilyService.userLeaveFromFamily(loginBlind.getBlindId(), null, LoginUtils.getLoginUserPhone());
             if (b) return "退出家庭成功";
@@ -80,9 +81,10 @@ public class UserTools {
      *
      * @return 家庭信息
      */
-    @Tool(name = "获取用户的家庭信息", description = "获取用户当前家庭的详细信息，包括家庭名称和成员列表")
+    @Tool(name = "Get user's family information", description = "Get detailed information about the user's current family, including family name and member list")
     public String getFamilyInfo() {
         try {
+            log.info("获取用户的家庭信息");
             Blind loginBlind = LoginUtils.getLoginBlind();
             FamilyVO familyVO = innerFamilyService.getFamilyVOById(loginBlind.getFamilyId(), LoginUtils.getLoginUserPhone());
             VolunteerVO creatorVolunteer = familyVO.getCreatorVolunteer();
@@ -112,13 +114,5 @@ public class UserTools {
             return "获取家庭信息失败" + e.getMessage();
         }
     }
-
-
-    @Tool(name = "前往社区加入页面", description = "引导用户前往社区加入页面")
-    public String joinCommunity() {
-        //todo 页面通知前端页面跳转
-        return "社区只能手动加入,正在帮您跳转页面";
-    }
-
 
 }

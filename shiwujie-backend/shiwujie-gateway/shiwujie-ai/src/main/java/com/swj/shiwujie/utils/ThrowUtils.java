@@ -1,7 +1,8 @@
-package com.swj.shiwujie.exception;
+package com.swj.shiwujie.utils;
 
 
 import com.swj.shiwujie.common.ErrorCode;
+import com.swj.shiwujie.exception.BusinessException;
 
 /**
  * 抛异常工具类
