@@ -28,11 +28,6 @@ public interface AiConstants {
     String KNOWLEDGE_INDEX = "视无界";
 
 
-    /**
-     * 对话语气
-     */
-    Map<Long,String> clientTone = new HashMap<>();
-
 
     /**
      * Redis键前缀

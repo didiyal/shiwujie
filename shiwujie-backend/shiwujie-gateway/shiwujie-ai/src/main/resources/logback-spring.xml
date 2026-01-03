@@ -30,9 +30,9 @@
 
     <!-- 特定包的日志级别 -->
     <logger name="com.swj.shiwujie.interceptor" level="INFO"/>
-    <logger name="com.swj.shiwujie.service" level="INFO"/>
+    <logger name="com.swj.shiwujie.service" level="DEBUG"/>
     <logger name="com.swj.shiwujie.controller" level="INFO"/>
-    <logger name="com.swj.shiwujie.chatmemory" level="INFO"/>
+    <logger name="com.swj.shiwujie.chatmemory" level="DEBUG"/>
     <logger name="com.swj.shiwujie.advisor" level="INFO"/>
     <logger name="com.swj.shiwujie.app" level="DEBUG"/>
     <logger name="com.swj.shiwujie.tools" level="INFO"/>

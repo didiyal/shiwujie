@@ -2,13 +2,13 @@ spring:
   #redis配置
   redis:
     port: 6379
-    host: 127.0.0.1
+    host: 47.112.114.139
     database: 2
     password: 123456
   #数据库连接
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: shiwujieCommunity
+    username: shiwujiecommunity
     password: JRM582hhtidPtFrG
-    url: jdbc:mysql://127.0.0.1:3306/shiwujiecommunity
+    url: jdbc:mysql://47.112.114.139:3306/shiwujiecommunity
 

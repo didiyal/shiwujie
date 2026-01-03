@@ -83,27 +83,21 @@ public class ToolChoiceCenter {
                     return "缺少必要参数：目的地";
                 }
                 return frontendTools.noticeNavigation(destination);
-            case 5:// 切换语气
-                String tone = parseJsonParam(jsonStr, "tone");
-                if (tone == null) {
-                    return "缺少必要参数：语气";
-                }
-                return aiModelTools.switchModelTone(tone);
-            case 6:// 志愿者视频求助功能
+            case 5:// 志愿者视频求助功能
                 frontendTools.noticeVideoHelp();
                 return "执行成功,已帮您开启视频求助";
-            case 7:// 家属视频求助功能
+            case 6:// 家属视频求助功能
                 frontendTools.noticeUrgentHelp();
                 return "执行成功,已帮您开启视频求助";
-            case 8:// 加入家庭 - 需要家庭创建人手机号
+            case 7:// 加入家庭 - 需要家庭创建人手机号
                 String phone = parseJsonParam(jsonStr, "familyVolunteerPhone");
                 if (phone == null) {
                     return "缺少必要参数：家庭创建人手机号";
                 }
                 return userTools.joinFamily(phone);
-            case 9:// 查看家庭信息
+            case 8:// 查看家庭信息
                 return userTools.getFamilyInfo();
-            case 10:// 退出家庭
+            case 9:// 退出家庭
                 return userTools.leaveFromFamily();
 
             default:

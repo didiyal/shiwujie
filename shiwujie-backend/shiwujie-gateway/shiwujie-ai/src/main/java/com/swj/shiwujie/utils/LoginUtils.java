@@ -1,6 +1,11 @@
 package com.swj.shiwujie.utils;
 
+import cn.hutool.core.convert.Convert;
+import cn.hutool.core.lang.TypeReference;
 import com.swj.shiwujie.model.domain.user.Blind;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 
 /**
@@ -15,15 +20,11 @@ public class LoginUtils {
      * @return
      */
     public static Blind getLoginBlind() {
-//        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-//        Blind loginBlind = Convert.convert(new TypeReference<Blind>() {
-//        }, request.getAttribute("loginBlind"));
-//
-//        return loginBlind;
-        Blind blind = new Blind();
-        blind.setBlindId(1L);
-        blind.setPhone("19872250169");
-        return blind;
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        Blind loginBlind = Convert.convert(new TypeReference<Blind>() {
+        }, request.getAttribute("loginBlind"));
+
+        return loginBlind;
     }
 
 
@@ -35,9 +36,8 @@ public class LoginUtils {
      * @return
      */
     public static String getLoginUserPhone() {
-//        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-//        return (String)request.getAttribute("phone");
-        return "19872250169";
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        return (String)request.getAttribute("phone");
     }
 
 

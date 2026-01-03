@@ -63,16 +63,12 @@ public class ChatServiceImpl implements ChatService {
     public Flux<String> doChatWithTextSSE(String text, Long blindId) {
 
         // 第一阶段：使用非流式调用获取AI响应
-        String tone = AiConstants.clientTone.get(blindId);
-        tone = ObjUtil.isNull(tone) ? "Normal" : tone;
-        String problem = "你正在使用" + tone + "语气。用户的问题是" + text;
-
-        String toolHandleResult = toolHandle(blindId, problem);
+        String toolHandleResult = toolHandle(blindId, text);
 
         // 第二阶段：将工具结果反馈给AI并流式输出最终结果
         String finalPrompt = String.format(
-                "用户的问题是：%s\n工具执行结果是：%s\n若执行了工具,请参考工具执行结果，使用%s的语气，回答用户最初的问题。",
-                text, toolHandleResult, tone);
+                "用户的问题是：%s，工具执行结果是：%s，若执行了工具,请参考工具执行结果，回答用户的问题。",
+                text, toolHandleResult);
         return textApp.doChat(finalPrompt, blindId);
 
 

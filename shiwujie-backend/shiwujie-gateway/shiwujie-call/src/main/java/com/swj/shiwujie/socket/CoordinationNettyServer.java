@@ -13,6 +13,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Controller;
 
@@ -22,6 +23,11 @@ public class CoordinationNettyServer {
     @Autowired
     private CoordinationSocketHandler coordinationSocketHandler;
 
+
+    @Value("${socket.port}")
+    private Integer socketPort;
+
+
     public void start() throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup group = new NioEventLoopGroup();
@@ -30,7 +36,7 @@ public class CoordinationNettyServer {
             sb.option(ChannelOption.SO_BACKLOG, 1024);
             sb.group(group, bossGroup) // 绑定线程池
                     .channel(NioServerSocketChannel.class) // 指定使用的channel
-                    .localAddress(8350)// 绑定监听端口
+                    .localAddress(socketPort)// 绑定监听端口
                     .childHandler(new ChannelInitializer<SocketChannel>() { // 绑定客户端连接时候触发操作
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {

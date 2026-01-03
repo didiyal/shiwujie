@@ -30,16 +30,5 @@ public class AiModelTools {
 
 
 
-    /**
-     * 切换回答语气
-     */
-    @Tool(name = "Switch tone")
-    public String switchModelTone(@ToolParam (description = "Tone to switch to") String tone) {
-        log.info("切换语气{}", tone);
-        Blind blind = LoginUtils.getLoginBlind();
-        Long blindId = blind.getBlindId();
-        AiConstants.clientTone.put(blindId, tone);
-        return "已切换至" + tone + "语气";
-    }
 
 }
