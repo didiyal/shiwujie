@@ -20,6 +20,14 @@ spring:
     chat:
       client:
         enabled: true
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 47.112.114.139:8848
+        username: nacos
+        password: nacos
+    compatibility-verifier:
+      enabled: false
 # 明确指定日志配置
 logging:
   config: classpath:logback-spring.xml

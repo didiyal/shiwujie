@@ -4,36 +4,41 @@ spring:
   profiles:
     active: dev
   cloud:
+    nacos:
+      discovery:
+        server-addr: 47.112.114.139:8848
+        namespace: public
+        group: DEFAULT_GROUP
     gateway:
       routes:
         # 用户端转发
         - id: route_user
-          uri: http://localhost:8200
+          uri: lb://shiwujieUser
           predicates:
             - Path=/api/user/**
         # 视频转发配置
         - id: route_call
-          uri: http://localhost:8300
+          uri: lb://shiwujieCall
           predicates:
             - Path=/api/call/**
         # SockJS route
         - id: websocket_sockjs_route
-          uri: http://localhost:8350
+          uri: lb://shiwujieCall
           predicates:
             - Path=/api/ws/call
         # Normal Websocket route
         - id: websocket_route
-          uri: ws://localhost:8350
+          uri: lb:ws://shiwujieCall
           predicates:
             - Path=/api/ws/call
         # 社区转发配置
         - id: route_community
-          uri: http://localhost:8400
+          uri: lb://shiwujieCommunity
           predicates:
             - Path=/api/community/**
-        # 社区转发配置
+        # AI转发配置
         - id: route_ai
-          uri: http://localhost:8500
+          uri: lb://shiwujieAi
           predicates:
             - Path=/api/ai/**
 server:
@@ -61,7 +66,7 @@ knife4j:
         order: 2
       - name: call
         url: /api/call/v2/api-docs?group=call
-        service-name: order-service
+        service-name: call-service
         # 路由前缀
         context-path: /
         order: 3

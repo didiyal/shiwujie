@@ -17,6 +17,9 @@ spring:
       shutdown-timeout: 0ms
     # 设置合理超时时间，防止连接验证阻塞
     timeout: 2s
+  cloud:
+    nacos:
+      server-addr: 47.112.114.139:8848
 server:
   servlet:
     context-path: /api/user   # 确保这里没有设置特殊的context-path
