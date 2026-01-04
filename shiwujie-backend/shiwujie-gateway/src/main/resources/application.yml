@@ -1,6 +1,6 @@
 spring:
   application:
-    name: shiwujieGatewaty
+    name: shiwujieGateway
   profiles:
     active: dev
   cloud:
@@ -36,39 +36,10 @@ spring:
           uri: http://localhost:8500
           predicates:
             - Path=/api/ai/**
-#  cloud:
-#    gateway:
-#      routes:
-#        # 用户端转发
-#        - id: route_user
-#          uri: lb://shiwujie-user
-#          predicates:
-#            - Path=/api/user/**
-#        # 视频转发配置
-#        - id: route_call
-#          uri: lb://shiwujie-call
-#          predicates:
-#            - Path=/api/call/**
-#        # Normal Websocket route
-#        - id: websocket_route
-#          uri: lb:ws://shiwujie-call
-#          predicates:
-#            - Path=/api/ws/call
-#        # 社区转发配置
-#        - id: route_community
-#          uri: lb://shiwujie-community
-#          predicates:
-#            - Path=/api/community/**
-#        # 社区转发配置
-#        - id: route_ai
-#          uri: lb://shiwujie-ai
-#          predicates:
-#            - Path=/api/ai/**
 server:
   servlet:
-    context-path: /api  #  确保这里没有设置特殊的context-path
+    context-path: /  # 调整为根路径，避免与路由规则冲突
   port: 8100
-
 knife4j:
   # 聚合swagger文档
   gateway:
@@ -100,7 +71,6 @@ knife4j:
         # 路由前缀
         context-path: /
         order: 4
-
 
 
 
