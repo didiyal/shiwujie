@@ -45,6 +45,4 @@ dubbo:
     timeout: 5000
     parameters:
       empty-protection: true   # 关键：开启空保护
-socket:
-  port: 8350
 
