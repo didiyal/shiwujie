@@ -26,6 +26,7 @@ spring:
         server-addr: 47.112.114.139:8848
         username: nacos
         password: nacos
+        ip: 47.112.114.139 #当使用公网nacos时使用自己的公网ip，否则nacos注册服务会报ip错误，其余127.0.0.1即可
     compatibility-verifier:
       enabled: false
 # 明确指定日志配置

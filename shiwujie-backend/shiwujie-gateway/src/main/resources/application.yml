@@ -7,8 +7,7 @@ spring:
     nacos:
       discovery:
         server-addr: 47.112.114.139:8848
-        namespace: public
-        group: DEFAULT_GROUP
+        ip: 47.112.114.139
     gateway:
       routes:
         # 用户端转发
