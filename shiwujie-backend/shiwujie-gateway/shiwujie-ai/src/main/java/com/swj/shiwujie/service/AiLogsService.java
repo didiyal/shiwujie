@@ -1,7 +1,7 @@
 package com.swj.shiwujie.service;
 
-import com.swj.shiwujie.model.domain.ai.AiLogs;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.swj.shiwujie.model.domain.ai.AiLogs;
 
 /**
 * @author Administrator

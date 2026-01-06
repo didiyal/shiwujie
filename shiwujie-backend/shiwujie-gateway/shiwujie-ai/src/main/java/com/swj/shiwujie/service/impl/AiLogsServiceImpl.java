@@ -1,9 +1,9 @@
 package com.swj.shiwujie.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.swj.shiwujie.mapper.AiLogsMapper;
 import com.swj.shiwujie.model.domain.ai.AiLogs;
 import com.swj.shiwujie.service.AiLogsService;
-import com.swj.shiwujie.mapper.AiLogsMapper;
 import org.springframework.stereotype.Service;
 
 /**

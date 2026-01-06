@@ -11,6 +11,17 @@ spring:
       connection-test-query: SELECT 1
       idle-timeout: 30000
       connection-timeout: 30000
+  # 在关闭时不等待 Lettuce 连接优雅退出，避免阻塞
+  redis:
+    lettuce:
+      shutdown-timeout: 0ms
+    # 设置合理超时时间，防止连接验证阻塞
+    timeout: 2s
+  cloud:
+    nacos:
+      server-addr: 47.112.114.139:8848
+      discovery:
+        ip: 47.92.170.90 #上传到nacos时的公网ip
 server:
   servlet:
     context-path: /api/call   # 确保这里没有设置特殊的context-path
@@ -29,12 +40,13 @@ dubbo:
   application:
     name: shiwujie-call
     logger: slf4j
-    qos-port: 33330
     serialize-check-status: DISABLE
+    qos-enable: false
   protocol:
     name: dubbo
-    port: 50030
+    port: 50300
   registry:
-    address: nacos://${nacos.address:127.0.0.1}:8848?username=nacos&password=nacos
+    address: nacos://${nacos.address:47.112.114.139}:8848?username=nacos&password=nacos
     timeout: 5000
-
+    parameters:
+      empty-protection: true   # 关键：开启空保护

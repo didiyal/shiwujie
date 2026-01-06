@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
  */
 public class ToolCallRequest {
 
-    private Integer type;
+    private Integer toolType;
 
 
     private String data;

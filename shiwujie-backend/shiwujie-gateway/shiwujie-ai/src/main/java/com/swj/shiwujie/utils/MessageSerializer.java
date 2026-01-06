@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,7 @@ public class MessageSerializer {
 
     /**
      * 使用Kryo将Message序列化为Base64字符串
+     * 对于大消息进行截断处理，避免数据库字段溢出
      */
     public static String serialize(Message message) {
         if (message == null) {
@@ -44,7 +46,19 @@ public class MessageSerializer {
             kryo.writeClassAndObject(output, message);
             output.flush();
 
-            return Base64.getEncoder().encodeToString(baos.toByteArray());
+            byte[] data = baos.toByteArray();
+            String base64 = Base64.getEncoder().encodeToString(data);
+
+            // MySQL的LONGTEXT最大可以存储4GB数据，一般来说足够使用
+            // 如果需要限制大小，可以取消下面的注释
+//            if (base64.length() > 65535) {
+//                // 如果序列化后的内容超过65KB，进行截断处理并记录日志
+//                System.err.println("警告：消息内容过长，已截断: " + base64.length() + " 字符");
+//                base64 = base64.substring(0, 65535);
+//            }
+
+
+            return base64;
         } catch (IOException e) {
             throw new RuntimeException("消息序列化失败", e);
         }
@@ -64,8 +78,10 @@ public class MessageSerializer {
             // 获取当前线程的Kryo实例
             Kryo kryo = KRYO_THREAD_LOCAL.get();
             return (Message) kryo.readClassAndObject(input);
-        } catch (IOException e) {
-            throw new RuntimeException("消息反序列化失败", e);
+        } catch (Exception e) {
+            // 如果反序列化失败，创建一个默认的消息对象
+            System.err.println("消息反序列化失败，创建默认消息对象: " + e.getMessage());
+            return new AssistantMessage("【消息内容已损坏或过长】");
         }
     }
 }

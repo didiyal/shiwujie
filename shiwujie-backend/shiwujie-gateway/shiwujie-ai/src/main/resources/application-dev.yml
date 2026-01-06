@@ -3,25 +3,12 @@ spring:
   data:
     redis:
       port: 6379
-      host: 43.139.38.62
+      host: 47.112.114.139
       database: 2
       password: 123456
   #数据库连接 - mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: shiwujieAi
+    username: shiwujieai
     password: PbEbzPLk6XEDj3aC
-    url: jdbc:mysql://43.139.38.62:3306/shiwujieai
-#修改spring ai 日志级别
-logging:
-  level:
-    org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor: debug
-#  #数据库连接 - pgSQL
-#  datasource:
-#    driver-class-name: org.postgresql.Driver
-#    username: shiwujieAiPg
-#    password: z4MEZxxxYGjrND7m
-#    url: jdbc:postgresql://43.139.38.62:5432/shiwujieaipg
-
-
-
+    url: jdbc:mysql://47.112.114.139:3306/shiwujieai

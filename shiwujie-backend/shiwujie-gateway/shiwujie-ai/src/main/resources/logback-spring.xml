@@ -29,7 +29,14 @@
     </root>
 
     <!-- 特定包的日志级别 -->
-    <logger name="com.swj.shiwujie" level="DEBUG"/>
+    <logger name="com.swj.shiwujie.interceptor" level="INFO"/>
+    <logger name="com.swj.shiwujie.service" level="DEBUG"/>
+    <logger name="com.swj.shiwujie.controller" level="INFO"/>
+    <logger name="com.swj.shiwujie.chatmemory" level="INFO"/>
+    <logger name="com.swj.shiwujie.advisor" level="INFO"/>
+    <logger name="com.swj.shiwujie.app" level="DEBUG"/>
+    <logger name="com.swj.shiwujie.tools" level="INFO"/>
+    <logger name="com.swj.shiwujie.mapper" level="INFO"/>
     <logger name="org.springframework" level="INFO"/>
     <logger name="org.apache.dubbo" level="INFO"/>
 </configuration>

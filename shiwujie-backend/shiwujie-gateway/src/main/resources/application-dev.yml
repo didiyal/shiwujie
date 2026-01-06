@@ -1,41 +1,7 @@
-spring:
-  cloud:
-    gateway:
-      routes:
-    # 用户端转发
-        - id: route_user
-          uri: http://localhost:8200
-          predicates:
-            - Path=/api/user/**
-    # 视频转发配置
-        - id: route_call
-          uri: http://localhost:8300
-          predicates:
-            - Path=/api/call/**
-        # SockJS route
-        - id: websocket_sockjs_route
-          uri: http://localhost:8350
-          predicates:
-            - Path=/api/ws/call
-        # Normal Websocket route
-        - id: websocket_route
-          uri: ws://localhost:8350
-          predicates:
-            - Path=/api/ws/call
-    # 社区转发配置
-        - id: route_community
-          uri: http://localhost:8400
-          predicates:
-            - Path=/api/community/**
-    # 社区转发配置
-        - id: route_ai
-          uri: http://localhost:8500
-          predicates:
-            - Path=/api/ai/**
-#logging:
-#  level:
-#    org:
-#      springframework:
-#        cloud:
-#          gateway: trace
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: trace
 

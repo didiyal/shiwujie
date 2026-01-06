@@ -2,23 +2,23 @@ package com.swj.shiwujie.interceptor;
 
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
-import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.service.user.InnerBlindService;
 import com.swj.shiwujie.utils.JwtUtils;
-import com.swj.shiwujie.utils.RedisUtils;
+import com.swj.shiwujie.utils.ThrowUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
 import static com.swj.shiwujie.constants.UserConstants.TOKEN_SECRETKEY;
@@ -30,7 +30,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
 
 
     @Resource
-    private RedisUtils redisUtils;
+    private RedisTemplate<String, Object> redisTemplate;
 
     @DubboReference
     private InnerBlindService innerBlindService;
@@ -46,8 +46,18 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         log.info("请求的url: {}", url);
         // 获取Authorization请求头中的令牌（token）
         String header = req.getHeader("Authorization");
-        ThrowUtils.throwIf(header == null || !header.startsWith("Bearer "), ErrorCode.NOT_LOGIN, "未登录");
+//        ThrowUtils.throwIf(header == null || !header.startsWith("Bearer "), ErrorCode.NOT_LOGIN, "未登录");
 
+        // 默认用户登录
+        if(header == null || !header.startsWith("Bearer ")){
+            Blind blind = new Blind();
+            // 默认用户登录
+            blind.setBlindId(1L);
+            blind.setPhone("19872250169");
+            req.setAttribute("loginBlind", blind);
+            req.setAttribute("phone",blind.getPhone());
+            return true;
+        }
         // 提取 token 如果token为空，返回未登录信息
         String token = header.replace("Bearer ", "");
         ThrowUtils.throwIf(!StringUtils.hasLength(token), ErrorCode.NOT_LOGIN, "未登录");
@@ -66,7 +76,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
             throw new BusinessException(ErrorCode.NOT_LOGIN, "未登录");
         }
         // 检查 Redis 中的令牌信息
-        Object fromRedisObj = redisUtils.getFromRedis(REDIS_SECRETKEY + "-blind-" + blindId );
+        Object fromRedisObj = redisTemplate.opsForValue().get(REDIS_SECRETKEY + "-blind-" + blindId );
         ThrowUtils.throwIf(fromRedisObj == null,ErrorCode.NOT_LOGIN, "未登录");
 
         // 比对token是否相同
@@ -74,7 +84,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         ThrowUtils.throwIf(!token.equals(tokenFromRedis),ErrorCode.NOT_LOGIN, "未登录");
 
         // 续期 Redis 中的用户信息
-        redisUtils.renewKey(REDIS_SECRETKEY+"-"+ blindId, 1L); // 续期 24 小时
+        redisTemplate.expire(REDIS_SECRETKEY+"-"+ blindId, 1L, TimeUnit.DAYS);
 
         Blind blind = innerBlindService.getById(blindId);
 

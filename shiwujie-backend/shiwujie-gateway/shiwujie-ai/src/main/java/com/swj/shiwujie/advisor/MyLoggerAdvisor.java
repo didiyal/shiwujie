@@ -1,53 +1,46 @@
 package com.swj.shiwujie.advisor;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.advisor.api.*;
-import org.springframework.ai.chat.model.MessageAggregator;
+import org.springframework.ai.chat.client.ChatClientMessageAggregator;
+import org.springframework.ai.chat.client.ChatClientRequest;
+import org.springframework.ai.chat.client.ChatClientResponse;
+import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
+import org.springframework.ai.chat.client.advisor.api.CallAdvisorChain;
+import org.springframework.ai.chat.client.advisor.api.StreamAdvisor;
+import org.springframework.ai.chat.client.advisor.api.StreamAdvisorChain;
 import reactor.core.publisher.Flux;
 
-/**
- * 自定义 日志advisor
- * 自定义日志记录
- */
 @Slf4j
-public class MyLoggerAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
+public class MyLoggerAdvisor implements CallAdvisor, StreamAdvisor {
+    private int order;
+
+    public MyLoggerAdvisor() {
+        this.order = 10086;
+    }
+
+
+    public ChatClientResponse adviseCall(ChatClientRequest chatClientRequest, CallAdvisorChain callAdvisorChain) {
+        log.debug("请求: {},token大小: {}", chatClientRequest.prompt().getUserMessage().getText(), chatClientRequest.prompt().getUserMessage().getText().length());
+        ChatClientResponse chatClientResponse = callAdvisorChain.nextCall(chatClientRequest);
+        log.debug("响应: {}", chatClientResponse.chatResponse().getResult().getOutput().getText());
+        return chatClientResponse;
+    }
+
+    public Flux<ChatClientResponse> adviseStream(ChatClientRequest chatClientRequest, StreamAdvisorChain streamAdvisorChain) {
+        log.debug("请求: {},token大小: {}", chatClientRequest.prompt().getUserMessage().getText(), chatClientRequest.prompt().getUserMessage().getText().length());
+        Flux<ChatClientResponse> chatClientResponses = streamAdvisorChain.nextStream(chatClientRequest);
+        return (new ChatClientMessageAggregator()).aggregateChatClientResponse(chatClientResponses, (chatClientResponse) -> {
+            log.debug("流式响应: {}", chatClientResponse.chatResponse().getResult().getOutput().getText());
+        });
+    }
+
+
     public String getName() {
         return this.getClass().getSimpleName();
     }
 
     public int getOrder() {
-        return 100;
+        return this.order;
     }
 
-    private AdvisedRequest before(AdvisedRequest request) {
-        log.info("----------------------------------------------\n");
-        log.info("AI request:{}",request.userText());
-        return request;
-    }
-
-    private void observeAfter(AdvisedResponse advisedResponse) {
-        log.info("AI response:{}",advisedResponse.response().getResult().getOutput().getText());
-        log.info("----------------------------------------------\n");
-    }
-
-
-    public AdvisedResponse aroundCall(AdvisedRequest advisedRequest, CallAroundAdvisorChain chain) {
-
-        advisedRequest = this.before(advisedRequest);
-
-        AdvisedResponse advisedResponse = chain.nextAroundCall(advisedRequest);
-
-        this.observeAfter(advisedResponse);
-
-        return advisedResponse;
-    }
-
-    public Flux<AdvisedResponse> aroundStream(AdvisedRequest advisedRequest, StreamAroundAdvisorChain chain) {
-
-        advisedRequest = this.before(advisedRequest);
-
-        Flux<AdvisedResponse> advisedResponses = chain.nextAroundStream(advisedRequest);
-
-        return (new MessageAggregator()).aggregateAdvisedResponse(advisedResponses, this::observeAfter);
-    }
 }
