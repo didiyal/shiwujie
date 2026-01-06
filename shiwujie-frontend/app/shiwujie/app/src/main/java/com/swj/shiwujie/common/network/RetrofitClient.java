@@ -8,7 +8,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 import java.util.concurrent.TimeUnit;
 
 public class RetrofitClient {
-    private static final String BASE_URL = "http://43.139.38.62:8100";
+    private static final String BASE_URL = "http://47.112.114.139:8100";
     private static RetrofitClient instance;
     private final Retrofit retrofit;
 

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
-    private static final String WS_URL = "ws://43.139.38.62:8100/api/ws/call";
+    private static final String WS_URL = "ws://47.112.114.139:8100/api/ws/call";
     
     private static WebSocketManager instance;
     private WebSocketClient webSocketClient;
