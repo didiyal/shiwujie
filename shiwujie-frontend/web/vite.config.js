@@ -16,7 +16,7 @@ export default defineConfig({
     proxy: {
       // 代理所有 /api 请求到后端
       '/api': {
-        target: 'http://localhost:8400', // 后端服务器地址
+        target: 'http://47.112.114.139:8100', // 后端服务器地址
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path // 保持 /api 前缀
