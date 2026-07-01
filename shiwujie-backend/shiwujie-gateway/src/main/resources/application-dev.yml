@@ -1,7 +1,11 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        ip: 127.0.0.1   # 本机调试时注册到 nacos 的 IP
 logging:
   level:
     org:
       springframework:
         cloud:
           gateway: trace
-

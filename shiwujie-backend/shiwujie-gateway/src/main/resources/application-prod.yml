@@ -1,0 +1,5 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        ip: 47.112.114.139   # 部署到服务器时注册到 nacos 的 IP

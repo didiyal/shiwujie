@@ -1,16 +1,8 @@
 spring:
-  #redis配置
-  redis:
-    port: 6379
-    host: 47.112.114.139
-    database: 2
-    password: 123456
-  #数据库连接
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: shiwujieuser
-    password: iiyKs4CaXfLmRnk8
-    url: jdbc:mysql://47.112.114.139:3306/shiwujieuser
+  cloud:
+    nacos:
+      discovery:
+        ip: 127.0.0.1   # 本机调试时注册到 nacos 的 IP
 # 打开mybatis的日志
 mybatis-plus:
   configuration:
@@ -20,4 +12,3 @@ logging:
   level:
     com.swj.shiwujie: DEBUG
     org.springframework.web.socket: DEBUG
-
