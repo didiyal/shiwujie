@@ -85,6 +85,6 @@
 | Nacos | `47.112.114.139:8848` | 服务注册 + Dubbo 注册中心 |
 | MySQL | `47.112.114.139:3306` | 4 库：shiwujieuser / shiwujiecall / shiwujiecommunity / shiwujieai |
 | Redis | `47.112.114.139:6379` | db=2 共享；token key 前缀 `REDIS_SECRETKEY-{role}-{id}` |
-| 注册 IP | dev=`127.0.0.1` / prod=`47.112.114.139` | profile 覆盖 `spring.cloud.nacos.discovery.ip` |
+| 注册 IP | dev=`127.0.0.1` / prod=`47.112.114.139` | SC 发现：profile 覆盖 `spring.cloud.nacos.discovery.ip`；**Dubbo 注册：启动命令 `-DDUBBO_IP_TO_REGISTRY`**（详见 [`gateway-dubbo.md`](gateway-dubbo.md)） |
 
 > 凭据已抽取为 `${ENV:default}` 占位符（`MYSQL_PASSWORD` / `REDIS_PASSWORD` / `NACOS_USERNAME` / `NACOS_PASSWORD` / `DASHSCOPE_API_KEY` / `SEARCH_API_KEY`），default 值仍硬编码在 yml（按用户要求保留在配置里）。

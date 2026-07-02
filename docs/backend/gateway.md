@@ -28,7 +28,7 @@
 - `lb://` 轮询（Spring Cloud LoadBalancer）。
 - WebSocket 走 `lb:ws://`（原生 + SockJS 双形态），承接 `/api/ws/call`。
 - Knife4j 4.4.0 手动聚合 user/call/community（**未聚合 ai**，因 SB3/OpenAPI3 不兼容）。
-- 注册 IP：dev=`127.0.0.1`，prod=`47.112.114.139`（解决 Dubbo 注册 127.0.0.1，见架构文档）。
+- Spring Cloud 注册 IP：dev=`127.0.0.1`，prod=`47.112.114.139`（profile 覆盖 `discovery.ip`）；**Dubbo 注册 IP 另需启动命令 `-DDUBBO_IP_TO_REGISTRY`**，见 [`../architecture/gateway-dubbo.md`](../architecture/gateway-dubbo.md)。
 
 ## 关键数据流
 

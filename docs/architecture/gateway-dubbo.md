@@ -108,20 +108,34 @@ sequenceDiagram
     App->>App: 调高德 SDK 启动导航
 ```
 
-## 生产风险：Dubbo 注册 127.0.0.1
+## 生产部署：Dubbo 注册 127.0.0.1 坑（两条独立注册链路）
 
-**问题**：服务部署到服务器后，Dubbo 注册到 Nacos 的地址默认是 `127.0.0.1`，导致消费者无法跨机调用。
+**问题**：服务部署到服务器后，注册到 Nacos 的地址默认是本机网卡地址（常为 `127.0.0.1`），导致跨机调用失败。
 
-**代码现状（实际方案）**：所有模块用 profile 覆盖 `spring.cloud.nacos.discovery.ip` 解决——
+**根因——本项目存在两条独立的 Nacos 注册链路，IP 由不同机制控制**：
 
-- `application-dev.yml`：`spring.cloud.nacos.discovery.ip: 127.0.0.1`（本机调试）
-- `application-prod.yml`：`spring.cloud.nacos.discovery.ip: 47.112.114.139`（服务器）
+| 注册链路 | 用途 | IP 控制方式 |
+|---|---|---|
+| Spring Cloud Nacos Discovery | 网关 `lb://` 路由发现服务实例 | `spring.cloud.nacos.discovery.ip`（dev/prod profile） |
+| Dubbo Registry（`dubbo.registry.address: nacos://...`） | Dubbo RPC 消费者发现提供者 | **`-DDUBBO_IP_TO_REGISTRY`（启动命令 JVM 参数）**——yml 中无任何 Dubbo IP 配置 |
 
-> Dubbo 复用 Spring Cloud Nacos 的注册 IP，故配置 SC 的 `discovery.ip` 即可同时修正 Dubbo 注册地址。
+> ⚠ **关键**：Dubbo 经 `dubbo.registry.address` **独立**注册到 Nacos，**不复用** Spring Cloud 的 `discovery.ip`。因此 `spring.cloud.nacos.discovery.ip` 只修正网关 `lb://` 的实例 IP，**对 Dubbo 注册地址无效**。实测部署时仅配 `discovery.ip`，Dubbo 仍注册 `127.0.0.1`、消费者无法 RPC；**生产必须在启动命令加 `-DDUBBO_IP_TO_REGISTRY=<公网IP>`。**
 
-**演进备注**：早期（纯 Dubbo、未与 Spring Cloud 整合阶段）曾用启动参数 `DUBBO_IP_TO_REGISTRY=<公网IP>` 解决同一问题；后续整合 Spring Cloud 后演进为上述 `spring.cloud.nacos.discovery.ip` 配置。两种方案都能解决，文档以**代码现状**为准。
+**生产启动命令（实测，两个参数都要）**——user/call/community/ai 四服务同构，仅 jar 名不同：
 
-**残留风险**：`${nacos.address:47.112.114.139}` 把生产 IP 硬编码进代码库默认值；若部署到新服务器忘记改 prod yml，注册的仍是旧 IP。
+```bash
+java -Xms128m -Xmx256m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m \
+  -DDUBBO_IP_TO_REGISTRY=47.112.114.139 \
+  -jar /home/liu/shiwujie/shiwujieUser-0.0.1-SNAPSHOT.jar \
+  --spring.profiles.active=prod \
+  --spring.cloud.nacos.discovery.ip=47.112.114.139
+```
+
+> `--spring.cloud.nacos.discovery.ip` 与 prod profile 内的值一致（命令行再传一次为双保险）。
+
+**关于多环境重构（commit `2e5573a`）**：重构只调整了 `spring.cloud.nacos.discovery.ip`（移入 profile）与凭据占位符化，**未改动 Dubbo 注册机制**（Dubbo 从未在 yml 配置注册 IP，重构前后皆然）。故 `-DDUBBO_IP_TO_REGISTRY` 的必要性是**结构性的**（Dubbo 独立注册），**并非多环境重构引入的回归**。
+
+**残留风险**：`${nacos.address:47.112.114.139}` 把生产 IP 硬编码进代码库默认值；新服务器部署需**同时**改 prod yml 的 `discovery.ip` 与启动命令的 `DUBBO_IP_TO_REGISTRY`。
 
 ## 功能需求（FR）
 
