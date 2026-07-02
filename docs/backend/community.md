@@ -8,7 +8,7 @@
 |---|---|
 | 路径 | `shiwujie-community/` |
 | 端口 | 8400，context-path `/api/community` |
-| Dubbo 端口 | 50400 |
+| Dubbo 端口 | 21400 |
 | 框架 | SB 2.7.0 + Java 17 |
 | MySQL | `shiwujiecommunity`（Community/Communitymanager/Communityjoinreview/Helppost/Activity/Activitysign） |
 | 启动类 | `CommunityApplication`（`@EnableDubbo`） |
@@ -68,7 +68,7 @@ src/main/java/com/swj/shiwujie/
 
 ## 配置要点
 
-- 端口 8400 / context-path `/api/community`；Dubbo 50400；MySQL `shiwujiecommunity`；Redis db=2。
+- 端口 8400 / context-path `/api/community`；Dubbo 21400；MySQL `shiwujiecommunity`；Redis db=2。
 - MyBatis-Plus 驼峰映射开启，逻辑删除 `isDelete`。
 - 拦截器放行含 `Login`/`Register`/`loginAndRegister` 的 URL（见 [`../architecture/auth.md`](../architecture/auth.md) 风险 #7）。
 - CORS 全开。

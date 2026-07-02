@@ -24,10 +24,10 @@
 | 模块 | HTTP | context-path | Dubbo 端口 | MySQL 库 | Redis db |
 |---|---|---|---|---|---|
 | gateway | 8100 | `/` | — | — | — |
-| user | 8200 | `/api/user` | 50200 | shiwujieuser | 2 |
-| call | 8300 | `/api` | 50300 | shiwujiecall | 2 |
-| community | 8400 | `/api/community` | 50400 | shiwujiecommunity | 2 |
-| ai | 8500 | （未设） | 50500 | shiwujieai | 2 |
+| user | 8200 | `/api/user` | 21200 | shiwujieuser | 2 |
+| call | 8300 | `/api` | 21300 | shiwujiecall | 2 |
+| community | 8400 | `/api/community` | 21400 | shiwujiecommunity | 2 |
+| ai | 8500 | （未设） | 21500 | shiwujieai | 2 |
 
 ## Dubbo 接口契约清单（单一真相源）
 
@@ -141,7 +141,7 @@ java -Xms128m -Xmx256m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m \
 
 **残留风险**：`${nacos.address:47.112.114.139}` 把生产 IP 硬编码进代码库默认值；新服务器部署需**同时**改 prod yml 的 `discovery.ip` 与启动命令的 `DUBBO_IP_TO_REGISTRY`。
 
-**端口可达性（同一超时症状的第二大病因）**：注册 IP 改对之后，消费者仍要直连 `dubbo://<IP>:<port>`。故须：① 云安全组/防火墙放行 Dubbo 端口（user 50200 / call 50300 / community 50400 / ai 50500）；② 若提供者跑在容器里，`docker run -p 50400:50400` 发布端口，否则注册了正确 IP 也连不进容器。改完 IP 仍超时，几乎都是这两条没做。
+**端口可达性（同一超时症状的第二大病因）**：注册 IP 改对之后，消费者仍要直连 `dubbo://<IP>:<port>`。故须：① 云安全组/防火墙放行 Dubbo 端口（user 21200 / call 21300 / community 21400 / ai 21500）；② 若提供者跑在容器里，`docker run -p 21400:21400` 发布端口，否则注册了正确 IP 也连不进容器。改完 IP 仍超时，几乎都是这两条没做。
 
 **更省事的写法（把 IP 收进配置，免启动命令传参）**：`-DDUBBO_IP_TO_REGISTRY` 是 JVM 系统属性，**yml 改不了它**，所以每条启动命令都得带。想省掉，可用 `dubbo.protocol.host`——它是普通 Dubbo 配置项，可写进 dev/prod profile，与已有的 `spring.cloud.nacos.discovery.ip` **完全对称**：
 

@@ -10,7 +10,7 @@
 |---|---|
 | 路径 | `shiwujie-ai/` |
 | 端口 | 8500（无 context-path） |
-| Dubbo 端口 | 50500 |
+| Dubbo 端口 | 21500 |
 | 框架 | **SB 3.4.5 + Java 21** + Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2 + Dubbo 3.3.0 |
 | MySQL | `shiwujieai`（AiLogs） |
 | Redis | 用 `spring.data.redis`（SB3 规范，非 `spring.redis`），db=2 |
@@ -125,7 +125,7 @@ advisor/{MyLoggerAdvisor, MyRagAdvisor(RAG 半残留)}
 - `dashscope.chat.options.model: qwen3-max`；图像模型 `qwen3-vl-flash`（`withMultiModel(true)`）。
 - `base-url: compatible-mode/v1`（OpenAI 兼容端点）。
 - Redis 用 `spring.data.redis`（与 SB2 模块的 `spring.redis` 不同）。
-- Dubbo 50500；`compatibility-verifier.enabled: false`（SB3.4.5 + SCA 共存需要）。
+- Dubbo 21500；`compatibility-verifier.enabled: false`（SB3.4.5 + SCA 共存需要）。
 - Spring Cloud 注册 IP 由 dev/prod profile 覆盖；**Dubbo 注册 IP 需启动命令 `-DDUBBO_IP_TO_REGISTRY`**（discovery.ip 对 Dubbo 无效，见 [`../architecture/gateway-dubbo.md`](../architecture/gateway-dubbo.md)）。
 - 凭据：`${DASHSCOPE_API_KEY:...}` / `${SEARCH_API_KEY:...}`。
 

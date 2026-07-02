@@ -8,7 +8,7 @@
 |---|---|
 | 路径 | `shiwujie-call/` |
 | 端口 | 8300，context-path `/api` |
-| Dubbo 端口 | 50300 |
+| Dubbo 端口 | 21300 |
 | 框架 | SB 2.7.0 + Java 17 |
 | MySQL | `shiwujiecall`（Videohelp/Urgenthelp） |
 | 启动类 | `CallApplication`（`@EnableDubbo`） |
@@ -75,7 +75,7 @@ src/main/java/com/swj/shiwujie/
 
 ## 配置要点
 
-- 端口 8300 / context-path `/api`；Dubbo 50300；MySQL `shiwujiecall`；Redis db=2。
+- 端口 8300 / context-path `/api`；Dubbo 21300；MySQL `shiwujiecall`；Redis db=2。
 - **MyBatis-Plus 驼峰映射关闭**（`map-underscore-to-camel-case: false`），SQL 与实体都用 snake_case（与其他模块不一致）。
 - CORS 全开（`http://*:*` 等 + allowCredentials=true）。
 - 志愿者匹配队列 Redis TTL=30 秒。

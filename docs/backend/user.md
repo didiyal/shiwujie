@@ -8,7 +8,7 @@
 |---|---|
 | 路径 | `shiwujie-user/` |
 | 端口 | 8200，context-path `/api/user` |
-| Dubbo 端口 | 50200 |
+| Dubbo 端口 | 21200 |
 | 框架 | SB 2.7.0 + Java 17 |
 | MySQL | `shiwujieuser`（Blind/Volunteer/Family/FamilyJoinReview） |
 | 启动类 | `ShiwujieUserApplication`（`@EnableDubbo`） |
@@ -44,7 +44,7 @@ src/main/java/com/swj/shiwujie/
 
 ## 配置要点
 
-- 端口 8200 / context-path `/api/user`；Dubbo 50200；MySQL `shiwujieuser`；Redis db=2。
+- 端口 8200 / context-path `/api/user`；Dubbo 21200；MySQL `shiwujieuser`；Redis db=2。
 - MyBatis-Plus：驼峰映射开启，逻辑删除 `isDelete`。
 - dev/prod 仅差 `spring.cloud.nacos.discovery.ip`。
 - 鉴权 key 规则：`REDIS_SECRETKEY-blind-{id}` / `-volunteer-{id}`，TTL 90 天（见 [`../architecture/auth.md`](../architecture/auth.md)）。

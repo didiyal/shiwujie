@@ -51,7 +51,7 @@ dubbo:
     qos-enable: false
   protocol:
     name: dubbo
-    port: 50300
+    port: 21300
   registry:
     address: nacos://${nacos.address:47.112.114.139}:8848?username=${NACOS_USERNAME:nacos}&password=${NACOS_PASSWORD:nacos}
     timeout: 5000
