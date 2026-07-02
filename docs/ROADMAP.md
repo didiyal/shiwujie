@@ -12,6 +12,8 @@
 [x] 分库设计（user/call/community/ai 各自独立库）
 [x] Knife4j 文档聚合（user/call/community）
 [x] dev/prod 多环境 profile + 凭据占位符化
+[x] 后端模块扁平化（6 模块移出 gateway 嵌套，同级摆放）
+[x] 仓库卫生（.idea/日志移出跟踪 + 分层 .gitignore）
 [ ] Knife4j 聚合 ai 服务（SB2/SB3 文档协议不兼容，未做）
 [ ] 网关统一鉴权（当前鉴权下沉到各服务，4 处拦截器重复）
 [ ] 引入分布式事务（Seata，当前靠 synchronized + 级联 update）

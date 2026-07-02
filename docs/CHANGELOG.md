@@ -10,7 +10,7 @@
 
 ## 阶段 9 · 工程化收尾（2026-07）
 
-> call 路由对齐、dev/prod 多环境、凭据占位符化。
+> call 路由对齐、dev/prod 多环境、凭据占位符化、后端模块扁平化与仓库卫生。
 
 ### 新增
 - dev/prod 多环境 profile 拆分（仅覆盖 `spring.cloud.nacos.discovery.ip`：dev=127.0.0.1，prod=47.112.114.139）。（`2e5573a`）
@@ -18,6 +18,8 @@
 
 ### 变更
 - 调整 call 模块路由与 web 代理目标对齐。（`6da3060`）
+- **后端模块扁平化**：model / common-web / user / call / community / ai 六模块从 `shiwujie-gateway/` 子目录移至 `shiwujie-backend/` 同级。gateway 原非 aggregator（pom 无 `<modules>`）、各模块 `<parent>` 均指向外部 starter-parent，故纯 `git mv`、**零 pom 改动**，Maven 关系与 Java 包名均不变。（`640c171`）
+- 仓库卫生：`.idea/`、`*.iml`、`logs/*.log` 移出 git 跟踪（`--cached` 仅退索引、保留磁盘）；根 `.gitignore` 补全通用 IDE/OS 规则（无前导 `/`、任意层级生效），backend `.gitignore` 上移覆盖全部同级模块并补 `logs/`、`*.log`。（`640c171`）
 
 ### 移除
 - 清理无用文件 `how 3dcf577` 与 `testgit.txt`。（`03e60ea`）
