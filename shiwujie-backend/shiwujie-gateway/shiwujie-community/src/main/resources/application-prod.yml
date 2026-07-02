@@ -3,3 +3,6 @@ spring:
     nacos:
       discovery:
         ip: 47.112.114.139   # 部署到服务器时注册到 nacos 的 IP
+# nacos 注册中心地址：prod 连服务器（与 application.yml 默认值一致，显式标注便于排查）
+nacos:
+  address: 47.112.114.139
