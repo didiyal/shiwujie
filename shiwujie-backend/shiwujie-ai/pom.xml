@@ -50,7 +50,7 @@
         <dependency>
             <groupId>com.swj</groupId>
             <artifactId>shiwujieModel</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.1-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.baomidou</groupId>
