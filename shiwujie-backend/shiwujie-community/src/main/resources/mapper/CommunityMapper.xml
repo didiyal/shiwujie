@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.swj.shiwujie.mapper.CommunityMapper">
+
+    <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.community.Community">
+            <id property="communityId" column="community_id" jdbcType="BIGINT"/>
+            <result property="communityTypeId" column="community_type_id" jdbcType="BIGINT"/>
+            <result property="communityLevelId" column="community_level_id" jdbcType="BIGINT"/>
+            <result property="isDefaultCommunity" column="is_default_community" jdbcType="TINYINT"/>
+            <result property="parentCommunityId" column="parent_community_id" jdbcType="BIGINT"/>
+            <result property="communityName" column="community_name" jdbcType="VARCHAR"/>
+            <result property="communityDescription" column="community_description" jdbcType="VARCHAR"/>
+            <result property="province" column="province" jdbcType="CHAR"/>
+            <result property="city" column="city" jdbcType="CHAR"/>
+            <result property="district" column="district" jdbcType="CHAR"/>
+            <result property="address" column="address" jdbcType="VARCHAR"/>
+            <result property="registrationInfo" column="registration_info" jdbcType="VARCHAR"/>
+            <result property="registerVolunteerId" column="register_volunteer_id" jdbcType="BIGINT"/>
+            <result property="communityStatus" column="community_status" jdbcType="TINYINT"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="is_delete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        community_id,community_type_id,community_level_id,
+        is_default_community,parent_community_id,community_name,
+        community_description,province,city,
+        district,address,registration_info,
+        register_volunteer_id,community_status,create_time,
+        update_time,is_delete
+    </sql>
+</mapper>

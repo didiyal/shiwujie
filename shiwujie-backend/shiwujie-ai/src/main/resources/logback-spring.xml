@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/shiwujie-ai.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/shiwujie-ai.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 日志级别配置 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+    <!-- 特定包的日志级别 -->
+    <logger name="com.swj.shiwujie.interceptor" level="INFO"/>
+    <logger name="com.swj.shiwujie.service" level="DEBUG"/>
+    <logger name="com.swj.shiwujie.controller" level="INFO"/>
+    <logger name="com.swj.shiwujie.chatmemory" level="INFO"/>
+    <logger name="com.swj.shiwujie.advisor" level="INFO"/>
+    <logger name="com.swj.shiwujie.app" level="DEBUG"/>
+    <logger name="com.swj.shiwujie.tools" level="INFO"/>
+    <logger name="com.swj.shiwujie.mapper" level="INFO"/>
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.apache.dubbo" level="INFO"/>
+</configuration>
