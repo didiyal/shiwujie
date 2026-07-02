@@ -80,11 +80,16 @@
 
 ## 基础设施地址
 
-| 设施 | 地址 | 备注 |
+> **dev / prod 拓扑不同**：dev 期 **MySQL/Redis 连服务器**（共享数据），但 **Nacos（Spring Cloud 发现 + Dubbo 注册中心）走本机**——整套服务在本机自洽，纯本机 dev 不存在跨网注册问题。prod 期全部连服务器。Nacos 地址由 `${nacos.address:47.112.114.139}` 占位符驱动，dev/prod profile 各自覆盖。
+
+| 设施 | dev | prod |
 |---|---|---|
-| Nacos | `47.112.114.139:8848` | 服务注册 + Dubbo 注册中心 |
-| MySQL | `47.112.114.139:3306` | 4 库：shiwujieuser / shiwujiecall / shiwujiecommunity / shiwujieai |
-| Redis | `47.112.114.139:6379` | db=2 共享；token key 前缀 `REDIS_SECRETKEY-{role}-{id}` |
-| 注册 IP | dev=`127.0.0.1` / prod=`47.112.114.139` | SC 发现：profile 覆盖 `spring.cloud.nacos.discovery.ip`；**Dubbo 注册：启动命令 `-DDUBBO_IP_TO_REGISTRY`**（详见 [`gateway-dubbo.md`](gateway-dubbo.md)） |
+| Nacos（Spring Cloud 发现 + Dubbo 注册中心） | 本机 `127.0.0.1:8848` | `47.112.114.139:8848` |
+| MySQL | `47.112.114.139:3306` | `47.112.114.139:3306` |
+| Redis | `47.112.114.139:6379`（db=2 共享） | `47.112.114.139:6379`（db=2 共享） |
+
+- **Nacos 地址**：`nacos.address` 变量——dev profile=`127.0.0.1`，prod profile=`47.112.114.139`（占位符默认值亦为 `47.112.114.139`）。命令行 `-Dnacos.address=X` 优先级最高，可临时覆盖（如 dev 期复现多机部署、连服务器 Nacos）。
+- **服务注册 IP**（服务注册到 Nacos 的自身 IP，与上面"基础设施地址"是两回事）：Spring Cloud 发现走 `spring.cloud.nacos.discovery.ip`（dev=`127.0.0.1` / prod=`47.112.114.139`）；**Dubbo 注册独立，须启动命令 `-DDUBBO_IP_TO_REGISTRY`**——详见 [`gateway-dubbo.md`](gateway-dubbo.md)。
+- **token key 前缀** `REDIS_SECRETKEY-{role}-{id}`。
 
 > 凭据已抽取为 `${ENV:default}` 占位符（`MYSQL_PASSWORD` / `REDIS_PASSWORD` / `NACOS_USERNAME` / `NACOS_PASSWORD` / `DASHSCOPE_API_KEY` / `SEARCH_API_KEY`），default 值仍硬编码在 yml（按用户要求保留在配置里）。

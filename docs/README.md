@@ -78,7 +78,8 @@ docs/
 - **Dubbo 单一契约源**：10 个 `Inner*Service` 接口集中在 shiwujie-model，提供者 `@DubboService`、消费者 `@DubboReference`（[gateway-dubbo.md](architecture/gateway-dubbo.md)）。
 - **AI 推送唯一落地点**：ai 模块通过 Dubbo 调 call 的 `InnerSocket`，再由 call 经 WebSocket 推前端（5xxx 信令）。
 - **三个试错-移除能力**（如实记录）：mqtt 硬件通道（取消，pom 残留）、自研 ReAct Agent（弃用，`@Component` 注释）、RAG（半残留，未注入）。
-- **Dubbo 注册 127.0.0.1 坑**：`spring.cloud.nacos.discovery.ip` 只解决网关 `lb://` 发现；**Dubbo 独立注册，须启动命令加 `-DDUBBO_IP_TO_REGISTRY`**（详见 [gateway-dubbo.md](architecture/gateway-dubbo.md)）。
+- **dev/prod 拓扑差异**：dev 期 Nacos（发现 + Dubbo 注册中心）走**本机**、仅 MySQL/Redis 连服务器，整套服务本机自洽；prod 期全部连服务器。`nacos.address` 占位符由 profile 覆盖（详见 [tech-stack.md](architecture/tech-stack.md)）。
+- **Dubbo 注册 IP 坑（prod/多机场景）**：`spring.cloud.nacos.discovery.ip` 只解决网关 `lb://` 发现；**Dubbo 独立注册，须启动命令加 `-DDUBBO_IP_TO_REGISTRY`**（详见 [gateway-dubbo.md](architecture/gateway-dubbo.md)）。纯本机 dev（Nacos 走本机）不触发。
 - **已知高危项**：续期 key 拼接 bug（滑动会话失效）、sessionMap HashMap 并发、AI 默认用户后门、多处权限检查被注释（详见各文档「已知问题」与 [auth.md](architecture/auth.md)）。
 - **诚实缺口**：无压测、无 Docker、无索引调优、统计页未实现。
 
