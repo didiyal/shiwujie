@@ -4,6 +4,10 @@ spring:
   profiles:
     active: dev
   datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: shiwujiecommunity
+    password: ${MYSQL_PASSWORD:JRM582hhtidPtFrG}
+    url: jdbc:mysql://47.112.114.139:3306/shiwujiecommunity
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -13,15 +17,18 @@ spring:
       connection-timeout: 30000
   # 在关闭时不等待 Lettuce 连接优雅退出，避免阻塞
   redis:
+    host: 47.112.114.139
+    port: 6379
+    database: 2
+    password: ${REDIS_PASSWORD:123456}
     lettuce:
       shutdown-timeout: 0ms
     # 设置合理超时时间，防止连接验证阻塞
     timeout: 2s
   cloud:
     nacos:
-      server-addr: 47.112.114.139:8848
-      discovery:
-        ip: 47.92.170.90 #上传到nacos时的公网ip
+      server-addr: ${nacos.address:47.112.114.139}:8848
+      # discovery.ip 由 dev/prod profile 覆盖：dev=127.0.0.1(本机)，prod=47.112.114.139(服务器)
 server:
   servlet:
     context-path: /api/community   # 确保这里没有设置特殊的context-path
@@ -46,7 +53,7 @@ dubbo:
     name: dubbo
     port: 50400
   registry:
-    address: nacos://${nacos.address:47.112.114.139}:8848?username=nacos&password=nacos
+    address: nacos://${nacos.address:47.112.114.139}:8848?username=${NACOS_USERNAME:nacos}&password=${NACOS_PASSWORD:nacos}
     timeout: 5000
     parameters:
       empty-protection: true   # 关键：开启空保护

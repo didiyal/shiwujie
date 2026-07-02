@@ -1,14 +1,8 @@
 spring:
-  #redis配置
-  redis:
-    port: 6379
-    host: 47.112.114.139
-    database: 2
-    password: 123456
-  #数据库连接
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: shiwujiecall
-    password: 2Pht6wWZK5aRm4c5
-    url: jdbc:mysql://47.112.114.139:3306/shiwujiecall
-
+  cloud:
+    nacos:
+      discovery:
+        ip: 47.112.114.139   # 部署到服务器时注册到 nacos 的 IP
+# nacos 注册中心地址：prod 连服务器（与 application.yml 默认值一致，显式标注便于排查）
+nacos:
+  address: 47.112.114.139

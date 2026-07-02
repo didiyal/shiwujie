@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletRequest;
  * 视频求助接口
  */
 @RestController
-@RequestMapping("/urgenthelp")
+@RequestMapping("/call/urgenthelp")
 @Slf4j
 @Api(tags = "紧急求助接口")
 public class UrgenthelpController {
