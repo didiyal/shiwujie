@@ -68,7 +68,7 @@ docs/
 | 6 AI 能执行 | 2025-08 | 避障/导航/跳转/性能 +50% | `831b7e0` |
 | 7 引擎升级 | 2025-10~11 | M6→1.0 + 工作流（mqtt/RAG/ReAct 试错后移除） | `07459f6` |
 | 8 分布式生产化 | 2026-01 | Netty→Spring WS + gateway 负载 + 多机 | `3f88ea7` |
-| 9 工程化收尾 | 2026-07 | call 路由对齐 + 多环境 + 凭据占位符 + 后端扁平化 + 仓库卫生 | `2e5573a` |
+| 9 工程化收尾 | 2026-07 | call 路由对齐 + 多环境 + 凭据占位符 + 后端扁平化 + 父pom聚合 + 端口迁出保留段 + 仓库卫生 | `0bdbbc5` |
 
 > 详细四分类见 [CHANGELOG.md](CHANGELOG.md)。
 
@@ -80,6 +80,7 @@ docs/
 - **三个试错-移除能力**（如实记录）：mqtt 硬件通道（取消，pom 残留）、自研 ReAct Agent（弃用，`@Component` 注释）、RAG（半残留，未注入）。
 - **dev/prod 拓扑差异**：dev 期 Nacos（发现 + Dubbo 注册中心）走**本机**、仅 MySQL/Redis 连服务器，整套服务本机自洽；prod 期全部连服务器。`nacos.address` 占位符由 profile 覆盖（详见 [tech-stack.md](architecture/tech-stack.md)）。
 - **Dubbo 注册 IP 坑（prod/多机场景）**：`spring.cloud.nacos.discovery.ip` 只解决网关 `lb://` 发现；**Dubbo 独立注册，须启动命令加 `-DDUBBO_IP_TO_REGISTRY`**（详见 [gateway-dubbo.md](architecture/gateway-dubbo.md)）。纯本机 dev（Nacos 走本机）不触发。
+- **Dubbo provider 端口 21200–21500**：避让 Windows Hyper-V/WSL2 动态保留的 TCP 排除段（原 502xx 落入会导致 bind 抛 `Address already in use` 而 `netstat` 查无进程，重启后段还会变）；web 端口仍 8100–8500 不受影响（详见 [CHANGELOG.md](CHANGELOG.md) 阶段9）。
 - **已知高危项**：续期 key 拼接 bug（滑动会话失效）、sessionMap HashMap 并发、AI 默认用户后门、多处权限检查被注释（详见各文档「已知问题」与 [auth.md](architecture/auth.md)）。
 - **诚实缺口**：无压测、无 Docker、无索引调优、统计页未实现。
 

@@ -15,11 +15,16 @@
 ### 新增
 - dev/prod 多环境 profile 拆分（仅覆盖 `spring.cloud.nacos.discovery.ip`：dev=127.0.0.1，prod=47.112.114.139）。（`2e5573a`）
 - 凭据占位符化：`MYSQL_PASSWORD` / `REDIS_PASSWORD` / `NACOS_USERNAME` / `NACOS_PASSWORD` / `DASHSCOPE_API_KEY` / `SEARCH_API_KEY` 走 `${ENV:default}`。（`2e5573a`）
+- **引入 `shiwujie-backend` 父 pom**（`<packaging>pom</packaging>`）：7 模块聚合 + 版本统一（统一 `0.0.1-SNAPSHOT`、dependencyManagement 集中版本）；ai 因 SB 3.4.5 / Java 21 保留直继承 `spring-boot-starter-parent`、仅纳入聚合；root properties 锁 `lombok 1.18.36` 以兼容 JDK 21 reactor 构建。（`91e0998`）
 
 ### 变更
 - 调整 call 模块路由与 web 代理目标对齐。（`6da3060`）
 - **后端模块扁平化**：model / common-web / user / call / community / ai 六模块从 `shiwujie-gateway/` 子目录移至 `shiwujie-backend/` 同级。gateway 原非 aggregator（pom 无 `<modules>`）、各模块 `<parent>` 均指向外部 starter-parent，故纯 `git mv`、**零 pom 改动**，Maven 关系与 Java 包名均不变。（`640c171`）
 - 仓库卫生：`.idea/`、`*.iml`、`logs/*.log` 移出 git 跟踪（`--cached` 仅退索引、保留磁盘）；根 `.gitignore` 补全通用 IDE/OS 规则（无前导 `/`、任意层级生效），backend `.gitignore` 上移覆盖全部同级模块并补 `logs/`、`*.log`。（`640c171`）
+- 清理 ai pom 重复依赖声明（`jackson-databind` / `org.eclipse.paho.client.mqttv3` 各去一份），消除 Maven `dependencies must be unique` 警告。（`e4b097b`）
+
+### 修复
+- **Dubbo provider 端口迁出 Hyper-V/WSL 保留段**：原 50200 / 50300 / 50400 / 50500 全部落入 Windows Hyper-V/WSL2 动态登记的 TCP 排除段（`netsh int ipv4 show excludedportrange protocol=tcp` 可见 49850–50559、59599–61672 等），导致 `contextLoads` bind 抛 `Address already in use` 而 `netstat` 查无进程——隐蔽环境坑，重启后段还会变。改用 21200 / 21300 / 21400 / 21500（远离保留段与临时端口区 49152+）。同步 docs 端口表与防火墙/docker 说明。（`0bdbbc5`）
 
 ### 移除
 - 清理无用文件 `how 3dcf577` 与 `testgit.txt`。（`03e60ea`）

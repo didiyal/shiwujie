@@ -14,6 +14,8 @@
 [x] dev/prod 多环境 profile + 凭据占位符化
 [x] 后端模块扁平化（6 模块移出 gateway 嵌套，同级摆放）
 [x] 仓库卫生（.idea/日志移出跟踪 + 分层 .gitignore）
+[x] 父 pom 聚合（shiwujie-backend）+ 7 模块版本统一
+[x] Dubbo provider 端口迁出 Hyper-V/WSL 保留段（502xx→212xx）
 [ ] Knife4j 聚合 ai 服务（SB2/SB3 文档协议不兼容，未做）
 [ ] 网关统一鉴权（当前鉴权下沉到各服务，4 处拦截器重复）
 [ ] 引入分布式事务（Seata，当前靠 synchronized + 级联 update）
@@ -74,7 +76,7 @@
 [x] 图片瘦身上下文工程（占位符 + MySQL 回放）
 [x] Web 搜索（searchapi.io + jsoup）
 [x] Dubbo 消费（InnerFamily/InnerSocket/InnerBlind）
-[?] 清理 pom 残留 paho（mqtt，已取消）
+[?] 清理 pom 残留 paho（mqtt，已取消；已去重，仍保留一份）
 [?] 清理 MyRagAdvisor 半残留 Bean（RAG 已弃用）
 [?] 清理提示词 community 残留文本（无对应工具）
 [ ] 关闭默认用户兜底（生产后门）
