@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### 日志 ###
+logs/
+*.log
