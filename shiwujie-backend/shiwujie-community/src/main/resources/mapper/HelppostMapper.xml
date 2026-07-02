@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.swj.shiwujie.mapper.HelppostMapper">
+
+    <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.community.Helppost">
+            <id property="helppostId" column="helppost_id" jdbcType="BIGINT"/>
+            <result property="communityId" column="community_id" jdbcType="BIGINT"/>
+            <result property="blindId" column="blind_id" jdbcType="BIGINT"/>
+            <result property="volunteerId" column="volunteer_id" jdbcType="BIGINT"/>
+            <result property="helpLevel" column="help_level" jdbcType="INTEGER"/>
+            <result property="helpContent" column="help_content" jdbcType="VARCHAR"/>
+            <result property="helpLocation" column="help_location" jdbcType="VARCHAR"/>
+            <result property="postStatus" column="post_status" jdbcType="TINYINT"/>
+            <result property="evaluation" column="evaluation" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="is_delete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        helppost_id,community_id,blind_id,
+        volunteer_id,help_level,help_content,
+        help_location,post_status,evaluation,
+        create_time,update_time,is_delete
+    </sql>
+</mapper>

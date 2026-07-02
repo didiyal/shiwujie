@@ -1,0 +1,299 @@
+package com.swj.shiwujie.controller;
+
+
+import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.PhoneUtil;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.swj.shiwujie.common.BaseResponse;
+import com.swj.shiwujie.common.ErrorCode;
+import com.swj.shiwujie.exception.ThrowUtils;
+import com.swj.shiwujie.model.VO.user.blind.BlindLoginSuccessVO;
+import com.swj.shiwujie.model.VO.user.blind.BlindVO;
+import com.swj.shiwujie.model.domain.user.Blind;
+import com.swj.shiwujie.model.request.user.blind.*;
+import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
+import com.swj.shiwujie.service.BlindService;
+import com.swj.shiwujie.utils.LoginUtils;
+import com.swj.shiwujie.utils.RedisUtils;
+import com.swj.shiwujie.utils.ResultUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.BeanUtils;
+import org.springframework.web.bind.annotation.*;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Objects;
+
+import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
+
+/**
+ * 视障人士接口
+ */
+@RestController
+@RequestMapping("/blind")
+@Api(tags = "视障人士操作接口")
+public class BlindController {
+
+    @Resource
+    private BlindService blindService;
+
+    @Resource
+    private RedisUtils redisUtils;
+
+
+    // region 登录注册相关
+
+    /**
+     * 测试是否登录
+     *
+     * @return 登录用户id
+     */
+    @GetMapping("/login/check")
+    @ApiOperation("检查视障用户是否登录")
+    public BaseResponse<BlindVO> checkLogin(HttpServletRequest request) {
+        Long loginBlindId = LoginUtils.getLoginBlindId(request);
+
+        Blind blind = blindService.getById(loginBlindId);
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "用户不存在");
+        return ResultUtils.success(blindService.getBlindVO(blind));
+    }
+
+
+    /**
+     * 手机号一键登录注册
+     * 账号存在,登录
+     * 账号不存在,注册
+     *
+     * @param phone 手机号
+     * @return 脱敏后的用户信息
+     */
+    @PostMapping("/login/loginAndRegisterQuickly")
+    @ApiOperation("手机号一键登录/注册视障用户")
+    public BaseResponse<BlindLoginSuccessVO> loginAndRegisterQuickly(String phone) {
+        // 鉴空
+        ThrowUtils.throwIf(StrUtil.isBlankIfStr(phone), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
+
+        BlindLoginSuccessVO res = blindService.loginAndRegisterQuickly(phone);
+
+        return ResultUtils.success(res);
+    }
+
+
+    /**
+     * 手机号,密码一键登录注册
+     * 账号存在,登录
+     * 账号不存在,注册
+     *
+     * @param blindLARRequest 用户的手机号与密码
+     * @return 脱敏后的用户信息
+     */
+    @PostMapping("/login/loginAndRegister")
+    @ApiOperation("手机号密码登录/注册视障用户")
+    public BaseResponse<BlindLoginSuccessVO> loginAndRegister(BlindLARRequest blindLARRequest) {
+        ThrowUtils.throwIf(ObjUtil.hasEmpty(blindLARRequest), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
+
+        BlindLoginSuccessVO res = blindService.loginAndRegister(blindLARRequest);
+
+        return ResultUtils.success(res);
+    }
+
+
+
+    /**
+     * 注销登录
+     *
+     * @return 是否成功
+     */
+    @GetMapping("/login/logout")
+    @ApiOperation("视障用户注销登录")
+    public BaseResponse<Boolean> logout(HttpServletRequest request) {
+        Long loginBlindId = LoginUtils.getLoginBlindId(request);
+
+        redisUtils.removeToRedis(REDIS_SECRETKEY+"-blind-" + loginBlindId);
+
+        return ResultUtils.success(true);
+    }
+
+
+    // endregion
+
+
+    // region 增删改查
+
+
+
+    /**
+     * 删除用户(管理员用户皆可使用)
+     *
+     * @param blindId 用户id
+     * @return 是否成功
+     */
+    @PostMapping("/delete")
+    @ApiOperation("删除视障用户")
+    public BaseResponse<Boolean> deleteBlind(Long blindId) {
+        //校验id是否合法
+        ThrowUtils.throwIf(ObjUtil.isNull(blindId) || blindId <= 0, ErrorCode.PARAMS_ERROR);
+
+        boolean b = blindService.removeById(blindId);
+        ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+
+
+        redisUtils.removeToRedis(REDIS_SECRETKEY + "-" + blindId);
+        return ResultUtils.success(true);
+    }
+
+
+    /**
+     * 更新用户
+     * 修改用户名,性别,身份证号,残疾人证
+     * 后期可以修改经纬度与位置信息
+     *
+     * @param blindUpdateRequest 用户更新信息
+     * @return 脱敏后的用户信息
+     */
+    @PutMapping("/update")
+    @ApiOperation("更新视障用户信息")
+    public BaseResponse<Boolean> updateBlind(@RequestBody BlindUpdateRequest blindUpdateRequest, HttpServletRequest request) {
+        //校验参数是否为空
+        ThrowUtils.throwIf(ObjUtil.isNull(blindUpdateRequest) || blindUpdateRequest.getBlindId() == null,
+                ErrorCode.PARAMS_ERROR);
+        // 只能自己修改自己的数据
+        Long loginBlindId = LoginUtils.getLoginBlindId(request);
+        ThrowUtils.throwIf(!Objects.equals(loginBlindId, blindUpdateRequest.getBlindId()), ErrorCode.PARAMS_ERROR, "操作用户错误");
+
+        Blind blind = new Blind();
+        BeanUtils.copyProperties(blindUpdateRequest, blind);
+        Boolean result = blindService.updateBlind(blind);
+
+        return ResultUtils.success(result);
+    }
+
+
+    /**
+     * 修改手机号
+     *
+     * @param blindUpdatePhoneRequest   要修改的手机号
+     * @param request 请求
+     * @return 脱敏后的用户信息
+     */
+    @PostMapping("/update/phone")
+    @ApiOperation("修改视障用户手机号")
+    public BaseResponse<Boolean> updateBlindPhone(BlindUpdatePhoneRequest blindUpdatePhoneRequest,
+                                                  HttpServletRequest request) {
+        // 校验参数
+        Long loginBlindId = LoginUtils.getLoginBlindId(request);
+        Long blindId = blindUpdatePhoneRequest.getBlindId();
+        ThrowUtils.throwIf(!Objects.equals(loginBlindId, blindId), ErrorCode.PARAMS_ERROR, "只能修改自己的手机号");
+
+        String phone = blindUpdatePhoneRequest.getPhone();
+        ThrowUtils.throwIf(!PhoneUtil.isPhone(phone), ErrorCode.PARAMS_ERROR, "手机号格式错误");
+
+
+        Blind blind = blindService.getById(blindId);
+
+        // 更新
+        blind.setPhone(phone);
+        boolean b = blindService.updateById(blind);
+        ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
+
+        return ResultUtils.success(true);
+
+    }
+
+    /**
+     * 将视障人士踢出社区
+     *
+     * @param request 请求参数
+     * @param httpRequest 请求对象
+     * @return 是否成功
+     */
+    @PostMapping("/removeFromCommunity")
+    @ApiOperation("将视障人士踢出社区")
+    public BaseResponse<Boolean> removeFromCommunity(@RequestBody BlindRemoveFromCommunityRequest request, HttpServletRequest httpRequest) {
+        // 参数校验
+        ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        ThrowUtils.throwIf(ObjUtil.isNull(request.getCommunityId()) || request.getCommunityId() <= 0, ErrorCode.PARAMS_ERROR, "社区ID不合法");
+        ThrowUtils.throwIf(ObjUtil.isNull(request.getBlindId()) || request.getBlindId() <= 0, ErrorCode.PARAMS_ERROR, "视障人士ID不合法");
+
+        // 获取当前登录志愿者ID
+        Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
+        ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
+
+        // 执行踢出社区操作
+        boolean result = blindService.removeFromCommunity(request, loginVolunteerId);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 设置/修改视障人士密码
+     *
+     * @param blindUpdatePassword 原密码与要修改的密码
+     * @return 是否成功
+     */
+    @PostMapping("/update/password")
+    @ApiOperation("设置/修改视障人士密码")
+    public BaseResponse<Boolean> updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword) {
+        //鉴空
+        ThrowUtils.throwIf(ObjUtil.hasEmpty(blindUpdatePassword), ErrorCode.PARAMS_ERROR);
+
+
+        boolean result = blindService.updateBlindPassword(blindUpdatePassword);
+
+
+        return ResultUtils.success(result);
+
+
+    }
+
+
+    /**
+     * 根据ID查询用户封装类
+     *
+     * @param blindId 用户id
+     * @return 脱敏后的用户信息
+     */
+    @GetMapping("/get/id/vo")
+    @ApiOperation("根据ID获取视障人士信息")
+    public BaseResponse<BlindVO> getBlindVOById(Long blindId) {
+        ThrowUtils.throwIf(blindId == null || blindId <= 0, ErrorCode.PARAMS_ERROR);
+
+        Blind blind = blindService.getById(blindId);
+        // 脱敏
+        BlindVO res = blindService.getBlindVO(blind);
+
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "用户不存在");
+        return ResultUtils.success(res);
+    }
+
+
+    // endregion
+
+
+    /**
+     * 分页查询社区视障人士
+     */
+    @GetMapping("/community/blinds/vo")
+    @ApiOperation("分页查询社区视障人士")
+    public BaseResponse<Page<BlindVO>> pageQueryCommunityBlinds(CommunityBlindQueryRequest request) {
+        long current = request.getCurrent();
+        long size = request.getPageSize();
+        Page<BlindVO> blindVOPage = blindService.pageQueryByCommunityId(request.getCommunityId(), current, size);
+        return ResultUtils.success(blindVOPage);
+    }
+
+    /**
+     * 加入社区
+     */
+    @PostMapping("/community/join")
+    @ApiOperation("视障人士加入社区")
+    public BaseResponse<Boolean> joinCommunity(@RequestBody CommunityJoinRequest communityJoinRequest, HttpServletRequest request) {
+        Long blindId = LoginUtils.getLoginBlindId(request);
+        boolean result = blindService.joinCommunity(blindId, communityJoinRequest);
+        return ResultUtils.success(result);
+    }
+
+
+
+}
