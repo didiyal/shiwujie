@@ -1,6 +1,6 @@
 # community 模块
 
-> 社区组织（省/市/街道三级）+ 成员审核 + 求助帖 + 活动与报名签到。Dubbo 提供 6 个 Inner 服务。
+> 社区组织（省/市/街道三级）+ 成员审核 + 求助帖 + 活动与报名签到。Dubbo 提供 6 个 Inner 服务。本文为 development 细化；用户可见契约（FR-COMMUNITY / AC-COMMUNITY）见 [product/current/](../../../docs/product/current/)。
 
 ## 模块定位
 
@@ -70,7 +70,7 @@ src/main/java/com/swj/shiwujie/
 
 - 端口 8400 / context-path `/api/community`；Dubbo 21400；MySQL `shiwujiecommunity`；Redis db=2。
 - MyBatis-Plus 驼峰映射开启，逻辑删除 `isDelete`。
-- 拦截器放行含 `Login`/`Register`/`loginAndRegister` 的 URL（见 [`../architecture/auth.md`](../architecture/auth.md) 风险 #7）。
+- 拦截器放行含 `Login`/`Register`/`loginAndRegister` 的 URL（见 [`../../../docs/architecture/auth.md`](../../../docs/architecture/auth.md)）。
 - CORS 全开。
 
 ## 关键数据流
@@ -95,45 +95,4 @@ src/main/java/com/swj/shiwujie/
 - `POST /helppost/add`：校验内容 → `innerBlindService.getById` 取 communityId，无社区 `NO_AUTH` → 建 Helppost(post_status=0)。
 - `POST /activitysign/add`：校验活动有效 → 查重（同活动同人 count==1 报"已报名"）→ 建 Activitysign。**未校验人数上限 / 活动状态 / 无签到签退接口**。
 
-## 功能需求（FR-COMMUNITY）
-
-| ID | 需求 | 状态 |
-|---|---|---|
-| FR-COMMUNITY-01 | 注册人入驻社区，自动建省/市级默认社区 | ✅（无分布式事务） |
-| FR-COMMUNITY-02 | 社区管理员登录 | ✅ |
-| FR-COMMUNITY-03 | 修改/删除社区（联动清成员 + 删管理记录） | ✅ |
-| FR-COMMUNITY-04 | 分页查子社区 | ✅ |
-| FR-COMMUNITY-05 | 管理员增改删 + 员工分页 | ✅ |
-| FR-COMMUNITY-06 | 成员加入审核（通过回写 communityId） | ✅（无事务） |
-| FR-COMMUNITY-07 | 视障发求助帖（须隶属社区） | ✅ |
-| FR-COMMUNITY-08 | 求助帖分页/删除/更新 | ⚠（权限检查被注释） |
-| FR-COMMUNITY-09 | 活动 CRUD | ✅ |
-| FR-COMMUNITY-10 | 活动报名（防重复） | ⚠（未校验人数/状态） |
-
-## 验收标准（AC-COMMUNITY）
-
-| ID | 验收点 |
-|---|---|
-| AC-COMMUNITY-01 | Register 全填 → 返回 VO + token；DB 出现三级社区，is_default=0/0/1，status=1 |
-| AC-COMMUNITY-02 | Login 密码错误 → PARAMS_ERROR；非管理员 → NO_AUTH |
-| AC-COMMUNITY-03 | 删社区后成员 communityId 清空、Communitymanager 记录删除 |
-| AC-COMMUNITY-04 | 审核通过后申请人 communityId 回写；并发同 phone 被 synchronized 串行 |
-| AC-COMMUNITY-05 | 未加入社区的视障发帖 → NO_AUTH |
-| AC-COMMUNITY-06 | 同活动同人重复报名 → "活动已报名" |
-| AC-COMMUNITY-07 | 求助帖状态仅接受四个中文名，非法 → PARAMS_ERROR |
-| AC-COMMUNITY-08 | 无/错 token → NOT_LOGIN |
-| AC-COMMUNITY-09 | URL 含 Login/Register 放行 |
-| AC-COMMUNITY-10 | prod 注册 IP=服务器，dev=本机 |
-
-## 已知问题
-
-1. **🟠 Controller 层直接 `@DubboReference`（架构瑕疵）**：`CommunitymanagerController.java:38-39` 在 Controller 内注入 `InnerVolunteerService` 并直调（`deleteCommunityManager:86`），跨模块 Inner 调用应封装在 Service 层。
-2. **🔴 权限检查被注释（安全漏洞）**：
-   - `HelppostServiceImpl.deleteHelppost`/`updateHelppost` 的"创建者或管理员"权限检查**整段被注释** → 任何登录视障者可删/改任意帖。
-   - `CommunityController.deleteCommunity`/`updateCommunity` 注释"仅注册人可改"但**实现未校验** → 任意志愿者可改/删任意社区。
-   - Activity delete/update、Activitysign add 均无登录身份与角色校验。
-3. **权限模型未落地**：3 角色枚举存在但无接口按 roleId 鉴权（见上）。
-4. **命名残留**：`ActivityStatusEnum` 内部字段叫 `postStatus`（从 PostStatusEnum 复制未改名），`END_HELP`/`FALL` 名字残留自 Post。
-5. **社区创建无人工审核**：`communityRegister` 直接 `setCommunityStatus(1)`，SQL 注释的"0-未审核"状态未走审核流。
-6. **Activitysign 缺签到/签退接口**：表有 check_in/out 字段但无对应更新方法；未校验 max_participants / activity_status。
-7. **跨库写无事务**：`communityRegister`、审核通过改 user 库 communityId 均无 Seata。
+> community 模块缺陷（Controller 层直调 Dubbo、🔴 权限检查被注释、权限模型未落地、命名残留、社区创建无人工审核、Activitysign 缺签到签退、跨库写无事务）见 [`../known-issues.md`](../known-issues.md)。

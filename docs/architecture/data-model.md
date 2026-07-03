@@ -20,7 +20,7 @@ Redis 单实例 `47.112.114.139:6379`，所有模块共享 **db=2**：
 
 | 用途 | key 模式 | TTL |
 |---|---|---|
-| 登录 token | `REDIS_SECRETKEY-{role}-{id}` | 90 天（见 [`auth.md`](auth.md) 续期 bug） |
+| 登录 token | `REDIS_SECRETKEY-{role}-{id}` | 90 天（续期 key 拼接 bug 见 [known-issues](../../shiwujie-backend/docs/known-issues.md)） |
 | AI 对话记忆（精简） | `chat:memory:{blindId}` | 文本侧 10 分钟 / 图片侧 5 天 |
 | 志愿者匹配队列 | `VOLUNTEER_QUEUE_REDIS_KEY` | 30 秒 |
 
@@ -61,7 +61,7 @@ Redis 单实例 `47.112.114.139:6379`，所有模块共享 **db=2**：
 |---|---|---|---|
 | ai_logs | `AiLogs` | AI 对话日志 + 图片对象存储（kryo 序列化整条消息） | operator(blindId) / time / content / 索引 `idx_ailogs_operator_time` |
 
-> ai 模块的 AiLogs 表身兼两职：①对话审计日志；②图片瘦身的对象存储载体（多轮历史中的图片以占位符 `image{logId}` 替换，回放时按 logId 反查还原）。详见 [`../backend/ai.md`](../backend/ai.md)。
+> ai 模块的 AiLogs 表身兼两职：①对话审计日志；②图片瘦身的对象存储载体（多轮历史中的图片以占位符 `image{logId}` 替换，回放时按 logId 反查还原）。详见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)。
 
 ## 全局约定
 
@@ -70,21 +70,10 @@ Redis 单实例 `47.112.114.139:6379`，所有模块共享 **db=2**：
   - user / community：`map-underscore-to-camel-case: true`（SQL snake_case ↔ 实体 camelCase）
   - call：`map-underscore-to-camel-case: false`（SQL 与实体**都用 snake_case**）
   - 跨模块字段命名风格不统一，潜在映射坑（已在 [`tech-stack.md`](tech-stack.md) 标注）。
-- **大数字 ID**：主键为雪花 ID（19 位），前端 JS 精度会丢失 → Web 后台做了多层字符串转换防护（详见 [`../frontend/web-vue.md`](../frontend/web-vue.md)）。
+- **大数字 ID**：主键为雪花 ID（19 位），前端 JS 精度会丢失 → Web 后台做了多层字符串转换防护（详见 [`../../shiwujie-frontend/web/docs/vue-admin.md`](../../shiwujie-frontend/web/docs/vue-admin.md)）。
 
 ## 跨服务数据契约（Dubbo）
 
 各库**独立**，跨库数据访问**不走 JOIN、不走 DB**，而是通过 Dubbo `Inner*Service` RPC。完整契约清单见 [`gateway-dubbo.md`](gateway-dubbo.md#dubbo-接口契约清单单一真相源)。
 
-> 典型反模式（已记录）：`InnerCommunityjoinreviewService.getOne(QueryWrapper)` 把 MyBatis-Plus 的 QueryWrapper 跨 Dubbo 传递（强耦合 + 序列化风险），见 [`../backend/community.md`](../backend/community.md)。
-
-## 跨库一致性
-
-项目**未引入分布式事务（Seata）**（user 模块 pom 中 seata 依赖被注释）。跨库写靠 `synchronized(phone.intern())` 单机锁 + 业务级联 updateById 保证，中途异常会留脏数据。已知跨库写场景：
-
-- 社区入驻（community 写社区 + user 写 volunteer.communityId）
-- 加入审核通过（community 改 review_status + user 写 communityId）
-- 删志愿者（级联删家庭 + 清社区）
-- 删社区（清成员 communityId + 删 communitymanager）
-
-详见各模块文档「已知问题」。
+> 跨库一致性（无 Seata、单机锁、跨库写场景）、QueryWrapper 跨 Dubbo 传递反模式等实现取舍与已知缺陷，登记于 [../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)「跨切面技术债」。

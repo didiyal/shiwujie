@@ -29,7 +29,7 @@
 | `shiwujie-model` | 纯契约层（无 Spring）：domain 实体 / enums / request-VO / `Inner*Service` Dubbo 接口 / 常量 / PageRequest | **全部模块**（含 SB3 的 ai） |
 | `shiwujie-common-web` | 依赖 model；提供 JwtUtils / RedisUtils / BaseResponse / GlobalExceptionHandler / ThrowUtils / RedisTemplateConfig | **仅 SB2 业务模块**（ai 用不了 `javax.*` 命名空间） |
 
-> ai 模块需要 JWT/Redis 工具，但因 SB3 命名空间从 `javax.*` 变为 `jakarta.*`，无法复用 common-web，故在 ai 模块内**自带一份** `JwtUtils` / `RedisTemplateConfig` / `LoginCheckInterceptor`（jakarta 版）。这是版本割裂的必然代价，详见 [`../backend/ai.md`](../backend/ai.md) 与 [`../backend/model-commonweb.md`](../backend/model-commonweb.md)。
+> ai 模块需要 JWT/Redis 工具，但因 SB3 命名空间从 `javax.*` 变为 `jakarta.*`，无法复用 common-web，故在 ai 模块内**自带一份** `JwtUtils` / `RedisTemplateConfig` / `LoginCheckInterceptor`（jakarta 版）。这是版本割裂的必然代价，详见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md) 与 [`../../shiwujie-backend/docs/modules/model-commonweb.md`](../../shiwujie-backend/docs/modules/model-commonweb.md)。
 
 > 附带产物：common-web 与 model 之间存在**重复代码**——`PageRequest`、`CommonConstant`、`UserConstants` 在两层各有一份（model 版 `PageRequest` 默认 pageSize=20 且 Serializable；common-web 版默认 10 且非 Serializable），属历史演进残留。
 
@@ -49,7 +49,7 @@
 | 导航 | 高德地图（URI 调起，NavigationManager） |
 | 架构 | 按角色分包（`blind/` / `volunteer/` / `common/` / `data/model/`） |
 
-> 详见 [`../frontend/app-android.md`](../frontend/app-android.md)。
+> 详见 [`../../shiwujie-frontend/app/docs/android.md`](../../shiwujie-frontend/app/docs/android.md)。
 
 ### Web 管理后台
 
@@ -61,7 +61,7 @@
 | 构建 | Vite **4**，dev 端口 9090，代理 `/api` → 网关 8100 |
 | 图表 | **未引入**（统计页为占位） |
 
-> 详见 [`../frontend/web-vue.md`](../frontend/web-vue.md)。
+> 详见 [`../../shiwujie-frontend/web/docs/vue-admin.md`](../../shiwujie-frontend/web/docs/vue-admin.md)。
 
 ## AI 能力栈
 
@@ -76,7 +76,7 @@
 | 网页搜索 | searchapi.io（engine=baidu）+ jsoup 摘要 |
 | 推送通道 | Dubbo → call 模块 `InnerSocket` → WebSocket 推前端 |
 
-> 详见 [`../backend/ai.md`](../backend/ai.md)。
+> 详见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)。
 
 ## 基础设施地址
 

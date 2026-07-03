@@ -1,6 +1,6 @@
 # Android 原生 App
 
-> 视障者/志愿者客户端。**原生 Android（Java + ViewBinding，compileSdk 35）**，非 uniapp。按角色分包，集成 anyRTC/讯飞/Camera2/高德，悬浮窗与无障碍 TTS。
+> 视障者/志愿者客户端。**原生 Android（Java + ViewBinding，compileSdk 35）**，非 uniapp。按角色分包，集成 anyRTC/讯飞/Camera2/高德，悬浮窗与无障碍 TTS。本文为 development 细化（结构/网络/SDK/数据流/配置）；用户可见契约（FR-APP / AC-APP）见 [product/current/](../../../docs/product/current/)。
 
 ## 模块定位
 
@@ -96,62 +96,10 @@ ChooseIdentityActivity 选身份 → blind/volunteer LoginActivity
 - 申请了系统级权限（悬浮窗等）。
 - token 无统一拦截器（手动加 Header）。
 
-## 功能需求（FR-APP）
+---
 
-| ID | 需求 |
-|---|---|
-| FR-APP-01 | 双角色选择与一键/密码登录 |
-| FR-APP-02 | 登录态持久化（SharedPrefs） |
-| FR-APP-03 | 盲人端 AI 多轮对话（SSE 流式 + 流式 TTS） |
-| FR-APP-04 | 盲人端 AI 悬浮球（AIFloatingBallService） |
-| FR-APP-05 | 视频求助发起/接听（anyRTC 双向） |
-| FR-APP-06 | 紧急求助（家属通知 + 来电悬浮窗 + 响铃） |
-| FR-APP-07 | WebSocket 信令处理（-1/0/1/2/3/4/5xxx） |
-| FR-APP-08 | 社区（求助帖/活动/报名） |
-| FR-APP-09 | 家庭（加入/退出/审核） |
-| FR-APP-10 | 图片识别（多模态） |
-| FR-APP-11 | 避障检测（Camera2 + 模型） |
-| FR-APP-12 | 高德导航（URI 调起） |
-| FR-APP-13 | 跳转他应用 |
-| FR-APP-14 | 讯飞 TTS/ASR |
-| FR-APP-15~18 | 资料编辑 / 消息（志愿者）/ 个人中心 / 权限管理 |
-
-## 验收标准（AC-APP）
-
-| ID | 验收点 |
-|---|---|
-| AC-APP-01 | 选身份 → 一键登录 → 进入对应 Home，token 持久化 |
-| AC-APP-02 | 盲人 AI 对话：语音输入 → SSE 流式回复 + 流式 TTS 播报 |
-| AC-APP-03 | AI 悬浮球可在任意界面悬浮，点击唤起 AI |
-| AC-APP-04 | 视频求助：盲人发起 → 志愿者接听 → 双向音视频建立 |
-| AC-APP-05 | 紧急求助：盲人发起 → 家属端悬浮窗 + 响铃提醒 |
-| AC-APP-06 | WS 连接保活（心跳），断线重连 |
-| AC-APP-07 | 收到 5xxx 推送正确跳转对应功能页 |
-| AC-APP-08 | 图片识别返回 100 字内描述 |
-| AC-APP-09~18 | 社区/家庭/导航/跳转/TTS 各功能可达 |
-
-## 已知问题
-
-> 共 25 项，按类别列要点：
-
-**安全**：
-1. 明文 HTTP/WS（无 TLS）。
-2. 避障服务自签证书全信任（`ObstacleDetectionRetrofitClient`）。
-3. release 构建未关闭日志（含 token/明文数据泄露）。
-4. anyRTC token 为空。
-5. SDK Key 全部硬编码。
-6. 申请了系统级权限。
-
-**功能**：
-7. **心跳频率 bug**：注释 30s，实际间隔 2 小时（WebSocketManager）。
-8. **避障模型未接**（用模拟数据），且避障服务内网不可达。
-9. `MessageFragment`（志愿者消息）全 mock 数据。
-10. `SegmentedTTSManager` 空文件。
-11. 紧急求助无超时机制。
-
-**架构**：
-12. `CameraPreviewManager` 用 Camera2（非依赖声明的 CameraX，与任务描述不符）。
-13. `NavigationManager` 未集成高德 SDK（仅 URI 调起）。
-14. 讯飞 appid 重复两处。
-15. token 无统一拦截器（各请求手动加 Header）。
-16. `VideoCallManager` 信令处理不完整（type 3/4/5 走 default 分支）。
+> **延伸阅读**
+>
+> - 用户可见契约（FR-APP / AC-APP）：[../../../docs/product/current/functional-requirements.md](../../../docs/product/current/functional-requirements.md) · [../../../docs/product/current/acceptance-criteria.md](../../../docs/product/current/acceptance-criteria.md)
+> - 功能实现备注（盲人社区 / 社区活动 / 应用列表管理器）：[features.md](features.md)
+> - 缺陷与技术债（安全/功能/架构 + 已修历史坑）：[known-issues.md](known-issues.md)
