@@ -1,6 +1,6 @@
 # Android 原生 App
 
-> 视障者/志愿者客户端。**原生 Android（Java + ViewBinding，compileSdk 35）**，非 uniapp。按角色分包，集成 anyRTC/讯飞/Camera2/高德，悬浮窗与无障碍 TTS。本文为 development 细化（结构/网络/SDK/数据流/配置）；用户可见契约（FR-APP / AC-APP）见 [product/current/](../../../docs/product/current/)。
+> 视障者/志愿者客户端。**原生 Android（Java + ViewBinding，compileSdk 35）**，非 uniapp。按角色分包，集成 anyRTC/讯飞/Camera2/高德，悬浮窗与无障碍 TTS。本文为 development 细化（结构/网络/SDK/数据流/配置）；用户可见契约（FR-APP / AC-APP）见 [product/current.md](../../../docs/product/current.md)。
 
 ## 模块定位
 
@@ -100,6 +100,6 @@ ChooseIdentityActivity 选身份 → blind/volunteer LoginActivity
 
 > **延伸阅读**
 >
-> - 用户可见契约（FR-APP / AC-APP）：[../../../docs/product/current/functional-requirements.md](../../../docs/product/current/functional-requirements.md) · [../../../docs/product/current/acceptance-criteria.md](../../../docs/product/current/acceptance-criteria.md)
+> - 用户可见契约（FR-APP / AC-APP）：[../../../docs/product/v2.0.0/functional-requirements.md](../../../docs/product/v2.0.0/functional-requirements.md) · [../../../docs/product/v2.0.0/acceptance-criteria.md](../../../docs/product/v2.0.0/acceptance-criteria.md)
 > - 功能实现备注（盲人社区 / 社区活动 / 应用列表管理器）：[features.md](features.md)
 > - 缺陷与技术债（安全/功能/架构 + 已修历史坑）：[known-issues.md](known-issues.md)

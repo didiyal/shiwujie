@@ -1,6 +1,6 @@
 # call 模块
 
-> WebSocket 信令中枢 + 视频求助/紧急求助业务；Dubbo 提供 `InnerSocket`，是 **AI→前端实时推送的唯一落地点**。本文为 development 细化；用户可见契约（FR-CALL / AC-CALL）见 [product/current/](../../../docs/product/current/)。
+> WebSocket 信令中枢 + 视频求助/紧急求助业务；Dubbo 提供 `InnerSocket`，是 **AI→前端实时推送的唯一落地点**。本文为 development 细化；用户可见契约（FR-CALL / AC-CALL）见 [product/current.md](../../../docs/product/current.md)。
 
 ## 模块定位
 

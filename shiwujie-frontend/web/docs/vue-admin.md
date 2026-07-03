@@ -1,13 +1,13 @@
 # Vue3 管理后台
 
-> 面向**社区管理员/注册人**的 Web 后台。Vue3 + Ant Design Vue 4 + Pinia，与 App（盲人/志愿者端）互补。本文为 development 细化（结构/路由/页面实现度/API/数据流/配置）；用户可见契约（FR-WEB / AC-WEB）见 [product/current/](../../../docs/product/current/)。
+> 面向**社区管理员/注册人**的 Web 后台。Vue3 + Ant Design Vue 4 + Pinia，与 App（盲人/志愿者端）互补。本文为 development 细化（结构/路由/页面实现度/API/数据流/配置）；用户可见契约（FR-WEB / AC-WEB）见 [product/current.md](../../../docs/product/current.md)。
 
 ## 模块定位
 
 | 项 | 值 |
 |---|---|
 | 路径 | `shiwujie-frontend/web/src/`（**排除 node_modules**） |
-| 包名 | `shiwujie-web-admin` v1.0.0（"视无界社区管理端"） |
+| 包名 | `shiwujie-web-admin` v2.0.0（"视无界社区管理端"） |
 | 技术栈 | Vue **3.3** + Vue Router 4 + Pinia 2 + Ant Design Vue **4** + Axios 1.4 + Vite **4** |
 | dev 端口 | 9090，代理 `/api` → 网关 8100 |
 | 鉴权主体 | 社区志愿者（`VolunteerVO`，带 communityManager 角色：注册人/管理员/空） |
@@ -118,6 +118,6 @@ BlindList.vue onMounted → fetchBlindList
 
 > **延伸阅读**
 >
-> - 用户可见契约（FR-WEB / AC-WEB）：[../../../docs/product/current/functional-requirements.md](../../../docs/product/current/functional-requirements.md) · [../../../docs/product/current/acceptance-criteria.md](../../../docs/product/current/acceptance-criteria.md)
+> - 用户可见契约（FR-WEB / AC-WEB）：[../../../docs/product/v2.0.0/functional-requirements.md](../../../docs/product/v2.0.0/functional-requirements.md) · [../../../docs/product/v2.0.0/acceptance-criteria.md](../../../docs/product/v2.0.0/acceptance-criteria.md)
 > - 缺陷与技术债（★ 运行时错误 / 统计缺失 / 调试日志等 11 项）：[known-issues.md](known-issues.md)
 > - 开发命令（`npm install` / `npm run dev` / `npm run build`）：见 [README.md](README.md)

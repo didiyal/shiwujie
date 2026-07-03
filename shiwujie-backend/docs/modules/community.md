@@ -1,6 +1,6 @@
 # community 模块
 
-> 社区组织（省/市/街道三级）+ 成员审核 + 求助帖 + 活动与报名签到。Dubbo 提供 6 个 Inner 服务。本文为 development 细化；用户可见契约（FR-COMMUNITY / AC-COMMUNITY）见 [product/current/](../../../docs/product/current/)。
+> 社区组织（省/市/街道三级）+ 成员审核 + 求助帖 + 活动与报名签到。Dubbo 提供 6 个 Inner 服务。本文为 development 细化；用户可见契约（FR-COMMUNITY / AC-COMMUNITY）见 [product/current.md](../../../docs/product/current.md)。
 
 ## 模块定位
 

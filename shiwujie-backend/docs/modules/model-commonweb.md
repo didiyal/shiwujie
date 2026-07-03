@@ -1,6 +1,6 @@
 # model 与 common-web 模块
 
-> 共享层：`shiwujie-model` 是纯契约（所有模块可依赖），`shiwujie-common-web` 是 SB2.7 公共能力（仅 SB2 业务模块依赖）。二者构成跨服务「单一真相源」。本文为 development 细化；用户可见契约（FR-MODEL / AC-MODEL）见 [product/current/](../../../docs/product/current/)。
+> 共享层：`shiwujie-model` 是纯契约（所有模块可依赖），`shiwujie-common-web` 是 SB2.7 公共能力（仅 SB2 业务模块依赖）。二者构成跨服务「单一真相源」。本文为 development 细化；用户可见契约（FR-MODEL / AC-MODEL）见 [product/current.md](../../../docs/product/current.md)。
 
 ## 模块定位
 

@@ -1,6 +1,6 @@
 # Web 管理后台文档（development 细化）
 
-> Vue3 社区管理后台技术实现文档。**不含用户契约**——FR-WEB / AC-WEB 在根 [product/current/](../../../docs/product/current/)；跨切面（鉴权/路由/选型）在根 [architecture/](../../../docs/architecture/)；规范见 [docs/CONTRIBUTING.md](../../../docs/CONTRIBUTING.md)。
+> Vue3 社区管理后台技术实现文档。**不含用户契约**——FR-WEB / AC-WEB 在根 [product/current.md](../../../docs/product/current.md)；跨切面（鉴权/路由/选型）在根 [architecture/](../../../docs/architecture/)；规范见 [docs/CONTRIBUTING.md](../../../docs/CONTRIBUTING.md)。
 
 ## 目录
 

@@ -1,6 +1,6 @@
 # 网关路由与 Dubbo 调用
 
-> 跨切面概览：网关路由表、Dubbo 接口契约清单（跨服务「单一真相源」）、RPC 调用图与时序图。用户可见契约（FR-GATEWAY / FR-MODEL / AC-GATEWAY / AC-MODEL）见 [product/current/](../product/current/)；启动命令与生产 Dubbo 注册 IP 坑见 [shiwujie-backend/docs/deployment.md](../../shiwujie-backend/docs/deployment.md)。
+> 跨切面概览：网关路由表、Dubbo 接口契约清单（跨服务「单一真相源」）、RPC 调用图与时序图。用户可见契约（FR-GATEWAY / FR-MODEL / AC-GATEWAY / AC-MODEL）见 [product/current.md](../product/current.md)；启动命令与生产 Dubbo 注册 IP 坑见 [shiwujie-backend/docs/deployment.md](../../shiwujie-backend/docs/deployment.md)。
 
 ## 网关路由表
 
@@ -112,7 +112,7 @@ sequenceDiagram
 
 > **延伸阅读**
 >
-> - 用户可见契约（FR-GATEWAY / FR-MODEL / AC-GATEWAY / AC-MODEL）：[../product/current/functional-requirements.md](../product/current/functional-requirements.md) · [../product/current/acceptance-criteria.md](../product/current/acceptance-criteria.md)
+> - 用户可见契约（FR-GATEWAY / FR-MODEL / AC-GATEWAY / AC-MODEL）：[../product/v2.0.0/functional-requirements.md](../product/v2.0.0/functional-requirements.md) · [../product/v2.0.0/acceptance-criteria.md](../product/v2.0.0/acceptance-criteria.md)
 > - 各微服务技术实现（核心类 / 数据流 / 配置）：[../../shiwujie-backend/docs/modules/](../../shiwujie-backend/docs/modules/)
 > - 启动命令、生产 Dubbo 注册 IP 坑（两条独立注册链路）、端口可达性、Docker：[../../shiwujie-backend/docs/deployment.md](../../shiwujie-backend/docs/deployment.md)
 > - 冗余 Inner 契约（Activity/Activitysign/Helppost 无消费者）：[../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)

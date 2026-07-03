@@ -1,6 +1,6 @@
 # 鉴权架构
 
-> 跨切面概览：JWT + Redis 单点鉴权链路（架构级流程图）。用户可见契约（FR-AUTH / AC-AUTH）见 [product/current/](../product/current/)；风险点与 `file:line` 明细（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、ai 默认用户后门、WS 绕过鉴权、URL 放行过宽等）见 [shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)。鉴权工具位于公共层（common-web），但拦截器在每个业务模块各复制一份。
+> 跨切面概览：JWT + Redis 单点鉴权链路（架构级流程图）。用户可见契约（FR-AUTH / AC-AUTH）见 [product/current.md](../product/current.md)；风险点与 `file:line` 明细（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、ai 默认用户后门、WS 绕过鉴权、URL 放行过宽等）见 [shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)。鉴权工具位于公共层（common-web），但拦截器在每个业务模块各复制一份。
 
 ## 总体链路
 
@@ -65,6 +65,6 @@ flowchart TD
 
 ## 功能需求 / 验收标准 / 已知风险
 
-FR-AUTH / AC-AUTH（含「续期不生效」当前不满足项）见 [../product/current/functional-requirements.md](../product/current/functional-requirements.md) · [../product/current/acceptance-criteria.md](../product/current/acceptance-criteria.md)。
+FR-AUTH / AC-AUTH（含「续期不生效」当前不满足项）见 [../product/v2.0.0/functional-requirements.md](../product/v2.0.0/functional-requirements.md) · [../product/v2.0.0/acceptance-criteria.md](../product/v2.0.0/acceptance-criteria.md)。
 
 风险点 #1–#9（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、拦截器 4 处复制、ai 默认用户后门、URL 放行过宽、WS 绕过鉴权、社区/家庭审核权限校验不完整）含 `file:line` 明细，统一登记于 [../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)（🔴 项同步进 [../ROADMAP.md](../ROADMAP.md) 安全加固）。

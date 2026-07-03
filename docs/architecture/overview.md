@@ -1,6 +1,6 @@
 # 架构总览
 
-> 跨切面的结构地图：项目是什么 / 用什么 / 怎么连。**项目定位、覆盖范围、核心目标、非目标**属用户可见面，见 [product/current/product-overview.md](../product/current/product-overview.md)；**迭代历程（两期演进、能力-时间对照）**见 [../CHANGELOG.md](../CHANGELOG.md)。本篇只留结构本身。
+> 跨切面的结构地图：项目是什么 / 用什么 / 怎么连。**项目定位、覆盖范围、核心目标、非目标**属用户可见面，见 [product/v2.0.0/product-overview.md](../product/v2.0.0/product-overview.md)；**迭代历程（两期演进、能力-时间对照）**见 [../CHANGELOG.md](../CHANGELOG.md)。本篇只留结构本身。
 
 ## 一句话
 
@@ -15,7 +15,7 @@
 | JWT + Redis 单点鉴权链路图 | [auth.md](auth.md) |
 | 分库设计 + 表字典（数据契约）+ 共享缓存 | [data-model.md](data-model.md) |
 
-> 用户可见契约（FR / AC / 端点 / 状态码）在 [product/current/](../product/current/)；各微服务与前端的技术实现（核心类 / 数据流 / 配置 / 已知缺陷）随代码就近，见 [../../shiwujie-backend/docs/](../../shiwujie-backend/docs/) 与 [../../shiwujie-frontend/app/docs/](../../shiwujie-frontend/app/docs/)、[../../shiwujie-frontend/web/docs/](../../shiwujie-frontend/web/docs/)。
+> 用户可见契约（FR / AC / 端点 / 状态码）在 [product/current.md](../product/current.md)；各微服务与前端的技术实现（核心类 / 数据流 / 配置 / 已知缺陷）随代码就近，见 [../../shiwujie-backend/docs/](../../shiwujie-backend/docs/) 与 [../../shiwujie-frontend/app/docs/](../../shiwujie-frontend/app/docs/)、[../../shiwujie-frontend/web/docs/](../../shiwujie-frontend/web/docs/)。
 
 ## 结构关键事实
 

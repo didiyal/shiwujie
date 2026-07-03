@@ -46,7 +46,7 @@
 
 ### ai（试错-移除残留 + 其它发现）
 
-> 移除历史见 [CHANGELOG.md](../../docs/CHANGELOG.md) 阶段 7；契约状态见 [product/current/functional-requirements.md](../../docs/product/current/functional-requirements.md) FR-AI-13~16。
+> 移除历史见 [CHANGELOG.md](../../docs/CHANGELOG.md) 阶段 7；契约状态见 [product/v2.0.0/functional-requirements.md](../../docs/product/v2.0.0/functional-requirements.md) FR-AI-13~16。
 
 1. **自研 ReAct Agent 未启用（✅ 坐实）**：`MyManus.java:9` `//@Component` 被注释 → 整条继承链（`BaseAgent`/`ReActAgent`/`ToolCallAgent`/`MyManus`）无 Bean 入容器；`ToolCallAgent` 自维护上下文（`withInternalToolExecutionEnabled(false)` + 自管 messageList）正是「重复调用工具」之源。实际生效路径是注入 `ToolChoiceApp`。弃用原因：自写 ReAct 工具重复调用/调用失败，周期紧放弃，改工作流式路由。
 2. **community 求助帖工具未注入（✅ 坐实）**：community Inner 服务完全未被消费；提示词 `toolChoice-template.txt` 中「处理用户、家庭、社区、活动、求助帖相关操作」是历史残留，ToolChoiceCenter switch 无 community 分支。

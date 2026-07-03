@@ -1,6 +1,6 @@
-# 验收标准（当前基线）
+# 验收标准（v2.0.0 · 进行中）
 
-> 全部模块的验收标准合并去重，编号 `AC-<MODULE>-<NN>`，与 [functional-requirements.md](functional-requirements.md) 的 `FR-<MODULE>-<NN>` 一一对应。⚠ 标注当前不满足项。本文件属 `product/current/` 滚动基线。
+> 全部模块的验收标准合并去重，编号 `AC-<MODULE>-<NN>`，与 [functional-requirements.md](functional-requirements.md) 的 `FR-<MODULE>-<NN>` 一一对应。⚠ 标注当前不满足项。本文件属 `product/v2.0.0/`（进行中）。
 
 ## 网关与共享层
 

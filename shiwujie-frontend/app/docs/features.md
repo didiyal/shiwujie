@@ -1,6 +1,6 @@
 # Android 功能实现备注
 
->development 细化：合并自原 `app/shiwujie/README_*.md` 与 `应用列表管理器实现说明.md`（已并入此处，原件移除）。记录若干 Fragment / 工具类的实现细节、文件清单与数据流，供二次开发参照。功能契约见 [product/current/functional-requirements.md](../../../docs/product/current/functional-requirements.md) FR-APP；缺陷见 [known-issues.md](known-issues.md)。
+>development 细化：合并自原 `app/shiwujie/README_*.md` 与 `应用列表管理器实现说明.md`（已并入此处，原件移除）。记录若干 Fragment / 工具类的实现细节、文件清单与数据流，供二次开发参照。功能契约见 [product/v2.0.0/functional-requirements.md](../../../docs/product/v2.0.0/functional-requirements.md) FR-APP；缺陷见 [known-issues.md](known-issues.md)。
 
 ## 盲人端社区模块
 

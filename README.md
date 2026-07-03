@@ -18,8 +18,8 @@ Phase2/
 | 想了解 | 进入 |
 |---|---|
 | 文档怎么写、内容边界在哪 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
-| 项目是什么、做什么、不做什么 | [docs/product/current/product-overview.md](docs/product/current/product-overview.md) |
-| 全部功能需求 / 验收标准（契约） | [docs/product/current/functional-requirements.md](docs/product/current/functional-requirements.md) |
+| 项目是什么、做什么、不做什么 | [docs/product/v2.0.0/product-overview.md](docs/product/v2.0.0/product-overview.md) |
+| 全部功能需求 / 验收标准（契约） | [docs/product/v2.0.0/functional-requirements.md](docs/product/v2.0.0/functional-requirements.md) |
 | 跨切面架构（路由/调用图/鉴权/分库/选型） | [docs/architecture/](docs/architecture/) |
 | 迭代历程（新增/变更/修复/移除） | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
 | 已完成 / 待实现 | [docs/ROADMAP.md](docs/ROADMAP.md) |

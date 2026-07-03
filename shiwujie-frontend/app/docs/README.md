@@ -1,6 +1,6 @@
 # Android App 文档（development 细化）
 
-> Android 客户端技术实现文档。**不含用户契约**——FR-APP / AC-APP 在根 [product/current/](../../../docs/product/current/)；跨切面（鉴权/路由/分库/选型）在根 [architecture/](../../../docs/architecture/)；规范见 [docs/CONTRIBUTING.md](../../../docs/CONTRIBUTING.md)。
+> Android 客户端技术实现文档。**不含用户契约**——FR-APP / AC-APP 在根 [product/current.md](../../../docs/product/current.md)；跨切面（鉴权/路由/分库/选型）在根 [architecture/](../../../docs/architecture/)；规范见 [docs/CONTRIBUTING.md](../../../docs/CONTRIBUTING.md)。
 
 ## 目录
 

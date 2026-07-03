@@ -35,6 +35,7 @@
 [ ] Knife4j 聚合 ai 服务（SB2/SB3 文档协议不兼容）
 [ ] 压力测试 + 性能基线 + AiLogs 索引调优（当前无压测）
 [ ] Docker 化部署
+[?] 二期单体重写（去微服务、按当前体量精简；反思 v2.0.0 微服务过度设计）—— 考虑中，编号待立项（v2.x 或 v3）
 ```
 
 ## 历史时期（阶段 0–9，约 2025-06 ~ 2026-07，日期不确定）
@@ -50,4 +51,4 @@
 [x] 分布式生产化：gateway 负载均衡、多机 nacos+dubbo、dev/prod 多环境、凭据占位符化、模块扁平化、Dubbo 端口迁出保留段
 ```
 
-> 首次打 tag（计划 v1.0.0）后：冻结 `docs/product/v1.0.0/` 快照 + 建 `docs/development/v1.0.0/` 三件套，并在此处新增 `## v1.0.0` 条目。流程见 [CONTRIBUTING.md](CONTRIBUTING.md) 第五节。
+> v2.0.0（进行中）：`docs/product/v2.0.0/` 与 `docs/development/v2.0.0/` 三件套已就位、随收尾工作滚动；打 tag 时冻结并补精确日期（流程见 [CONTRIBUTING.md](CONTRIBUTING.md) 第五节），并在本文件历史时期之上新增 `## v2.0.0` 条目。

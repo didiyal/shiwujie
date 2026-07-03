@@ -1,6 +1,6 @@
 # Android App 已知问题与技术债
 
-> App 端技术债 / 缺陷登记。development 层（允许源码引用与文件名）。🔴 = 安全或高危。统计/占位类缺口同步进 [ROADMAP.md](../../../docs/ROADMAP.md) 待实现「能力补全」。功能契约状态见 [product/current/functional-requirements.md](../../../docs/product/current/functional-requirements.md) FR-APP。
+> App 端技术债 / 缺陷登记。development 层（允许源码引用与文件名）。🔴 = 安全或高危。统计/占位类缺口同步进 [ROADMAP.md](../../../docs/ROADMAP.md) 待实现「能力补全」。功能契约状态见 [product/v2.0.0/functional-requirements.md](../../../docs/product/v2.0.0/functional-requirements.md) FR-APP。
 
 ## 🔴 安全
 

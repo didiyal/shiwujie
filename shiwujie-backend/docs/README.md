@@ -1,6 +1,6 @@
 # 后端文档（development 细化）
 
-> 后端微服务技术实现文档。**不含用户契约**——FR/AC/HTTP 路径/WebSocket 码/Dubbo 接口清单在根 [product/current/](../../docs/product/current/)；跨切面（路由/调用图/鉴权/分库/选型）在根 [architecture/](../../docs/architecture/)。规范见 [docs/CONTRIBUTING.md](../../docs/CONTRIBUTING.md)。
+> 后端微服务技术实现文档。**不含用户契约**——FR/AC/HTTP 路径/WebSocket 码/Dubbo 接口清单在根 [product/current.md](../../docs/product/current.md)；跨切面（路由/调用图/鉴权/分库/选型）在根 [architecture/](../../docs/architecture/)。规范见 [docs/CONTRIBUTING.md](../../docs/CONTRIBUTING.md)。
 
 ## 目录
 

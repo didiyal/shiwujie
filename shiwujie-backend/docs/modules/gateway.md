@@ -1,6 +1,6 @@
 # gateway 模块
 
-> Spring Cloud Gateway 网关，端口 8100。**仅路由 + 负载均衡，不做鉴权**（鉴权下沉各业务服务）。本文为 development 细化；用户可见契约（FR-GATEWAY / AC-GATEWAY）见 [product/current/](../../../docs/product/current/)。
+> Spring Cloud Gateway 网关，端口 8100。**仅路由 + 负载均衡，不做鉴权**（鉴权下沉各业务服务）。本文为 development 细化；用户可见契约（FR-GATEWAY / AC-GATEWAY）见 [product/current.md](../../../docs/product/current.md)。
 
 ## 模块定位
 

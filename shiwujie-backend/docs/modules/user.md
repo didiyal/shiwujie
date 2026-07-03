@@ -1,6 +1,6 @@
 # user 模块
 
-> 三类用户（Blind/Volunteer/Family）的身份、资料、家庭关系与家庭审核；**JWT 单点鉴权签发方**；Dubbo 提供者。本文为 development 细化；用户可见契约（FR-USER / AC-USER）见 [product/current/](../../../docs/product/current/)。
+> 三类用户（Blind/Volunteer/Family）的身份、资料、家庭关系与家庭审核；**JWT 单点鉴权签发方**；Dubbo 提供者。本文为 development 细化；用户可见契约（FR-USER / AC-USER）见 [product/current.md](../../../docs/product/current.md)。
 
 ## 模块定位
 
