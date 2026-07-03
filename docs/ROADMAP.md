@@ -15,7 +15,7 @@
 [ ] 修复续期 key 拼接 bug（漏 -blind-/-volunteer- 前缀，滑动会话静默失效）
 ```
 
-> 以上 🔴 项的代码定位与机制见 [shiwujie-backend/docs/known-issues.md](shiwujie-backend/docs/known-issues.md) 与 [architecture/auth.md](architecture/auth.md)；此处只登记为必办方向。
+> 以上 🔴 项的代码定位与机制见 [shiwujie-backend/docs/known-issues.md](../shiwujie-backend/docs/known-issues.md) 与 [architecture/auth.md](architecture/auth.md)；此处只登记为必办方向。
 
 ### 能力补全
 

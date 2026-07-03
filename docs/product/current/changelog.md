@@ -16,4 +16,4 @@
 
 ## 首次打 tag 后
 
-打 tag（计划 v1.0.0）时：① 本目录快照为 `product/v1.0.0/`；② 根 CHANGELOG 新增 `## v1.0.0 - <tag 日期>`（精确日期）；③ 此文件后续按版本记录用户可见变更。流程见 [CONTRIBUTING.md](../CONTRIBUTING.md) 第五节。
+打 tag（计划 v1.0.0）时：① 本目录快照为 `product/v1.0.0/`；② 根 CHANGELOG 新增 `## v1.0.0 - <tag 日期>`（精确日期）；③ 此文件后续按版本记录用户可见变更。流程见 [CONTRIBUTING.md](../../CONTRIBUTING.md) 第五节。

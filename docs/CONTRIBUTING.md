@@ -94,7 +94,7 @@ Phase2/                              ← 仓库根（工作区恒设此层）
 | bug / 重构 / 缺陷 / 技术债的实现细节 | ✗（只写用户影响） | ✓ |
 | Mermaid 链路图 / 调用图 / 时序图 | ✗（用文字契约） | ✓ |
 
-> **去重铁律**：FR/AC 只在 `product/current/` 出现一次。architecture 与 modules **不重复** FR/AC；若需引用，写「见 [product/functional-requirements.md](../product/functional-requirements.md#fr-xxx)」。
+> **去重铁律**：FR/AC 只在 `product/current/` 出现一次。architecture 与 modules **不重复** FR/AC；若需引用，写「见 [product/current/functional-requirements.md](product/current/functional-requirements.md#fr-xxx)」。
 
 ## 五、版本号与状态规则
 

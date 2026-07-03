@@ -1,6 +1,6 @@
 # 后端部署
 
-> 启动命令、Dubbo 注册 IP 坑、端口/防火墙、Docker。development 层（允许启动命令与 yml 片段）。路由表与端口表见 [architecture/gateway-dubbo.md](../../../docs/architecture/gateway-dubbo.md)。
+> 启动命令、Dubbo 注册 IP 坑、端口/防火墙、Docker。development 层（允许启动命令与 yml 片段）。路由表与端口表见 [architecture/gateway-dubbo.md](../../docs/architecture/gateway-dubbo.md)。
 
 ## 端口与基础设施
 
@@ -12,7 +12,7 @@
 | community | 8400 | `/api/community` | 21400 | shiwujiecommunity | 2 |
 | ai | 8500 | （未设） | 21500 | shiwujieai | 2 |
 
-> Dubbo provider 端口用 21200–21500，避让 Windows Hyper-V/WSL2 动态保留的 TCP 排除段（原 502xx 落入会 bind 抛 `Address already in use` 而 `netstat` 查无进程）。见 [CHANGELOG.md](../../../docs/CHANGELOG.md) 阶段 9。
+> Dubbo provider 端口用 21200–21500，避让 Windows Hyper-V/WSL2 动态保留的 TCP 排除段（原 502xx 落入会 bind 抛 `Address already in use` 而 `netstat` 查无进程）。见 [CHANGELOG.md](../../docs/CHANGELOG.md) 阶段 9。
 
 ## dev / prod 拓扑
 

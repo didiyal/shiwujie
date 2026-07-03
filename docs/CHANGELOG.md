@@ -73,8 +73,8 @@
 - AI 模块拦截器 redis 连接问题。（`7737559`）
 
 **移除**
-- **mqtt 硬件 IoT 通道**：因硬件成本问题取消，代码删除（**pom 残留 paho 依赖**，见 [shiwujie-backend/docs/modules/ai.md](shiwujie-backend/docs/modules/ai.md) 已知问题）。（git 历史可溯，代码已无 MqttClient 引用）
-- **自研 ReAct Agent**：经大量测试（多种提示词、RAG 注入、Agent 调用），确定工具调用最佳方案为**代码实现工作流**，自研 ReAct 框架弃用、`@Component` 注释（保留代码未启用）。（`07459f6`，见 [shiwujie-backend/docs/modules/ai.md](shiwujie-backend/docs/modules/ai.md)）
+- **mqtt 硬件 IoT 通道**：因硬件成本问题取消，代码删除（**pom 残留 paho 依赖**，见 [shiwujie-backend/docs/modules/ai.md](../shiwujie-backend/docs/modules/ai.md) 已知问题）。（git 历史可溯，代码已无 MqttClient 引用）
+- **自研 ReAct Agent**：经大量测试（多种提示词、RAG 注入、Agent 调用），确定工具调用最佳方案为**代码实现工作流**，自研 ReAct 框架弃用、`@Component` 注释（保留代码未启用）。（`07459f6`，见 [shiwujie-backend/docs/modules/ai.md](../shiwujie-backend/docs/modules/ai.md)）
 - **RAG 知识库增强**：测试后效果不及工作流，移除接入（`MyRagAdvisor` Bean 半残留，未注入）。（`07459f6`）
 - **语气切换功能**。（后续 `088b14f` 彻底删除）
 

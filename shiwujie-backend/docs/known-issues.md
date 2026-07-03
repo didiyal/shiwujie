@@ -1,21 +1,21 @@
 # 后端已知问题与技术债
 
-> 后端技术债 / 缺陷登记。development 层（允许源码引用 `file:line`）。🔴 = 安全漏洞或高危，已同步进 [ROADMAP.md](../../../docs/ROADMAP.md) 待实现「安全加固」作必办。鉴权链路总览见 [architecture/auth.md](../../../docs/architecture/auth.md)。
+> 后端技术债 / 缺陷登记。development 层（允许源码引用 `file:line`）。🔴 = 安全漏洞或高危，已同步进 [ROADMAP.md](../../docs/ROADMAP.md) 待实现「安全加固」作必办。鉴权链路总览见 [architecture/auth.md](../../docs/architecture/auth.md)。
 
 ## 🔴 安全漏洞（必办）
 
-1. **ai 默认用户兜底（生产后门）**：`LoginCheckInterceptor`（ai 模块，line 52-60）无 Authorization 时注入 blindId=1 / phone=19872250169。生产未关闭则任何人可白嫖 AI（消耗 DashScope token）。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #6。
-2. **community 权限检查被注释**：`HelppostServiceImpl.deleteHelppost`/`updateHelppost` 的「创建者或管理员」检查**整段被注释** → 任何登录视障者可删/改任意帖；`CommunityController.deleteCommunity`/`updateCommunity` 注释「仅注册人可改」但**实现未校验** → 任意志愿者可改/删任意社区；Activity delete/update、Activitysign add 均无身份与角色校验。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #9。
-3. **续期 key 拼接 bug**：`renewKey`/`expire` 拼的 key **少了 `-blind-`/`-volunteer-` 段**（`LoginCheckInterceptor` 续期、`deleteBlind` 删 token 均漏前缀；登录存/注销删/拦截器读则正确）→ 滑动会话静默失效，活跃用户 90 天后被踢；删用户删 token 同样漏前缀。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #1。
-4. **JWT 过期校验被关闭**：`validateToken(..., true)` 第三参 `ignoreExp=true`，JWT 自身 exp 永不生效，过期完全依赖 Redis TTL。Redis 故障/误写则 JWT 形同永久有效。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #2。
-5. **TOKEN_SECRETKEY 硬编码且弱**：密钥即字符串 `"TOKEN_SECRETKEY"`，明文在共享 model 模块，HS256 弱密钥有离线爆破/伪造 token 风险。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #3。
-6. **MD5 存密码、无加盐**：`SecureUtil.md5(password)`，不适用口令存储且无 salt → 彩虹表风险。建议 BCrypt/Argon2。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #4。
-7. **/ws/call 未在鉴权白名单**：`WebConfig.excludePathPatterns` 不含 `/ws/call`，`@ServerEndpoint` 走独立容器 → **WS 实际绕过 JWT**。任何人构造 `{requestType:0, volunteerPhone:"任意号"}` 即可冒名 bind，接收他人求助通知。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #8。
-8. **URL 放行规则过宽**：`url.contains("loginAndRegister")`/`contains("Login")` 按子串放行未限定 path，任何含该子串的路径都绕过鉴权。建议 AntPathMatcher。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #7。
+1. **ai 默认用户兜底（生产后门）**：`LoginCheckInterceptor`（ai 模块，line 52-60）无 Authorization 时注入 blindId=1 / phone=19872250169。生产未关闭则任何人可白嫖 AI（消耗 DashScope token）。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #6。
+2. **community 权限检查被注释**：`HelppostServiceImpl.deleteHelppost`/`updateHelppost` 的「创建者或管理员」检查**整段被注释** → 任何登录视障者可删/改任意帖；`CommunityController.deleteCommunity`/`updateCommunity` 注释「仅注册人可改」但**实现未校验** → 任意志愿者可改/删任意社区；Activity delete/update、Activitysign add 均无身份与角色校验。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #9。
+3. **续期 key 拼接 bug**：`renewKey`/`expire` 拼的 key **少了 `-blind-`/`-volunteer-` 段**（`LoginCheckInterceptor` 续期、`deleteBlind` 删 token 均漏前缀；登录存/注销删/拦截器读则正确）→ 滑动会话静默失效，活跃用户 90 天后被踢；删用户删 token 同样漏前缀。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #1。
+4. **JWT 过期校验被关闭**：`validateToken(..., true)` 第三参 `ignoreExp=true`，JWT 自身 exp 永不生效，过期完全依赖 Redis TTL。Redis 故障/误写则 JWT 形同永久有效。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #2。
+5. **TOKEN_SECRETKEY 硬编码且弱**：密钥即字符串 `"TOKEN_SECRETKEY"`，明文在共享 model 模块，HS256 弱密钥有离线爆破/伪造 token 风险。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #3。
+6. **MD5 存密码、无加盐**：`SecureUtil.md5(password)`，不适用口令存储且无 salt → 彩虹表风险。建议 BCrypt/Argon2。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #4。
+7. **/ws/call 未在鉴权白名单**：`WebConfig.excludePathPatterns` 不含 `/ws/call`，`@ServerEndpoint` 走独立容器 → **WS 实际绕过 JWT**。任何人构造 `{requestType:0, volunteerPhone:"任意号"}` 即可冒名 bind，接收他人求助通知。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #8。
+8. **URL 放行规则过宽**：`url.contains("loginAndRegister")`/`contains("Login")` 按子串放行未限定 path，任何含该子串的路径都绕过鉴权。建议 AntPathMatcher。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #7。
 
 ## 鉴权链路（LoginCheckInterceptor 4 处复制 + 行为分叉）
 
-`{user, call, community, ai}/.../interceptor/LoginCheckInterceptor.java` 各一份：user/call/community 三份几乎逐字相同（仅 URL 放行规则略异）；**ai 那份完全不同**（jakarta 命名空间、直调 RedisTemplate、`@DubboReference InnerBlindService` 拉 Blind 实体、无 token 时 fallback 测试用户）。应抽到 common-web 统一份，但被 SB2/SB3 割裂阻挡。见 [architecture/auth.md](../../../docs/architecture/auth.md) 风险 #5。
+`{user, call, community, ai}/.../interceptor/LoginCheckInterceptor.java` 各一份：user/call/community 三份几乎逐字相同（仅 URL 放行规则略异）；**ai 那份完全不同**（jakarta 命名空间、直调 RedisTemplate、`@DubboReference InnerBlindService` 拉 Blind 实体、无 token 时 fallback 测试用户）。应抽到 common-web 统一份，但被 SB2/SB3 割裂阻挡。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #5。
 
 ## 各模块缺陷
 
@@ -46,7 +46,7 @@
 
 ### ai（试错-移除残留 + 其它发现）
 
-> 移除历史见 [CHANGELOG.md](../../../docs/CHANGELOG.md) 阶段 7；契约状态见 [product/current/functional-requirements.md](../../../docs/product/current/functional-requirements.md) FR-AI-13~16。
+> 移除历史见 [CHANGELOG.md](../../docs/CHANGELOG.md) 阶段 7；契约状态见 [product/current/functional-requirements.md](../../docs/product/current/functional-requirements.md) FR-AI-13~16。
 
 1. **自研 ReAct Agent 未启用（✅ 坐实）**：`MyManus.java:9` `//@Component` 被注释 → 整条继承链（`BaseAgent`/`ReActAgent`/`ToolCallAgent`/`MyManus`）无 Bean 入容器；`ToolCallAgent` 自维护上下文（`withInternalToolExecutionEnabled(false)` + 自管 messageList）正是「重复调用工具」之源。实际生效路径是注入 `ToolChoiceApp`。弃用原因：自写 ReAct 工具重复调用/调用失败，周期紧放弃，改工作流式路由。
 2. **community 求助帖工具未注入（✅ 坐实）**：community Inner 服务完全未被消费；提示词 `toolChoice-template.txt` 中「处理用户、家庭、社区、活动、求助帖相关操作」是历史残留，ToolChoiceCenter switch 无 community 分支。
@@ -73,6 +73,6 @@
 ## 跨切面技术债
 
 - **无分布式事务（Seata）**：user 模块 pom 中 seata 依赖被注释。跨库写靠 `synchronized(phone.intern())` 单机锁 + 业务级联 updateById，中途异常留脏数据。已知跨库写场景：社区入驻（community 写社区 + user 写 volunteer.communityId）、加入审核通过（community 改 review_status + user 写 communityId）、删志愿者（级联删家庭 + 清社区）、删社区（清成员 communityId + 删 communitymanager）。
-- **反模式：QueryWrapper 跨 Dubbo 传递**：`InnerCommunityjoinreviewService.getOne(QueryWrapper)` 把 MyBatis-Plus QueryWrapper 跨 Dubbo 传（强耦合 + 序列化风险）。见 [architecture/data-model.md](../../../docs/architecture/data-model.md)。
-- **冗余 Inner 契约**：community 的 `InnerActivityService`/`InnerActivitysignService`/`InnerHelppostService` 已 `@DubboService` 暴露但全局无 `@DubboReference` 消费方——预留或清理遗漏。见 [architecture/gateway-dubbo.md](../../../docs/architecture/gateway-dubbo.md)。
+- **反模式：QueryWrapper 跨 Dubbo 传递**：`InnerCommunityjoinreviewService.getOne(QueryWrapper)` 把 MyBatis-Plus QueryWrapper 跨 Dubbo 传（强耦合 + 序列化风险）。见 [architecture/data-model.md](../../docs/architecture/data-model.md)。
+- **冗余 Inner 契约**：community 的 `InnerActivityService`/`InnerActivitysignService`/`InnerHelppostService` 已 `@DubboService` 暴露但全局无 `@DubboReference` 消费方——预留或清理遗漏。见 [architecture/gateway-dubbo.md](../../docs/architecture/gateway-dubbo.md)。
 - **单机 JVM 锁多实例失效**：`synchronized(loginUserPhone.intern())` 在多实例部署下无法防并发写。

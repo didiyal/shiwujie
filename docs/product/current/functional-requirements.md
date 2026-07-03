@@ -36,7 +36,7 @@
 | FR-AUTH-05 | 每次合法请求对 Redis token key 续期（设计意图=滑动会话） | ❌（续期 key 拼接 bug，滑动会话静默失效） |
 | FR-AUTH-06 | 注销删除 Redis 对应 token key | ✅ |
 
-> ⚠ 鉴权链路存在多个已知风险（JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、ai 默认用户后门、WS 绕过鉴权等），方向登记见 [ROADMAP.md](../../ROADMAP.md) 安全加固，机制定位见 [architecture/auth.md](../../architecture/auth.md) 与 [shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)。
+> ⚠ 鉴权链路存在多个已知风险（JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、ai 默认用户后门、WS 绕过鉴权等），方向登记见 [ROADMAP.md](../../ROADMAP.md) 安全加固，机制定位见 [architecture/auth.md](../../architecture/auth.md) 与 [shiwujie-backend/docs/known-issues.md](../../../shiwujie-backend/docs/known-issues.md)。
 
 ## 用户与家庭（user 模块）
 
@@ -107,7 +107,7 @@
 
 ### FR-AI
 
-> 状态列如实标注已弃用/未启用/未实现能力（试错-移除记录见 [CHANGELOG.md](../../CHANGELOG.md) 阶段 7；残留代码状态见 [shiwujie-backend/docs/modules/ai.md](../../shiwujie-backend/docs/modules/ai.md)）。
+> 状态列如实标注已弃用/未启用/未实现能力（试错-移除记录见 [CHANGELOG.md](../../CHANGELOG.md) 阶段 7；残留代码状态见 [shiwujie-backend/docs/modules/ai.md](../../../shiwujie-backend/docs/modules/ai.md)）。
 
 | ID | 需求 | 状态 |
 |---|---|---|
@@ -178,4 +178,4 @@
 
 ## 数据契约（补充）
 
-跨服务数据访问不走 JOIN，统一经 Dubbo `Inner*Service`。各库独立、共享缓存 db=2。表字典与字段枚举见 [architecture/data-model.md](../../architecture/data-model.md)（数据契约属用户可见面，列入 product 边界；分库设计的实现取舍见同文与 [shiwujie-backend/docs/modules/](../../shiwujie-backend/docs/)）。
+跨服务数据访问不走 JOIN，统一经 Dubbo `Inner*Service`。各库独立、共享缓存 db=2。表字典与字段枚举见 [architecture/data-model.md](../../architecture/data-model.md)（数据契约属用户可见面，列入 product 边界；分库设计的实现取舍见同文与 [shiwujie-backend/docs/modules/](../../../shiwujie-backend/docs/)）。
