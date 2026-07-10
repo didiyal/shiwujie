@@ -27,33 +27,35 @@
 - [ ] App 高德 SDK 集成 ——独立项
 - [ ] Docker 化 + 压测 + AiLogs 索引调优 ——独立项
 
-## 合库执行步骤（mysqldump 旧 4 库 → 单库 `shiwujie`）
+## 合库执行步骤（旧 4 库导出 → 单库 `shiwujie`）
 
-> 旧 4 库 `shiwujieuser` / `shiwujiecall` / `shiwujiecommunity` / `shiwujieai` 共 13 表（表名 PascalCase，无冲突）合并导入空库 `shiwujie`（`47.112.114.139:3306`，user=`shiwujie`，密码见 [`shiwujie-bootstrap/src/main/resources/application.yml`](../../../shiwujie-backend/shiwujie-bootstrap/src/main/resources/application.yml)）。由具备远程访问权限的连接执行（应用账号默认仅授权服务端本机/白名单 IP）。
+> 旧 4 库 `shiwujieuser` / `shiwujiecall` / `shiwujiecommunity` / `shiwujieai` 共 **16 表**（13 业务主表 + 3 字典表；表名 PascalCase 无冲突）合并导入空库 `shiwujie`（`47.112.114.139:3306`，user=`shiwujie`，密码见 [`shiwujie-bootstrap/src/main/resources/application.yml`](../../../shiwujie-backend/shiwujie-bootstrap/src/main/resources/application.yml)）。由具备远程访问权限的连接执行（应用账号默认仅授权服务端本机/白名单 IP）。
+
+**已知导出格式坑**（实测 `localhost_2026-07-11_04-56-49_mysql_data.zip`，Navicat 风格、源 MySQL 5.7）：每份 `*.sql` 顶部带 `CREATE DATABASE IF NOT EXISTS \`<旧库>\`` + `USE \`<旧库>\`;`——直接导入会把表建回旧库。导入前用 `sed` 把反引号包裹的旧库名整体换成 `shiwujie`（`CREATE DATABASE` 变空操作、`USE` 指向正确库；裸词旧库名只出现在注释里，不受影响）。导出已内置 `FOREIGN_KEY_CHECKS=0`，无需再包。`shiwujieai.sql` 约 110MB（`AiLogs.content` longtext 存 base64 图片，141 条多行 INSERT），属可弃历史——**建议 ai 仅导结构**跳过图片数据。
 
 ```bash
 # 0) 凭据（PWD 取自 bootstrap application.yml 的 ${MYSQL_PASSWORD:默认}）
-export MPWD='<'密码'>'
+export MPWD='SGaxER3XisXFfRKw'
+DBH=47.112.114.139   # 若导入本机 dev 库改 localhost
+cd <含 4 份 *.sql 的目录>
 
-# 1) 逐库导出（仅表级，不含 CREATE DATABASE/USE；--single-transaction 一致性快照）
-for db in shiwujieuser shiwujiecall shiwujiecommunity shiwujieai; do
-  mysqldump -h47.112.114.139 -P3306 -ushiwujie -p"$MPWD" \
-    --single-transaction --default-character-set=utf8mb4 \
-    "$db" > "${db}.sql"
+# 1) user / call / community：全量（结构+数据，都很小）；sed 反引号旧库名→shiwujie
+for db in shiwujieuser shiwujiecall shiwujiecommunity; do
+  sed "s/\`${db}\`/\`shiwujie\`/g" "${db}.sql" \
+    | mysql -h"$DBH" -P3306 -ushiwujie -p"$MPWD"
 done
 
-# 2) 导入空库 shiwujie（临时关 FK 检查，避免表创建/外键顺序依赖；mysqldump 自带 DROP+CREATE+INSERT，可重跑）
-for db in shiwujieuser shiwujiecall shiwujiecommunity shiwujieai; do
-  ( echo "SET FOREIGN_KEY_CHECKS=0;"; cat "${db}.sql"; echo "SET FOREIGN_KEY_CHECKS=1;" ) \
-    | mysql -h47.112.114.139 -P3306 -ushiwujie -p"$MPWD" shiwujie
-done
+# 2) ai：仅结构（保留 AiLogs CREATE TABLE，跳过 110MB 图片历史 INSERT）
+grep -v '^INSERT INTO' shiwujieai.sql | sed 's/`shiwujieai`/`shiwujie`/g' \
+  | mysql -h"$DBH" -P3306 -ushiwujie -p"$MPWD"
+# （若要保留 ai 历史，改用第 1 步同样写法导入全量 shiwujieai.sql）
 
-# 3) 校验：目标库表数应 = 13（user4 + call2 + community6 + ai1）
-mysql -h47.112.114.139 -P3306 -ushiwujie -p"$MPWD" shiwujie -e \
+# 3) 校验：目标库表数应 = 16（user4 + call2 + community9 + ai1）
+mysql -h"$DBH" -P3306 -ushiwujie -p"$MPWD" -e \
   "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema='shiwujie';"
 ```
 
-> 注意：表名大小写由服务端 `lower_case_table_names` 决定——旧库既已按现名工作，导入后行为一致，无需额外处理。导入完成后保留 4 份 `.sql` 作为回滚源，直到 2.7 验证通过。
+> 表名 PascalCase 全程反引号包裹，大小写由服务端 `lower_case_table_names` 决定——旧库既已按现名工作，导入后一致。导入完成后保留 4 份 `.sql` 作为回滚源，直到 2.7 验证通过。
 
 ## 启动与冒烟验证（合库后起栈）
 

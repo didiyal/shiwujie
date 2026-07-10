@@ -6,7 +6,7 @@
 
 > 下方「分库设计」为 v2.1.0 现状。v3.0.0 单体化将合并为单库（详见 [`task-breakdown`](../development/v3.0.0/task-breakdown.md) 阶段 2.6）：
 
-- **4 库 → 单库 `shiwujie`**：`shiwujieuser` / `shiwujiecall` / `shiwujiecommunity` / `shiwujieai` 共 13 表（表名无冲突）合并导入新库 `shiwujie`（`47.112.114.139:3306`，user=`shiwujie`），单体单一 datasource。表字典（字段/枚举）不变。
+- **4 库 → 单库 `shiwujie`**：`shiwujieuser` / `shiwujiecall` / `shiwujiecommunity` / `shiwujieai` 共 **16 表**（13 业务主表 + `CommunityLevel`/`CommunityRolePermission`/`CommunityType` 3 字典表；表名 PascalCase 无冲突）合并导入新库 `shiwujie`（`47.112.114.139:3306`，user=`shiwujie`），单体单一 datasource。表字典（字段/枚举）不变。导入步骤见 [`release-checklist`](../development/v3.0.0/release-checklist.md)「合库执行步骤」。
 - **跨库写 → 单库单事务**：社区入驻 / 审核通过 / 删志愿者 / 删社区 4 场景，原先 Dubbo 跨库 + `synchronized` + 级联 updateById 无事务保证，合并后同库用 `@Transactional` 包裹（强一致，无脏数据残留）。
 - **驼峰映射统一**：call 模块 `map-underscore-to-camel-case: false`（实体 snake_case）是当前唯一不一致点；统一为全局 `true`，call 的 `Videohelp` / `Urgenthelp` 实体字段 snake→camel（`blind_id`→`blindId`、`help_status`→`helpStatus`、`is_delete`→`isDelete`），**DB 列名保持 snake_case** 由下划线映射自动匹配，无需 DDL 改列。
 - **跨服务数据契约退化为本地调用**：Dubbo `Inner*Service` RPC 改为同进程 Bean 注入，跨库数据访问仍不走 JOIN（保持现有解耦），契约清单见 [`gateway-dubbo.md`](gateway-dubbo.md)。
@@ -55,7 +55,7 @@ Redis 单实例 `47.112.114.139:6379`，所有模块共享 **db=2**：
 
 > call 模块实体字段用 **snake_case**（`blind_id`、`help_status`），配合 `map-underscore-to-camel-case: false`。
 
-### shiwujiecommunity（community 模块，6 表）
+### shiwujiecommunity（community 模块，9 表 = 6 业务主表 + 3 字典表）
 
 | 表 | 实体 | 说明 | 关键字段 |
 |---|---|---|---|
@@ -65,6 +65,11 @@ Redis 单实例 `47.112.114.139:6379`，所有模块共享 **db=2**：
 | helppost | `Helppost` | 求助帖 | blindId / communityId / postStatus(0待响应/1处理中/2完成/3取消) / volunteerId |
 | activity | `Activity` | 活动 | communityId / managerId / activityStatus(0未开始/1进行中/2结束/3取消) |
 | activitysign | `Activitysign` | 活动报名 | activityId / blindId / volunteerId / signUpTime / checkInTime / checkOutTime |
+| communitylevel | `CommunityLevel` | 字典·社区层级（省/市/街道） | levelId / levelName |
+| communitytype | `CommunityType` | 字典·社区类型 | communityTypeId / communityTypeName |
+| communityrolepermission | `CommunityRolePermission` | 字典·角色权限（1注册人/2管理员/3员工） | rolePermissionId / rolePermissionName |
+
+> 3 张字典表在 v3.0.0 合库导出中为空表（CREATE only，无数据）——角色判定走 Java `CommunityRolePermissionEnum`，不依赖 `CommunityRolePermission` 表数据，空表不影响运行。
 
 ### shiwujieai（ai 模块，1 表）
 
