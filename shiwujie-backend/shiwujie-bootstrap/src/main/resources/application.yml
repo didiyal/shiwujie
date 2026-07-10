@@ -1,0 +1,58 @@
+# 视无界单体配置（v3.0.0 单体化）——合并自原 user/call/community/ai 四模块 yml，去 Dubbo/Nacos。
+# 对外契约不变：端口复用原 gateway 8100；HTTP /api/{user,call,community,ai}/** + WS /api/ws/call 由各 controller 内化前缀（见阶段2.4）。
+server:
+  port: 8100                      # 复用原 gateway 对外端口（契约：前端连 :8100）
+  servlet:
+    context-path: /               # 单体 context-path 置空（根）；原各模块 context-path 前缀下沉到 controller 类级 @RequestMapping（阶段2.4）
+    encoding:
+      enabled: true
+      force: true
+      charset: UTF-8
+spring:
+  application:
+    name: shiwujie
+  profiles:
+    active: dev
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: shiwujie
+    password: ${MYSQL_PASSWORD:SGaxER3XisXFfRKw}
+    url: jdbc:mysql://47.112.114.139:3306/shiwujie   # 单库（v3.0.0 合库目标，旧 4 库 mysqldump 结构+数据导入；阶段2.6）
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20       # 4 库合一，池大小沿用单库上限
+      max-lifetime: 30000         # 不能小于 30 秒，否则默认回到 1800 秒
+      connection-test-query: SELECT 1
+      idle-timeout: 30000
+      connection-timeout: 30000
+  data:
+    redis:
+      host: 47.112.114.139
+      port: 6379
+      database: 2
+      password: ${REDIS_PASSWORD:123456}
+      lettuce:
+        shutdown-timeout: 0ms     # 关闭时不等待 Lettuce 优雅退出，避免阻塞
+      timeout: 2s
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:sk-6374b4a1ebd64f56ae8d0799e74b7927}
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      chat:
+        options:
+          model: qwen3-max
+    chat:
+      client:
+        enabled: true
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true   # 全局开（阶段2.6 统一 call 实体 snake→camel；DB 列名保持 snake_case）
+  global-config:
+    db-config:
+      logic-delete-field: isDelete       # 全局逻辑删除字段名
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+logging:
+  config: classpath:logback-spring.xml
+search-api:
+  api-key: ${SEARCH_API_KEY:4qkQ96eSGHAbAQKS5wbs8WyT}

@@ -8,46 +8,38 @@
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>shiwujieGateway</artifactId>
-    <name>shiwujieGateway</name>
-    <description>视无界网关</description>
+    <artifactId>shiwujieBootstrap</artifactId>
+    <name>shiwujieBootstrap</name>
+    <description>视无界单体启动模块（v3.0.0 单体化：唯一 @SpringBootApplication 入口，聚合 user/call/community/ai，repackage 产出可执行 jar）</description>
+
     <dependencies>
+        <!-- 四业务模块（含 Dubbo 接缝点 v3.0.0 阶段2.2 转本地后同进程注入）；common-web/model 随传递依赖引入 -->
         <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-gateway-spring-boot-starter</artifactId>
+            <groupId>com.swj</groupId>
+            <artifactId>shiwujieUser</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <groupId>com.swj</groupId>
+            <artifactId>shiwujieCall</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.swj</groupId>
+            <artifactId>shiwujieCommunity</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.swj</groupId>
+            <artifactId>shiwujieAi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-<!--        spring-cloud-->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-gateway</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
-        </dependency>
-        <!-- Nacos Discovery -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-        <!-- Spring Cloud LoadBalancer -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
     </dependencies>
+
     <build>
         <plugins>
+            <!-- 唯一 repackage：单体可执行 jar（四业务模块在 2.1 已去 repackage，降为库） -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
