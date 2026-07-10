@@ -32,7 +32,6 @@
         <dubbo.version>3.3.0</dubbo.version>
         <knife4j.version>4.4.0</knife4j.version>
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
-        <pagehelper.version>5.1.10</pagehelper.version>
         <hutool.version>5.8.25</hutool.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
     </properties>
@@ -89,10 +88,10 @@
                 <version>${spring-cloud-alibaba.version}</version>
             </dependency>
 
-            <!-- Knife4j -->
+            <!-- Knife4j（v3.0.0 阶段1.4：openapi2→openapi3-jakarta，匹配 SB3.4.5） -->
             <dependency>
                 <groupId>com.github.xiaoymin</groupId>
-                <artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
+                <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
             </dependency>
             <dependency>
@@ -100,6 +99,8 @@
                 <artifactId>knife4j-gateway-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
             </dependency>
+
+            <!-- PageHelper 已删（v3.0.0 阶段1.4：全代码 0 处 PageHelper.startPage，死依赖） -->
 
             <!-- MyBatis-Plus（v3.0.0 阶段1.3：坐标 SB2→SB3，mybatis-plus-boot-starter→mybatis-plus-spring-boot3-starter 3.5.9，与 ai 对齐） -->
             <dependency>

@@ -14,8 +14,8 @@ import com.swj.shiwujie.model.request.user.familyJoinReview.FamilyJoinReviewUpda
 import com.swj.shiwujie.service.FamilyJoinReviewService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +33,7 @@ import java.util.List;
 @RestController
 @Slf4j
 @RequestMapping("/familyJoinReview")
-@Api(tags = "家庭审核操作接口")
+@Tag(name = "家庭审核操作接口")
 public class FamilyJoinReviewController {
 
 
@@ -51,7 +51,7 @@ public class FamilyJoinReviewController {
      * @return 是否成功
      */
     @PutMapping("/update")
-    @ApiOperation("更新家庭加入审核信息")
+    @Operation(summary = "更新家庭加入审核信息")
     @Transactional(rollbackFor = Exception.class)
     public BaseResponse<Boolean> updateFamilyJoinReview(FamilyJoinReviewUpdateRequest familyJoinReviewUpdateRequest, HttpServletRequest request) {
         //1. 获取操作用户的id
@@ -76,7 +76,7 @@ public class FamilyJoinReviewController {
      * @return 脱敏后的审核信息
      */
     @GetMapping("/get/id/vo")
-    @ApiOperation("根据ID获取家庭加入审核信息")
+    @Operation(summary = "根据ID获取家庭加入审核信息")
     public BaseResponse<FamilyJoinReviewVO> getFamilyJoinReviewVOById(Long reviewId) {
 
         FamilyJoinReview familyJoinReview = familyJoinReviewService.getById(reviewId);
@@ -95,7 +95,7 @@ public class FamilyJoinReviewController {
      * @return 脱敏后的审核信息
      */
     @GetMapping("/get/list/vo")
-    @ApiOperation("获取家庭加入审核信息列表")
+    @Operation(summary = "获取家庭加入审核信息列表")
     public BaseResponse<List<FamilyJoinReviewVO>> getFamilyJoinReviewVOList(HttpServletRequest request) {
         //1. 获取家主的id
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);

@@ -17,8 +17,8 @@ import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import com.swj.shiwujie.utils.ResultUtils;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +33,7 @@ import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
  */
 @RestController
 @RequestMapping("/volunteer")
-@Api(tags = "志愿者操作接口")
+@Tag(name = "志愿者操作接口")
 public class VolunteerController {
 
     @Resource
@@ -51,7 +51,7 @@ public class VolunteerController {
      * @return 登录用户id
      */
     @GetMapping("/login/check")
-    @ApiOperation("检查志愿者是否登录")
+    @Operation(summary = "检查志愿者是否登录")
     public BaseResponse<VolunteerVO> checkLogin(HttpServletRequest request) {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
         ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId), ErrorCode.NOT_LOGIN, "未登录");
@@ -70,7 +70,7 @@ public class VolunteerController {
      * @return 脱敏后的用户信息
      */
     @PostMapping("/login/loginAndRegisterQuickly")
-    @ApiOperation("手机号一键登录/注册志愿者")
+    @Operation(summary = "手机号一键登录/注册志愿者")
     public BaseResponse<VolunteerLoginSuccessVO> loginAndRegisterQuickly(String phone) {
         // 鉴空
         ThrowUtils.throwIf(StrUtil.isBlankIfStr(phone), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
@@ -90,7 +90,7 @@ public class VolunteerController {
      * @return 脱敏后的用户信息
      */
     @PostMapping("/login/loginAndRegister")
-    @ApiOperation("手机号密码登录/注册志愿者")
+    @Operation(summary = "手机号密码登录/注册志愿者")
     public BaseResponse<VolunteerLoginSuccessVO> loginAndRegister(VolunteerLARRequest volunteerLARRequest) {
         ThrowUtils.throwIf(ObjUtil.hasEmpty(volunteerLARRequest), ErrorCode.PARAMS_ERROR, "输入数据格式错误");
 
@@ -107,7 +107,7 @@ public class VolunteerController {
      * @return 是否成功
      */
     @GetMapping("/login/logout")
-    @ApiOperation("志愿者注销登录")
+    @Operation(summary = "志愿者注销登录")
     public BaseResponse<Boolean> logout(HttpServletRequest request) {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
 
@@ -128,7 +128,7 @@ public class VolunteerController {
      * @return 是否成功
      */
     @PostMapping("/delete")
-    @ApiOperation("删除志愿者用户")
+    @Operation(summary = "删除志愿者用户")
     public BaseResponse<Boolean> deleteVolunteer(Long volunteerId,HttpServletRequest request) {
         //校验id是否合法
         ThrowUtils.throwIf(ObjUtil.isNull(volunteerId) || volunteerId <= 0, ErrorCode.PARAMS_ERROR);
@@ -150,7 +150,7 @@ public class VolunteerController {
      * @return 脱敏后的用户信息
      */
     @PostMapping("/update")
-    @ApiOperation("更新志愿者信息")
+    @Operation(summary = "更新志愿者信息")
     public BaseResponse<Boolean> updateVolunteer(@RequestBody VolunteerUpdateRequest volunteerUpdateRequest, HttpServletRequest request) {
         //校验参数是否为空
         ThrowUtils.throwIf(ObjUtil.isNull(volunteerUpdateRequest) || volunteerUpdateRequest.getVolunteerId() == null,
@@ -175,7 +175,7 @@ public class VolunteerController {
      * @return 脱敏后的用户信息
      */
     @PostMapping("/update/phone")
-    @ApiOperation("修改志愿者手机号")
+    @Operation(summary = "修改志愿者手机号")
     public BaseResponse<Boolean> updateVolunteerPhone(VolunteerUpdatePhoneRequest volunteerUpdatePhoneRequest,
                                                       HttpServletRequest request) {
         // 校验参数
@@ -206,7 +206,7 @@ public class VolunteerController {
      * @return 是否成功
      */
     @PostMapping("/update/password")
-    @ApiOperation("设置/修改视障人士密码")
+    @Operation(summary = "设置/修改视障人士密码")
     public BaseResponse<Boolean> updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword) {
         //鉴空
         ThrowUtils.throwIf(ObjUtil.hasEmpty(volunteerUpdatePassword), ErrorCode.PARAMS_ERROR);
@@ -226,7 +226,7 @@ public class VolunteerController {
      * @return 脱敏后的用户信息
      */
     @GetMapping("/get/id/vo")
-    @ApiOperation("根据ID获取志愿者信息")
+    @Operation(summary = "根据ID获取志愿者信息")
     public BaseResponse<VolunteerVO> getVolunteerVOById(Long volunteerId,
                                                         HttpServletRequest request) {
         ThrowUtils.throwIf(volunteerId == null || volunteerId <= 0, ErrorCode.PARAMS_ERROR);
@@ -247,7 +247,7 @@ public class VolunteerController {
      * 分页条件查询社区下的志愿者
      */
     @GetMapping("/community/volunteers")
-    @ApiOperation("分页查询社区志愿者")
+    @Operation(summary = "分页查询社区志愿者")
     public BaseResponse<Page<VolunteerVO>> pageQueryCommunityVolunteers(CommunityVolunteerQueryRequest request) {
         long current = request.getCurrent();
         long size = request.getPageSize();
@@ -259,7 +259,7 @@ public class VolunteerController {
      * 加入社区
      */
     @PostMapping("/community/join")
-    @ApiOperation("志愿者加入社区")
+    @Operation(summary = "志愿者加入社区")
     public BaseResponse<Boolean> joinCommunity(@RequestBody CommunityJoinRequest communityJoinRequest,HttpServletRequest request) {
         Long volunteerId = LoginUtils.getLoginVolunteerId(request);
         boolean result = volunteerService.joinCommunity(volunteerId, communityJoinRequest);
@@ -275,7 +275,7 @@ public class VolunteerController {
      * @return 是否成功
      */
     @PostMapping("/removeFromCommunity")
-    @ApiOperation("将志愿者踢出社区")
+    @Operation(summary = "将志愿者踢出社区")
     public BaseResponse<Boolean> removeFromCommunity(@RequestBody VolunteerRemoveFromCommunityRequest request, HttpServletRequest httpRequest) {
         // 参数校验
         ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR, "请求参数不能为空");

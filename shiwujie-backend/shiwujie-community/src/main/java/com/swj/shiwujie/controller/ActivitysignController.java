@@ -3,8 +3,8 @@ package com.swj.shiwujie.controller;
 import com.swj.shiwujie.model.request.community.activitysign.ActivitySignQueryRequest;
 import com.swj.shiwujie.service.ActivitysignService;
 import com.swj.shiwujie.utils.ResultUtils;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +21,7 @@ import com.swj.shiwujie.model.request.community.activitysign.ActivitySignAddRequ
  */
 @RestController
 @RequestMapping("/activitysign")
-@Api(tags = "活动报名签到管理接口")
+@Tag(name = "活动报名签到管理接口")
 public class ActivitysignController {
 
     @Resource
@@ -31,7 +31,7 @@ public class ActivitysignController {
      * 添加活动报名签到
      */
     @PostMapping("/add")
-    @ApiOperation("添加活动报名签到")
+    @Operation(summary = "添加活动报名签到")
     public BaseResponse<Boolean> addActivitySign(@RequestBody ActivitySignAddRequest activitySignAddRequest, HttpServletRequest request) {
         boolean result = activitysignService.addActivitySign(activitySignAddRequest);
         return ResultUtils.success(result);
@@ -41,7 +41,7 @@ public class ActivitysignController {
      * 通过id查询活动报名签到VO
      */
     @GetMapping("/get/vo")
-    @ApiOperation("通过id查询活动报名签到VO")
+    @Operation(summary = "通过id查询活动报名签到VO")
     public BaseResponse<ActivitysignVO> getActivitySignVOById(Long signId, HttpServletRequest request) {
         ActivitysignVO activitysignVO = activitysignService.getActivitySignVOById(signId);
         return ResultUtils.success(activitysignVO);
@@ -51,7 +51,7 @@ public class ActivitysignController {
      * 分页查询活动下的报名签到VO
      */
     @GetMapping("/list/page/vo")
-    @ApiOperation("分页查询活动下的报名签到VO")
+    @Operation(summary = "分页查询活动下的报名签到VO")
     public BaseResponse<Page<ActivitysignVO>> listActivitySignByActivity(ActivitySignQueryRequest activitySignQueryRequest) {
         Page<ActivitysignVO> activitysignVOPage = activitysignService.listActivitySignByActivity(activitySignQueryRequest);
         return ResultUtils.success(activitysignVOPage);

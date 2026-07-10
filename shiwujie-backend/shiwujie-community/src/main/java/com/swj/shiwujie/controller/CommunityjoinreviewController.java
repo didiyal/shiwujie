@@ -10,8 +10,8 @@ import com.swj.shiwujie.model.request.community.communityJoinReview.CommunityJoi
 import com.swj.shiwujie.service.CommunityjoinreviewService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/communityjoinreview")
 @Slf4j
-@Api(tags = "社区加入审核接口")
+@Tag(name = "社区加入审核接口")
 public class CommunityjoinreviewController {
 
     @Resource
@@ -42,7 +42,7 @@ public class CommunityjoinreviewController {
      * @return 是否成功
      */
     @PutMapping("/update")
-    @ApiOperation("更新社区加入审核状态")
+    @Operation(summary = "更新社区加入审核状态")
     public BaseResponse<Boolean> updateCommunityJoinReview(@RequestBody CommunityJoinReviewUpdateRequest updateRequest, HttpServletRequest request) {
         // 获取登录管理员ID
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
@@ -60,7 +60,7 @@ public class CommunityjoinreviewController {
      * @return 审核列表
      */
     @GetMapping("/get/list/vo")
-    @ApiOperation("获取社区待审核列表")
+    @Operation(summary = "获取社区待审核列表")
     public BaseResponse<List<CommunityJoinReviewVO>> getCommunityJoinReviewVOList(HttpServletRequest request) {
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
 
@@ -75,7 +75,7 @@ public class CommunityjoinreviewController {
      * @return 脱敏后的审核信息
      */
     @GetMapping("/get/id/vo")
-    @ApiOperation("根据ID获取社区审核详情")
+    @Operation(summary = "根据ID获取社区审核详情")
     public BaseResponse<CommunityJoinReviewVO> getCommunityJoinReviewVOById(Long reviewId, HttpServletRequest request) {
         Long volunteerRole = LoginUtils.getVolunteerRole(request);
         ThrowUtils.throwIf(reviewId == null || reviewId <= 0, ErrorCode.PARAMS_ERROR, "审核ID不合法");

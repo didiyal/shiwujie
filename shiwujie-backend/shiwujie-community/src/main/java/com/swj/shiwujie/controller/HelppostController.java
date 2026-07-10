@@ -12,8 +12,8 @@ import com.swj.shiwujie.model.request.community.helppost.HelppostUpdateRequest;
 import com.swj.shiwujie.service.HelppostService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -27,7 +27,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/helppost")
-@Api(tags = "求助帖接口")
+@Tag(name = "求助帖接口")
 public class HelppostController {
 
     @Resource
@@ -37,7 +37,7 @@ public class HelppostController {
      * 视障人士发出求助帖
      */
     @PostMapping("/add")
-    @ApiOperation("视障人士发出求助帖")
+    @Operation(summary = "视障人士发出求助帖")
     public BaseResponse<HelppostVO> addHelppost(@RequestBody HelppostAddRequest helppostAddRequest, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(helppostAddRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
 
@@ -53,7 +53,7 @@ public class HelppostController {
      * 通过id查询求助帖VO
      */
     @GetMapping("/get")
-    @ApiOperation("通过id查询求助帖")
+    @Operation(summary = "通过id查询求助帖")
     public BaseResponse<HelppostVO> getHelppostById(Long helppostId, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(helppostId == null || helppostId <= 0, ErrorCode.PARAMS_ERROR, "求助帖ID不合法");
 
@@ -65,7 +65,7 @@ public class HelppostController {
      * 分页选择查询社区下的求助帖
      */
     @GetMapping("/list")
-    @ApiOperation("分页查询社区下的求助帖")
+    @Operation(summary = "分页查询社区下的求助帖")
     public BaseResponse<Page<HelppostVO>> listHelppostsByCommunity(HelppostQueryRequest helppostQueryRequest, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(helppostQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
 
@@ -77,7 +77,7 @@ public class HelppostController {
      * 删除求助帖
      */
     @DeleteMapping("/delete")
-    @ApiOperation("删除求助帖")
+    @Operation(summary = "删除求助帖")
     public BaseResponse<Boolean> deleteHelppost(Long helppostId, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(helppostId == null || helppostId <= 0, ErrorCode.PARAMS_ERROR, "求助帖ID不合法");
 
@@ -93,7 +93,7 @@ public class HelppostController {
      * 修改求助帖信息
      */
     @PostMapping("/update")
-    @ApiOperation("修改求助帖信息")
+    @Operation(summary = "修改求助帖信息")
     public BaseResponse<Boolean> updateHelppost(@RequestBody HelppostUpdateRequest helppostUpdateRequest, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(helppostUpdateRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
 
