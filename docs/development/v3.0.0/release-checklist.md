@@ -55,6 +55,26 @@ mysql -h47.112.114.139 -P3306 -ushiwujie -p"$MPWD" shiwujie -e \
 
 > 注意：表名大小写由服务端 `lower_case_table_names` 决定——旧库既已按现名工作，导入后行为一致，无需额外处理。导入完成后保留 4 份 `.sql` 作为回滚源，直到 2.7 验证通过。
 
+## 启动与冒烟验证（合库后起栈）
+
+> 前置：JDK21（fat jar 为 SB3.4.5/Java21）；MySQL `shiwujie` 库已按上节合库导入；Redis `47.112.114.139:6379` db=2 可连。无 Nacos/Dubbo 依赖。
+
+```bash
+# 1) 启动单体（唯一进程；端口 8100 复用原 gateway）
+java -jar shiwujie-backend/shiwujie-bootstrap/target/shiwujieBootstrap-0.0.1-SNAPSHOT.jar
+# 期望日志：Started ShiwujieApplication ... on port(s): 8100
+
+# 2) 冒烟：公开登录校验接口（login 白名单放行，无需 token，返回 BaseResponse JSON）
+curl "http://localhost:8100/api/user/blind/login/check?phone=13800000000"
+
+# 3) 契约回归要点（详见 testing-strategy.md「契约保护铁律」）：
+#    - HTTP 全路径前缀：/api/user/** /api/call/** /api/community/** /api/ai/** 不变
+#    - ai SSE：POST /api/ai/ai/doChatByText?text=...（produces text/event-stream，需 blind token）
+#    - WS：ws://host:8100/api/ws/call，12 信令码 -1/0/1/2/3/4/5001~5006 往返
+#    - 业务码 NOT_LOGIN/NO_AUTH/PARAMS_ERROR 不变
+# 4) 事务回归：删志愿者→级联清家庭/社区；删社区→清成员——中途异常不残留脏数据
+```
+
 ## 部署回归
 
 - [ ] 单体统一端口 / 单库 / 统一 Spring Boot 版本 `contextLoads` 全绿
