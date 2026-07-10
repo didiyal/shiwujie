@@ -33,6 +33,19 @@
 
 > 附带产物：common-web 与 model 之间存在**重复代码**——`PageRequest`、`CommonConstant`、`UserConstants` 在两层各有一份（model 版 `PageRequest` 默认 pageSize=20 且 Serializable；common-web 版默认 10 且非 Serializable），属历史演进残留。
 
+## v3.0.0 单体化目标（进行中）
+
+> 反思 v2.1.0 微服务对当前体量过度设计，v3.0.0 去微服务、合并 user/call/community/ai 为单体（保留模块化分包）。本篇下方描述的 **SB 双栈割裂与 model/common-web 两层结构为 v2.1.0 现状**；v3.0.0 将消解：
+
+- **统一 SB 3.4.5 / Java 21**：业务模块（gateway/user/call/community/common-web）从 SB 2.7/Java17 升到与 ai 一致的 SB 3.4.5/Java21。Spring AI 1.0 强制 SB3，无回退。
+- **两层结构根因消失**：SB 统一后 common-web（jakarta 命名空间）可被 ai 依赖，model/common-web 两层不再被版本割裂逼迫——ai 删自带 common-web 副本，两层重复类去重。
+- **javax → jakarta**：业务模块 `javax.servlet` / `javax.annotation.Resource` / `javax.websocket` 全量迁 `jakarta.*`（无 persistence/validation/xml.bind，机械化迁移）。
+- **坐标升级**：MyBatis-Plus 3.5.1→3.5.9（`mybatis-plus-spring-boot3-starter`）；knife4j openapi2→openapi3-jakarta（83 处注解重写）；mysql 驱动换 `mysql-connector-j`；nacos-discovery `2021.0.5.0`→`2023.0.1.0`（顺带修 JDK21+nacos-client 测试坑）。
+- **去微服务**：删 gateway / Spring Cloud / Dubbo / Nacos（仅服务发现 + Dubbo 注册中心，非配置中心），`Inner*Service` 从 Dubbo RPC 退化为本地 Bean 注入（详见 [`gateway-dubbo.md`](gateway-dubbo.md)）。
+- **合库**：4 分库 → 单库 `shiwujie`（详见 [`data-model.md`](data-model.md)）。
+
+> 两阶段交付（先升版本后合并）见 [`development/v3.0.0/task-breakdown.md`](../development/v3.0.0/task-breakdown.md)。契约（HTTP 路径 / WS 信令 / 状态码）零变更。
+
 ## 前端技术栈
 
 ### Android 原生 App

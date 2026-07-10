@@ -2,6 +2,18 @@
 
 > 跨切面概览：网关路由表、Dubbo 接口契约清单（跨服务「单一真相源」）、RPC 调用图与时序图。用户可见契约（FR-GATEWAY / FR-MODEL / AC-GATEWAY / AC-MODEL）见 [product/current.md](../product/current.md)；启动命令与生产 Dubbo 注册 IP 坑见 [shiwujie-backend/docs/deployment.md](../../shiwujie-backend/docs/deployment.md)。
 
+## v3.0.0 单体化目标（进行中）
+
+> 下方网关路由表与 Dubbo 契约为 v2.1.0 现状。v3.0.0 单体化将整体移除网关与 Dubbo（详见 [`task-breakdown`](../development/v3.0.0/task-breakdown.md) 阶段 2）：
+
+- **删 gateway 模块**：Spring Cloud Gateway（端口 8100，纯路由 + LB、无 Java 逻辑、不做鉴权）整体删除。对外路径由单体 controller 直接承接。
+- **去 Dubbo / Nacos**：`Inner*Service` 从 Dubbo RPC 退化为**同进程本地 Bean 注入**（`@DubboService`→`@Service`、`@DubboReference`→`@Resource`），接口定义留 `shiwujie-model` 不动。Nacos 仅作服务发现 + Dubbo 注册中心（非配置中心），随之移除。删 3 个无消费者冗余 Inner（`InnerActivityService` / `InnerActivitysignService` / `InnerHelppostService`）。
+- **路径内化（保对外契约）**：单体 context-path 置空，原各服务 context-path 前缀下沉到 controller 类级 `@RequestMapping`——`/api/user/**`、`/api/call/**`、`/api/community/**`、`/api/ai/**`、WebSocket `/api/ws/call` 对外不变。
+- **单端口入口**：原 gateway:8100 分发到 user:8200 / call:8300 / community:8400 / ai:8500，合并为单体单端口（bootstrap）。
+- **Dubbo 端口 21200–21500 全消失**（避让 Hyper-V/WSL 保留段的端口迁出设计随 Dubbo 移除而废弃）。
+
+> 4 处 `LoginCheckInterceptor`（各服务自带鉴权副本）收敛为 common-web 单份；用户可见鉴权契约不变，见 [`auth.md`](auth.md)。
+
 ## 网关路由表
 
 网关（`shiwujie-gateway`，端口 **8100**，Spring Cloud Gateway）**仅做路由与负载均衡，不做鉴权**。鉴权下沉到各业务服务的 `LoginCheckInterceptor`（详见 [`auth.md`](auth.md)）。

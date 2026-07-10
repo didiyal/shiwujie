@@ -17,12 +17,15 @@
 - [ ] `development/current.md` 写 `v3.0.0`
 - [ ] `docs/README.md` 当前工作版本段写 `v3.0.0`
 
-## 单体化交付
+## 单体化交付（单体重写两阶段，详见 [task-breakdown](task-breakdown.md)）
 
-- [ ] 单体重写完成（去 Spring Cloud / Dubbo，合并 4 模块）
-- [ ] 🔴 安全加固全部清零（ai 后门 / 删改权限 / WS 鉴权 / 密码哈希 / 弱密钥 / 前端 TLS）
-- [ ] App 高德 SDK 集成
-- [ ] Docker 化 + 压测 + AiLogs 索引调优
+- [ ] 阶段 1：业务模块统一 SB 3.4.5/Java21（jakarta 迁移 + MP 3.5.9 + knife4j openapi3 + nacos 2023.0.1.0），逐模块 `contextLoads` 全绿
+- [ ] 阶段 2：合并单体（bootstrap 唯一入口 + 删 gateway + Dubbo→本地 + 路径内化 + 4 拦截器收敛 + ai 副本/重复类清理）
+- [ ] 阶段 2：合库 `shiwujie`（mysqldump 旧 4 库导入 + 单 datasource + call snake→camel + 跨库写单事务）
+- [ ] 契约回归零变更：HTTP 路径 + WS `/api/ws/call` 12 信令 + 业务码 + 返回字段（前端 App/Web 不改可对接，详见 [testing-strategy](testing-strategy.md) 契约保护铁律）
+- [ ] 🔴 安全加固全部清零（ai 后门 / 删改权限 / WS 鉴权 / 密码哈希 / 弱密钥 / 前端 TLS）——独立项
+- [ ] App 高德 SDK 集成 ——独立项
+- [ ] Docker 化 + 压测 + AiLogs 索引调优 ——独立项
 
 ## 部署回归
 

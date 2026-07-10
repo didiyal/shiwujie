@@ -12,7 +12,14 @@
 
 > 单体化改造版本。反思 v2.1.0 微服务对当前体量过度设计，去微服务、合并 user/call/community/ai 为单体（保留模块化分包、统一 Spring Boot 版本）。用户可见契约原则上不变（继承 v2.1.0），变更以工程架构为主。大方向见 [ROADMAP.md](ROADMAP.md) 待实现段；交付任务见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。打 tag 时补精确日期。
 
-（随改造滚动记录）
+**架构决策（2026-07-11）**
+
+- **两阶段推进**：阶段 1 业务模块原地升 SB 3.4.5/Java21（仍微服务、逐模块验证）；阶段 2 合并单体 + 去微服务 + 合库。版本迁移与模块合并解耦，bug 易定位。
+- **合并为单库 `shiwujie`**：取代旧 4 库（shiwujieuser / shiwujiecall / shiwujiecommunity / shiwujieai），`47.112.114.139:3306`，user=`shiwujie`；结构 + 数据从旧 4 库 mysqldump 导入。
+- **契约保护（硬约束）**：对外 HTTP 路径 `/api/{user,call,community,ai}/**` + WebSocket `/api/ws/call`（12 信令码）+ 状态码 / 返回字段名零变更，前端 App/Web 不改可对接。
+- **call WebSocket 保留 `@ServerEndpoint`**：仅 `javax.websocket`→`jakarta.websocket`（嵌入式 Tomcat10 原生支持），不重写为 Spring 原生 handler。
+
+> 行为变更明细（升 SB3 实际改动、合并单体、合库、Dubbo→本地、4 拦截器收敛）随各阶段代码落地滚动补。架构目标态见 [architecture/tech-stack.md](architecture/tech-stack.md) / [architecture/data-model.md](architecture/data-model.md) / [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) 的「v3.0.0 目标」段；交付 spec 见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。
 
 ---
 
