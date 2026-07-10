@@ -4,27 +4,28 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.swj.shiwujie.mapper.UrgenthelpMapper">
 
+    <!-- v3.0.0 单体化阶段2.6：property 改 camelCase（实体 snake→camel）；column 保 snake_case（DB 列名不变，下划线映射自动匹配） -->
     <resultMap id="BaseResultMap" type="com.swj.shiwujie.model.domain.call.Urgenthelp">
-            <id property="help_id" column="help_id" jdbcType="BIGINT"/>
-            <result property="channel_id" column="channel_id" jdbcType="BIGINT"/>
-            <result property="family_id" column="family_id" jdbcType="BIGINT"/>
-            <result property="blind_id" column="blind_id" jdbcType="BIGINT"/>
-            <result property="blind_latitude" column="blind_latitude" jdbcType="DECIMAL"/>
-            <result property="blind_longitude" column="blind_longitude" jdbcType="DECIMAL"/>
-            <result property="blind_location_address" column="blind_location_address" jdbcType="VARCHAR"/>
-            <result property="volunteer_id" column="volunteer_id" jdbcType="BIGINT"/>
-            <result property="volunteer_latitude" column="volunteer_latitude" jdbcType="DECIMAL"/>
-            <result property="volunteer_longitude" column="volunteer_longitude" jdbcType="DECIMAL"/>
-            <result property="volunteer_location_address" column="volunteer_location_address" jdbcType="VARCHAR"/>
-            <result property="help_status" column="help_status" jdbcType="TINYINT"/>
-            <result property="start_time" column="start_time" jdbcType="TIMESTAMP"/>
-            <result property="response_time" column="response_time" jdbcType="TIMESTAMP"/>
-            <result property="end_time" column="end_time" jdbcType="TIMESTAMP"/>
+            <id property="helpId" column="help_id" jdbcType="BIGINT"/>
+            <result property="channelId" column="channel_id" jdbcType="BIGINT"/>
+            <result property="familyId" column="family_id" jdbcType="BIGINT"/>
+            <result property="blindId" column="blind_id" jdbcType="BIGINT"/>
+            <result property="blindLatitude" column="blind_latitude" jdbcType="DECIMAL"/>
+            <result property="blindLongitude" column="blind_longitude" jdbcType="DECIMAL"/>
+            <result property="blindLocationAddress" column="blind_location_address" jdbcType="VARCHAR"/>
+            <result property="volunteerId" column="volunteer_id" jdbcType="BIGINT"/>
+            <result property="volunteerLatitude" column="volunteer_latitude" jdbcType="DECIMAL"/>
+            <result property="volunteerLongitude" column="volunteer_longitude" jdbcType="DECIMAL"/>
+            <result property="volunteerLocationAddress" column="volunteer_location_address" jdbcType="VARCHAR"/>
+            <result property="helpStatus" column="help_status" jdbcType="TINYINT"/>
+            <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+            <result property="responseTime" column="response_time" jdbcType="TIMESTAMP"/>
+            <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
             <result property="duration" column="duration" jdbcType="BIGINT"/>
-            <result property="video_path" column="video_path" jdbcType="VARCHAR"/>
-            <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
-            <result property="update_time" column="update_time" jdbcType="TIMESTAMP"/>
-            <result property="is_delete" column="is_delete" jdbcType="TINYINT"/>
+            <result property="videoPath" column="video_path" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="is_delete" jdbcType="TINYINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">

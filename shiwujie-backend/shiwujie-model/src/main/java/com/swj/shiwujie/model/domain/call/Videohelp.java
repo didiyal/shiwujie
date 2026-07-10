@@ -18,76 +18,76 @@ public class Videohelp implements Serializable {
      * 视频求助ID
      */
     @TableId(type = IdType.ASSIGN_ID)
-    private Long help_id;
+    private Long helpId;
 
 
     /**
      * 频道id
      */
     @TableField(updateStrategy = FieldStrategy.IGNORED)
-    private Long channel_id;
+    private Long channelId;
 
     /**
      * 视障人士ID
      */
     @TableField(updateStrategy = FieldStrategy.IGNORED)
-    private Long blind_id;
+    private Long blindId;
 
     /**
      * 视障人士纬度坐标
      */
-    private BigDecimal blind_latitude;
+    private BigDecimal blindLatitude;
 
     /**
      * 视障人士经度坐标
      */
-    private BigDecimal blind_longitude;
+    private BigDecimal blindLongitude;
 
     /**
      * 视障人士位置地址（省市区+详细地址）
      */
-    private String blind_location_address;
+    private String blindLocationAddress;
 
     /**
      * 响应志愿者ID
      */
     @TableField(updateStrategy = FieldStrategy.IGNORED)
-    private Long volunteer_id;
+    private Long volunteerId;
 
     /**
      * 响应志愿者纬度坐标
      */
-    private BigDecimal volunteer_latitude;
+    private BigDecimal volunteerLatitude;
 
     /**
      * 响应志愿者经度坐标
      */
-    private BigDecimal volunteer_longitude;
+    private BigDecimal volunteerLongitude;
 
     /**
      * 响应志愿者位置地址（省市区+详细地址）
      */
-    private String volunteer_location_address;
+    private String volunteerLocationAddress;
 
     /**
      * 求助状态 0-待响应 1-处理中 2-已完成 3-已取消
      */
-    private Integer help_status;
+    private Integer helpStatus;
 
     /**
      * 求助开始时间
      */
-    private Date start_time;
+    private Date startTime;
 
     /**
      * 求助响应时间
      */
-    private Date response_time;
+    private Date responseTime;
 
     /**
      * 求助结束时间
      */
-    private Date end_time;
+    private Date endTime;
 
     /**
      * 求助耗时
@@ -97,7 +97,7 @@ public class Videohelp implements Serializable {
     /**
      * 视频储存地址
      */
-    private String video_path;
+    private String videoPath;
 
     /**
      * 求助评价
@@ -107,18 +107,18 @@ public class Videohelp implements Serializable {
     /**
      * 创建时间
      */
-    private Date create_time;
+    private Date createTime;
 
     /**
      * 信息更新时间
      */
-    private Date update_time;
+    private Date updateTime;
 
     /**
      * 逻辑删除 0-存在 1-删除
      */
     @TableLogic
-    private Integer is_delete;
+    private Integer isDelete;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

@@ -99,7 +99,7 @@ public class UrgenthelpController {
 
 
         Urgenthelp urgenthelp = urgenthelpService.getByBlindId(loginBlindId);
-        urgenthelp.setVideo_path(videoPath);
+        urgenthelp.setVideoPath(videoPath);
 
         //3.处理
         Boolean b = urgenthelpService.updateById(urgenthelp);
@@ -157,9 +157,9 @@ public class UrgenthelpController {
         // 只有通话中才可以挂断通话
         ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp),ErrorCode.PARAMS_ERROR,"只有通话中才可以挂断通话");
 
-        urgenthelp.setEnd_time(DateUtil.date());
-        urgenthelp.setHelp_status(CallHelpStatusEnum.END_HELP.getHelpStatus());
-        long between = DateUtil.between(urgenthelp.getResponse_time(), urgenthelp.getEnd_time(), DateUnit.MINUTE);
+        urgenthelp.setEndTime(DateUtil.date());
+        urgenthelp.setHelpStatus(CallHelpStatusEnum.END_HELP.getHelpStatus());
+        long between = DateUtil.between(urgenthelp.getResponseTime(), urgenthelp.getEndTime(), DateUnit.MINUTE);
         urgenthelp.setDuration(between);
         boolean b = urgenthelpService.updateById(urgenthelp);
         ThrowUtils.throwIf(!b,ErrorCode.SYSTEM_ERROR);

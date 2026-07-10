@@ -73,10 +73,10 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
             ThrowUtils.throwIf(ObjUtil.isNull(familyId), ErrorCode.PARAMS_ERROR, "您没有加入家庭,无法紧急求助");
             //3. 创建数据库表
             urgenthelp = new Urgenthelp();
-            urgenthelp.setBlind_id(loginBlindId);
-            urgenthelp.setStart_time(DateUtil.date());
-            urgenthelp.setHelp_status(CallHelpStatusEnum.WAITING.getHelpStatus());
-            urgenthelp.setFamily_id(familyId);
+            urgenthelp.setBlindId(loginBlindId);
+            urgenthelp.setStartTime(DateUtil.date());
+            urgenthelp.setHelpStatus(CallHelpStatusEnum.WAITING.getHelpStatus());
+            urgenthelp.setFamilyId(familyId);
 
             this.save(urgenthelp);
 
@@ -112,7 +112,7 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
         List<Volunteer> volunteerList = innerVolunteerService.getListByFamilyId(familyId);
 
         //修改匹配表信息
-        urgenthelp.setHelp_status(CallHelpStatusEnum.FALL.getHelpStatus());
+        urgenthelp.setHelpStatus(CallHelpStatusEnum.FALL.getHelpStatus());
         boolean b = this.updateById(urgenthelp);
         ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
@@ -140,10 +140,10 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
         Urgenthelp urgenthelp = this.getWaitingByBlindId(blind.getBlindId());
         ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp), ErrorCode.PARAMS_ERROR, "对方没有在求助");
 
-        urgenthelp.setVolunteer_id(loginVolunteerId);
-        urgenthelp.setResponse_time(DateUtil.date());
-        urgenthelp.setHelp_status(CallHelpStatusEnum.HELPING.getHelpStatus());
-        urgenthelp.setChannel_id(loginVolunteerId);
+        urgenthelp.setVolunteerId(loginVolunteerId);
+        urgenthelp.setResponseTime(DateUtil.date());
+        urgenthelp.setHelpStatus(CallHelpStatusEnum.HELPING.getHelpStatus());
+        urgenthelp.setChannelId(loginVolunteerId);
         this.updateById(urgenthelp);
 
         return true;

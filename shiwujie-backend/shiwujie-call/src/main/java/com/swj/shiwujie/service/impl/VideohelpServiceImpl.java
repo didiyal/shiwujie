@@ -77,10 +77,10 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
 
             //6. 新建匹配表,设置初始信息
             videohelp = new Videohelp();
-            videohelp.setVolunteer_id(loginVolunteerId);
-            videohelp.setChannel_id(loginVolunteerId);
-            videohelp.setStart_time(DateUtil.date());
-            videohelp.setHelp_status(CallHelpStatusEnum.WAITING.getHelpStatus());
+            videohelp.setVolunteerId(loginVolunteerId);
+            videohelp.setChannelId(loginVolunteerId);
+            videohelp.setStartTime(DateUtil.date());
+            videohelp.setHelpStatus(CallHelpStatusEnum.WAITING.getHelpStatus());
             boolean b = this.save(videohelp);
             ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
@@ -122,7 +122,7 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
         synchronized (loginUserPhone.intern()) {
 
             //5. 修改匹配表信息
-            videohelp.setHelp_status(CallHelpStatusEnum.FALL.getHelpStatus());
+            videohelp.setHelpStatus(CallHelpStatusEnum.FALL.getHelpStatus());
             boolean b = this.updateById(videohelp);
             ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
@@ -154,10 +154,10 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
             //4. 更新求助表内容
             Videohelp videohelp = this.getWaitingByVolunteerId(volunteerId);
             ThrowUtils.throwIf(ObjUtil.isNull(videohelp), ErrorCode.PARAMS_ERROR);
-            videohelp.setBlind_id(loginBlindId);
-            videohelp.setResponse_time(DateUtil.date());
-            videohelp.setHelp_status(CallHelpStatusEnum.HELPING.getHelpStatus());
-            videohelp.setChannel_id(volunteerId);
+            videohelp.setBlindId(loginBlindId);
+            videohelp.setResponseTime(DateUtil.date());
+            videohelp.setHelpStatus(CallHelpStatusEnum.HELPING.getHelpStatus());
+            videohelp.setChannelId(volunteerId);
             this.updateById(videohelp);
 
 

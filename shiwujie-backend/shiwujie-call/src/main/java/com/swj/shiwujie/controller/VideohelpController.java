@@ -125,7 +125,7 @@ public class VideohelpController {
 
 
         Videohelp videohelp = videohelpService.getByBlindId(loginBlindId);
-        videohelp.setVideo_path(videoPath);
+        videohelp.setVideoPath(videoPath);
 
         //3.处理
         Boolean b = videohelpService.updateById(videohelp);
@@ -161,9 +161,9 @@ public class VideohelpController {
         ThrowUtils.throwIf(ObjUtil.isNull(videohelps),ErrorCode.PARAMS_ERROR,"只有通话中才可以挂断通话");
 
         for (Videohelp videohelp : videohelps) {
-            videohelp.setEnd_time(DateUtil.date());
-            videohelp.setHelp_status(CallHelpStatusEnum.END_HELP.getHelpStatus());
-            long between = DateUtil.between(videohelp.getResponse_time(), videohelp.getEnd_time(), DateUnit.MINUTE);
+            videohelp.setEndTime(DateUtil.date());
+            videohelp.setHelpStatus(CallHelpStatusEnum.END_HELP.getHelpStatus());
+            long between = DateUtil.between(videohelp.getResponseTime(), videohelp.getEndTime(), DateUnit.MINUTE);
             videohelp.setDuration(between);
         }
         videohelpService.updateBatchById(videohelps);
