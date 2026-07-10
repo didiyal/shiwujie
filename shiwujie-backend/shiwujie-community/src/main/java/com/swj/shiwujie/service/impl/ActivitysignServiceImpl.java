@@ -19,8 +19,8 @@ import com.swj.shiwujie.service.ActivitysignService;
 import com.swj.shiwujie.utils.LoginUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 /**

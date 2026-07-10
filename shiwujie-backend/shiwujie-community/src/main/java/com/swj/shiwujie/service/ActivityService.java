@@ -7,7 +7,7 @@ import com.swj.shiwujie.model.VO.community.activity.ActivityVO;
 import com.swj.shiwujie.model.request.community.activity.ActivityAddRequest;
 import com.swj.shiwujie.model.request.community.activity.ActivityQueryRequest;
 import com.swj.shiwujie.model.request.community.activity.ActivityUpdateRequest;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
 * @author Administrator

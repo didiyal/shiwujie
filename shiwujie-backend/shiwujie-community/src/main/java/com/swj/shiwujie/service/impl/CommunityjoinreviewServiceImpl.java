@@ -21,7 +21,7 @@ import com.swj.shiwujie.service.user.InnerVolunteerService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

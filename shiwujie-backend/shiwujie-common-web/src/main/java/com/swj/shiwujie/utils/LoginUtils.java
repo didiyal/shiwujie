@@ -1,6 +1,6 @@
 package com.swj.shiwujie.utils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * 获取登录用户id

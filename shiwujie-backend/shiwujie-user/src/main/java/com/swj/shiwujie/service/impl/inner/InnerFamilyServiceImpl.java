@@ -5,7 +5,7 @@ import com.swj.shiwujie.service.FamilyService;
 import com.swj.shiwujie.service.user.InnerFamilyService;
 import org.apache.dubbo.config.annotation.DubboService;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @DubboService
 public class InnerFamilyServiceImpl implements InnerFamilyService {

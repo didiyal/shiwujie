@@ -22,8 +22,8 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
 import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;

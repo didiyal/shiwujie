@@ -6,7 +6,7 @@ import com.swj.shiwujie.service.CommunityService;
 import com.swj.shiwujie.service.community.InnerCommunityService;
 import org.apache.dubbo.config.annotation.DubboService;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * @author Administrator

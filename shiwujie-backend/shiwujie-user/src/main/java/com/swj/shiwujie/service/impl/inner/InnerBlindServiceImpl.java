@@ -10,7 +10,7 @@ import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.user.InnerBlindService;
 import org.apache.dubbo.config.annotation.DubboService;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 
 /**

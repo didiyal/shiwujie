@@ -7,7 +7,7 @@ import com.swj.shiwujie.model.VO.community.activitysign.ActivitysignVO;
 import com.swj.shiwujie.model.request.community.activitysign.ActivitySignAddRequest;
 import com.swj.shiwujie.model.request.community.activitysign.ActivitySignQueryRequest;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
 * @author Administrator

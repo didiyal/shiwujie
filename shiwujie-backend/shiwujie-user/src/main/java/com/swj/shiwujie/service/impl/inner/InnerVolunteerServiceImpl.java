@@ -17,7 +17,7 @@ import com.swj.shiwujie.utils.RedisUtils;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;

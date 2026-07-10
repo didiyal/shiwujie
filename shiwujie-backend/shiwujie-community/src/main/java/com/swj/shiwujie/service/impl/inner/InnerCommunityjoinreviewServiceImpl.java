@@ -6,7 +6,7 @@ import com.swj.shiwujie.service.CommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import org.apache.dubbo.config.annotation.DubboService;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
 * 社区加入接口调用
