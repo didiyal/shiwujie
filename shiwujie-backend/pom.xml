@@ -35,7 +35,6 @@
         <pagehelper.version>5.1.10</pagehelper.version>
         <hutool.version>5.8.25</hutool.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <netty.version>4.1.50.Final</netty.version>
     </properties>
 
     <modules>
@@ -138,13 +137,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
-            </dependency>
-
-            <!-- Netty（call 模块） -->
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-all</artifactId>
-                <version>${netty.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
