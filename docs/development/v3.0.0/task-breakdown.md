@@ -24,13 +24,13 @@
 
 #### 阶段 2 · 合并单体 + 去微服务 + 合库
 
-- [ ] 2.1 新建 `shiwujie-bootstrap` 模块（唯一 `@SpringBootApplication(scanBasePackages=...)` + `@MapperScan` + `@EnableAsync` + repackage）；删 user/call/community/ai 四个 Application 类；**删 gateway 模块**
-- [ ] 2.2 Dubbo→本地：10 处 `@DubboService`→`@Service`、15+ 处 `@DubboReference`→`@Resource`（接口定义留 model 不动）；删 3 个无消费者冗余 Inner（`InnerActivityService`/`InnerActivitysignService`/`InnerHelppostService`）
-- [ ] 2.3 去微服务基础设施：删 Dubbo/Nacos 依赖+配置+`@EnableDubbo`/`@EnableDiscoveryClient`；父 pom 删 spring-cloud/nacos/dubbo 的 dependencyManagement；dev/prod profile 的 nacos IP 覆盖随移除
-- [ ] 2.4 路径内化（保契约）：单体 context-path 置空，原 context-path 前缀下沉到 controller 类级 `@RequestMapping`（user `/api/user/...`、community `/api/community/...`、call `/api/call/...`；ai `/api/ai/ai` 不动）；WS `@ServerEndpoint("/ws/call")`→`("/api/ws/call")`；收敛后 WebConfig 的 excludePathPatterns 同步用新全路径
-- [ ] 2.5 收敛重复：4 份 `LoginCheckInterceptor` + 4 份 `WebConfig` → common-web 各 1 份；ai 删自带 common-web 副本（JwtUtils/RedisTemplateConfig/拦截器/异常/BaseResponse 等）改用 common-web；model vs common-web 去重（PageRequest/CommonConstant/UserConstants）
-- [ ] 2.6 合库：mysqldump 旧 4 库（结构+数据）→空 `shiwujie` 库（`47.112.114.139`，user=`shiwujie`）；bootstrap 单一 datasource；call 实体字段 snake→camel + 全局 `map-underscore-to-camel-case: true`（DB 列名不动，call 2 个 Mapper XML 的 `#{}`/resultMap 同步改名）；跨库写 4 场景（社区入驻/审核通过/删志愿者/删社区）改单 `@Transactional`，逐个评估移除 `synchronized`
-- [ ] 2.7 验证：`mvn install` 全 reactor（JDK21，bootstrap 产出可执行 jar）+ 启动单 jar + 契约回归（HTTP 全路径 + WS 12 信令链 + ai SSE）+ 事务回归（删用户级联）+ token 滑动会话回归
+- [x] 2.1 新建 `shiwujie-bootstrap` 模块（唯一 `@SpringBootApplication(scanBasePackages=...)` + `@MapperScan` + `@EnableAsync` + repackage）；删 user/call/community/ai 四个 Application 类；**删 gateway 模块** `4f10d11`
+- [x] 2.2 Dubbo→本地：10 处 `@DubboService`→`@Service`、15+ 处 `@DubboReference`→`@Resource`（接口定义留 model 不动）；删 3 个无消费者冗余 Inner（`InnerActivityService`/`InnerActivitysignService`/`InnerHelppostService`） `199e6f3`
+- [x] 2.3 去微服务基础设施：删 Dubbo/Nacos 依赖+配置+`@EnableDubbo`/`@EnableDiscoveryClient`；父 pom 删 spring-cloud/nacos/dubbo 的 dependencyManagement；dev/prod profile 的 nacos IP 覆盖随移除 `106902b`
+- [x] 2.4 路径内化（保契约）：单体 context-path 置空，原 context-path 前缀下沉到 controller 类级 `@RequestMapping`（user `/api/user/...`、community `/api/community/...`、call `/api/call/...`；ai `/api/ai/ai` 不动）；WS `@ServerEndpoint("/ws/call")`→`("/api/ws/call")`；收敛后 WebConfig 的 excludePathPatterns 同步用新全路径 `03c0d96`
+- [x] 2.5 收敛重复：4 份 `LoginCheckInterceptor` + 4 份 `WebConfig` → common-web 各 1 份；ai 删自带 common-web 副本（JwtUtils/RedisTemplateConfig/拦截器/异常/BaseResponse 等）改用 common-web；model vs common-web 去重（PageRequest/CommonConstant/UserConstants） `35b81ed`
+- [ ] 2.6 合库（⏳ 代码部分完成，mysqldump 导入待远程执行）：bootstrap 单一 datasource（yml 指向 `shiwujie`）✅；call 实体字段 snake→camel + 全局 `map-underscore-to-camel-case: true`（DB 列名不动，call 2 个 Mapper XML 的 resultMap property 同步改名）`61cb18a`；跨库写场景改单 `@Transactional`（删志愿者/删社区/社区审核/家庭审核；`synchronized` 保留作同库并发护栏）`a157991`；⏳ mysqldump 旧 4 库导入空 `shiwujie` 待远程执行（步骤见 [release-checklist](release-checklist.md)「合库执行步骤」）
+- [ ] 2.7 验证（⏳ 待合库后远程起栈）：`mvn install` 全 reactor（JDK21，bootstrap 产出可执行 jar）✅ 已绿 + 启动单 jar + 契约回归（HTTP 全路径 + WS 12 信令链 + ai SSE）+ 事务回归（删用户级联）+ token 滑动会话回归
 
 ### 🔴 安全加固（v2.1.0 收尾遗留项平移，详见 [known-issues.md](../../../shiwujie-backend/docs/known-issues.md) + [auth.md](../../architecture/auth.md)）
 
