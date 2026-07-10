@@ -21,6 +21,11 @@ import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
 import static com.swj.shiwujie.constants.UserConstants.TOKEN_SECRETKEY;
 
 
+/**
+ * v3.0.0 单体化阶段2.5：收敛 user/call/community 三份业务拦截器为 common-web 一份。
+ * 白名单取三模块并集（loginAndRegister / Login / Register），覆盖 user 的 loginAndRegister*
+ * 与 community 的 /Login、/Register 等公开端点；路径作用域见 {@link com.swj.shiwujie.config.WebConfig}。
+ */
 @Slf4j
 @Component
 public class LoginCheckInterceptor implements HandlerInterceptor {
@@ -41,7 +46,7 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         log.info("请求的url: {}", url);
 
         // 判断请求url中是否包含login，如果包含，说明是登录操作，放行。
-        if(url.contains("loginAndRegister")) {
+        if(url.contains("loginAndRegister") || url.contains("Login") || url.contains("Register")) {
             log.info("登录或者注册操作, 放行...");
             return true;
         }
@@ -120,4 +125,3 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
 
     }
 }
-

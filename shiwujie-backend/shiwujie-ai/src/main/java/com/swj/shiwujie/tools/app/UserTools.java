@@ -9,7 +9,7 @@ import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.service.user.InnerFamilyService;
 import com.swj.shiwujie.utils.LoginUtils;
-import com.swj.shiwujie.utils.ThrowUtils;
+import com.swj.shiwujie.exception.ThrowUtils;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.Resource;
 import org.springframework.ai.tool.annotation.Tool;

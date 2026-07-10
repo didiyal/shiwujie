@@ -5,7 +5,7 @@ import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.service.user.InnerBlindService;
 import com.swj.shiwujie.utils.JwtUtils;
-import com.swj.shiwujie.utils.ThrowUtils;
+import com.swj.shiwujie.exception.ThrowUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,9 +23,16 @@ import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
 import static com.swj.shiwujie.constants.UserConstants.TOKEN_SECRETKEY;
 
 
+/**
+ * ai 链路登录拦截器（v3.0.0 单体化阶段2.5：由原 ai 自带 {@code LoginCheckInterceptor} 改名而来，
+ * 避免与 common-web 收敛后的业务 {@code LoginCheckInterceptor} 同 FQN 碰撞）。
+ *
+ * <p>与业务拦截器行为不同：含 dev 默认用户兜底（无 Authorization 时注入 blindId=1 默认盲人）、
+ * 注入完整 Blind 实体、Redis 续期 1 天。默认用户兜底属 🔴 安全加固项，本次单体化出范围，原样保留。</p>
+ */
 @Slf4j
 @Component
-public class LoginCheckInterceptor implements HandlerInterceptor {
+public class AiLoginCheckInterceptor implements HandlerInterceptor {
 
 
     @Resource
@@ -101,4 +108,3 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
 
     }
 }
-

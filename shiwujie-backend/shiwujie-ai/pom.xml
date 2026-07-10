@@ -56,6 +56,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- v3.0.0 单体化阶段2.5：依赖 common-web，删除 ai 自带 common-web 副本（统一公共层） -->
+        <dependency>
+            <groupId>com.swj</groupId>
+            <artifactId>shiwujieCommonWeb</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
         <!--SpringBootWeb-->
         <dependency>
             <groupId>org.springframework.boot</groupId>

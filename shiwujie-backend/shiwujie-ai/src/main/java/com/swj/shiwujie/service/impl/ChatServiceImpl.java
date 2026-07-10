@@ -17,7 +17,7 @@ import com.swj.shiwujie.service.ChatService;
 import com.swj.shiwujie.tools.ToolChoiceCenter;
 import com.swj.shiwujie.tools.mytools.WebSearchTool;
 import com.swj.shiwujie.utils.LoginUtils;
-import com.swj.shiwujie.utils.ThrowUtils;
+import com.swj.shiwujie.exception.ThrowUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
