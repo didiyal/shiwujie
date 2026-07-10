@@ -1,12 +1,12 @@
 # 后端已知问题与技术债
 
-> 后端技术债 / 缺陷登记。development 层（允许源码引用 `file:line`）。🔴 = 安全漏洞或高危，已同步进 [ROADMAP.md](../../docs/ROADMAP.md) 待实现「安全加固」作必办。鉴权链路总览见 [architecture/auth.md](../../docs/architecture/auth.md)。
+> 后端技术债 / 缺陷登记。development 层（允许源码引用 `file:line`）。🔴 = 安全漏洞或高危，已同步进 [ROADMAP.md](../../docs/ROADMAP.md) 待实现「安全加固」作必办；✅ = 已修复（保留作历史）。鉴权链路总览见 [architecture/auth.md](../../docs/architecture/auth.md)。
 
 ## 🔴 安全漏洞（必办）
 
 1. **ai 默认用户兜底（生产后门）**：`LoginCheckInterceptor`（ai 模块，line 52-60）无 Authorization 时注入 blindId=1 / phone=19872250169。生产未关闭则任何人可白嫖 AI（消耗 DashScope token）。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #6。
 2. **community 权限检查被注释**：`HelppostServiceImpl.deleteHelppost`/`updateHelppost` 的「创建者或管理员」检查**整段被注释** → 任何登录视障者可删/改任意帖；`CommunityController.deleteCommunity`/`updateCommunity` 注释「仅注册人可改」但**实现未校验** → 任意志愿者可改/删任意社区；Activity delete/update、Activitysign add 均无身份与角色校验。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #9。
-3. **续期 key 拼接 bug**：`renewKey`/`expire` 拼的 key **少了 `-blind-`/`-volunteer-` 段**（`LoginCheckInterceptor` 续期、`deleteBlind` 删 token 均漏前缀；登录存/注销删/拦截器读则正确）→ 滑动会话静默失效，活跃用户 90 天后被踢；删用户删 token 同样漏前缀。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #1。
+3. ✅ **续期 key 拼接 bug（已修复 2026-07-10）**：`renewKey`/`expire` 曾拼的 key **少了 `-blind-`/`-volunteer-` 段**（`LoginCheckInterceptor` 续期、`deleteBlind`/`deleteVolunteer` 删 token 均漏前缀；登录存/注销删/拦截器读则正确）→ 滑动会话静默失效，活跃用户 90 天后被踢；删用户旧 token 残留。**修复**：user/call/community 三份拦截器提取共享 `redisKey`（读/续期共用）杜绝拼接分叉，续期对齐登录 90 天；`BlindController:143`/`VolunteerServiceImpl:410` 删 token 补回前缀。ai 模块同型 bug 暂未处理。原风险见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #1。
 4. **JWT 过期校验被关闭**：`validateToken(..., true)` 第三参 `ignoreExp=true`，JWT 自身 exp 永不生效，过期完全依赖 Redis TTL。Redis 故障/误写则 JWT 形同永久有效。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #2。
 5. **TOKEN_SECRETKEY 硬编码且弱**：密钥即字符串 `"TOKEN_SECRETKEY"`，明文在共享 model 模块，HS256 弱密钥有离线爆破/伪造 token 风险。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #3。
 6. **MD5 存密码、无加盐**：`SecureUtil.md5(password)`，不适用口令存储且无 salt → 彩虹表风险。建议 BCrypt/Argon2。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #4。

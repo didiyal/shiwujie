@@ -140,7 +140,7 @@ public class BlindController {
         ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
 
-        redisUtils.removeToRedis(REDIS_SECRETKEY + "-" + blindId);
+        redisUtils.removeToRedis(REDIS_SECRETKEY + "-blind-" + blindId);
         return ResultUtils.success(true);
     }
 

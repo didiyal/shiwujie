@@ -85,8 +85,9 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
             throw new BusinessException(ErrorCode.NOT_LOGIN, "未登录");
         }
 
-        // 检查 Redis 中的令牌信息
-        Object fromRedisObj = redisUtils.getFromRedis(REDIS_SECRETKEY +  (blindId != null ? "-blind-"+blindId : "-volunteer-"+volunteerID));
+        // 检查 Redis 中的令牌信息(读与续期共用同一 key,避免拼接不一致)
+        String redisKey = REDIS_SECRETKEY + (blindId != null ? "-blind-"+blindId : "-volunteer-"+volunteerID);
+        Object fromRedisObj = redisUtils.getFromRedis(redisKey);
         ThrowUtils.throwIf(fromRedisObj == null,ErrorCode.NOT_LOGIN, "未登录");
 
         // 比对token是否相同
@@ -94,8 +95,8 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         ThrowUtils.throwIf(!token.equals(tokenFromRedis),ErrorCode.NOT_LOGIN, "未登录");
 
 
-        // 续期 Redis 中的用户信息
-        redisUtils.renewKey(REDIS_SECRETKEY+"-"+ (blindId != null ? blindId:volunteerID), 1L); // 续期 24 小时
+        // 续期 Redis 中的用户信息(滑动会话,对齐登录 90 天)
+        redisUtils.renewKey(redisKey, 90L);
 
 
 

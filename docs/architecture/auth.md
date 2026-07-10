@@ -58,7 +58,7 @@ flowchart TD
 5. 从 payload 解析 blindId / volunteerId / phone / role。
 6. 查 Redis 对应 key，为 null 抛 `NOT_LOGIN`。
 7. **比对 token 字符串**（请求 token 必须 == Redis 值）。
-8. `renewKey(..., 1L)` 续期（单位=天，见下文风险）。
+8. `renewKey(redisKey, 90L)` 续期（滑动会话，对齐登录 90 天；2026-07-10 修复漏 `-blind-`/`-volunteer-` 前缀 bug，见 [known-issues](../../shiwujie-backend/docs/known-issues.md) #3）。
 9. 注入 `loginBlindId` / `loginVolunteerId` / `phone` / `role` 到 `request.setAttribute`。
 
 注销：`/login/logout` 直接删 Redis key。
@@ -67,4 +67,4 @@ flowchart TD
 
 FR-AUTH / AC-AUTH（含「续期不生效」当前不满足项）见 [../product/v2.0.0/functional-requirements.md](../product/v2.0.0/functional-requirements.md) · [../product/v2.0.0/acceptance-criteria.md](../product/v2.0.0/acceptance-criteria.md)。
 
-风险点 #1–#9（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、拦截器 4 处复制、ai 默认用户后门、URL 放行过宽、WS 绕过鉴权、社区/家庭审核权限校验不完整）含 `file:line` 明细，统一登记于 [../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)（🔴 项同步进 [../ROADMAP.md](../ROADMAP.md) 安全加固）。
+风险点 #1–#9（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、拦截器 4 处复制、ai 默认用户后门、URL 放行过宽、WS 绕过鉴权、社区/家庭审核权限校验不完整）含 `file:line` 明细，统一登记于 [../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)（🔴 项同步进 [../ROADMAP.md](../ROADMAP.md) 安全加固）。其中 **#1 续期 key 拼接 bug 已于 2026-07-10 修复**（滑动会话 90 天生效、删用户清 token 生效）。

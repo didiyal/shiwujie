@@ -24,7 +24,7 @@
 - [ ] `/ws/call` 与社区/家庭审核补鉴权
 - [ ] 密码 MD5 → BCrypt/Argon2；TOKEN_SECRETKEY 走环境变量
 - [ ] 前端 TLS；移除硬编码 SDK Key / token；release 关调试日志
-- [ ] 修复续期 key 拼接 bug
+- [x] 修复续期 key 拼接 bug（2026-07-10）
 
 ## 能力补全 · 工程化（详见 [task-breakdown.md](task-breakdown.md)）
 

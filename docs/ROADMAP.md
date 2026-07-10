@@ -12,7 +12,7 @@
 [ ] /ws/call 与社区/家庭审核补鉴权（当前 WS 绕过 JWT、审核未校验是否 creator）
 [ ] 密码 MD5 无盐 → BCrypt/Argon2；TOKEN_SECRETKEY 走环境变量（当前硬编码弱密钥）
 [ ] 前端明文 HTTP/WS → TLS；移除硬编码 SDK Key / token；release 关闭调试日志
-[ ] 修复续期 key 拼接 bug（漏 -blind-/-volunteer- 前缀，滑动会话静默失效）
+[x] 修复续期 key 拼接 bug（漏 -blind-/-volunteer- 前缀，滑动会话静默失效）—— 2026-07-10 修复，滑动会话 90 天生效 + 删用户清 token 生效
 ```
 
 > 以上 🔴 项的代码定位与机制见 [shiwujie-backend/docs/known-issues.md](../shiwujie-backend/docs/known-issues.md) 与 [architecture/auth.md](architecture/auth.md)；此处只登记为必办方向。

@@ -15,6 +15,9 @@
 **文档体系**
 - 版本分级落地：`product/` 与 `development/` 改为 `current.md` 指针 + `vX.Y.Z/` 目录模型（工作直接写在进行中版本目录，发布即冻结、新建下一版；历史版本目录保留不删）。详见 [CONTRIBUTING.md](CONTRIBUTING.md) 第五节。
 
+**修复**
+- **token 续期 key 漏身份前缀**：`LoginCheckInterceptor` 续期（`renewKey`）与删用户删 token（`deleteBlind`/`deleteVolunteer`）拼的 Redis key 漏了 `-blind-`/`-volunteer-` 段，与登录存/拦截器读的 key 不匹配 → 续期静默失效（活跃用户 90 天后被踢）、删用户旧 token 残留。改为提取共享 `redisKey`（读/续期共用）杜绝拼接分叉，续期对齐登录 90 天（真滑动会话）；删 token 补回前缀。涉及 user/call/community 三份拦截器 + user 模块两处删除（ai 模块同型 bug 暂不动）。明细见 [known-issues](../shiwujie-backend/docs/known-issues.md) #3。
+
 **待办（打 tag 前须完成）**
 - 🔴 安全加固 / 能力补全 / 工程化：见 [ROADMAP.md](ROADMAP.md) 待实现段 + [development/v2.0.0/task-breakdown.md](development/v2.0.0/task-breakdown.md)。
 

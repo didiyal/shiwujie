@@ -38,7 +38,7 @@
 - [ ] **`/ws/call` 与社区/家庭审核补鉴权**：WS 当前绕过 JWT；加入社区/家庭审核未校验是否 creator。
 - [ ] **密码哈希升级 + 密钥环境变量**：MD5 无盐 → BCrypt/Argon2；`TOKEN_SECRETKEY` 走环境变量（当前硬编码弱密钥）。位置 user 模块登录/注册。
 - [ ] **前端 TLS + 去硬编码密钥**：App/Web 明文 HTTP/WS → TLS；anyRTC appId / 讯飞 appid / 高德 key / token 移出硬编码；release 关闭调试日志。
-- [ ] **修复续期 key 拼接 bug**：滑动会话续期漏 `-blind-`/`-volunteer-` 前缀，token 静默失效。位置 common-web Redis 操作。
+- [x] **修复续期 key 拼接 bug**：滑动会话续期漏 `-blind-`/`-volunteer-` 前缀，token 静默失效。✅ 2026-07-10 修复：user/call/community 三份拦截器提取共享 `redisKey`（读/续期共用）+ 续期对齐登录 90 天；`BlindController:143`/`VolunteerServiceImpl:410` 删 token 补前缀；ai 模块同型 bug 暂未处理。
 
 ### 能力补全
 

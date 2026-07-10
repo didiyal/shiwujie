@@ -407,7 +407,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
             boolean b = this.removeById(volunteerId);
             ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
-            redisUtils.removeToRedis(REDIS_SECRETKEY + "-" + volunteerId);
+            redisUtils.removeToRedis(REDIS_SECRETKEY + "-volunteer-" + volunteerId);
         }
 
 
