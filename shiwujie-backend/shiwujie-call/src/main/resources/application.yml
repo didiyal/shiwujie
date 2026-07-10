@@ -15,16 +15,17 @@ spring:
       connection-test-query: SELECT 1
       idle-timeout: 30000
       connection-timeout: 30000
-  # 在关闭时不等待 Lettuce 连接优雅退出，避免阻塞
-  redis:
-    host: 47.112.114.139
-    port: 6379
-    database: 2
-    password: ${REDIS_PASSWORD:123456}
-    lettuce:
-      shutdown-timeout: 0ms
-    # 设置合理超时时间，防止连接验证阻塞
-    timeout: 2s
+  # 在关闭时不等待 Lettuce 连接优雅退出，避免阻塞（SB3 起 redis 配置下沉到 spring.data.redis）
+  data:
+    redis:
+      host: 47.112.114.139
+      port: 6379
+      database: 2
+      password: ${REDIS_PASSWORD:123456}
+      lettuce:
+        shutdown-timeout: 0ms
+      # 设置合理超时时间，防止连接验证阻塞
+      timeout: 2s
   cloud:
     nacos:
       server-addr: ${nacos.address:47.112.114.139}:8848
