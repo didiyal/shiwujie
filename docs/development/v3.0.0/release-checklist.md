@@ -27,6 +27,34 @@
 - [ ] App 高德 SDK 集成 ——独立项
 - [ ] Docker 化 + 压测 + AiLogs 索引调优 ——独立项
 
+## 合库执行步骤（mysqldump 旧 4 库 → 单库 `shiwujie`）
+
+> 旧 4 库 `shiwujieuser` / `shiwujiecall` / `shiwujiecommunity` / `shiwujieai` 共 13 表（表名 PascalCase，无冲突）合并导入空库 `shiwujie`（`47.112.114.139:3306`，user=`shiwujie`，密码见 [`shiwujie-bootstrap/src/main/resources/application.yml`](../../../shiwujie-backend/shiwujie-bootstrap/src/main/resources/application.yml)）。由具备远程访问权限的连接执行（应用账号默认仅授权服务端本机/白名单 IP）。
+
+```bash
+# 0) 凭据（PWD 取自 bootstrap application.yml 的 ${MYSQL_PASSWORD:默认}）
+export MPWD='<'密码'>'
+
+# 1) 逐库导出（仅表级，不含 CREATE DATABASE/USE；--single-transaction 一致性快照）
+for db in shiwujieuser shiwujiecall shiwujiecommunity shiwujieai; do
+  mysqldump -h47.112.114.139 -P3306 -ushiwujie -p"$MPWD" \
+    --single-transaction --default-character-set=utf8mb4 \
+    "$db" > "${db}.sql"
+done
+
+# 2) 导入空库 shiwujie（临时关 FK 检查，避免表创建/外键顺序依赖；mysqldump 自带 DROP+CREATE+INSERT，可重跑）
+for db in shiwujieuser shiwujiecall shiwujiecommunity shiwujieai; do
+  ( echo "SET FOREIGN_KEY_CHECKS=0;"; cat "${db}.sql"; echo "SET FOREIGN_KEY_CHECKS=1;" ) \
+    | mysql -h47.112.114.139 -P3306 -ushiwujie -p"$MPWD" shiwujie
+done
+
+# 3) 校验：目标库表数应 = 13（user4 + call2 + community6 + ai1）
+mysql -h47.112.114.139 -P3306 -ushiwujie -p"$MPWD" shiwujie -e \
+  "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema='shiwujie';"
+```
+
+> 注意：表名大小写由服务端 `lower_case_table_names` 决定——旧库既已按现名工作，导入后行为一致，无需额外处理。导入完成后保留 4 份 `.sql` 作为回滚源，直到 2.7 验证通过。
+
 ## 部署回归
 
 - [ ] 单体统一端口 / 单库 / 统一 Spring Boot 版本 `contextLoads` 全绿
