@@ -102,10 +102,10 @@
                 <version>${knife4j.version}</version>
             </dependency>
 
-            <!-- MyBatis-Plus（v3.0.0 阶段1：版本 3.5.1→3.5.9；SB2→SB3 的 artifactId 交换见阶段 1.3，与 ai 对齐） -->
+            <!-- MyBatis-Plus（v3.0.0 阶段1.3：坐标 SB2→SB3，mybatis-plus-boot-starter→mybatis-plus-spring-boot3-starter 3.5.9，与 ai 对齐） -->
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
             <dependency>
