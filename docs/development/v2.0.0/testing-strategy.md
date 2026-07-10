@@ -1,6 +1,6 @@
 # v2.0.0 测试策略
 
-> 本文件属 `development/v2.0.0/`（二期·进行中）。**测试现状** + **验证点**（按模块，交叉引用 [product/v2.0.0/acceptance-criteria.md](../../product/v2.0.0/acceptance-criteria.md) 的 `AC-*`）+ **环境表** + **已知缺口**。版本指针 [../current.md](../current.md)。
+> 本文件属 `development/v2.0.0/`（二期·已封版 2026-07-11）。**测试现状** + **验证点**（按模块，交叉引用 [product/v2.0.0/acceptance-criteria.md](../../product/v2.0.0/acceptance-criteria.md) 的 `AC-*`）+ **环境表** + **已知缺口**。版本指针 [../current.md](../current.md)。
 
 ## 测试现状
 

@@ -2,12 +2,12 @@
 
 > 平台层文档（Tier1）：**规范 + 用户可见契约 + 跨切面概览 + 路线/历史**。技术实现（development 细化）随代码就近，分别在 [shiwujie-backend/docs/](../shiwujie-backend/docs/) 与 [shiwujie-frontend/app/docs/](../shiwujie-frontend/app/docs/)、[shiwujie-frontend/web/docs/](../shiwujie-frontend/web/docs/)。规范真值在 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-## 当前工作版本（v2.0.0 · 进行中）
+## 当前工作版本（v3.0.0 · 进行中）
 
-当前工作版本 `v2.0.0`（二期·进行中；二期首个 semver 版本——一期 `v1.0` tag 在前，起点 = 阶段 0–9 累积现状）。版本分级模型：`current.md` 指针 + 每版本一个 `vX.Y.Z/` 目录（工作直接写在进行中版本目录里，发布即冻结）。打 tag 时冻结当前版本目录、`current.md` 改指下一版。
+当前工作版本 `v3.0.0`（单体化改造·进行中；反思 v2.0.0 微服务过度设计，去微服务精简为单体）。前一版本 `v2.0.0`（二期微服务，tag `v2.0.0`，2026-07-11 已封版）。版本分级模型：`current.md` 指针 + 每版本一个 `vX.Y.Z/` 目录（工作直接写在进行中版本目录里，发布即冻结、目录保留不删）。打 tag 时冻结当前版本目录、`current.md` 改指下一版。
 
-- **产品需求入口**（指针）：[product/current.md](product/current.md) → `product/v2.0.0/`（4 文件：overview / functional-requirements `FR-<MODULE>-<NN>` / acceptance-criteria `AC-<MODULE>-<NN>` / changelog）
-- **开发交付入口**（指针）：[development/current.md](development/current.md) → `development/v2.0.0/`（三件套：task-breakdown / testing-strategy / release-checklist）
+- **产品需求入口**（指针）：[product/current.md](product/current.md) → `product/v3.0.0/`（4 文件：overview / functional-requirements `FR-<MODULE>-<NN>` / acceptance-criteria `AC-<MODULE>-<NN>` / changelog）
+- **开发交付入口**（指针）：[development/current.md](development/current.md) → `development/v3.0.0/`（三件套：task-breakdown / testing-strategy / release-checklist）
 
 ## 文档地图
 
@@ -28,9 +28,9 @@
 | 文档 | 内容 |
 |---|---|
 | [ROADMAP.md](ROADMAP.md) | 待实现（🔴 安全加固必办 / 能力补全 / 工程化）+ 历史时期 roll-up |
-| [CHANGELOG.md](CHANGELOG.md) | v2.0.0（进行中）+ 历史时期 banner + 阶段 9..0 明细（新增 / 变更 / 修复 / 移除） |
+| [CHANGELOG.md](CHANGELOG.md) | v3.0.0（进行中）+ v2.0.0（2026-07-11）+ 历史时期 banner + 阶段 9..0 明细（新增 / 变更 / 修复 / 移除） |
 
-> 阶段 0–9 属过去开发、不回溯分层，整合为「历史时期」一块（日期不确定，标注「约」）；其累积现状作为 v2.0.0（进行中）的起点。版本分级流程见 [CONTRIBUTING.md](CONTRIBUTING.md) 第五节。
+> 阶段 0–9 属过去开发、不回溯分层，整合为「历史时期」一块（日期不确定，标注「约」）；其累积现状作为 v2.0.0（已封版）的起点。版本分级流程见 [CONTRIBUTING.md](CONTRIBUTING.md) 第五节。
 
 ## 分层一句话
 

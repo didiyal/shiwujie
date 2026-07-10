@@ -1,6 +1,6 @@
 # v2.0.0 发布检查清单
 
-> 本文件属 `development/v2.0.0/`（二期·进行中）。打 **v2.0.0** tag 前逐项核对。版本指针 [../current.md](../current.md)。
+> 本文件属 `development/v2.0.0/`（二期·已封版 2026-07-11）。以下为封版前核对清单（tag `v2.0.0` 已于 2026-07-11 打）。版本指针 [../current.md](../current.md)。
 
 ## 文档体系
 
@@ -42,8 +42,8 @@
 - [ ] `contextLoads` 在 JDK17（业务模块）/ JDK21（ai）全绿
 - [ ] 手动联调：App + Web + 全后端起栈，核心链路（登录 / 视频求助 / AI 对话 / 社区审核）跑通
 
-## 打 tag 动作
+## 打 tag 动作（已于 2026-07-11 执行）
 
-- [ ] `git tag v2.0.0`
-- [ ] CHANGELOG `## v2.0.0（进行中，未发布）` → `## v2.0.0 - <tag 日期>`
-- [ ] 新建 `product/v2.x.0/` + `development/v2.x.0/`（复制 v2.0.0 作起点），`current.md` ×2 + README 改指下一版
+- [x] `git tag v2.0.0`
+- [x] CHANGELOG `## v2.0.0（进行中，未发布）` → `## v2.0.0 - 2026-07-11`
+- [x] 新建 `product/v3.0.0/` + `development/v3.0.0/`（立项骨架），`current.md` ×2 + README 改指 v3.0.0

@@ -1,6 +1,6 @@
 # v2.0.0 任务拆解
 
-> 本文件属 `development/v2.0.0/`（二期·进行中）。**交付范围**（已建成能力，按模块指向各组件详细文档，不在此重复 `file:line`）+ **收尾任务**（打 tag 前须完成的 file-level 任务，此处允许源码路径/符号，属 development 层）。版本指针 [../current.md](../current.md)。
+> 本文件属 `development/v2.0.0/`（二期·已封版 2026-07-11）。**交付范围**（已建成能力，按模块指向各组件详细文档，不在此重复 `file:line`）+ **收尾任务**（打 tag 前须完成的 file-level 任务，此处允许源码路径/符号，属 development 层）。版本指针 [../current.md](../current.md)。
 
 ## v2.0.0 交付范围（已建成）
 
