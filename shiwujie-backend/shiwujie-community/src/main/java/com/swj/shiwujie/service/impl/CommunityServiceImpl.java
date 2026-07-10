@@ -30,6 +30,7 @@ import com.swj.shiwujie.service.user.InnerVolunteerService;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.util.stream.Collectors;
@@ -247,6 +248,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
      * @param volunteerId 操作人ID
      * @return 是否删除成功
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean deleteCommunity(Long communityId, Long volunteerId) {
         // 参数校验

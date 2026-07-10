@@ -19,6 +19,7 @@ import com.swj.shiwujie.service.CommunityjoinreviewService;
 import com.swj.shiwujie.service.user.InnerBlindService;
 import com.swj.shiwujie.service.user.InnerVolunteerService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ public class CommunityjoinreviewServiceImpl extends ServiceImpl<Communityjoinrev
      * @param loginUserPhone 管理员手机号
      * @return 是否成功
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateCommunityJoinReview(CommunityJoinReviewUpdateRequest updateRequest, Long loginVolunteerId, String loginUserPhone) {
         Long reviewId = updateRequest.getReviewId();

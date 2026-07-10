@@ -19,6 +19,7 @@ import com.swj.shiwujie.model.enums.user.FamilyReviewStatusEnum;
 import com.swj.shiwujie.model.request.user.familyJoinReview.FamilyJoinReviewUpdateRequest;
 import com.swj.shiwujie.service.FamilyJoinReviewService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ public class FamilyJoinReviewServiceImpl extends ServiceImpl<FamilyJoinReviewMap
      * @param loginVolunteerId              操作人id
      * @return 更新后脱敏后的家庭信息
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateFamilyJoinReview(FamilyJoinReviewUpdateRequest familyJoinReviewUpdateRequest, Long loginVolunteerId, String loginUserPhone) {
 

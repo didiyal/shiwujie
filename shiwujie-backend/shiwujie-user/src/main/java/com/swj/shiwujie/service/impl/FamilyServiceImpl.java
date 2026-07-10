@@ -23,6 +23,7 @@ import com.swj.shiwujie.mapper.FamilyMapper;
 import com.swj.shiwujie.service.VolunteerService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.util.List;
@@ -108,6 +109,7 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
      * @param loginUserPhone   登录志愿者手机号
      * @return 是否成功
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean deleteFamily(Long loginVolunteerId, String loginUserPhone) {
         synchronized (loginUserPhone.intern()) {

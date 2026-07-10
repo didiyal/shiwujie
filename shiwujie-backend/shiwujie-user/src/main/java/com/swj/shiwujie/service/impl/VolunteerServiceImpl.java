@@ -31,6 +31,7 @@ import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.time.Duration;
@@ -313,6 +314,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
      * @param loginVolunteerId 当前登录志愿者ID
      * @return 是否成功
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean removeFromCommunity(VolunteerRemoveFromCommunityRequest request, Long loginVolunteerId) {
         // 参数校验
@@ -360,6 +362,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
      * @param loginUserPhone 登录手机号
      * @return 是否成功
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean deleteVolunteer(Long volunteerId, String loginUserPhone) {
 
