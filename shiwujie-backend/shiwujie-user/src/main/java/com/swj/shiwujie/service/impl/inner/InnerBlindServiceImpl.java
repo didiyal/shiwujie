@@ -8,7 +8,7 @@ import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.request.community.CommunityJoinRequest;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.user.InnerBlindService;
-import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
 
@@ -18,7 +18,7 @@ import jakarta.annotation.Resource;
  * @description 针对表【Blind(视障人士信息表)】的数据库操作Service实现
  * @createDate 2025-07-01 00:21:42
  */
-@DubboService
+@Service
 public class InnerBlindServiceImpl implements InnerBlindService {
 
 

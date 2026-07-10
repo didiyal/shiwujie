@@ -18,7 +18,6 @@ import com.swj.shiwujie.service.user.InnerVolunteerService;
 import com.swj.shiwujie.socket.CoordinationSocketHandler;
 import com.swj.shiwujie.utils.ConverterUtils;
 import com.swj.shiwujie.utils.RedisUtils;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +36,7 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
         implements VideohelpService {
 
 
-    @DubboReference
+    @Resource
     private InnerVolunteerService innerVolunteerService;
 
     @Resource

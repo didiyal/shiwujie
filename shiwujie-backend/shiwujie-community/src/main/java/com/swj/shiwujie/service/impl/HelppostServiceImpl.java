@@ -16,7 +16,7 @@ import com.swj.shiwujie.model.request.community.helppost.HelppostUpdateRequest;
 import com.swj.shiwujie.service.HelppostService;
 import com.swj.shiwujie.mapper.HelppostMapper;
 import com.swj.shiwujie.service.user.InnerBlindService;
-import org.apache.dubbo.config.annotation.DubboReference;
+import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> implements HelppostService {
 
 
-    @DubboReference
+    @Resource
     private InnerBlindService innerBlindService;
 
 

@@ -4,14 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.swj.shiwujie.model.domain.community.Communityjoinreview;
 import com.swj.shiwujie.service.CommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
-import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
 
 /**
 * 社区加入接口调用
 */
-@DubboService
+@Service
 public class InnerCommunityjoinreviewServiceImpl implements InnerCommunityjoinreviewService {
 
 

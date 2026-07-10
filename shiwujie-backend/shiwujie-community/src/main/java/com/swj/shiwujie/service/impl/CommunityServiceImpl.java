@@ -28,7 +28,6 @@ import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.service.user.InnerBlindService;
 import com.swj.shiwujie.service.user.InnerVolunteerService;
 import com.swj.shiwujie.utils.RedisUtils;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -45,10 +44,10 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         implements CommunityService {
 
 
-    @DubboReference
+    @Resource
     private InnerVolunteerService innerVolunteerService;
 
-    @DubboReference
+    @Resource
     private InnerBlindService innerBlindService;
 
 

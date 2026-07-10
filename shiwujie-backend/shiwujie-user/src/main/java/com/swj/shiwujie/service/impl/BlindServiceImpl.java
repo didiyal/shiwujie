@@ -26,7 +26,6 @@ import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -64,17 +63,17 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
     @Resource
     private RedisUtils redisUtils;
 
-    @DubboReference
+    @Resource
     private InnerCommunityService innerCommunityService;
 
 
 
-    @DubboReference
+    @Resource
     private InnerCommunityjoinreviewService innerCommunityjoinreviewService;
 
 
 
-    @DubboReference
+    @Resource
     private InnerCommunitymanagerService innerCommunitymanagerService;
 
     /**

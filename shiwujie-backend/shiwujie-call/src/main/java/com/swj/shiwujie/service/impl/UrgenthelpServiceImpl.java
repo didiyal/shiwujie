@@ -20,7 +20,6 @@ import com.swj.shiwujie.socket.CoordinationSocketHandler;
 import com.swj.shiwujie.utils.ConverterUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,11 +38,11 @@ import java.util.Queue;
 public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenthelp>
         implements UrgenthelpService {
 
-    @DubboReference
+    @Resource
     private InnerVolunteerService innerVolunteerService;
 
 
-    @DubboReference
+    @Resource
     private InnerBlindService innerBlindService;
 
 

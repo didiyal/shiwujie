@@ -16,7 +16,6 @@ import com.swj.shiwujie.utils.ResultUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -35,7 +34,7 @@ public class CommunitymanagerController {
     @Resource
     private CommunitymanagerService communitymanagerService;
 
-    @DubboReference
+    @Resource
     private InnerVolunteerService innerVolunteerService;
 
     /**

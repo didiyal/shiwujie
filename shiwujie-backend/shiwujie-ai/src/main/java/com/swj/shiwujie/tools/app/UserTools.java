@@ -11,7 +11,7 @@ import com.swj.shiwujie.service.user.InnerFamilyService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ThrowUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
+import jakarta.annotation.Resource;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ import java.util.List;
 public class UserTools {
 
 
-    @DubboReference
+    @Resource
     private InnerFamilyService innerFamilyService;
 
 

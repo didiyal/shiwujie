@@ -29,7 +29,6 @@ import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -63,14 +62,14 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
     private RedisUtils redisUtils;
 
 
-    @DubboReference
+    @Resource
     private InnerCommunitymanagerService innerCommunitymanagerService;
 
 
-    @DubboReference
+    @Resource
     private InnerCommunityjoinreviewService innerCommunityjoinreviewService;
 
-    @DubboReference
+    @Resource
     private InnerCommunityService innerCommunityService;
 
 

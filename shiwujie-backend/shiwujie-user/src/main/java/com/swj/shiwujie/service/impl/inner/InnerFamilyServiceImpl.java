@@ -3,11 +3,11 @@ package com.swj.shiwujie.service.impl.inner;
 import com.swj.shiwujie.model.VO.user.family.FamilyVO;
 import com.swj.shiwujie.service.FamilyService;
 import com.swj.shiwujie.service.user.InnerFamilyService;
-import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
 
-@DubboService
+@Service
 public class InnerFamilyServiceImpl implements InnerFamilyService {
 
 

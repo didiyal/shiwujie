@@ -5,7 +5,7 @@ package com.swj.shiwujie.service.impl.inner;
 import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
-import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
 
@@ -14,7 +14,7 @@ import jakarta.annotation.Resource;
 * @description 针对表【CommunityManager(社区管理人员表)】的数据库操作Service实现
 * @createDate 2025-07-19 01:31:15
 */
-@DubboService
+@Service
 public class InnerCommunitymanagerServiceImpl implements InnerCommunitymanagerService {
 
     @Resource

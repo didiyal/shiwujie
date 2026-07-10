@@ -18,7 +18,6 @@ import com.swj.shiwujie.model.request.community.communityJoinReview.CommunityJoi
 import com.swj.shiwujie.service.CommunityjoinreviewService;
 import com.swj.shiwujie.service.user.InnerBlindService;
 import com.swj.shiwujie.service.user.InnerVolunteerService;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -37,10 +36,10 @@ public class CommunityjoinreviewServiceImpl extends ServiceImpl<Communityjoinrev
     @Resource
     private CommunityMapper communityMapper;
 
-    @DubboReference
+    @Resource
     private InnerVolunteerService innerVolunteerService;
 
-    @DubboReference
+    @Resource
     private InnerBlindService innerBlindService;
 
     

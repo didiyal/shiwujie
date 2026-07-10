@@ -4,7 +4,7 @@ import com.swj.shiwujie.model.request.call.SocketData;
 import com.swj.shiwujie.service.call.InnerSocket;
 import com.swj.shiwujie.socket.CoordinationSocketHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
 
@@ -12,7 +12,7 @@ import jakarta.annotation.Resource;
  * 内部socket实现类
  */
 @Slf4j
-@DubboService
+@Service
 public class InnerSocketImpl implements InnerSocket {
 
     @Resource

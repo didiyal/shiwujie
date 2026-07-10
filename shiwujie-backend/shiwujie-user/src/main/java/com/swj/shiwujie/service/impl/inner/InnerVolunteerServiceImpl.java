@@ -14,7 +14,6 @@ import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.service.user.InnerVolunteerService;
 import com.swj.shiwujie.utils.JwtUtils;
 import com.swj.shiwujie.utils.RedisUtils;
-import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -32,7 +31,7 @@ import static com.swj.shiwujie.constants.UserConstants.TOKEN_SECRETKEY;
  * @description 针对表【Volunteer(视障人士信息表)】的数据库操作Service实现
  * @createDate 2025-07-01 00:21:42
  */
-@DubboService
+@Service
 public class InnerVolunteerServiceImpl implements InnerVolunteerService {
 
     @Resource

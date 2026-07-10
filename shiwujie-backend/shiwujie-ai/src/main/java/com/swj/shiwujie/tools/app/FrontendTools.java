@@ -5,7 +5,7 @@ import com.swj.shiwujie.model.request.call.SocketData;
 import com.swj.shiwujie.service.call.InnerSocket;
 import com.swj.shiwujie.utils.LoginUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
+import jakarta.annotation.Resource;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class FrontendTools {
 
-    @DubboReference
+    @Resource
     private InnerSocket innerSocket;
 
 
