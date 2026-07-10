@@ -112,7 +112,7 @@ sequenceDiagram
 
 > **延伸阅读**
 >
-> - 用户可见契约（FR-GATEWAY / FR-MODEL / AC-GATEWAY / AC-MODEL）：[../product/v2.0.0/functional-requirements.md](../product/v2.0.0/functional-requirements.md) · [../product/v2.0.0/acceptance-criteria.md](../product/v2.0.0/acceptance-criteria.md)
+> - 用户可见契约（FR-GATEWAY / FR-MODEL / AC-GATEWAY / AC-MODEL）：[../product/v2.1.0/functional-requirements.md](../product/v2.1.0/functional-requirements.md) · [../product/v2.1.0/acceptance-criteria.md](../product/v2.1.0/acceptance-criteria.md)
 > - 各微服务技术实现（核心类 / 数据流 / 配置）：[../../shiwujie-backend/docs/modules/](../../shiwujie-backend/docs/modules/)
 > - 启动命令、生产 Dubbo 注册 IP 坑（两条独立注册链路）、端口可达性、Docker：[../../shiwujie-backend/docs/deployment.md](../../shiwujie-backend/docs/deployment.md)
 > - 冗余 Inner 契约（Activity/Activitysign/Helppost 无消费者）：[../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)

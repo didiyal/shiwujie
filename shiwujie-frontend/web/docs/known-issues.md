@@ -1,6 +1,6 @@
 # Web 管理后台已知问题与技术债
 
-> Web 后台技术债 / 缺陷登记。development 层（允许源码引用 `file:line`）。★ = 影响功能正确性。统计占位类缺口同步进 [ROADMAP.md](../../../docs/ROADMAP.md) 待实现「能力补全」。功能契约状态见 [product/v2.0.0/functional-requirements.md](../../../docs/product/v2.0.0/functional-requirements.md) FR-WEB。
+> Web 后台技术债 / 缺陷登记。development 层（允许源码引用 `file:line`）。★ = 影响功能正确性。统计占位类缺口同步进 [ROADMAP.md](../../../docs/ROADMAP.md) 待实现「能力补全」。功能契约状态见 [product/v2.1.0/functional-requirements.md](../../../docs/product/v2.1.0/functional-requirements.md) FR-WEB。
 
 1. **★ 子社区加载方法名不一致（运行时错误）**：`CommunityList.vue:340` 调 `getSubCommunityList(...)`，但 `api/community.js:86` 定义的是 `getSubCommunities(...)` → 点击展开子社区抛 `TypeError: ... is not a function`。
 2. **★ 统计模块完全缺失**：Dashboard / CommunityStats / ActivityStats 全占位，无图表库（echarts/antv 不在 `package.json`），后端 `/activity/stats` 未对接。

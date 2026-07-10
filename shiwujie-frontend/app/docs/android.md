@@ -100,6 +100,6 @@ ChooseIdentityActivity 选身份 → blind/volunteer LoginActivity
 
 > **延伸阅读**
 >
-> - 用户可见契约（FR-APP / AC-APP）：[../../../docs/product/v2.0.0/functional-requirements.md](../../../docs/product/v2.0.0/functional-requirements.md) · [../../../docs/product/v2.0.0/acceptance-criteria.md](../../../docs/product/v2.0.0/acceptance-criteria.md)
+> - 用户可见契约（FR-APP / AC-APP）：[../../../docs/product/v2.1.0/functional-requirements.md](../../../docs/product/v2.1.0/functional-requirements.md) · [../../../docs/product/v2.1.0/acceptance-criteria.md](../../../docs/product/v2.1.0/acceptance-criteria.md)
 > - 功能实现备注（盲人社区 / 社区活动 / 应用列表管理器）：[features.md](features.md)
 > - 缺陷与技术债（安全/功能/架构 + 已修历史坑）：[known-issues.md](known-issues.md)

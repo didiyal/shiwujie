@@ -1,8 +1,8 @@
-# v2.0.0 任务拆解
+# v2.1.0 任务拆解
 
-> 本文件属 `development/v2.0.0/`（二期·已封版 2026-07-11）。**交付范围**（已建成能力，按模块指向各组件详细文档，不在此重复 `file:line`）+ **收尾任务**（打 tag 前须完成的 file-level 任务，此处允许源码路径/符号，属 development 层）。版本指针 [../current.md](../current.md)。
+> 本文件属 `development/v2.1.0/`（二期·已封版 2026-07-11）。**交付范围**（已建成能力，按模块指向各组件详细文档，不在此重复 `file:line`）+ **收尾任务**（打 tag 前须完成的 file-level 任务，此处允许源码路径/符号，属 development 层）。版本指针 [../current.md](../current.md)。
 
-## v2.0.0 交付范围（已建成）
+## v2.1.0 交付范围（已建成）
 
 ### 后端（shiwujie-backend）
 
@@ -25,9 +25,9 @@
 | Android App | 视障/志愿者双端（Java + ViewBinding）；AI 多轮对话 + 悬浮球；视频/紧急求助；拍照识别；高德 URI 导航 | [app/docs/android.md](../../../shiwujie-frontend/app/docs/android.md) |
 | Web 管理后台 | Vue3 + AntdV4；社区/活动/求助/用户管理；社区入驻审核 | [web/docs/vue-admin.md](../../../shiwujie-frontend/web/docs/vue-admin.md) |
 
-> 阶段 0–9 的演进明细见 [CHANGELOG.md](../../CHANGELOG.md) 历史时期；用户可见契约（FR/AC）见 [product/v2.0.0/](../../product/v2.0.0/)。
+> 阶段 0–9 的演进明细见 [CHANGELOG.md](../../CHANGELOG.md) 历史时期；用户可见契约（FR/AC）见 [product/v2.1.0/](../../product/v2.1.0/)。
 
-## v2.0.0 收尾任务（打 tag 前须完成）
+## v2.1.0 收尾任务（打 tag 前须完成）
 
 > 与 [ROADMAP.md](../../ROADMAP.md) 待实现段、[known-issues.md](../../../shiwujie-backend/docs/known-issues.md) 三处归位不重复——此处给 file-level 定位。
 

@@ -1,11 +1,11 @@
-# v2.0.0 发布检查清单
+# v2.1.0 发布检查清单
 
-> 本文件属 `development/v2.0.0/`（二期·已封版 2026-07-11）。以下为封版前核对清单（tag `v2.0.0` 已于 2026-07-11 打）。版本指针 [../current.md](../current.md)。
+> 本文件属 `development/v2.1.0/`（二期·已封版 2026-07-11）。以下为封版前核对清单（tag `v2.1.0` 已于 2026-07-11 打）。版本指针 [../current.md](../current.md)。
 
 ## 文档体系
 
-- [ ] `product/v2.0.0/` 4 文件内容定稿（overview / functional-requirements / acceptance-criteria / changelog）
-- [ ] `development/v2.0.0/` 三件套定稿（task-breakdown / testing-strategy / 本文件）
+- [ ] `product/v2.1.0/` 4 文件内容定稿（overview / functional-requirements / acceptance-criteria / changelog）
+- [ ] `development/v2.1.0/` 三件套定稿（task-breakdown / testing-strategy / 本文件）
 - [ ] 内容边界自检零命中：`grep -rniE 'src/main|com/swj|\.java:|@DubboService|@DubboReference|java -jar|DUBBO_IP_TO_REGISTRY|mvn |\.yml' docs/product/`
 - [ ] FR/AC 去重自检零命中：`grep -rniE 'FR-[A-Z]+-[0-9]+|AC-[A-Z]+-[0-9]+' docs/ | grep -v 'docs/product/'`
 - [ ] 全仓相对链接可达（`git mv` / 改名后逐一核）
@@ -13,9 +13,9 @@
 
 ## 版本号三处同步
 
-- [ ] `product/current.md` 写 `v2.0.0`
-- [ ] `development/current.md` 写 `v2.0.0`
-- [ ] `docs/README.md` 当前工作版本段写 `v2.0.0`
+- [ ] `product/current.md` 写 `v2.1.0`
+- [ ] `development/current.md` 写 `v2.1.0`
+- [ ] `docs/README.md` 当前工作版本段写 `v2.1.0`
 
 ## 🔴 安全加固（逐条，详见 [task-breakdown.md](task-breakdown.md)）
 
@@ -44,6 +44,6 @@
 
 ## 打 tag 动作（已于 2026-07-11 执行）
 
-- [x] `git tag v2.0.0`
-- [x] CHANGELOG `## v2.0.0（进行中，未发布）` → `## v2.0.0 - 2026-07-11`
+- [x] `git tag v2.1.0`
+- [x] CHANGELOG `## v2.1.0（进行中，未发布）` → `## v2.1.0 - 2026-07-11`
 - [x] 新建 `product/v3.0.0/` + `development/v3.0.0/`（立项骨架），`current.md` ×2 + README 改指 v3.0.0

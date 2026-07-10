@@ -118,6 +118,6 @@ BlindList.vue onMounted → fetchBlindList
 
 > **延伸阅读**
 >
-> - 用户可见契约（FR-WEB / AC-WEB）：[../../../docs/product/v2.0.0/functional-requirements.md](../../../docs/product/v2.0.0/functional-requirements.md) · [../../../docs/product/v2.0.0/acceptance-criteria.md](../../../docs/product/v2.0.0/acceptance-criteria.md)
+> - 用户可见契约（FR-WEB / AC-WEB）：[../../../docs/product/v2.1.0/functional-requirements.md](../../../docs/product/v2.1.0/functional-requirements.md) · [../../../docs/product/v2.1.0/acceptance-criteria.md](../../../docs/product/v2.1.0/acceptance-criteria.md)
 > - 缺陷与技术债（★ 运行时错误 / 统计缺失 / 调试日志等 11 项）：[known-issues.md](known-issues.md)
 > - 开发命令（`npm install` / `npm run dev` / `npm run build`）：见 [README.md](README.md)

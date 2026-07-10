@@ -1,6 +1,6 @@
-# 产品概览（v2.0.0 · 已封版 2026-07-11）
+# 产品概览（v2.1.0 · 已封版 2026-07-11）
 
-> 用户可见视角的项目概括。本文件只写「是什么、做什么、不做什么」，不含技术实现（实现见 [architecture/](../../architecture/) 与各子项目 `docs/`）。本文件属 `product/v2.0.0/`（二期·已封版 2026-07-11；当前工作版本已转 v3.0.0）。版本分级模型见 [CONTRIBUTING.md](../../CONTRIBUTING.md) 第五节；当前版本指针 [../current.md](../current.md)。
+> 用户可见视角的项目概括。本文件只写「是什么、做什么、不做什么」，不含技术实现（实现见 [architecture/](../../architecture/) 与各子项目 `docs/`）。本文件属 `product/v2.1.0/`（二期·已封版 2026-07-11；当前工作版本已转 v3.0.0）。版本分级模型见 [CONTRIBUTING.md](../../CONTRIBUTING.md) 第五节；当前版本指针 [../current.md](../current.md)。
 
 ## 定位
 

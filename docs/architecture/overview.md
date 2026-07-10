@@ -1,6 +1,6 @@
 # 架构总览
 
-> 跨切面的结构地图：项目是什么 / 用什么 / 怎么连。**项目定位、覆盖范围、核心目标、非目标**属用户可见面，见 [product/v2.0.0/product-overview.md](../product/v2.0.0/product-overview.md)；**迭代历程（两期演进、能力-时间对照）**见 [../CHANGELOG.md](../CHANGELOG.md)。本篇只留结构本身。
+> 跨切面的结构地图：项目是什么 / 用什么 / 怎么连。**项目定位、覆盖范围、核心目标、非目标**属用户可见面，见 [product/v2.1.0/product-overview.md](../product/v2.1.0/product-overview.md)；**迭代历程（两期演进、能力-时间对照）**见 [../CHANGELOG.md](../CHANGELOG.md)。本篇只留结构本身。
 
 ## 一句话
 

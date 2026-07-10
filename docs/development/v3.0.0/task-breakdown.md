@@ -8,7 +8,7 @@
 
 - [ ] 去 Spring Cloud / Dubbo，合并 user / call / community / ai 为单体应用（保留模块化分包，统一 Spring Boot 版本）
 
-### 🔴 安全加固（v2.0.0 收尾遗留项平移，详见 [known-issues.md](../../../shiwujie-backend/docs/known-issues.md) + [auth.md](../../architecture/auth.md)）
+### 🔴 安全加固（v2.1.0 收尾遗留项平移，详见 [known-issues.md](../../../shiwujie-backend/docs/known-issues.md) + [auth.md](../../architecture/auth.md)）
 
 - [ ] 关闭 ai 默认用户兜底
 - [ ] 恢复 Helppost / Community 删除/更新权限检查
@@ -18,14 +18,14 @@
 
 ### 能力补全
 
-- [ ] App 集成高德 SDK（替代 v2.0.0 的 URI 调起）
+- [ ] App 集成高德 SDK（替代 v2.1.0 的 URI 调起）
 
 ### 工程化
 
 - [ ] Docker 化部署
 - [ ] 压力测试 + 性能基线 + AiLogs 索引调优
 
-### 因单体化废弃（自 v2.0.0 收尾移除，见 ROADMAP 删除线）
+### 因单体化废弃（自 v2.1.0 收尾移除，见 ROADMAP 删除线）
 
 - ~~分布式事务（Seata）~~：单体化后单库，无需跨库事务
 - ~~网关统一鉴权~~：单体化后单拦截器，4 处 `LoginCheckInterceptor` 重复自然消除

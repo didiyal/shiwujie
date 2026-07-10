@@ -25,7 +25,7 @@ Phase2/                              ← 仓库根（工作区恒设此层）
     CONTRIBUTING.md                  ★ 本文件（规则真值，唯一一处）
     README.md                        文档中心首页：当前工作版本 + 入口 + 历史时期指针
     ROADMAP.md                       大方向（历史时期 rolled-up + 待实现）
-    CHANGELOG.md                     变更明细（v2.0.0 进行中 + 历史时期 banner + 阶段 9..0）
+    CHANGELOG.md                     变更明细（v3.0.0 进行中 + v2.1.0 + 历史时期 banner + 阶段 9..0）
     product/
       current.md                     → 当前工作版本（指针，指向进行中的 vX.Y.Z/）
       vX.Y.Z/                        每版本一个目录（4 文件同构）；工作直接写在进行中版本目录里，发布即冻结、历史版本目录保留不删
@@ -64,7 +64,7 @@ Phase2/                              ← 仓库根（工作区恒设此层）
 ### 2. CHANGELOG.md
 
 - **降序**（最新在顶）。
-- **进行中版本**：顶部 `## vX.Y.Z（进行中，未发布）`（当前 `v2.0.0`），打 tag 时改为 `## vX.Y.Z - YYYY-MM-DD`（精确日期，来自 tag）。
+- **进行中版本**：顶部 `## vX.Y.Z（进行中，未发布）`（当前 `v3.0.0`），打 tag 时改为 `## vX.Y.Z - YYYY-MM-DD`（精确日期，来自 tag）。
 - **历史时期 banner**：`## 历史时期（阶段 0–9，约 2025-06 ~ 2026-07，日期不确定）`。阶段子条目 `### 阶段 N · 标题（约 区间）`，保留四分类（新增 / 变更 / 修复 / 移除）。
 - 一行一变更，可带粗体小标题；技术细节（符号/路径）**允许在此层**（明细层）。
 
@@ -101,13 +101,13 @@ Phase2/                              ← 仓库根（工作区恒设此层）
 | bug / 重构 / 缺陷 / 技术债的实现细节 | ✗（只写用户影响） | ✓ |
 | Mermaid 链路图 / 调用图 / 时序图 | ✗（用文字契约） | ✓ |
 
-> **去重铁律**：FR/AC 只在 `product/<进行中版本>/` 出现一次。architecture 与 modules **不重复** FR/AC；若需引用，写「见 [product/v2.0.0/functional-requirements.md](product/v2.0.0/functional-requirements.md#fr-xxx)」。
+> **去重铁律**：FR/AC 只在 `product/<进行中版本>/` 出现一次。architecture 与 modules **不重复** FR/AC；若需引用，写「见 [product/v2.1.0/functional-requirements.md](product/v2.1.0/functional-requirements.md#fr-xxx)」。
 
 ## 五、版本号与状态规则
 
 - **版本真值 = git tag**：tag 指向的 commit 即该版本起点；tag 之后的工作归下一版本。
 - **版本分级模型（指针 + 版本目录）**：`product/current.md` 与 `development/current.md` 是指针，指向进行中的 `vX.Y.Z/` 目录；工作直接写在该版本目录里。发布时冻结该目录（保留不删）、新建下一版目录、把两个指针改指新版本。`current.md` ×2 + `docs/README.md` **三处版本号必须一致**。
-- **现有 tag**：`v1.0`（一期·单体，独立根提交）+ `二期开发后初步稳定版`（二期里程碑）；二期无 semver tag，版本线 `v1.0`（一期）→ `v2.0.0`（二期·进行中）。阶段 0–9 的历史**不回溯打 tag、不建 `product/阶段N/`**，统一并入 CHANGELOG 的「历史时期」banner（日期不确定标注）。这段历史的累积现状作为 **`v2.0.0`（二期首个 semver 版本，进行中）**的起点内容——`product/v2.0.0/` 与 `development/v2.0.0/` 已就位、随收尾工作滚动，打 tag 时冻结并补精确日期。
+- **现有 tag**：`v1.0`（一期·单体，独立根提交）、`v2.0.0`（二期开发后初步稳定版，2025-11-12）、`v2.1.0`（二期微服务封版，2026-07-11）；版本线 `v1.0`（一期）→ `v2.0.0`（二期初步稳定）→ `v2.1.0`（二期微服务封版）→ `v3.0.0`（单体化改造，进行中）。阶段 0–9 的历史**不回溯打 tag、不建 `product/阶段N/`**，统一并入 CHANGELOG 的「历史时期」banner（日期不确定标注）。这段历史的累积现状作为 `v2.1.0` 的起点内容——`product/v2.1.0/` 与 `development/v2.1.0/` 已封版（tag `v2.1.0`），当前工作版本 `v3.0.0`。
 - **打 tag 流程**：① 冻结已存在的进行中 `product/<vX.Y.Z>/` 与 `development/<vX.Y.Z>/`；② CHANGELOG 的 `## vX.Y.Z（进行中，未发布）` 改为 `## vX.Y.Z - <tag 日期>`；③ `current.md` ×2 + README 指针与版本号改指下一版；④ ROADMAP 勾掉对应项。
 - **状态标注**：进行中版本在 CHANGELOG / `current.md` / overview 标「进行中；尚未发布」。
 - **前端无独立版本号**：前端随同一次 tag 一并发布，不在前端子项目里另设版本号。
@@ -123,7 +123,7 @@ Phase2/                              ← 仓库根（工作区恒设此层）
   > Dubbo **接口名**（`InnerSocket`/`InnerBlindService`…）允许出现在 product 的契约清单里；命中的应是接口名而非注解/路径。
 
 - **链接有效性**：`docs/README.md`、各 product/architecture 文件、子项目 `docs/README.md` 内相对链接可达；`product/current/`、`development/current/` 目录**不应存在**（`current` 是 `.md` 指针文件，非目录）。
-- **目录完整**：`product/current.md` 指针在 + `product/v2.0.0/` 4 文件齐；`development/current.md` 指针在 + `development/v2.0.0/` 三件套齐；`shiwujie-backend/docs/modules/` 6 篇齐（gateway/model-commonweb/user/call/community/ai）；frontend app/web 各有 docs。
+- **目录完整**：`product/current.md` 指针在 + `product/v2.1.0/` 4 文件齐；`development/current.md` 指针在 + `development/v2.1.0/` 三件套齐；`shiwujie-backend/docs/modules/` 6 篇齐（gateway/model-commonweb/user/call/community/ai）；frontend app/web 各有 docs。
 - **去重**：`grep -rniE 'FR-[A-Z]+-[0-9]+|AC-[A-Z]+-[0-9]+' docs/ | grep -v 'docs/product/'` 期望**零命中**（FR/AC 不出现在 product 之外）。
 - **三处版本号一致**：`product/current.md` + `development/current.md` + `docs/README.md` 写同一个当前版本号。
 - **无信息丢失**：未开发路线全在 ROADMAP、缺陷全在 known-issues、历史全在 CHANGELOG、试错移除三处归位（CHANGELOG 移除 + development 残留 + product 非目标）。
