@@ -27,9 +27,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- SB3.4.5 starter-parent 默认即 Lombok 1.18.36（兼容 JDK21）；显式钉版本，reactor 内统一 -->
         <lombok.version>1.18.36</lombok.version>
-        <spring-cloud.version>2024.0.0</spring-cloud.version>
-        <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
-        <dubbo.version>3.3.0</dubbo.version>
         <knife4j.version>4.4.0</knife4j.version>
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <hutool.version>5.8.25</hutool.version>
@@ -49,14 +46,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Cloud BOM（SB3 栈：gateway 的 spring-cloud-gateway/circuitbreaker/loadbalancer 版本由此管理；与 ai 一致） -->
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+            <!-- v3.0.0 单体化阶段2.3：删 spring-cloud-dependencies（gateway 已删，业务模块不再用 spring-cloud） -->
 
             <!-- 内部模块：统一版本，子模块引用时省略 <version> -->
             <dependency>
@@ -91,24 +81,7 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- Dubbo -->
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-spring-boot-starter</artifactId>
-                <version>${dubbo.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
-                <version>${dubbo.version}</version>
-            </dependency>
-
-            <!-- Spring Cloud Alibaba Nacos Discovery（SB3 栈，与 ai 一致） -->
-            <dependency>
-                <groupId>com.alibaba.cloud</groupId>
-                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-                <version>${spring-cloud-alibaba.version}</version>
-            </dependency>
+            <!-- v3.0.0 单体化阶段2.3：删 Dubbo(dubbo/dubbo-nacos) + Nacos(spring-cloud-starter-alibaba-nacos-discovery) DM -->
 
             <!-- Knife4j（v3.0.0 阶段1.4：openapi2→openapi3-jakarta，匹配 SB3.4.5） -->
             <dependency>
@@ -116,11 +89,7 @@
                 <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.github.xiaoymin</groupId>
-                <artifactId>knife4j-gateway-spring-boot-starter</artifactId>
-                <version>${knife4j.version}</version>
-            </dependency>
+            <!-- v3.0.0 单体化阶段2.3：删 knife4j-gateway-spring-boot-starter DM（gateway 已删，无消费方） -->
 
             <!-- PageHelper 已删（v3.0.0 阶段1.4：全代码 0 处 PageHelper.startPage，死依赖） -->
 
@@ -141,12 +110,7 @@
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
-            <!-- PageHelper -->
-            <dependency>
-                <groupId>com.github.pagehelper</groupId>
-                <artifactId>pagehelper</artifactId>
-                <version>${pagehelper.version}</version>
-            </dependency>
+            <!-- v3.0.0 单体化阶段2.3：删 pagehelper DM（${pagehelper.version} 属性早已删，死 DM 条目；阶段1.4 全代码 0 处 PageHelper.startPage） -->
 
             <!-- Hutool -->
             <dependency>

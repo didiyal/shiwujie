@@ -23,7 +23,6 @@
         <spring-ai.version>1.0.0</spring-ai.version>
         <spring-ai-alibaba.version>1.0.0.2</spring-ai-alibaba.version>
         <spring-boot.version>3.4.5</spring-boot.version>
-        <spring-cloud.version>2024.0.0</spring-cloud.version>
     </properties>
 
     <dependencies>
@@ -84,23 +83,7 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- dubbo -->
-        <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo-spring-boot-starter</artifactId>
-            <version>3.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
-            <version>3.3.0</version>
-        </dependency>
-        <!-- Spring Cloud Alibaba Nacos Discovery -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-            <version>2023.0.1.0</version>
-        </dependency>
+        <!-- v3.0.0 单体化阶段2.3：删 Dubbo(dubbo/dubbo-nacos starter) + Nacos(spring-cloud-starter-alibaba-nacos-discovery) 依赖 -->
         <!-- 自定义持久化的序列化库-->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
@@ -152,13 +135,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+            <!-- v3.0.0 单体化阶段2.3：删 spring-cloud-dependencies 导入（ai 不再用 spring-cloud） -->
             <dependency>
                 <groupId>com.alibaba.cloud.ai</groupId>
                 <artifactId>spring-ai-alibaba-bom</artifactId>

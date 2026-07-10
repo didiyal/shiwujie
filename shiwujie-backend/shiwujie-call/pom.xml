@@ -16,20 +16,7 @@
             <groupId>com.swj</groupId>
             <artifactId>shiwujieCommonWeb</artifactId>
         </dependency>
-        <!-- dubbo -->
-        <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo-spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
-        </dependency>
-        <!-- Spring Cloud Alibaba Nacos Discovery -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
+        <!-- v3.0.0 单体化阶段2.3：删 Dubbo(dubbo/dubbo-nacos starter) + Nacos(spring-cloud-starter-alibaba-nacos-discovery) 依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
