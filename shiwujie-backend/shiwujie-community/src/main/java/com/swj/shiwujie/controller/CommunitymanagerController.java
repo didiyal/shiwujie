@@ -26,7 +26,7 @@ import java.util.List;
  * 社区管理人员接口
  */
 @RestController
-@RequestMapping("/communitymanager")
+@RequestMapping("/api/community/communitymanager")
 @Slf4j
 @Tag(name = "社区管理人员操作接口")
 public class CommunitymanagerController {

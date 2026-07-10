@@ -23,7 +23,7 @@ import java.util.Map;
  * WebSocket处理器
  * 使用Spring WebSocket的@ServerEndpoint注解实现
  */
-@ServerEndpoint(value = "/ws/call")
+@ServerEndpoint(value = "/api/ws/call")
 @Component
 @Slf4j
 public class CoordinationSocketHandler {

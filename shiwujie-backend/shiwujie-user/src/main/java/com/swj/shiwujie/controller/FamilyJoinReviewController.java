@@ -32,7 +32,7 @@ import java.util.List;
  */
 @RestController
 @Slf4j
-@RequestMapping("/familyJoinReview")
+@RequestMapping("/api/user/familyJoinReview")
 @Tag(name = "家庭审核操作接口")
 public class FamilyJoinReviewController {
 

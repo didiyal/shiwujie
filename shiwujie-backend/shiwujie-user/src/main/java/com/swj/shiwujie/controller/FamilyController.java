@@ -30,7 +30,7 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @RestController
 @Slf4j
-@RequestMapping("/family")
+@RequestMapping("/api/user/family")
 @Tag(name = "家庭操作接口")
 public class FamilyController {
 

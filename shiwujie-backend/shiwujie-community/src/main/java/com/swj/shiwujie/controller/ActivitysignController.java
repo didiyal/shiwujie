@@ -20,7 +20,7 @@ import com.swj.shiwujie.model.request.community.activitysign.ActivitySignAddRequ
  * @author swj
  */
 @RestController
-@RequestMapping("/activitysign")
+@RequestMapping("/api/community/activitysign")
 @Tag(name = "活动报名签到管理接口")
 public class ActivitysignController {
 

@@ -32,7 +32,7 @@ import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
  * 视障人士接口
  */
 @RestController
-@RequestMapping("/blind")
+@RequestMapping("/api/user/blind")
 @Tag(name = "视障人士操作接口")
 public class BlindController {
 

@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * 社区管理接口
  */
 @RestController
-@RequestMapping("/community")
+@RequestMapping("/api/community/community")
 @Slf4j
 @Tag(name = "社区操作接口")
 public class CommunityController {

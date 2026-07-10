@@ -26,7 +26,7 @@ import java.util.List;
  * @author swj
  */
 @RestController
-@RequestMapping("/helppost")
+@RequestMapping("/api/community/helppost")
 @Tag(name = "求助帖接口")
 public class HelppostController {
 

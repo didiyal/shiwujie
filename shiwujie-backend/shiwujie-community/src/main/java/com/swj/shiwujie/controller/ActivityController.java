@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author swj
  */
 @RestController
-@RequestMapping("/activity")
+@RequestMapping("/api/community/activity")
 @Tag(name = "活动管理接口")
 @Slf4j
 public class ActivityController {

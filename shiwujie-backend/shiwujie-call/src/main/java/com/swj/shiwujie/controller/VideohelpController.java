@@ -29,7 +29,7 @@ import java.util.List;
  * 视频求助接口
  */
 @RestController
-@RequestMapping("/call/videohelp")
+@RequestMapping("/api/call/videohelp")
 @Slf4j
 @Tag(name = "视频求助接口")
 public class VideohelpController {

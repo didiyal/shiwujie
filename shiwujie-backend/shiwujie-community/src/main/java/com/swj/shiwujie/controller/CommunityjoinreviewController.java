@@ -24,7 +24,7 @@ import java.util.List;
  * 社区加入审核接口
  */
 @RestController
-@RequestMapping("/communityjoinreview")
+@RequestMapping("/api/community/communityjoinreview")
 @Slf4j
 @Tag(name = "社区加入审核接口")
 public class CommunityjoinreviewController {

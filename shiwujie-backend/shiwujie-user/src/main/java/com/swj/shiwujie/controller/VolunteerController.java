@@ -32,7 +32,7 @@ import static com.swj.shiwujie.constants.UserConstants.REDIS_SECRETKEY;
  * 志愿者操作接口
  */
 @RestController
-@RequestMapping("/volunteer")
+@RequestMapping("/api/user/volunteer")
 @Tag(name = "志愿者操作接口")
 public class VolunteerController {
 
