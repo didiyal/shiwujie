@@ -14,13 +14,13 @@
 
 > 消除 SB 双栈根因（Spring AI 1.0 强制 SB3/Java21）。ai 模块为迁移样板。
 
-- [ ] 1.1 父 pom `shiwujie-backend/pom.xml`：parent → SB 3.4.5、`java.version` 17→21、`mybatis-plus.version` 3.5.1→3.5.9（lombok 1.18.36 保留）
-- [ ] 1.2 jakarta 迁移（业务模块 59 文件）：`javax.servlet.*`→`jakarta.*`、`javax.annotation.Resource`→`jakarta.annotation.Resource`、call `javax.websocket`→`jakarta.websocket`（确认无 persistence/validation/xml.bind）
-- [ ] 1.3 MyBatis-Plus 换坐标：`mybatis-plus-boot-starter` → `mybatis-plus-spring-boot3-starter`（4 业务模块 + model pom；ai 对 model 的 exclusion 三件套随之可去）
-- [ ] 1.4 knife4j openapi2→openapi3：换 `knife4j-openapi3-jakarta-spring-boot-starter`；删 3 份 SwaggerConfig 改全局 springdoc `OpenAPI`（放 common-web）；83 处注解 `@Api`→`@Tag`、`@ApiOperation`→`@Operation`；删 pagehelper 死依赖
-- [ ] 1.5 驱动/注册中心坐标：mysql `mysql-connector-java`→`mysql-connector-j`；nacos-discovery `2021.0.5.0`→`2023.0.1.0`（顺带修 JDK21+nacos-client 坑）；删 call pom netty 残留
-- [ ] 1.6 配置：yml `spring.redis`→`spring.data.redis`（3 业务模块）；call WebSocket 仅换 jakarta import，保留 `@ServerEndpoint("/ws/call")` + `ServerEndpointExporter` + static sessionMap
-- [ ] 1.7 验证：每模块 `mvn compile`（JDK21）+ `contextLoads` + 手动联调（登录→受保护接口→WS 信令→ai SSE）
+- [x] 1.1 父 pom：parent→SB 3.4.5、`java.version` 17→21、`mybatis-plus` 3.5.1→3.5.9、spring-cloud 2021.0.5→**2024.0.0**、spring-cloud-alibaba 2021.0.5.0→2023.0.1.0（lombok 1.18.36/dubbo 3.3.0 保留）`9997b89`
+- [x] 1.2 jakarta 迁移：`javax.servlet.*`/`javax.annotation.Resource`/call `javax.websocket`→jakarta（42 文件；确认无 persistence/validation/xml.bind）`c698b66`
+- [x] 1.3 MyBatis-Plus 换坐标 `mybatis-plus-boot-starter`→`mybatis-plus-spring-boot3-starter`（model + common-web）；ai 对 model 的 exclusion 三件套**推迟到阶段 2**——ai 不继承父 pom，现仍需排除 model 无版本 core/extension `34b0f6b`
+- [x] 1.4 knife4j openapi2→openapi3：换 `knife4j-openapi3-jakarta-spring-boot-starter`（**收敛到 common-web 单处声明**，业务模块传递依赖）；删 3 份 SwaggerConfig 改 common-web 单份 springdoc `OpenApiConfig`；83 注解 `@Api`→`@Tag`、`@ApiOperation`→`@Operation`；删 pagehelper `4db2c53`
+- [x] 1.5 驱动/注册中心坐标：mysql→`com.mysql:mysql-connector-j`（解除 reactor version 阻塞）；nacos 随 1.1 升 2023.0.1.0（修 JDK21+nacos-client 坑）；删 call pom netty-all 死依赖（grep 确认 0 处 io.netty 代码引用）`af162c9`
+- [x] 1.6 配置：3 业务模块 yml `spring.redis`→`spring.data.redis`；call WebSocket 的 jakarta import 已在 1.2 完成，`@ServerEndpoint("/ws/call")` + `ServerEndpointExporter` + static sessionMap 复核保留 `6da5253`
+- [x] 1.7 验证：全 7 模块 reactor `mvn install -DskipTests` 全绿（SB 双栈根因消除）；`contextLoads` + 手动联调（登录→受保护接口→WS 信令→ai SSE）需 Nacos/MySQL/Redis 基础设施，为运行时验证（待起栈）
 
 #### 阶段 2 · 合并单体 + 去微服务 + 合库
 
