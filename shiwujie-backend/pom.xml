@@ -3,13 +3,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- 继承 SB2.7：6 个业务模块（model/common-web/gateway/user/call/community）通过本 pom 继承统一管理。
-         ai 是 SB3.4.5/Java21，不继承本 pom（保持自己的 spring-boot-starter-parent:3.4.5），
+    <!-- 继承 SB3.4.5/Java21：6 个业务模块（model/common-web/gateway/user/call/community）通过本 pom 统一管理。
+         v3.0.0 单体化阶段 1：消除 SB2.7/SB3.4.5 双栈——本父 pom 由 SB2.7.0 升至 SB3.4.5，与 ai 对齐。
+         ai 仍不继承本 pom（自带 spring-boot-starter-parent:3.4.5，版本已与本 pom 一致），
          但列入下方 <modules>，与其余模块在同一个 reactor 里一条 mvn install 构建。 -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.0</version>
+        <version>3.4.5</version>
         <relativePath/>
     </parent>
 
@@ -21,16 +22,16 @@
     <description>视无界后端聚合父 pom</description>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <!-- SB2.7 starter-parent 默认 Lombok 1.18.24 不支持 JDK21；reactor 在 JDK21 下构建需提升到 1.18.36 -->
+        <!-- SB3.4.5 starter-parent 默认即 Lombok 1.18.36（兼容 JDK21）；显式钉版本，reactor 内统一 -->
         <lombok.version>1.18.36</lombok.version>
-        <spring-cloud.version>2021.0.5</spring-cloud.version>
-        <spring-cloud-alibaba.version>2021.0.5.0</spring-cloud-alibaba.version>
+        <spring-cloud.version>2024.0.0</spring-cloud.version>
+        <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
         <dubbo.version>3.3.0</dubbo.version>
         <knife4j.version>4.4.0</knife4j.version>
-        <mybatis-plus.version>3.5.1</mybatis-plus.version>
+        <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <pagehelper.version>5.1.10</pagehelper.version>
         <hutool.version>5.8.25</hutool.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
@@ -49,7 +50,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Cloud BOM（SB2 栈：gateway 的 spring-cloud-gateway/circuitbreaker/loadbalancer 版本由此管理） -->
+            <!-- Spring Cloud BOM（SB3 栈：gateway 的 spring-cloud-gateway/circuitbreaker/loadbalancer 版本由此管理；与 ai 一致） -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -82,7 +83,7 @@
                 <version>${dubbo.version}</version>
             </dependency>
 
-            <!-- Spring Cloud Alibaba Nacos Discovery（SB2 栈） -->
+            <!-- Spring Cloud Alibaba Nacos Discovery（SB3 栈，与 ai 一致） -->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
@@ -101,7 +102,7 @@
                 <version>${knife4j.version}</version>
             </dependency>
 
-            <!-- MyBatis-Plus（SB2 栈 3.5.1；ai 另用 mybatis-plus-spring-boot3-starter 3.5.9） -->
+            <!-- MyBatis-Plus（v3.0.0 阶段1：版本 3.5.1→3.5.9；SB2→SB3 的 artifactId 交换见阶段 1.3，与 ai 对齐） -->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-boot-starter</artifactId>
