@@ -1,6 +1,31 @@
 # 后端部署
 
-> 启动命令、Dubbo 注册 IP 坑、端口/防火墙、Docker。development 层（允许启动命令与 yml 片段）。路由表与端口表见 [architecture/gateway-dubbo.md](../../docs/architecture/gateway-dubbo.md)。
+> **v3.0.0 单体化后：部署 = 拷 1 个自包含 fat jar + `java -jar`**，仅需外部 MySQL（库 `shiwujie`）+ Redis（db=2），**无 Nacos / Dubbo**。详见下方「v3.0.0 单体部署（当前）」。
+
+## v3.0.0 单体部署（当前）
+
+**单 jar 自包含**：`shiwujie-bootstrap` 经 `spring-boot-maven-plugin` repackage，把 user/call/community/ai + model + common-web + 全部第三方依赖打成 1 个 fat jar（约 64M，`BOOT-INF/lib` 内嵌 6 个 shiwujie 模块 jar）。部署只需这一个文件，**不存在「一堆 jar」**。
+
+**外部依赖**（仅 2 项）：
+- MySQL `47.112.114.139:3306` 库 `shiwujie`（16 表，合库导入见 [release-checklist](../../docs/development/v3.0.0/release-checklist.md)「合库执行步骤」）
+- Redis `47.112.114.139:6379` db=2
+
+**构建 + 启动**：
+
+```bash
+# 构建（仓库根，全 7 模块 reactor）
+mvn -f shiwujie-backend/pom.xml install -DskipTests
+# 部署：拷单 jar 到服务器，起进程（端口 8100 复用原 gateway 对外端口）
+java -jar shiwujie-backend/shiwujie-bootstrap/target/shiwujieBootstrap-0.0.1-SNAPSHOT.jar
+```
+
+期望日志 `Started ShiwujieBootstrapApplication ... on port(s): 8100`。对外契约不变（HTTP `/api/{user,call,community,ai}/**` + WS `/api/ws/call`），前端连 `:8100`。
+
+> 无 Dubbo 注册 IP 坑、无 Dubbo 端口防火墙放行（21200–21500 随 Dubbo 移除消失）。凭据沿用 `${ENV:default}` 占位符（`MYSQL_PASSWORD` / `REDIS_PASSWORD` / `DASHSCOPE_API_KEY` / `SEARCH_API_KEY`），default 硬编码在 yml。
+
+---
+
+> ⬇️ 以下为 **v2.1.0 多服务部署历史**（每服务一 jar + Nacos 注册 + Dubbo 注册 IP 坑），随 v3.0.0 单体化废弃，仅作 tag `v2.1.0` 参考。
 
 ## 端口与基础设施
 

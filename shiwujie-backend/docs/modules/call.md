@@ -1,40 +1,39 @@
 # call 模块
 
-> WebSocket 信令中枢 + 视频求助/紧急求助业务；Dubbo 提供 `InnerSocket`，是 **AI→前端实时推送的唯一落地点**。本文为 development 细化；用户可见契约（FR-CALL / AC-CALL）见 [product/current.md](../../../docs/product/current.md)。
+> WebSocket 信令中枢 + 视频求助/紧急求助业务；提供 `InnerSocket`，是 **AI→前端实时推送的唯一落地点**。本文为 development 细化；用户可见契约（FR-CALL / AC-CALL）见 [product/current.md](../../../docs/product/current.md)。
+
+> ⚠️ **v3.0.0 单体化后**：call 不再是独立服务（无 8300 端口 / 无 `CallApplication` / 无 Dubbo），并入 `shiwujie-bootstrap` 单进程，库 `shiwujie`，`Inner*` 改同进程 Bean 注入。「模块定位」表已更新；正文数据流里的「Dubbo innerXxx」即 v2.1.0 远程调用，v3.0.0 已是同进程方法调用。当前态见 [tech-stack](../../../docs/architecture/tech-stack.md) / [deployment](../deployment.md) as-built。
 
 ## 模块定位
 
 | 项 | 值 |
 |---|---|
 | 路径 | `shiwujie-call/` |
-| 端口 | 8300，context-path `/api` |
-| Dubbo 端口 | 21300 |
-| 框架 | SB 2.7.0 + Java 17 |
-| MySQL | `shiwujiecall`（Videohelp/Urgenthelp） |
-| 启动类 | `CallApplication`（`@EnableDubbo`） |
-| 角色 | Dubbo **提供者**（InnerSocket，被 ai 消费）+ **消费者**（InnerVolunteer/InnerBlindService） |
+| 端口 | （v3.0.0 单体，无独立端口；对外经 bootstrap:8100，前缀 `/api/call`） |
+| 框架 | SB 3.4.5 + Java 21（v3.0.0 统一） |
+| MySQL | `shiwujie`（Videohelp/Urgenthelp，v3.0.0 合库） |
+| 启动类 | （无；v3.0.0 删 `CallApplication`，由 `shiwujie-bootstrap` 统一入口） |
+| 角色 | 本地 Bean **提供者**（`InnerSocketImpl`，`@Service`，被 ai 同进程消费）+ **消费者**（`@Resource` 注入 InnerVolunteer/InnerBlindService） |
 
 ## 目录与核心类
 
 ```
 src/main/java/com/swj/shiwujie/
-├── CallApplication.java
-├── config/{WebSocketConfig, WebConfig, SwaggerConfig}.java
+├── config/WebSocketConfig.java            # （v3.0.0 删 CallApplication/SwaggerConfig；WebConfig+拦截器收敛 common-web）
 ├── constants/CallConstant.java            # VOLUNTEER_QUEUE_REDIS_KEY
-├── interceptor/LoginCheckInterceptor.java
 ├── socket/
-│   ├── CoordinationSocketHandler.java     # @ServerEndpoint("/ws/call") 核心
-│   └── inner/InnerSocketImpl.java         # @DubboService
+│   ├── CoordinationSocketHandler.java     # @ServerEndpoint("/api/ws/call") 核心（v3.0.0 路径内化）
+│   └── inner/InnerSocketImpl.java         # @Service（v2.1.0 为 @DubboService）
 ├── controller/{Videohelp, Urgenthelp}Controller.java
 ├── service/{Videohelp, Urgenthelp}Service(+impl).java
 └── mapper/{Videohelp, Urgenthelp}Mapper.java
 ```
 
-> `WebSocketConfig` 仅注册 `ServerEndpointExporter`，用 **javax.websocket**（`@ServerEndpoint`）。这是阶段 8 从 Netty 迁移到 Spring WebSocket 的成果。
+> `WebSocketConfig` 仅注册 `ServerEndpointExporter`，用 **jakarta.websocket**（v3.0.0 阶段1.2 由 `javax.websocket` 迁移）。这是阶段 8 从 Netty 迁移到 Spring WebSocket、v3.0.0 jakarta 化的成果。
 
 ## WebSocket 消息协议
 
-`CoordinationSocketHandler`（`@ServerEndpoint("/ws/call")`）维护 `sessionMap<phone, Session>` 与 `sessionPhoneMap<Session, phone>`。消息类型：
+`CoordinationSocketHandler`（`@ServerEndpoint("/api/ws/call")`，v3.0.0 阶段2.4 路径内化）维护 `sessionMap<phone, Session>` 与 `sessionPhoneMap<Session, phone>`。消息类型：
 
 | type | 方向 | 含义 |
 |---|---|---|
@@ -53,11 +52,11 @@ src/main/java/com/swj/shiwujie/
 
 > 5xxx 推送由 ai 模块通过 Dubbo 调 `InnerSocket` 触发。**5005** `noticeJumpToUserUpdate` 接口与实现存在，但 ai 侧 `FrontendTools` 无对应 `@Tool`，全局无生产端调用——疑似遗留或预留。
 
-## 接口与 Dubbo 契约
+## 接口与本地契约（v2.1.0 Dubbo → v3.0.0 同进程 Bean）
 
-**提供者** `InnerSocketImpl`（`@DubboService`）6 个方法：`noticeTakePhoto`(5001) / `noticeVideoHelp`(5002) / `noticeUrgentHelp`(5003) / `noticeJumpSoftware`(5004) / `noticeJumpToUserUpdate`(5005) / `noticeNavigation`(5006)。
+**提供者** `InnerSocketImpl`（`@Service`，v2.1.0 为 `@DubboService`）6 个方法：`noticeTakePhoto`(5001) / `noticeVideoHelp`(5002) / `noticeUrgentHelp`(5003) / `noticeJumpSoftware`(5004) / `noticeJumpToUserUpdate`(5005) / `noticeNavigation`(5006)。
 
-**消费者**（→ user）：`InnerVolunteerService`（getById / getListByFamilyId）、`InnerBlindService`（getById / getByPhone）。
+**消费者**（→ user，`@Resource` 注入）：`InnerVolunteerService`（getById / getListByFamilyId）、`InnerBlindService`（getById / getByPhone）。
 
 **REST 接口**（均 `/api/call/*`）：
 
@@ -75,8 +74,8 @@ src/main/java/com/swj/shiwujie/
 
 ## 配置要点
 
-- 端口 8300 / context-path `/api`；Dubbo 21300；MySQL `shiwujiecall`；Redis db=2。
-- **MyBatis-Plus 驼峰映射关闭**（`map-underscore-to-camel-case: false`），SQL 与实体都用 snake_case（与其他模块不一致）。
+- v3.0.0 单体经 bootstrap:8100 对外，前缀 `/api/call`（无独立 8300 端口）；MySQL 库 `shiwujie`（合库）；Redis db=2。
+- **MyBatis-Plus 驼峰映射统一 `true`**（v3.0.0 阶段2.6，原 call 单独 `false` / snake_case 实体已改 camelCase）。
 - CORS 全开（`http://*:*` 等 + allowCredentials=true）。
 - 志愿者匹配队列 Redis TTL=30 秒。
 

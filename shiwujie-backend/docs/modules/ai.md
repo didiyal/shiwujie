@@ -1,18 +1,19 @@
 # ai 模块
 
-> 视障辅助 App 的 AI 大脑。Spring AI Alibaba 多模型对话 + 自研记忆 + 工作流式工具路由 + 图片瘦身上下文工程。Dubbo **纯消费方**（无对外 Inner 服务）。本文为 development 细化（全套文档最重要的一篇——AI Agent 方向的核心工程价值在此）；用户可见契约（FR-AI / AC-AI）见 [product/current.md](../../../docs/product/current.md)。
+> 视障辅助 App 的 AI 大脑。Spring AI Alibaba 多模型对话 + 自研记忆 + 工作流式工具路由 + 图片瘦身上下文工程。Inner 纯消费方（v2.1.0 经 Dubbo / v3.0.0 同进程，无对外 Inner 服务）。本文为 development 细化（全套文档最重要的一篇——AI Agent 方向的核心工程价值在此）；用户可见契约（FR-AI / AC-AI）见 [product/current.md](../../../docs/product/current.md)。
+
+> ⚠️ **v3.0.0 单体化后**：ai 不再是独立服务（无 8500 端口 / 无 `AiApplication` / 无 Dubbo），并入 `shiwujie-bootstrap` 单进程，库 `shiwujie`，`@DubboReference`→`@Resource`。AI 业务逻辑（三层架构 / ChatMemory / 图片瘦身）不变，变化的仅基础设施框架。「模块定位」表已更新。当前态见 [tech-stack](../../../docs/architecture/tech-stack.md) / [deployment](../deployment.md) as-built。
 
 ## 模块定位
 
 | 项 | 值 |
 |---|---|
 | 路径 | `shiwujie-ai/` |
-| 端口 | 8500（无 context-path） |
-| Dubbo 端口 | 21500 |
-| 框架 | **SB 3.4.5 + Java 21** + Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2 + Dubbo 3.3.0 |
-| MySQL | `shiwujieai`（AiLogs） |
-| Redis | 用 `spring.data.redis`（SB3 规范，非 `spring.redis`），db=2 |
-| 角色 | Dubbo **纯消费者**（无 `@DubboService`），仅 HTTP/SSE 对外 |
+| 端口 | （v3.0.0 单体，无独立端口；对外经 bootstrap:8100，前缀 `/api/ai/ai`） |
+| 框架 | **SB 3.4.5 + Java 21** + Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2（v3.0.0 去 Dubbo 3.3.0） |
+| MySQL | `shiwujie`（AiLogs，v3.0.0 合库） |
+| Redis | `spring.data.redis`（全栈统一 SB3 后与业务模块同规范），db=2 |
+| 角色 | 本地 Bean **纯消费者**（v2.1.0 为 Dubbo `@DubboReference`，v3.0.0 改 `@Resource`，无对外 Inner），仅 HTTP/SSE 对外 |
 
 ## 三层架构（App / Agent / Tool）
 
@@ -35,9 +36,9 @@ advisor/{MyLoggerAdvisor, MyRagAdvisor(RAG 半残留)}
 
 > 三层职责：**App 层** = 路由（ToolChoiceApp）/ 文本流（TextApp）/ 图像流（ImageApp）；**Agent 层** = 自研 ReAct（未启用）；**Tool 层** = 工具分发中心 + 具体 `@Tool`。
 
-## Dubbo 消费契约（仅消费，不提供）
+## 本地消费契约（v2.1.0 Dubbo `@DubboReference` → v3.0.0 同进程 `@Resource`，仅消费不提供）
 
-全模块 `@DubboReference` 共 **3 处**：
+全模块消费 `Inner*Service` 共 **3 处**（v2.1.0 `@DubboReference`，v3.0.0 `@Resource` 同进程注入）：
 
 | 消费类 | Inner 服务 | 提供方 | 用途 |
 |---|---|---|---|
@@ -51,7 +52,7 @@ advisor/{MyLoggerAdvisor, MyRagAdvisor(RAG 半残留)}
 
 | case | 工具 | 实现路径 | 触发推送 |
 |---|---|---|---|
-| 1 | 拍照识别 | `FrontendTools.noticeTakePhoto` | Dubbo→call→WS 5001 |
+| 1 | 拍照识别 | `FrontendTools.noticeTakePhoto` | 本地→call→WS 5001 |
 | 2 | 图片追问 | `AiModelTools.TakePhoto`（调 ImageApp） | — |
 | 3 | 跳转应用 | `FrontendTools.noticeJumpSoftware` | WS 5004 |
 | 4 | 高德导航 | `FrontendTools.noticeNavigation` | WS 5006 |
@@ -123,8 +124,8 @@ advisor/{MyLoggerAdvisor, MyRagAdvisor(RAG 半残留)}
 - `dashscope.chat.options.model: qwen3-max`；图像模型 `qwen3-vl-flash`（`withMultiModel(true)`）。
 - `base-url: compatible-mode/v1`（OpenAI 兼容端点）。
 - Redis 用 `spring.data.redis`（与 SB2 模块的 `spring.redis` 不同）。
-- Dubbo 21500；`compatibility-verifier.enabled: false`（SB3.4.5 + SCA 共存需要）。
-- Spring Cloud 注册 IP 由 dev/prod profile 覆盖；**Dubbo 注册 IP 需启动命令 `-DDUBBO_IP_TO_REGISTRY`**（discovery.ip 对 Dubbo 无效，见 [`../../../docs/architecture/gateway-dubbo.md`](../../../docs/architecture/gateway-dubbo.md) 与 [`../deployment.md`](../deployment.md)）。
+- v3.0.0 单体经 bootstrap:8100 对外，前缀 `/api/ai/ai`；无 Dubbo / Nacos（注册 IP 相关配置全随去微服务移除）。
+- `compatibility-verifier.enabled: false`（SB3.4.5 + SCA 共存需要）。
 - 凭据：`${DASHSCOPE_API_KEY:...}` / `${SEARCH_API_KEY:...}`。
 
 > ai 模块的「试错-移除」残留（自研 ReAct 未启用、community 工具未注入、mqtt pom 残留、RAG 半残留）与其它发现（ToolChoiceAppChatMemoryRes 空实现、TextApp TTL 注释不一致、🔴 默认用户后门、CORS 全开、无压测/Docker/索引调优、@EnableScheduling 残留、ToolIndex 枚举失同步）见 [`../known-issues.md`](../known-issues.md)。移除历史见 [`../../../docs/CHANGELOG.md`](../../../docs/CHANGELOG.md) 阶段 7，已弃用能力的契约状态见 [product/v2.1.0/functional-requirements.md](../../../docs/product/v2.1.0/functional-requirements.md) FR-AI-13~16。
