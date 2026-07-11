@@ -19,7 +19,31 @@
 - **契约保护（硬约束）**：对外 HTTP 路径 `/api/{user,call,community,ai}/**` + WebSocket `/api/ws/call`（12 信令码）+ 状态码 / 返回字段名零变更，前端 App/Web 不改可对接。
 - **call WebSocket 保留 `@ServerEndpoint`**：仅 `javax.websocket`→`jakarta.websocket`（嵌入式 Tomcat10 原生支持），不重写为 Spring 原生 handler。
 
-> 行为变更明细（升 SB3 实际改动、合并单体、合库、Dubbo→本地、4 拦截器收敛）随各阶段代码落地滚动补。架构目标态见 [architecture/tech-stack.md](architecture/tech-stack.md) / [architecture/data-model.md](architecture/data-model.md) / [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) 的「v3.0.0 目标」段；交付 spec 见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。
+**行为变更明细（阶段 1 + 阶段 2，2026-07-11，启动级验证通过）**
+
+> 用户可见契约（HTTP 路径 / WS 12 信令 / 状态码 / 返回字段）启动级回归零变更；功能级（WS 往返 / ai SSE / 事务级联 / token 滑动）待 App/Web 联调。
+
+**变更**
+- **统一 Spring Boot 3.4.5 / Java 21**（阶段1.1 `9997b89`）：业务模块从 SB 2.7/Java17 升级，消除 SB2/SB3 双栈根因（Spring AI 1.0 强制 SB3）。MyBatis-Plus 3.5.1→3.5.9 换 `mybatis-plus-spring-boot3-starter`（阶段1.3 `34b0f6b`）；knife4j openapi2→openapi3-jakarta，83 处 `@Api`/`@ApiOperation`→`@Tag`/`@Operation` 注解重写（阶段1.4 `4db2c53`）；MySQL 驱动 `mysql-connector-java`→`mysql-connector-j`（阶段1.5 `af162c9`）。
+- **javax → jakarta**（阶段1.2 `c698b66`）：业务模块 `javax.servlet` / `javax.annotation.Resource` / `javax.websocket` 全量迁 `jakarta.*`（无 persistence/validation/xml.bind，机械化迁移）。
+- **Dubbo → 本地调用**（阶段2.2 `199e6f3`）：10 处 `@DubboService`→`@Service`、15+ 处 `@DubboReference`→`@Resource`（接口定义留 model 不动）；删 3 个无消费者冗余 Inner（Activity/Activitysign/Helppost）。
+- **路径内化（保对外契约）**（阶段2.4 `03c0d96`）：单体 context-path 置空，原各服务 context-path 前缀下沉到 controller 类级 `@RequestMapping`——`/api/{user,call,community,ai}/**` 与 WS `/api/ws/call` 对外不变。
+- **收敛重复**（阶段2.5 `35b81ed`）：4 份 `LoginCheckInterceptor` + 4 份 `WebConfig` → common-web 各 1 份；ai 删自带 common-web 副本（JwtUtils/拦截器/异常/BaseResponse 等）改用 common-web；model vs common-web 重复类（PageRequest/CommonConstant/UserConstants）去重。
+- **合库 + 跨库写升单事务**（阶段2.6 `61cb18a` / `a157991` / `9afd831`）：4 分库 → 单库 `shiwujie`（mysqldump 导入，远程 16 表已验证）；call 实体 snake_case→camelCase + 全局 `map-underscore-to-camel-case: true`（DB 列名不动，2 个 Mapper XML resultMap property 同步改名）；社区入驻/审核通过/删志愿者/删社区 4 场景升 `@Transactional` 单事务（`synchronized` 保留作同库并发护栏）。
+
+**新增**
+- `shiwujie-bootstrap` 模块：单体唯一启动入口（`@SpringBootApplication(scanBasePackages=...)` + `@MapperScan` + `@EnableAsync`）+ 合并后 `application.yml`（单 datasource 指向 `shiwujie`、redis db=2、统一 SB3 配置 key），`spring-boot-maven-plugin` repackage 产出自包含 fat jar（约 64M，单 jar 部署）。（阶段2.1 `4f10d11`）
+
+**修复**
+- **Dubbo→本地 bean 循环依赖**（阶段2.7 `5f21cf4`）：`@DubboReference→@Resource` 后，社区↔志愿者↔社区管理员级联删除的双向耦合显化为 Spring bean 环（启动报 `BeanCurrentlyInCreationException`）。Dubbo 远程代理时代天然解耦构造期，单体以 `spring.main.allow-circular-references: true`（早期引用）等价还原，行为不变；登记 [known-issues](../shiwujie-backend/docs/known-issues.md)，后续可 `@Lazy` 精细化解环。
+
+**移除**
+- **gateway 模块**（阶段2.1 `4f10d11`）：Spring Cloud Gateway 整体删除（纯路由 + LB、无 Java 逻辑）。
+- **Spring Cloud / Nacos / Dubbo**（阶段2.3 `106902b`）：删 Dubbo/Nacos 依赖 + 配置 + `@EnableDubbo`/`@EnableDiscoveryClient` 注解；父 pom 删 spring-cloud/nacos/dubbo 的 dependencyManagement；Dubbo provider 端口 21200–21500 全消失；dev/prod profile 的 nacos IP 覆盖随移除。
+- **call `netty-all` 死依赖**（阶段1.5 `af162c9`）：源码零 Netty 引用，删冗余 `netty-all:4.1.50.Final`。
+- **pagehelper 死依赖**（阶段1.4 `4db2c53`）：全代码 0 处 `PageHelper.startPage`。
+
+> 架构现状（已落地）见 [architecture/tech-stack.md](architecture/tech-stack.md) / [architecture/data-model.md](architecture/data-model.md) / [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) 的「v3.0.0 单体化（已落地）」段；交付 spec 见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。
 
 ---
 
