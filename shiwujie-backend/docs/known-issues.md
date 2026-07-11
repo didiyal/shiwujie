@@ -76,3 +76,4 @@
 - **反模式：QueryWrapper 跨 Dubbo 传递**：`InnerCommunityjoinreviewService.getOne(QueryWrapper)` 把 MyBatis-Plus QueryWrapper 跨 Dubbo 传（强耦合 + 序列化风险）。见 [architecture/data-model.md](../../docs/architecture/data-model.md)。
 - **冗余 Inner 契约**：community 的 `InnerActivityService`/`InnerActivitysignService`/`InnerHelppostService` 已 `@DubboService` 暴露但全局无 `@DubboReference` 消费方——预留或清理遗漏。见 [architecture/gateway-dubbo.md](../../docs/architecture/gateway-dubbo.md)。
 - **单机 JVM 锁多实例失效**：`synchronized(loginUserPhone.intern())` 在多实例部署下无法防并发写。
+- **单体 bean 循环依赖（已用配置还原 阶段2.7 `5f21cf4`）**：`@DubboReference→@Resource`（阶段2.2）后，社区↔志愿者↔社区管理员级联删除的双向耦合显化为 Spring bean 环（`communityServiceImpl↔volunteerServiceImpl↔communitymanagerServiceImpl`，启动报 `BeanCurrentlyInCreationException`）。Dubbo 时代远程代理天然解耦构造期，单体以 `spring.main.allow-circular-references: true`（早期引用）等价还原，行为不变；后续可改 `@Lazy` 精细化解环、消除全局开关。
