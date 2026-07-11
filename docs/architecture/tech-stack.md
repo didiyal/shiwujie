@@ -1,6 +1,8 @@
 # 技术栈
 
-> 项目存在**版本割裂**：业务模块与 AI 模块分别基于 Spring Boot 2.7 与 3.4.5，这一事实约束了整个工程结构（尤其 common / common-web 两层设计）。本篇详述各层技术选型与割裂根因。
+> **v3.0.0 单体化已落地（2026-07-11，启动级验证通过）**：版本割裂与 model/common-web 两层结构已随单体化消解——详见文末「[v3.0.0 单体化（已落地）](#v300-单体化已落地启动级验证通过-2026-07-11)」。下方「后端技术栈总览」「SB 2.7 与 SB 3.4.5 的割裂」「基础设施地址」描述的是 **v2.1.0 现状**（tag `v2.1.0`，历史保留），当前代码已不如此。
+
+> （v2.1.0 历史叙述）项目曾存在**版本割裂**：业务模块与 AI 模块分别基于 Spring Boot 2.7 与 3.4.5，这一事实约束了整个工程结构（尤其 common / common-web 两层设计）。本篇详述各层技术选型与割裂根因。
 
 ## 后端技术栈总览
 
@@ -33,18 +35,18 @@
 
 > 附带产物：common-web 与 model 之间存在**重复代码**——`PageRequest`、`CommonConstant`、`UserConstants` 在两层各有一份（model 版 `PageRequest` 默认 pageSize=20 且 Serializable；common-web 版默认 10 且非 Serializable），属历史演进残留。
 
-## v3.0.0 单体化目标（进行中）
+## v3.0.0 单体化（已落地，启动级验证通过 2026-07-11）
 
-> 反思 v2.1.0 微服务对当前体量过度设计，v3.0.0 去微服务、合并 user/call/community/ai 为单体（保留模块化分包）。本篇下方描述的 **SB 双栈割裂与 model/common-web 两层结构为 v2.1.0 现状**；v3.0.0 将消解：
+> 反思 v2.1.0 微服务对当前体量过度设计，v3.0.0 去微服务、合并 user/call/community/ai 为单体（**保留模块化分包**）。上方「SB 双栈割裂与 model/common-web 两层结构」为 **v2.1.0 现状**；v3.0.0 已逐项消解：
 
-- **统一 SB 3.4.5 / Java 21**：业务模块（gateway/user/call/community/common-web）从 SB 2.7/Java17 升到与 ai 一致的 SB 3.4.5/Java21。Spring AI 1.0 强制 SB3，无回退。
-- **两层结构根因消失**：SB 统一后 common-web（jakarta 命名空间）可被 ai 依赖，model/common-web 两层不再被版本割裂逼迫——ai 删自带 common-web 副本，两层重复类去重。
-- **javax → jakarta**：业务模块 `javax.servlet` / `javax.annotation.Resource` / `javax.websocket` 全量迁 `jakarta.*`（无 persistence/validation/xml.bind，机械化迁移）。
-- **坐标升级**：MyBatis-Plus 3.5.1→3.5.9（`mybatis-plus-spring-boot3-starter`）；knife4j openapi2→openapi3-jakarta（83 处注解重写）；mysql 驱动换 `mysql-connector-j`；nacos-discovery `2021.0.5.0`→`2023.0.1.0`（顺带修 JDK21+nacos-client 测试坑）。
-- **去微服务**：删 gateway / Spring Cloud / Dubbo / Nacos（仅服务发现 + Dubbo 注册中心，非配置中心），`Inner*Service` 从 Dubbo RPC 退化为本地 Bean 注入（详见 [`gateway-dubbo.md`](gateway-dubbo.md)）。
-- **合库**：4 分库 → 单库 `shiwujie`（详见 [`data-model.md`](data-model.md)）。
+- ✅ **统一 SB 3.4.5 / Java 21**（阶段1.1 `9997b89`）：业务模块从 SB 2.7/Java17 升到与 ai 一致。Spring AI 1.0 强制 SB3，无回退。
+- ✅ **两层结构根因消失**（阶段2.5 `35b81ed`）：SB 统一后 common-web（jakarta）可被 ai 依赖——ai 删自带 common-web 副本（JwtUtils/拦截器/异常/BaseResponse 等），model/common-web 重复类（PageRequest/CommonConstant/UserConstants）去重。
+- ✅ **javax → jakarta**（阶段1.2 `c698b66`）：业务模块 `javax.servlet` / `javax.annotation.Resource` / `javax.websocket` 全量迁 `jakarta.*`（无 persistence/validation/xml.bind，机械化迁移）。
+- ✅ **坐标升级**（阶段1.1–1.5）：MyBatis-Plus 3.5.1→3.5.9（`mybatis-plus-spring-boot3-starter`）；knife4j openapi2→openapi3-jakarta（83 处注解重写 `4db2c53`）；mysql 驱动换 `mysql-connector-j`（`af162c9`）。nacos 随去微服务整体移除，JDK21+nacos-client 测试坑随之 moot。
+- ✅ **去微服务**（阶段2.1–2.3 `4f10d11`/`199e6f3`/`106902b`）：删 gateway / Spring Cloud / Dubbo / Nacos，`Inner*Service` 从 Dubbo RPC 退化为本地 Bean 注入（详见 [`gateway-dubbo.md`](gateway-dubbo.md)）。
+- ✅ **合库**（阶段2.6 `61cb18a`）：4 分库 → 单库 `shiwujie`（远程 16 表已导入验证，详见 [`data-model.md`](data-model.md)）。
 
-> 两阶段交付（先升版本后合并）见 [`development/v3.0.0/task-breakdown.md`](../development/v3.0.0/task-breakdown.md)。契约（HTTP 路径 / WS 信令 / 状态码）零变更。
+> 当前单体态：唯一入口 `shiwujie-bootstrap`（port 8100 复用原 gateway，单 datasource 指向 `shiwujie` 库，统一 SB3.4.5/Java21）。**部署即单 jar**——bootstrap 虽是 thin 装配点（仅 `ShiwujieBootstrapApplication` + `application.yml`），`spring-boot-maven-plugin` repackage 把 4 业务模块 + model + common-web + 全部第三方依赖打成 **1 个自包含 fat jar**（约 64M），拷一个 jar `java -jar` 即可，无 Nacos/Dubbo。两阶段交付（先升版本后合并）见 [`development/v3.0.0/task-breakdown.md`](../development/v3.0.0/task-breakdown.md)。契约（HTTP 路径 / WS 信令 / 状态码）启动级回归零变更，功能级待 App/Web 联调。
 
 ## 前端技术栈
 
@@ -87,13 +89,15 @@
 | 工具路由 | 工作流式 `ToolChoiceApp`（约定 JSON 解析，非原生 function-calling） |
 | 检索增强 | RAG **已移除**（半残留 Bean，未启用） |
 | 网页搜索 | searchapi.io（engine=baidu）+ jsoup 摘要 |
-| 推送通道 | Dubbo → call 模块 `InnerSocket` → WebSocket 推前端 |
+| 推送通道 | 本地调用 call 模块 `InnerSocket`（v2.1.0 为 Dubbo RPC，v3.0.0 起同进程注入）→ WebSocket 推前端 |
 
 > 详见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)。
 
 ## 基础设施地址
 
-> **dev / prod 拓扑不同**：dev 期 **MySQL/Redis 连服务器**（共享数据），但 **Nacos（Spring Cloud 发现 + Dubbo 注册中心）走本机**——整套服务在本机自洽，纯本机 dev 不存在跨网注册问题。prod 期全部连服务器。Nacos 地址由 `${nacos.address:47.112.114.139}` 占位符驱动，dev/prod profile 各自覆盖。
+> ⚠️ **本节为 v2.1.0 现状（历史保留）**——Nacos / Dubbo / dev-prod 注册 IP 拓扑已随 v3.0.0 单体化整体移除。当前（v3.0.0）仅需：MySQL `47.112.114.139:3306` 库 `shiwujie` + Redis `47.112.114.139:6379` db=2，无 Nacos/Dubbo。启动详见 [`../../shiwujie-backend/docs/deployment.md`](../../shiwujie-backend/docs/deployment.md)。
+
+> （v2.1.0 历史叙述）**dev / prod 拓扑不同**：dev 期 **MySQL/Redis 连服务器**（共享数据），但 **Nacos（Spring Cloud 发现 + Dubbo 注册中心）走本机**——整套服务在本机自洽，纯本机 dev 不存在跨网注册问题。prod 期全部连服务器。Nacos 地址由 `${nacos.address:47.112.114.139}` 占位符驱动，dev/prod profile 各自覆盖。
 
 | 设施 | dev | prod |
 |---|---|---|
