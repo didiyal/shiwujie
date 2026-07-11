@@ -21,13 +21,15 @@
 
 - [ ] 阶段 1：业务模块统一 SB 3.4.5/Java21（jakarta 迁移 + MP 3.5.9 + knife4j openapi3 + nacos 2023.0.1.0），逐模块 `contextLoads` 全绿
 - [ ] 阶段 2：合并单体（bootstrap 唯一入口 + 删 gateway + Dubbo→本地 + 路径内化 + 4 拦截器收敛 + ai 副本/重复类清理）
-- [ ] 阶段 2：合库 `shiwujie`（mysqldump 旧 4 库导入 + 单 datasource + call snake→camel + 跨库写单事务）
+- [x] 阶段 2：合库 `shiwujie`（mysqldump 旧 4 库导入 + 单 datasource + call snake→camel + 跨库写单事务）✅ 远程 `47.112.114.139` 的 `shiwujie` 库 16 表已导入验证
 - [ ] 契约回归零变更：HTTP 路径 + WS `/api/ws/call` 12 信令 + 业务码 + 返回字段（前端 App/Web 不改可对接，详见 [testing-strategy](testing-strategy.md) 契约保护铁律）
 - [ ] 🔴 安全加固全部清零（ai 后门 / 删改权限 / WS 鉴权 / 密码哈希 / 弱密钥 / 前端 TLS）——独立项
 - [ ] App 高德 SDK 集成 ——独立项
 - [ ] Docker 化 + 压测 + AiLogs 索引调优 ——独立项
 
-## 合库执行步骤（旧 4 库导出 → 单库 `shiwujie`）
+## 合库执行步骤（旧 4 库导出 → 单库 `shiwujie`）✅ 已完成
+
+> 远程 `47.112.114.139` 的 `shiwujie` 库已按本节导入并校验 16 表（2026-07-11）。下述命令留作回滚/复现参考。
 
 > 旧 4 库 `shiwujieuser` / `shiwujiecall` / `shiwujiecommunity` / `shiwujieai` 共 **16 表**（13 业务主表 + 3 字典表；表名 PascalCase 无冲突）合并导入空库 `shiwujie`（`47.112.114.139:3306`，user=`shiwujie`，密码见 [`shiwujie-bootstrap/src/main/resources/application.yml`](../../../shiwujie-backend/shiwujie-bootstrap/src/main/resources/application.yml)）。由具备远程访问权限的连接执行（应用账号默认仅授权服务端本机/白名单 IP）。
 
