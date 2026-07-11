@@ -16,6 +16,8 @@ v2.1.0 的测试现状 / 环境表 / 验证点 / 缺口继续适用，见 [../v2
 
 ## v3.0.0 验证点（随两阶段落地滚动补充）
 
+> **当前状态（2026-07-11）**：阶段 1 全 reactor `mvn install` 全绿、各模块 `contextLoads` 全绿（新 nacos-client 2023.0.1.0 修好 JDK21 坑）；阶段 2 单 jar **启动级验证通过**——8.8s 干净启动、4 模块 HTTP 路由全注册且 `/api/{user,call,community,ai}/**` 前缀对（OpenAPI 文档实测）、`BaseResponse` 信封 + 业务码 `40010 NOT_LOGIN` 不变、WS `/api/ws/call` 握手 101。**功能级回归待 App/Web 手动联调**：下方「阶段 2」清单中的 WS 12 信令往返 / 跨模块本地调用 / 事务级联 / 鉴权滑动 / 合库字段映射 / AI SSE 仍需带 token 客户端起栈验证。
+
 **阶段 1（升 SB 3.4.5/Java21，仍微服务）**：
 
 - 每模块 `mvn compile`（JDK21）reactor 全绿；`contextLoads` 全绿（新 nacos-client 2023.0.1.0 修好 JDK21 坑，不再切 JDK17）。

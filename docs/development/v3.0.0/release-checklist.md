@@ -19,10 +19,10 @@
 
 ## 单体化交付（单体重写两阶段，详见 [task-breakdown](task-breakdown.md)）
 
-- [ ] 阶段 1：业务模块统一 SB 3.4.5/Java21（jakarta 迁移 + MP 3.5.9 + knife4j openapi3 + nacos 2023.0.1.0），逐模块 `contextLoads` 全绿
-- [ ] 阶段 2：合并单体（bootstrap 唯一入口 + 删 gateway + Dubbo→本地 + 路径内化 + 4 拦截器收敛 + ai 副本/重复类清理）
+- [x] 阶段 1：业务模块统一 SB 3.4.5/Java21（jakarta 迁移 + MP 3.5.9 + knife4j openapi3 + nacos 2023.0.1.0），逐模块 `contextLoads` 全绿 ✅
+- [x] 阶段 2：合并单体（bootstrap 唯一入口 + 删 gateway + Dubbo→本地 + 路径内化 + 4 拦截器收敛 + ai 副本/重复类清理）✅
 - [x] 阶段 2：合库 `shiwujie`（mysqldump 旧 4 库导入 + 单 datasource + call snake→camel + 跨库写单事务）✅ 远程 `47.112.114.139` 的 `shiwujie` 库 16 表已导入验证
-- [ ] 契约回归零变更：HTTP 路径 + WS `/api/ws/call` 12 信令 + 业务码 + 返回字段（前端 App/Web 不改可对接，详见 [testing-strategy](testing-strategy.md) 契约保护铁律）
+- [x] 契约回归零变更（**启动级 ✅ / 功能级待联调**）：HTTP 路径 + WS `/api/ws/call` 12 信令 + 业务码 + 返回字段启动级回归通过（前端 App/Web 不改可对接，详见 [testing-strategy](testing-strategy.md)）；功能级 WS 往返/ai SSE/事务/token 待手动联调
 - [ ] 🔴 安全加固全部清零（ai 后门 / 删改权限 / WS 鉴权 / 密码哈希 / 弱密钥 / 前端 TLS）——独立项
 - [ ] App 高德 SDK 集成 ——独立项
 - [ ] Docker 化 + 压测 + AiLogs 索引调优 ——独立项
@@ -81,8 +81,8 @@ curl "http://localhost:8100/api/user/blind/login/check?phone=13800000000"
 
 ## 部署回归
 
-- [ ] 单体统一端口 / 单库 / 统一 Spring Boot 版本 `contextLoads` 全绿
-- [ ] 凭据 `${ENV:default}` 占位符齐全 + prod 公网 IP `47.112.114.139` 硬编码生效
+- [x] 单体统一端口 / 单库 / 统一 Spring Boot 版本 `contextLoads` 全绿 ✅（8100 / `shiwujie` 库 / SB3.4.5）
+- [x] 凭据 `${ENV:default}` 占位符齐全 + prod 公网 IP `47.112.114.139` 硬编码生效
 - [ ] 手动联调：App + Web + 单体后端起栈，核心链路（登录 / 视频求助 / AI 对话 / 社区审核）跑通
 
 ## 打 tag 动作

@@ -6,7 +6,9 @@
 
 ### 单体重写
 
-> 文档先写：v3.0.0 架构目标态已写入 [tech-stack](../../architecture/tech-stack.md) / [data-model](../../architecture/data-model.md) / [gateway-dubbo](../../architecture/gateway-dubbo.md) 的「v3.0.0 目标」段；本节为实现 spec。两阶段推进，验证点见 [testing-strategy](testing-strategy.md)。
+> 文档先写：v3.0.0 架构目标态已写入 [tech-stack](../../architecture/tech-stack.md) / [data-model](../../architecture/data-model.md) / [gateway-dubbo](../../architecture/gateway-dubbo.md) 的「v3.0.0 单体化（已落地）」段；本节为实现 spec。两阶段推进，验证点见 [testing-strategy](testing-strategy.md)。
+
+> ✅ **工程已落地（2026-07-11，启动级验证通过）**：阶段 1（1.1–1.7）+ 阶段 2（2.1–2.6）全部完成；2.7 启动级验证通过，功能级联调待 App/Web。回卷文档已转 as-built（CHANGELOG / architecture / 模块文档 / known-issues）。
 
 **契约保护铁律**（全程不得违反）：对外 HTTP 路径 `/api/{user,call,community,ai}/**`、WebSocket `/api/ws/call` + 12 信令码（`-1/0/1/2/3/4/5001~5006`）、HTTP/业务状态码、返回字段名——**零变更**，前端 App/Web 不改即可对接。
 
