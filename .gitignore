@@ -18,3 +18,6 @@ shiwujie-frontend/app/shiwujie/app/release/app-release.apk
 # CLAUDE.md 由 /init 扫描代码库生成本地代码地图；规则真值在 tracked 的 docs/CONTRIBUTING.md
 CLAUDE.md
 .claude/
+
+# ===== 运行时日志（单体 jar 运行产物）=====
+/logs/
