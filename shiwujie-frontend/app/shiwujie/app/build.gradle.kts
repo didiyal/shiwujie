@@ -34,12 +34,7 @@ android {
         viewBinding = true
     }
     
-    // 按照讯飞官方文档要求配置jniLibs
-    sourceSets {
-        getByName("main") {
-            jniLibs.srcDirs("src/main/Jnilibs")
-        }
-    }
+    // JNI libs 由 Android Gradle Plugin 自动发现 src/main/jniLibs/，无需手动指定
 }
 
 
@@ -66,9 +61,10 @@ dependencies {
     // WebSocket
     implementation(libs.java.websocket)
     
-    // AnyRTC SDK (官方Maven仓库)
-    implementation("io.anyrtc:rtc:4.3.1.2")
-    implementation(files("libs\\Msc.jar"))
+    // AnyRTC SDK (本地 AAR，避免远程下载)
+    implementation(files("libs/rtc-release-4.3.1.3.aar"))
+    // iFlytek MSC SDK (TTS/语音识别)
+    implementation(files("libs/Msc.jar"))
 
     // ===== 障碍物检测功能依赖 - 严格按照backend_service.py的摄像头功能需求 =====
     // 改造说明：将Python后端的OpenCV摄像头功能转换为Android CameraX实现
