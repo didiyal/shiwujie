@@ -1,17 +1,17 @@
-# model 与 common-web 模块
+# model 模块（契约层）
 
-> 共享层：`shiwujie-model` 是纯契约（所有模块可依赖），`shiwujie-common-web` 是公共能力（v3.0.0 全模块含 ai 可依赖；v2.1.0 因 SB 割裂仅 SB2 业务模块可用）。二者构成「单一真相源」。本文为 development 细化；用户可见契约（FR-MODEL / AC-MODEL）见 [product/current.md](../../../docs/product/current.md)。
+> v3.0.0 收敛为 **2 模块**：`shiwujie-model`（契约层，本文件）+ `shiwujie-bootstrap`（唯一 app：原 common-web 公共层 + user/call/community/ai 全部业务代码已于阶段2.8 并入，见 [bootstrap.md](bootstrap.md)）。本文为 development 细化；用户可见契约（FR-MODEL / AC-MODEL）见 [product/current.md](../../../docs/product/current.md)。
 
-> ⚠️ **v3.0.0 单体化后**：SB 统一为 3.4.5/jakarta，「model/common-web 两层因 SB 割裂而被迫分立」的根因消失——ai 已接入 common-web，两层重复类已去重。当前态见 [tech-stack](../../../docs/architecture/tech-stack.md) as-built。
+> ⚠️ **v3.0.0 单体化后**：SB 统一为 3.4.5/jakarta，「model/common-web 两层因 SB 割裂而被迫分立」的根因消失——ai 接入 common-web、两层重复类去重（阶段2.5）；阶段2.8 进一步把 common-web 并入 bootstrap，现仅 model 作独立库模块保留。当前态见 [tech-stack](../../../docs/architecture/tech-stack.md) as-built。
 
 ## 模块定位
 
 | 模块 | 类型 | 依赖 | 被谁依赖 |
 |---|---|---|---|
-| `shiwujie-model` | jar（无 Spring） | 无 | **全部模块**（含 ai） |
-| `shiwujie-common-web` | jar（SB 3.4.5，v3.0.0 统一） | model | user/call/community/ai（v3.0.0 起 ai 也依赖；v2.1.0 因 SB 割裂不含 ai） |
+| `shiwujie-model` | jar（无 Spring） | 无 | **bootstrap**（阶段2.8 起 common-web/user/call/community/ai 均并入 bootstrap，仅 bootstrap 依赖 model） |
+| ~~`shiwujie-common-web`~~ | **已并入 bootstrap**（阶段2.8 `a215d9e`） | — | 公共层代码现处 bootstrap 的 `com.swj.shiwujie.{common,config,constants,exception,interceptor,utils}` 子包，详见 [bootstrap.md](bootstrap.md) |
 
-> 为什么两层？（v2.1.0 根因）详见 [`../../../docs/architecture/tech-stack.md`](../../../docs/architecture/tech-stack.md) 的「SB 2.7 与 SB 3.4.5 割裂」：Spring AI 强制 SB3+/Java21，而 common-web 是 SB2.7（`javax.*` 命名空间），ai 用不了。纯契约的 model 不绑 Spring，故所有模块都能依赖。**v3.0.0 SB 统一为 3.4.5/jakarta 后此根因消失**（阶段2.5 `35b81ed`），ai 接入 common-web、两层重复类去重——但分层结构本身保留（契约/公共职责分离仍有价值）。
+> 为什么曾有 model/common-web 两层？（v2.1.0 根因）详见 [`../../../docs/architecture/tech-stack.md`](../../../docs/architecture/tech-stack.md) 的「SB 2.7 与 SB 3.4.5 割裂」：Spring AI 强制 SB3+/Java21，而 common-web 是 SB2.7（`javax.*` 命名空间），ai 用不了。纯契约的 model 不绑 Spring，故所有模块都能依赖。**v3.0.0 SB 统一为 3.4.5/jakarta 后此根因消失**（阶段2.5 `35b81ed`），ai 接入 common-web、两层重复类去重；阶段2.8 进一步把 common-web 并入 bootstrap——契约/公共职责现以「model 契约 + bootstrap 公共子包」两模块形态承载。
 
 ## shiwujie-model（契约层）
 
@@ -36,27 +36,8 @@ src/main/java/com/swj/shiwujie/
 2. **domain / enums / request / VO**：前后端与跨服务的数据契约。
 3. **共享常量**：`TOKEN_SECRETKEY` / `REDIS_SECRETKEY` / `PASSWORD_REGEX` / `BLIND_REGEX`（见 [`../../../docs/architecture/auth.md`](../../../docs/architecture/auth.md)）。
 
-## shiwujie-common-web（SB2 公共层）
+## ~~shiwujie-common-web~~ → 已并入 bootstrap
 
-```
-src/main/java/com/swj/shiwujie/
-├── common/{BaseResponse, ErrorCode, PageRequest}.java   # （v3.0.0 去重：PageRequest 仅留 common-web 版）
-├── constants/{CommonConstant, UserConstants}.java        # （v3.0.0 去重：仅留 common-web 版）
-├── config/RedisTemplateConfig.java
-├── exception/{BusinessException, GlobalExceptionHandler, ThrowUtils}.java
-└── utils/
-    ├── JwtUtils.java           # HS256 签发/校验（Hutool）
-    ├── RedisUtils.java         # setToRedis/renewKey(TTL=DAYS)/getFromRedis
-    ├── LoginUtils.java         # 从 request 取登录用户
-    ├── ResultUtils.java
-    └── ConverterUtils.java
-```
+common-web 的公共能力（`BaseResponse`/`ErrorCode`、`WebConfig`、`LoginCheckInterceptor`、`JwtUtils`/`RedisUtils`/`LoginUtils`、`GlobalExceptionHandler`/`ThrowUtils`、`RedisTemplateConfig`）已于阶段2.8（`a215d9e`）整体并入 `shiwujie-bootstrap` 的 `com.swj.shiwujie.{common,config,constants,exception,interceptor,utils}` 子包，对外路径与行为零变更。详见 [bootstrap.md](bootstrap.md)「公共层」节。
 
-**核心能力**：
-
-- **JwtUtils**：`generateToken(payload, secret, duration)` / `validateToken(token, secret, ignoreExp)`。业务模块调用时恒传 `ignoreExp=true`（忽略 JWT 自身过期，见 [`../../../docs/architecture/auth.md`](../../../docs/architecture/auth.md)）。
-- **RedisUtils**：`setToRedis(key, val, days)` / `renewKey(key, days)` → `redisTemplate.expire(key, days, TimeUnit.DAYS)` / `getFromRedis` / `removeToRedis`。
-- **GlobalExceptionHandler**：`BusinessException` / `RuntimeException` 统一转 `BaseResponse`。
-- **ThrowUtils**：`throwIf(cond, code, msg)` 断言式抛业务异常。
-
-> 上述 v2.1.0 缺陷（common-web 与 model 重复代码、LoginCheckInterceptor 复制到 4 模块、ai 用不了 common-web）**已随 v3.0.0 单体化消灭**（阶段2.5 `35b81ed`），✅ 标记见 [`../known-issues.md`](../known-issues.md)。
+> v2.1.0 缺陷（common-web 与 model 重复代码、LoginCheckInterceptor 复制到 4 模块、ai 用不了 common-web）已随 v3.0.0 单体化消灭（阶段2.5 + 阶段2.8），✅ 标记见 [`../known-issues.md`](../known-issues.md)。

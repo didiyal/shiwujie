@@ -22,6 +22,7 @@
 - [x] 阶段 1：业务模块统一 SB 3.4.5/Java21（jakarta 迁移 + MP 3.5.9 + knife4j openapi3 + nacos 2023.0.1.0），逐模块 `contextLoads` 全绿 ✅
 - [x] 阶段 2：合并单体（bootstrap 唯一入口 + 删 gateway + Dubbo→本地 + 路径内化 + 4 拦截器收敛 + ai 副本/重复类清理）✅
 - [x] 阶段 2：合库 `shiwujie`（mysqldump 旧 4 库导入 + 单 datasource + call snake→camel + 跨库写单事务）✅ 远程 `47.112.114.139` 的 `shiwujie` 库 16 表已导入验证
+- [x] 阶段 2.8 模块合并（7→2）：`<modules>` = {shiwujie-model, shiwujie-bootstrap}；common-web + user/call/community/ai 并入 bootstrap；spring-ai BOM/版本/spring-milestones 仓库迁父 pom；`mvn install` 2 模块 reactor 全绿 + jar 启动契约回归（74 路由四模块前缀齐）✅
 - [x] 契约回归零变更（**启动级 ✅ / 功能级待联调**）：HTTP 路径 + WS `/api/ws/call` 12 信令 + 业务码 + 返回字段启动级回归通过（前端 App/Web 不改可对接，详见 [testing-strategy](testing-strategy.md)）；功能级 WS 往返/ai SSE/事务/token 待手动联调
 - [ ] 🔴 安全加固全部清零（ai 后门 / 删改权限 / WS 鉴权 / 密码哈希 / 弱密钥 / 前端 TLS）——独立项
 - [ ] App 高德 SDK 集成 ——独立项
