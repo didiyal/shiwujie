@@ -5,11 +5,11 @@
 ## 🔴 安全漏洞（必办）
 
 1. **ai 默认用户兜底（生产后门）**：`LoginCheckInterceptor`（ai 模块，line 52-60）无 Authorization 时注入 blindId=1 / phone=19872250169。生产未关闭则任何人可白嫖 AI（消耗 DashScope token）。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #6。
-2. **community 权限检查被注释**：`HelppostServiceImpl.deleteHelppost`/`updateHelppost` 的「创建者或管理员」检查**整段被注释** → 任何登录视障者可删/改任意帖；`CommunityController.deleteCommunity`/`updateCommunity` 注释「仅注册人可改」但**实现未校验** → 任意志愿者可改/删任意社区；Activity delete/update、Activitysign add 均无身份与角色校验。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #9。
+2. ✅ **community 权限检查（部分修复 2026-07-12，`fix/v3.0.0-security-hardening`）**：求助帖删改、社区修改/删除、社区管理员增删改的权限检查已恢复（仅作者/注册人/管理员，员工无权，+末位注册人护栏；`CommunitymanagerController.deleteCommunityManager` 自删 bug 一并修正）。**仍待办（同类未网关）**：Activity add/update/delete 无作者/角色校验、Communityjoinreview 审核无角色校验、Activitysign add 无调用者校验。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #9。
 3. ✅ **续期 key 拼接 bug（已修复 2026-07-10）**：`renewKey`/`expire` 曾拼的 key **少了 `-blind-`/`-volunteer-` 段**（`LoginCheckInterceptor` 续期、`deleteBlind`/`deleteVolunteer` 删 token 均漏前缀；登录存/注销删/拦截器读则正确）→ 滑动会话静默失效，活跃用户 90 天后被踢；删用户旧 token 残留。**修复**：user/call/community 三份拦截器提取共享 `redisKey`（读/续期共用）杜绝拼接分叉，续期对齐登录 90 天；`BlindController:143`/`VolunteerServiceImpl:410` 删 token 补回前缀。ai 模块同型 bug 暂未处理。原风险见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #1。
 4. **JWT 过期校验被关闭**：`validateToken(..., true)` 第三参 `ignoreExp=true`，JWT 自身 exp 永不生效，过期完全依赖 Redis TTL。Redis 故障/误写则 JWT 形同永久有效。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #2。
 5. **TOKEN_SECRETKEY 硬编码且弱**：密钥即字符串 `"TOKEN_SECRETKEY"`，明文在共享 model 模块，HS256 弱密钥有离线爆破/伪造 token 风险。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #3。
-6. **MD5 存密码、无加盐**：`SecureUtil.md5(password)`，不适用口令存储且无 salt → 彩虹表风险。建议 BCrypt/Argon2。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #4。
+6. ✅ ~~MD5 存密码、无加盐~~（2026-07-12 修复）：改 BCrypt（Hutool `BCrypt` cost=10，盐内嵌），新增 `utils/PasswordUtils`；盲人/志愿者/社区登录注册与改密全改 BCrypt，存量无盐 MD5 行登录通过即懒升级。身份证/残疾证 PII 哈希仍 MD5（与口令无关）。原风险见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #4。
 7. **/ws/call 未在鉴权白名单**：`WebConfig.excludePathPatterns` 不含 `/ws/call`，`@ServerEndpoint` 走独立容器 → **WS 实际绕过 JWT**。任何人构造 `{requestType:0, volunteerPhone:"任意号"}` 即可冒名 bind，接收他人求助通知。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #8。
 8. **URL 放行规则过宽**：`url.contains("loginAndRegister")`/`contains("Login")` 按子串放行未限定 path，任何含该子串的路径都绕过鉴权。建议 AntPathMatcher。见 [architecture/auth.md](../../docs/architecture/auth.md) 风险 #7。
 

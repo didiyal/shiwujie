@@ -44,6 +44,15 @@
 - **call `netty-all` 死依赖**（阶段1.5 `af162c9`）：源码零 Netty 引用，删冗余 `netty-all:4.1.50.Final`。
 - **pagehelper 死依赖**（阶段1.4 `4db2c53`）：全代码 0 处 `PageHelper.startPage`。
 
+**安全加固（2026-07-12，`fix/v3.0.0-security-hardening`）**
+
+> 落地 ROADMAP「安全加固」项。对外 HTTP 路径 / WS 信令 / 业务码（`NO_AUTH` 40030）不变；权限边界**收紧**与口令算法升级为行为变更。明细见 [known-issues](../shiwujie-backend/docs/known-issues.md) #2/#6、[architecture/auth.md](architecture/auth.md) 风险 #4/#9。
+
+**变更**
+- **恢复社区域删改权限检查**：求助帖删改——仅作者（盲人本人）或本社区注册人/管理员可操作，员工（EMPLOYEE）无权，违者返 `NO_AUTH`；社区修改/删除——仅注册人；社区管理员增删改——仅注册人/管理员，并加「末位注册人护栏」（禁降级/删除唯一注册人、禁新增第二个注册人）。此前这些检查被注释或缺失，任意登录用户可删/改任意求助帖与社区、随意增删管理员。
+- **修正 `deleteCommunityManager` 自删 bug**：原实现忽略请求体、恒删调用者自己的管理记录；改为按请求体目标删除并鉴权。
+- **口令存储 MD5 → BCrypt**：新增 `PasswordUtils`（Hutool `BCrypt`，cost=10，盐内嵌），盲人/志愿者/社区登录注册与改密全改 BCrypt；存量无盐 MD5 行于首次以原明文口令登录通过时**懒升级**为 BCrypt（对用户透明，无离线迁移脚本）。身份证/残疾证等 PII 单向哈希仍用 MD5（与口令无关）。`password varchar(100)` 足装 60 字符 BCrypt 串，不加 salt 列、不改 DDL。
+
 > 架构现状（已落地）见 [architecture/tech-stack.md](architecture/tech-stack.md) / [architecture/data-model.md](architecture/data-model.md) / [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) 的「v3.0.0 单体化（已落地）」段；交付 spec 见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。
 
 ---

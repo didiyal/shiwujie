@@ -27,7 +27,7 @@ flowchart TD
 实现位于 user 模块 `BlindServiceImpl.generateLoginToken` / `VolunteerServiceImpl.generateLoginToken`：
 
 1. 校验手机号格式（`PhoneUtil.isPhone`）、密码格式（`PASSWORD_REGEX`：须含字母+数字、仅字母数字）。
-2. 密码 **MD5 加密（未加盐）** 存库/比对。
+2. 密码 **BCrypt 哈希存储（cost=10，盐内嵌）** 比对；存量无盐 MD5 行登录通过即懒升级（2026-07-12 由 MD5 迁移，见 [known-issues](../../shiwujie-backend/docs/known-issues.md) #6）。
 3. 跨表查重：Blind/Volunteer 手机号互斥（同一号只能存在一处）。
 4. 构造 payload `{blindId|volunteerId, isBlind, phone, role}` → `JwtUtils.generateToken(payload, TOKEN_SECRETKEY, 90天)`。
 5. `redisUtils.setToRedis("REDIS_SECRETKEY-blind-"+id, token, 90L)`（单位=**天**）。
@@ -67,4 +67,4 @@ flowchart TD
 
 FR-AUTH / AC-AUTH（含「续期不生效」当前不满足项）见 [../product/v2.1.0/functional-requirements.md](../product/v2.1.0/functional-requirements.md) · [../product/v2.1.0/acceptance-criteria.md](../product/v2.1.0/acceptance-criteria.md)。
 
-风险点 #1–#9（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、拦截器 4 处复制、ai 默认用户后门、URL 放行过宽、WS 绕过鉴权、社区/家庭审核权限校验不完整）含 `file:line` 明细，统一登记于 [../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)（🔴 项同步进 [../ROADMAP.md](../ROADMAP.md) 安全加固）。其中 **#1 续期 key 拼接 bug 已于 2026-07-10 修复**（滑动会话 90 天生效、删用户清 token 生效）。
+风险点 #1–#9（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、拦截器 4 处复制、ai 默认用户后门、URL 放行过宽、WS 绕过鉴权、社区/家庭审核权限校验不完整）含 `file:line` 明细，统一登记于 [../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)（🔴 项同步进 [../ROADMAP.md](../ROADMAP.md) 安全加固）。其中 **#1 续期 key 拼接 bug 已于 2026-07-10 修复**（滑动会话 90 天生效、删用户清 token 生效）；**#4 MD5 无盐已于 2026-07-12 修复**（改 BCrypt + 存量懒升级）；**#9 社区/家庭审核权限部分修复**（求助帖/社区/社区管理员删改已恢复鉴权，Activity/审核/签到仍待办）。
