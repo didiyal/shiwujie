@@ -7,12 +7,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.community.helppost.HelppostVO;
+import com.swj.shiwujie.model.domain.community.Communitymanager;
 import com.swj.shiwujie.model.domain.community.Helppost;
 import com.swj.shiwujie.model.domain.user.Blind;
+import com.swj.shiwujie.model.enums.community.CommunityRolePermissionEnum;
 import com.swj.shiwujie.model.enums.community.PostStatusEnum;
 import com.swj.shiwujie.model.request.community.helppost.HelppostAddRequest;
 import com.swj.shiwujie.model.request.community.helppost.HelppostQueryRequest;
 import com.swj.shiwujie.model.request.community.helppost.HelppostUpdateRequest;
+import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.service.HelppostService;
 import com.swj.shiwujie.mapper.HelppostMapper;
 import com.swj.shiwujie.service.user.InnerBlindService;
@@ -34,6 +37,9 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
 
     @Resource
     private InnerBlindService innerBlindService;
+
+    @Resource
+    private CommunitymanagerService communitymanagerService;
 
 
     /**
@@ -136,21 +142,21 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
     @Override
     public boolean deleteHelppost(Long helppostId, Long loginBlindId,Long loginVolunteerId) {
         ThrowUtils.throwIf(helppostId == null || helppostId <= 0, ErrorCode.PARAMS_ERROR, "求助帖ID不合法");
-        ThrowUtils.throwIf(loginBlindId == null || loginBlindId <= 0, ErrorCode.PARAMS_ERROR, "用户ID不合法");
+        ThrowUtils.throwIf(loginBlindId == null && loginVolunteerId == null, ErrorCode.NOT_LOGIN, "未登录");
 
         // 查询求助帖
         Helppost helppost = this.getById(helppostId);
         ThrowUtils.throwIf(helppost == null, ErrorCode.PARAMS_ERROR, "求助帖不存在");
 
-//        Long communityId = helppost.getCommunityId();
-//        Long blindId = helppost.getBlindId();
-//        // 权限检查：创建者或社区管理员/注册人
-//        boolean isCreator = blindId.equals(loginBlindId);
-//        if (!isCreator) {
-//            // 检查是否为社区管理员或注册人
-//            Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, communityId);
-//            ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限删除该求助帖");
-//        }
+        // 权限检查：作者(盲人本人) 或 本社区注册人/管理员（员工无权）
+        boolean isAuthor = loginBlindId != null && loginBlindId.equals(helppost.getBlindId());
+        boolean isAdmin = false;
+        if (!isAuthor && loginVolunteerId != null) {
+            Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, helppost.getCommunityId());
+            isAdmin = communitymanager != null
+                    && communitymanager.getRolePermissionId() != CommunityRolePermissionEnum.EMPLOYEE.getRoleId();
+        }
+        ThrowUtils.throwIf(!isAuthor && !isAdmin, ErrorCode.NO_AUTH, "无权限删除该求助帖");
 
         return this.removeById(helppostId);
     }
@@ -173,16 +179,16 @@ public class HelppostServiceImpl extends ServiceImpl<HelppostMapper, Helppost> i
         Helppost helppost = this.getById(helppostId);
         ThrowUtils.throwIf(helppost == null, ErrorCode.PARAMS_ERROR, "求助帖不存在");
 
-//        // 权限检查：创建者或社区管理员/注册人
-//        Long blindId = helppost.getBlindId();
-//        Long communityId = helppost.getCommunityId();
-//        // 权限检查：创建者或社区管理员/注册人
-//        boolean isCreator = blindId.equals(loginBlindId);
-//        if (!isCreator) {
-//            // 检查是否为社区管理员或注册人
-//            Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, communityId);
-//            ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限删除该求助帖");
-//        }
+        // 权限检查：作者(盲人本人) 或 本社区注册人/管理员（员工无权）
+        ThrowUtils.throwIf(loginBlindId == null && loginVolunteerId == null, ErrorCode.NOT_LOGIN, "未登录");
+        boolean isAuthor = loginBlindId != null && loginBlindId.equals(helppost.getBlindId());
+        boolean isAdmin = false;
+        if (!isAuthor && loginVolunteerId != null) {
+            Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(loginVolunteerId, helppost.getCommunityId());
+            isAdmin = communitymanager != null
+                    && communitymanager.getRolePermissionId() != CommunityRolePermissionEnum.EMPLOYEE.getRoleId();
+        }
+        ThrowUtils.throwIf(!isAuthor && !isAdmin, ErrorCode.NO_AUTH, "无权限修改该求助帖");
 
         // 更新字段
         if (helpContent != null && !helpContent.isEmpty()) {

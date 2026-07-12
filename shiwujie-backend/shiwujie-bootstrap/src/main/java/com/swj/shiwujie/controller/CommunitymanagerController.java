@@ -6,11 +6,9 @@ import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
-import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.community.communitymanager.CommunityEmployeeQueryRequest;
 import com.swj.shiwujie.model.request.community.communitymanager.CommunityManagerRequest;
 import com.swj.shiwujie.service.CommunitymanagerService;
-import com.swj.shiwujie.service.user.InnerVolunteerService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,9 +31,6 @@ public class CommunitymanagerController {
 
     @Resource
     private CommunitymanagerService communitymanagerService;
-
-    @Resource
-    private InnerVolunteerService innerVolunteerService;
 
     /**
      * 查询社区下的员工(志愿者)
@@ -82,9 +77,9 @@ public class CommunitymanagerController {
     public BaseResponse<Boolean> deleteCommunityManager(@RequestBody CommunityManagerRequest request, HttpServletRequest httpRequest) {
         ThrowUtils.throwIf(ObjUtil.isNull(request), ErrorCode.PARAMS_ERROR);
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
-        Volunteer volunteer = innerVolunteerService.getById(loginVolunteerId);
-        int i = communitymanagerService.removeByVolunteerIdAndCommunityId(loginVolunteerId, volunteer.getCommunityId());
-        ThrowUtils.throwIf(i<=0,ErrorCode.SYSTEM_ERROR);
-        return ResultUtils.success(true);
+        ThrowUtils.throwIf(loginVolunteerId == null, ErrorCode.NOT_LOGIN, "未登录");
+        boolean result = communitymanagerService.deleteCommunityManager(
+                request.getVolunteerId(), request.getCommunityId(), loginVolunteerId);
+        return ResultUtils.success(result);
     }
 }

@@ -25,6 +25,7 @@ import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import com.swj.shiwujie.utils.JwtUtils;
+import com.swj.shiwujie.utils.PasswordUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -134,16 +135,19 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 密码格式校验
         boolean isMatch = this.validatePassword(password);
         ThrowUtils.throwIf(!isMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-        String md5Password = SecureUtil.md5(password);// 加密
 
 
         // 有账号直接登录
         Blind blind = this.getByPhone(phone);
         if (ObjUtil.isNotNull(blind)) {
 
-            //校验密码是否正确
+            //校验密码是否正确（兼容历史 MD5，通过即懒升级为 BCrypt）
             String blindPassword = blind.getPassword();
-            ThrowUtils.throwIf(!md5Password.equals(blindPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
+            ThrowUtils.throwIf(!PasswordUtils.matches(password, blindPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
+            if (PasswordUtils.isLegacyMd5(blindPassword)) {
+                blind.setPassword(PasswordUtils.hash(password));
+                this.updateById(blind);
+            }
 
             //生成token并存入redis
             String token = this.generateLoginToken(blind);
@@ -157,7 +161,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 无账号自动注册
         Blind newBlind = new Blind();
         newBlind.setPhone(phone);
-        newBlind.setPassword(md5Password);
+        newBlind.setPassword(PasswordUtils.hash(password));
         boolean save = this.save(newBlind);
         ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
 
@@ -187,15 +191,14 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
             ThrowUtils.throwIf(!isOriginMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
 
             ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
-            //检查原密码
-            String md5OriginPassword = SecureUtil.md5(originPassword);
-            ThrowUtils.throwIf(!md5OriginPassword.equals(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+            //检查原密码（兼容历史 MD5 与 BCrypt）
+            ThrowUtils.throwIf(!PasswordUtils.matches(originPassword, blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
         }
 
         boolean isNewMatch = this.validatePassword(newPassword);
         ThrowUtils.throwIf(!isNewMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-        // 密码加密更新
-        blind.setPassword(SecureUtil.md5(newPassword));
+        // 密码加密更新（BCrypt）
+        blind.setPassword(PasswordUtils.hash(newPassword));
 
         boolean result = this.updateById(blind);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
