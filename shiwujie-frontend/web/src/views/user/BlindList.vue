@@ -1,6 +1,6 @@
 <template>
   <div class="blind-list">
-    <a-card title="视障人士管理" class="management-card">
+    <a-card class="management-card" :bordered="false">
       <!-- 搜索和操作栏 -->
       <div class="search-section">
         <a-row :gutter="16" align="middle">
@@ -469,51 +469,33 @@ export default {
 
 <style scoped>
 .blind-list {
-  padding: 24px;
-  background: #f5f5f5;
-  min-height: 100vh;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .management-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .search-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  color: white;
-}
-
-.search-section :deep(.ant-input),
-.search-section :deep(.ant-select-selector) {
-  border-radius: 6px;
+  margin-bottom: 18px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .stats-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
-}
-
-.management-table {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.management-table :deep(.ant-table-thead > tr > th) {
-  background: #fafafa;
-  font-weight: 600;
-  color: #262626;
-}
-
-.management-table :deep(.ant-table-tbody > tr:hover > td) {
-  background: #f0f8ff;
+  margin-bottom: 18px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .certification-cell {
@@ -523,39 +505,6 @@ export default {
 }
 
 .detail-content {
-  padding: 16px 0;
+  padding: 8px 0;
 }
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .blind-list {
-    padding: 16px;
-  }
-  
-  .search-section {
-    padding: 16px;
-  }
-  
-  .stats-section {
-    padding: 16px;
-  }
-}
-
-/* 动画效果 */
-.management-card {
-  transition: all 0.3s ease;
-}
-
-.management-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.search-section {
-  transition: all 0.3s ease;
-}
-
-.search-section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-</style> 
+</style>

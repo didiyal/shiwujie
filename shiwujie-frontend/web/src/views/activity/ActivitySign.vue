@@ -1,6 +1,6 @@
 <template>
   <div class="activity-sign">
-    <a-card :title="pageTitle" class="management-card">
+    <a-card class="management-card" :bordered="false">
       <!-- 搜索和操作栏 -->
       <div class="search-section">
         <a-row :gutter="16" align="middle">
@@ -54,40 +54,16 @@
       <div class="stats-section">
         <a-row :gutter="16">
           <a-col :span="6">
-            <div class="stat-card total">
-              <div class="stat-icon">📊</div>
-              <div class="stat-content">
-                <div class="stat-value">{{ totalActivities }}</div>
-                <div class="stat-title">总活动数</div>
-              </div>
-            </div>
+            <a-statistic title="总活动数" :value="totalActivities" />
           </a-col>
           <a-col :span="6">
-            <div class="stat-card pending">
-              <div class="stat-icon">📝</div>
-              <div class="stat-content">
-                <div class="stat-value">{{ pendingActivities }}</div>
-                <div class="stat-title">未开始</div>
-              </div>
-            </div>
+            <a-statistic title="未开始" :value="pendingActivities" :value-style="{ color: '#ff9500' }" />
           </a-col>
           <a-col :span="6">
-            <div class="stat-card active">
-              <div class="stat-icon">✅</div>
-              <div class="stat-content">
-                <div class="stat-value">{{ activeActivities }}</div>
-                <div class="stat-title">进行中</div>
-              </div>
-            </div>
+            <a-statistic title="进行中" :value="activeActivities" :value-style="{ color: '#0071e3' }" />
           </a-col>
           <a-col :span="6">
-            <div class="stat-card finished">
-              <div class="stat-icon">🏁</div>
-              <div class="stat-content">
-                <div class="stat-value">{{ finishedActivities }}</div>
-                <div class="stat-title">已结束</div>
-              </div>
-            </div>
+            <a-statistic title="已结束" :value="finishedActivities" :value-style="{ color: '#34c759' }" />
           </a-col>
         </a-row>
       </div>
@@ -345,130 +321,67 @@ export default {
 
 <style scoped>
 .activity-sign {
-  padding: 24px;
-  background: #f5f5f5;
-  min-height: 100vh;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .management-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .search-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  color: white;
-}
-
-.search-section :deep(.ant-input),
-.search-section :deep(.ant-select-selector) {
-  border-radius: 6px;
+  margin-bottom: 18px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .stats-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  border-left: 4px solid;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.stat-card.total {
-  border-left-color: #722ed1;
-}
-
-.stat-card.pending {
-  border-left-color: #faad14;
-}
-
-.stat-card.active {
-  border-left-color: #1890ff;
-}
-
-.stat-card.finished {
-  border-left-color: #52c41a;
-}
-
-.stat-icon {
-  font-size: 32px;
-  margin-right: 16px;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #262626;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-
-.stat-title {
-  font-size: 14px;
-  color: #8c8c8c;
-  font-weight: 500;
+  margin-bottom: 18px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .activities-section {
-  margin-top: 24px;
+  margin-top: 18px;
 }
-
 .activity-col {
   margin-bottom: 16px;
 }
 
 .activity-card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: var(--tr);
   cursor: pointer;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--border-l);
+  height: 100%;
 }
-
 .activity-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  border-color: #1890ff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px rgba(0, 113, 227, 0.1);
 }
 
 .activity-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
-
 .activity-status {
   flex: 1;
 }
-
 .activity-time {
-  color: #8c8c8c;
+  color: var(--text-2);
   font-size: 12px;
   display: flex;
   align-items: center;
@@ -476,70 +389,32 @@ export default {
 }
 
 .activity-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  color: #262626;
-  margin-bottom: 16px;
+  color: var(--text);
+  margin-bottom: 14px;
   line-height: 1.4;
 }
 
 .activity-info {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
-
 .info-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  color: #595959;
-  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--text-2);
+  font-size: 13px;
 }
 
 .activity-footer {
-  text-align: center;
+  text-align: right;
 }
 
 .empty-state {
   text-align: center;
-  padding: 60px 0;
-  color: #8c8c8c;
+  padding: 48px 0;
+  color: var(--text-3);
 }
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .activity-sign {
-    padding: 16px;
-  }
-  
-  .search-section {
-    padding: 16px;
-  }
-  
-  .stats-section {
-    padding: 16px;
-  }
-  
-  .activity-col {
-    span: 24;
-  }
-}
-
-/* 动画效果 */
-.management-card {
-  transition: all 0.3s ease;
-}
-
-.management-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.search-section {
-  transition: all 0.3s ease;
-}
-
-.search-section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-</style> 
+</style>

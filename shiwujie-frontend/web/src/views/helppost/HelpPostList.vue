@@ -1,6 +1,6 @@
 <template>
   <div class="helppost-list">
-    <a-card title="求助帖管理">
+    <a-card :bordered="false">
       <div class="action-bar">
         <a-row :gutter="16" align="middle">
           <a-col :span="8">
@@ -25,10 +25,7 @@
             </a-select>
           </a-col>
           <a-col :span="12" style="text-align: right">
-            <a-button @click="handleRefresh">
-              🔄
-              刷新
-            </a-button>
+            <a-button @click="handleRefresh">刷新</a-button>
           </a-col>
         </a-row>
       </div>
@@ -310,20 +307,23 @@ export default {
 
 <style scoped>
 .helppost-list {
-  padding: 24px;
-  background: #f5f5f5;
-  min-height: 100vh;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .action-bar {
   margin-bottom: 16px;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 6px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .detail-content {
-  padding: 16px 0;
+  padding: 8px 0;
 }
 
 .help-content {
@@ -332,13 +332,14 @@ export default {
   line-height: 1.6;
   max-height: 200px;
   overflow-y: auto;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 4px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
 }
 
 .loading-content {
   text-align: center;
   padding: 40px 0;
 }
-</style> 
+</style>
