@@ -180,17 +180,20 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
     @Override
     public boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword) {
 
-        // 校验密码格式
         String newPassword = blindUpdatePassword.getNewPassword();
         String originPassword = blindUpdatePassword.getOriginPassword();
 
         Blind blind = this.getById(blindUpdatePassword.getBlindId());
-        // 若用户没有密码则设置密码
-        if(StrUtil.isNotBlank(originPassword)){
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "用户不存在");
+
+        if (StrUtil.isBlank(blind.getPassword())) {
+            // 当前无密码（快注册用户）首次设密：调用者所有权已在 controller 校验，无需原密码
+            ThrowUtils.throwIf(StrUtil.isBlank(newPassword), ErrorCode.PARAMS_ERROR, "新密码不能为空");
+        } else {
+            // 已设密码：原密码必填且须匹配（修复账户接管：原 originPassword 留空即跳过整段校验）
+            ThrowUtils.throwIf(StrUtil.isBlank(originPassword), ErrorCode.PARAMS_ERROR, "原密码不能为空");
             boolean isOriginMatch = this.validatePassword(originPassword);
             ThrowUtils.throwIf(!isOriginMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-
-            ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
             //检查原密码（兼容历史 MD5 与 BCrypt）
             ThrowUtils.throwIf(!PasswordUtils.matches(originPassword, blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
         }
@@ -202,7 +205,6 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
 
         boolean result = this.updateById(blind);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
-
 
         return true;
     }
@@ -424,7 +426,9 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 检查操作者权限（必须是社区创建者或管理员）
         // 通过社区管理服务获取志愿者角色
         Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(currentVolunteerId, communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限执行此操作");
         Long rolePermissionId = communitymanager.getRolePermissionId();
+        ThrowUtils.throwIf(rolePermissionId == null, ErrorCode.NO_AUTH, "无权限执行此操作");
         CommunityRolePermissionEnum volunteerRole = CommunityRolePermissionEnum.getById(rolePermissionId);
         ThrowUtils.throwIf(volunteerRole == CommunityRolePermissionEnum.EMPLOYEE, ErrorCode.NO_AUTH, "无权限执行此操作");
 

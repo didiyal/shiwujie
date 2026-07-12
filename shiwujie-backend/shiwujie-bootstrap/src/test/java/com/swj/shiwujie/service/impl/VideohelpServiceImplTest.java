@@ -25,6 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,9 +42,10 @@ import static org.mockito.Mockito.when;
  * 纯 Mockito：@Mock 三个 @Resource/@Autowired 字段 + baseMapper（ServiceImpl 走 baseMapper）。
  * RedisUtils 用 @Mock；CoordinationSocketHandler 用 @Mock，static sessionMap 不被触发。
  *
- * 注意源码缺陷（见 known-issues）：
- *  - removeVolunteerFromVideohelp 在 hasKey=FALSE 分支 queue=null 却调 queue.contains → NPE。
- *    本测试只覆盖 hasKey=TRUE 正常路径，不覆盖该 NPE 分支。
+ * 注意：P0 修复后（见 CHANGELOG v3.0.0）：
+ *  - removeVolunteerFromVideohelp 的 hasKey=FALSE 分支已改为直接抛 PARAMS_ERROR（原对 null queue
+ *    调 contains 必现 NPE 已修）；notInRedis_throws 覆盖该分支。
+ *  - 匹配队列 TTL 由 30 天订正为 30 秒（TimeUnit.SECONDS），写回走 4 参 setToRedis 重载。
  *  - joinVideohelp 末尾 coordinationSocketHandler.matchSuccess 内部读 static sessionMap，
  *    但此处 handler 被 @Mock 隔离（不执行真实方法），故可单测。
  */
@@ -98,8 +100,8 @@ class VideohelpServiceImplTest {
             assertThat(saved.getHelpStatus()).isEqualTo(CallHelpStatusEnum.WAITING.getHelpStatus());
             assertThat(saved.getStartTime()).isNotNull();
 
-            // 队列写回 redis（30 天）
-            verify(redisUtils).setToRedis(eq(CallConstant.VOLUNTEER_QUEUE_REDIS), any(), eq(30L));
+            // 队列写回 redis（30 秒 TTL）
+            verify(redisUtils).setToRedis(eq(CallConstant.VOLUNTEER_QUEUE_REDIS), any(), eq(30L), eq(TimeUnit.SECONDS));
         }
 
         @Test
@@ -147,7 +149,7 @@ class VideohelpServiceImplTest {
 
             assertThat(result).isTrue();
             verify(baseMapper).insert(any(Videohelp.class));
-            verify(redisUtils).setToRedis(eq(CallConstant.VOLUNTEER_QUEUE_REDIS), any(), eq(30L));
+            verify(redisUtils).setToRedis(eq(CallConstant.VOLUNTEER_QUEUE_REDIS), any(), eq(30L), eq(TimeUnit.SECONDS));
         }
     }
 
@@ -156,6 +158,21 @@ class VideohelpServiceImplTest {
     @Nested
     @DisplayName("removeVolunteerFromVideohelp：志愿者退出匹配")
     class RemoveVolunteer {
+
+        @Test
+        @DisplayName("Redis 无队列（hasKey=false）→ 抛 PARAMS_ERROR（原为必现 NPE，已修复）")
+        void notInRedis_throws() {
+            Long volunteerId = 8000L;
+            when(redisUtils.hasKey(CallConstant.VOLUNTEER_QUEUE_REDIS)).thenReturn(Boolean.FALSE);
+
+            assertThatThrownBy(() -> service.removeVolunteerFromVideohelp(volunteerId, "13900000010"))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("code").isEqualTo(ErrorCode.PARAMS_ERROR.getCode());
+
+            // hasKey=false 时不应读队列、不应写库
+            verify(redisUtils, never()).getFromRedis(any());
+            verify(baseMapper, never()).updateById(any(Videohelp.class));
+        }
 
         @Test
         @DisplayName("志愿者不在队列中 → 抛 PARAMS_ERROR")
@@ -211,7 +228,7 @@ class VideohelpServiceImplTest {
             assertThat(captor.getValue().getHelpStatus())
                     .isEqualTo(CallHelpStatusEnum.FALL.getHelpStatus());
 
-            verify(redisUtils).setToRedis(eq(CallConstant.VOLUNTEER_QUEUE_REDIS), any(), eq(30L));
+            verify(redisUtils).setToRedis(eq(CallConstant.VOLUNTEER_QUEUE_REDIS), any(), eq(30L), eq(TimeUnit.SECONDS));
         }
     }
 
@@ -282,7 +299,7 @@ class VideohelpServiceImplTest {
             // socket 匹配成功被调（@Mock 隔离，不触发 static sessionMap）
             verify(coordinationSocketHandler).matchSuccess(any(SocketData.class));
             // 队列回写 redis
-            verify(redisUtils).setToRedis(eq(CallConstant.VOLUNTEER_QUEUE_REDIS), any(), eq(30L));
+            verify(redisUtils).setToRedis(eq(CallConstant.VOLUNTEER_QUEUE_REDIS), any(), eq(30L), eq(TimeUnit.SECONDS));
         }
     }
 

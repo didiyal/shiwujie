@@ -25,6 +25,7 @@ import jakarta.annotation.Resource;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Administrator
@@ -86,7 +87,7 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
 
 
             //5. 志愿者信息上传redis
-            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, 30L);
+            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, CallConstant.VOLUNTEER_QUEUE_TTL_SECONDS, TimeUnit.SECONDS);
         }
 
         return true;
@@ -104,12 +105,11 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
 
         //1. 检查redis是否有队列,有则使用,无则报错
         Boolean hasKey = (Boolean) redisUtils.hasKey(CallConstant.VOLUNTEER_QUEUE_REDIS);
-        Queue<Long> queue = null;
         if (!hasKey) {
-            ThrowUtils.throwIf(queue.contains(loginVolunteerId), ErrorCode.PARAMS_ERROR, "您不在匹配之中,无法取消匹配");
-        } else {
-            queue = ConverterUtils.ObjToQueueLong(redisUtils.getFromRedis(CallConstant.VOLUNTEER_QUEUE_REDIS));
+            // 队列不存在,直接拒绝（修复：原代码对 null queue 调用 contains 必现 NPE）
+            ThrowUtils.throwIf(true, ErrorCode.PARAMS_ERROR, "您不在匹配之中,无法取消匹配");
         }
+        Queue<Long> queue = ConverterUtils.ObjToQueueLong(redisUtils.getFromRedis(CallConstant.VOLUNTEER_QUEUE_REDIS));
         //2. 检查是否在匹配中:检查redis中是否有用用户信息
         ThrowUtils.throwIf(!queue.contains(loginVolunteerId), ErrorCode.PARAMS_ERROR);
 
@@ -128,7 +128,7 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
 
 
             //4. 志愿者信息上传redis
-            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, 30L);
+            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, CallConstant.VOLUNTEER_QUEUE_TTL_SECONDS, TimeUnit.SECONDS);
         }
 
         return true;
@@ -171,7 +171,7 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
 
 
             //3. 更新redis
-            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, 30L);
+            redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, CallConstant.VOLUNTEER_QUEUE_TTL_SECONDS, TimeUnit.SECONDS);
 
 
         }

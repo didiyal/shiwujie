@@ -67,4 +67,13 @@ flowchart TD
 
 FR-AUTH / AC-AUTH（含「续期不生效」当前不满足项）见 [../product/v2.1.0/functional-requirements.md](../product/v2.1.0/functional-requirements.md) · [../product/v2.1.0/acceptance-criteria.md](../product/v2.1.0/acceptance-criteria.md)。
 
-风险点 #1–#9（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、拦截器 4 处复制、ai 默认用户后门、URL 放行过宽、WS 绕过鉴权、社区/家庭审核权限校验不完整）含 `file:line` 明细，统一登记于 [../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)（🔴 项同步进 [../ROADMAP.md](../ROADMAP.md) 安全加固）。其中 **#1 续期 key 拼接 bug 已于 2026-07-10 修复**（滑动会话 90 天生效、删用户清 token 生效）；**#4 MD5 无盐已于 2026-07-12 修复**（改 BCrypt + 存量懒升级）；**#9 社区/家庭审核权限部分修复**（求助帖/社区/社区管理员删改已恢复鉴权，Activity/审核/签到仍待办）。
+风险点 #1–#10（续期 key 拼接 bug、JWT 过期校验关闭、弱密钥硬编码、MD5 无盐、拦截器 4 处复制、ai 默认用户后门、URL 放行过宽、WS 绕过鉴权、社区/家庭审核权限校验不完整、改密接口账户接管）含 `file:line` 明细，统一登记于 [../../shiwujie-backend/docs/known-issues.md](../../shiwujie-backend/docs/known-issues.md)（🔴 项同步进 [../ROADMAP.md](../ROADMAP.md) 安全加固）。其中 **#1 续期 key 拼接 bug 已于 2026-07-10 修复**（滑动会话 90 天生效、删用户清 token 生效）；**#4 MD5 无盐已于 2026-07-12 修复**（改 BCrypt + 存量懒升级）；**#9 社区/家庭审核权限部分修复**（求助帖/社区/社区管理员删改已恢复鉴权，Activity/审核/签到仍待办）；**#10 改密账户接管已于 2026-07-12 修复**（`BlindController`/`VolunteerController` 改密加 ownership 校验——登录人须 == body 目标 id 否则 `NO_AUTH`；service 侧已设密码用户 originPassword 必填且须 `PasswordUtils.matches` 通过，堵住「空原密码绕过」，首次设密免 origin）。
+
+## 改密链路（2026-07-12 加固）
+
+`BlindController.updateBlindPassword` / `VolunteerController.updateVolunteerPassword` 两道闸：
+
+1. **所有权**：从 `LoginUtils.getLoginBlindId/getLoginVolunteerId(request)` 取登录人 id，与请求体 `blindId/volunteerId` 比对，不等即 `NO_AUTH(40030)`「只能修改自己的密码」。
+2. **原密码**（仅已设密码用户）：`StrUtil.isBlank(blind.getPassword())` 为真（当前确实无密码，如快注册首登）→ 免原密码、仅校验新密码格式后写入；否则 originPassword 必填，先 `PasswordUtils.matches(originPassword, 存量哈希)`，不匹配即 `PARAMS_ERROR`「原密码输入错误」，通过后写新 BCrypt 哈希。
+
+此前 controller 不校验归属、service 原密码校验整段包在 `if(isNotBlank(originPassword))` 内 → originPassword 留空即跳过 → 任意登录用户可改任意账号密码（账户接管）。修复明细见 [known-issues](../../shiwujie-backend/docs/known-issues.md) 安全漏洞 #9。

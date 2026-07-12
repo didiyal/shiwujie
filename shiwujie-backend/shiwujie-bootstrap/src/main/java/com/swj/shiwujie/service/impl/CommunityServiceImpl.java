@@ -68,6 +68,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     @Override
     public VolunteerVO checkLogin(Long loginVolunteerId) {
         Volunteer volunteer = innerVolunteerService.getById(loginVolunteerId);
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.NOT_LOGIN, "用户不存在");
         ThrowUtils.throwIf(ObjUtil.isNull(volunteer.getCommunityId()), ErrorCode.NO_AUTH);
         Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(
                 volunteer.getVolunteerId(), volunteer.getCommunityId());

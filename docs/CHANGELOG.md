@@ -92,6 +92,15 @@
 **新增**
 - `shiwujie-bootstrap/src/test/`：20 个纯单元测试类，286 例。
 
+**后端代码审查 P0 止血（2026-07-12，`fix/v3.0.0-security-hardening`）**
+
+> 安全加固 + 单测落地后的一次独立全量审查（ai 外）。验证刚落地的加固（BCrypt + 权限恢复）正确；并修掉一批**新发现**的 P0 高危（账户接管、Redis 队列序列化断裂、TTL 单位错、NPE 簇）。对外 HTTP 路径 / WS 信令 / 业务码（`NO_AUTH` 40030、`PARAMS_ERROR` 40000）零变更，前端零改。明细见 [known-issues](../shiwujie-backend/docs/known-issues.md) #4/#5/#9 + 跨切面 ✅ 段、[architecture/auth.md](architecture/auth.md) 权限矩阵。`mvn install -DskipTests` + `mvn test`（287 例，+1 回归）全绿。
+
+**修复**
+- **改密账户接管**：`BlindController`/`VolunteerController` 改密接口原不校验登录人 == body 目标 id，且 service 侧原密码校验整段在 `if(isNotBlank(originPassword))` 内——originPassword 留空即跳过原密码校验。组合 `{blindId:<受害者>, newPassword, originPassword:""}` 可改任意账号密码。加 ownership 校验（不等即 `NO_AUTH`）+ 已设密码用户 originPassword 必填且须 `PasswordUtils.matches` 通过；首次设密（当前确实无密码）免 origin，此时所有权已过。
+- **视频求助匹配队列序列化断裂 + TTL 单位错**：`RedisUtils` 双注入（`@Resource` 字段 + `StringRedisTemplate` 构造器）致实际用 `StringRedisTemplate`，存 `LinkedList<Long>` 队列首写即 `ClassCastException`（token 等 String 值正常，故 WS 信令测过未暴露）；且队列写回 `setToRedis(key,queue,30L)` 走硬编码 `TimeUnit.DAYS` = **30 天**（非登记的 30s），僵尸志愿者 id 滞留队列头致盲人匹配失败。删构造器、字段改 `@Resource RedisTemplate<String,Object>` 走配置 bean（JDK 序列化兜底两类值）；新增 `setToRedis(key,value,timeout,TimeUnit)` 重载，`CallConstant.VOLUNTEER_QUEUE_TTL_SECONDS=30L`，三处队列写回改 `TimeUnit.SECONDS`。
+- **NPE 簇加固**：`removeVolunteerFromVideohelp` Redis 无队列 key 时原对 null queue 调 `contains` 必现 NPE，改直接抛 `PARAMS_ERROR("您不在匹配之中")`；并补多处取实体后未判空即解引用（Blind/Volunteer/Family 删除路径、Community `checkLogin`、Communityjoinreview 列表、Urgenthelp `joinUrgenthelp`、Videohelp/Urgenthelp 上传视频路径）统一 `ObjUtil.isNull` 判空。
+
 > 架构现状（已落地）见 [architecture/tech-stack.md](architecture/tech-stack.md) / [architecture/data-model.md](architecture/data-model.md) / [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) 的「v3.0.0 单体化（已落地）」段；交付 spec 见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。
 
 ---
