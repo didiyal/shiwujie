@@ -1,0 +1,2 @@
+# hook 脚本必须用 LF 换行 (CRLF 会让 shebang `#!/bin/sh` 失效, 导致 hook 执行报错)
+.githooks/* text eol=lf
