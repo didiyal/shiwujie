@@ -1,7 +1,7 @@
 package com.swj.shiwujie.app;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
+import org.springframework.ai.chat.model.ChatModel;
 import com.swj.shiwujie.advisor.MyLoggerAdvisor;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class ToolChoiceApp {
     private Resource toolChoiceResource;
     private String systemPrompt;
 
-    public ToolChoiceApp(@Qualifier("qwenText") DashScopeChatModel chatModel,
+    public ToolChoiceApp(@Qualifier("qwenText") ChatModel chatModel,
                          @Qualifier("toolChoiceAppChatMemory") ChatMemoryRepository chatMemoryRepository){
         log.info("文字模型" + chatModel.getDefaultOptions().getModel());
         // 创建消息存储器

@@ -39,10 +39,10 @@ spring:
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY:sk-6374b4a1ebd64f56ae8d0799e74b7927}
-      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      base-url: https://dashscope.aliyuncs.com/compatible-mode   # 不带 /v1：OpenAiChatModel 默认拼 /v1/chat/completions
       chat:
         options:
-          model: qwen3-max
+          model: qwen3-vl-flash
     chat:
       client:
         enabled: true

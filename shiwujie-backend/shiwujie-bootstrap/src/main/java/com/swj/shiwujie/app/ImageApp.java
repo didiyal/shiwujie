@@ -1,7 +1,7 @@
 package com.swj.shiwujie.app;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
+import org.springframework.ai.chat.model.ChatModel;
 import com.swj.shiwujie.advisor.MyLoggerAdvisor;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class ImageApp {
     private Resource imageResource;
     private String systemPrompt;
 
-    public ImageApp(@Qualifier("qwenImage") DashScopeChatModel chatModel,
+    public ImageApp(@Qualifier("qwenImage") ChatModel chatModel,
                     @Qualifier("imageAppChatMemory") ChatMemoryRepository chatMemoryRepository) {
         log.info("图像模型" + chatModel.getDefaultOptions().getModel());
         // 创建消息存储器

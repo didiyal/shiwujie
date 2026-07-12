@@ -61,6 +61,7 @@
 8. **诚实缺口**：无压测 / 无 Docker / 无索引调优；AiLogs 仅 `idx_ailogs_operator_time` 单索引；图片占位符用 logId 主键查 AiLogs = 把日志表当 KV 存储。
 9. ✅ ~~`@EnableScheduling` 残留~~：原 ai Application 声明但无 `@Scheduled` 方法；v3.0.0 删 ai Application 后，新入口 `ShiwujieBootstrapApplication` 仅声明 `@EnableAsync`，残留消失。
 10. **ToolIndex 枚举与 ToolChoiceCenter switch 不完全一致**：枚举是给 ReAct 用的旧映射，随框架弃用失同步；以 switch case 1-9 为准。
+11. ✅ ~~文本模型 spring-ai-alibaba 客户端 + qwen3.x 不兼容（url error）~~（2026-07-12 修复）：`AiConfig.qwenText` 原用 `DashScopeChatModel`，qwen3-max 过期后换 qwen3.6-flash，调文本模型报 `400 InvalidParameter: url error`。裸 HTTP 直调 compatible-mode 拿 200，证明 key/model/服务均正常，问题在 spring-ai-alibaba 1.0.0.2 客户端构造的请求体不被 qwen3.x 接受。**止血**：文本 bean 改官方 `OpenAiChatModel`（新增 `spring-ai-openai` 依赖，版本由父 pom spring-ai-bom 管）+ DashScope compatible-mode base-url（`application.yml` 的 `spring.ai.dashscope.base-url` 改为**不带 `/v1`**——OpenAiApi 默认拼 `/v1/chat/completions`，带则重复成 404）；图像仍用 `DashScopeChatModel`（多模态走原生端点正常）。消费方（TextApp/ToolChoiceApp/ImageApp/MyManus）构造器参数 `DashScopeChatModel`→`ChatModel` 接口（两 bean 均实现之）。新增 `AiSmokeTest`（3 用例：文本 OpenAI 兼容 / 裸 HTTP 对照 / 图像 DashScope，`@EnabledIfSystemProperty(ai.smoke)` 守卫默认不进 `mvn test`，`-Dai.smoke=true` 单独跑）。AI 后续将用别的技术重构（见 ROADMAP），此为止血非治本。
 
 ### gateway（✅ v3.0.0 模块整体删除）
 

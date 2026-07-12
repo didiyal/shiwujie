@@ -37,6 +37,6 @@ public interface AiConstants {
 
 
     // 模型名称常量定义，一套系统多模型共存
-    String TEXT_MODEL = "qwen3-max";
+    String TEXT_MODEL = "qwen3.6-flash";
     String IMAGE_MODEL = "qwen3-vl-flash";
 }

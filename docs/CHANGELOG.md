@@ -53,6 +53,17 @@
 - **修正 `deleteCommunityManager` 自删 bug**：原实现忽略请求体、恒删调用者自己的管理记录；改为按请求体目标删除并鉴权。
 - **口令存储 MD5 → BCrypt**：新增 `PasswordUtils`（Hutool `BCrypt`，cost=10，盐内嵌），盲人/志愿者/社区登录注册与改密全改 BCrypt；存量无盐 MD5 行于首次以原明文口令登录通过时**懒升级**为 BCrypt（对用户透明，无离线迁移脚本）。身份证/残疾证等 PII 单向哈希仍用 MD5（与口令无关）。`password varchar(100)` 足装 60 字符 BCrypt 串，不加 salt 列、不改 DDL。
 
+**AI 文本路径止血（2026-07-12）**
+
+> `qwen3-max` 文本模型 key 过期；且 spring-ai-alibaba 1.0.0.2 的 `DashScopeChatModel` 调 qwen3.x 文本模型返 `400 InvalidParameter: url error`（裸 HTTP 同 key 同模型 200，定位为客户端与 qwen3.x 文本模型不兼容）。最小止血——对外契约零变更；AI 模块后续会用别的技术重构（见 [ROADMAP](ROADMAP.md)），本轮为止血非治本。明细见 [known-issues](../shiwujie-backend/docs/known-issues.md) #11。
+
+**变更**
+- **文本模型 `qwen3-max` → `qwen3.6-flash`** + **文本路径改 OpenAI 兼容直连**：`AiConfig.qwenText` 由 `DashScopeChatModel` 改为官方 `OpenAiChatModel`（新增 `spring-ai-openai` 依赖，版本随 spring-ai-bom 1.0.0 管理），经 DashScope OpenAI 兼容端点 `compatible-mode` 直连。消费方（`TextApp`/`ToolChoiceApp`/`ImageApp`/`MyManus`）注入类型 `DashScopeChatModel` → `ChatModel` 接口（两实现均实现该接口，类型无关注入）。**图像路径不变**（仍 `DashScopeChatModel` + `qwen3-vl-flash` + `withMultiModel`）。
+- **`base-url` 去 `/v1`**：`OpenAiApi` 默认拼 `/v1/chat/completions`（与 `DashScopeApi` 语义不同，后者不拼），`application.yml` 的 `spring.ai.dashscope.base-url` 由 `.../compatible-mode/v1` 改为 `.../compatible-mode`，否则路径双拼 404。注：`spring.ai.dashscope.chat.options.model` 为**死配置**（`AiConfig` 用 `AiConstants` 常量装配，不读 yml），仅 `api-key` / `base-url` 经 `@Value` 生效。
+
+**新增**
+- `AiSmokeTest`：AI 集成冒烟测试（文本模型返回非空 / 裸 HTTP 对照隔离 / 图像模型识别三用例），`@EnabledIfSystemProperty(ai.smoke=true)` 守卫，默认跳过、不污染常规 `mvn test`（与现有 286 例纯 Mockito 单测性质不同）。临时验证用，AI 重构后丢弃。
+
 **App 前端 P0 快速止血（2026-07-12）**
 
 > 落地 [`问题.md`](../问题.md) 视频通话/紧急求助前后端问题分析 + 本轮 App 代码审查中核实仍存在的前端阻断/高危项。最小修复，不触碰结构（blind/volunteer 合并、AiFragment 拆分、ViewModel 引入等留待结构重构批）。对外 HTTP/WS 契约零变更。明细见 [App known-issues](../shiwujie-frontend/app/docs/known-issues.md)「已修复（P0 快速止血）」。`assembleDebug` + `assembleRelease`（R8 混淆+资源压缩+lintVital）均已通过。

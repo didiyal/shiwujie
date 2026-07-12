@@ -83,14 +83,16 @@
 
 | 能力 | 实现 |
 |---|---|
-| 文本模型 | DashScope **qwen3-max**（OpenAI 兼容端点 `compatible-mode/v1`） |
-| 图像模型 | DashScope **qwen3-vl-flash** |
-| 框架 | Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2 |
+| 文本模型 | DashScope **qwen3.6-flash**，经官方 `OpenAiChatModel`（`spring-ai-openai`）走 OpenAI 兼容端点 `compatible-mode` 直连 |
+| 图像模型 | DashScope **qwen3-vl-flash**，`DashScopeChatModel`（spring-ai-alibaba，多模态 `withMultiModel`） |
+| 框架 | Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2 + spring-ai-openai（版本随 spring-ai-bom 1.0.0） |
 | 记忆 | **自研 ChatMemory**（Redis 精简 + MySQL 全量，kryo 序列化），非 Spring AI 默认 |
 | 工具路由 | 工作流式 `ToolChoiceApp`（约定 JSON 解析，非原生 function-calling） |
 | 检索增强 | RAG **已移除**（半残留 Bean，未启用） |
 | 网页搜索 | searchapi.io（engine=baidu）+ jsoup 摘要 |
 | 推送通道 | 本地调用 call 模块 `InnerSocket`（v2.1.0 为 Dubbo RPC，v3.0.0 起同进程注入）→ WebSocket 推前端 |
+
+> 文本/图像用不同客户端：spring-ai-alibaba 的 `DashScopeChatModel` 调 qwen3.x 文本模型返 `url error`，故文本路径改用官方 `OpenAiChatModel`（OpenAI 兼容直连）；图像多模态仍用 `DashScopeChatModel`（正常）。详见 [known-issues](../../shiwujie-backend/docs/known-issues.md) #11、[CHANGELOG](../CHANGELOG.md)「AI 文本路径止血」。
 
 > 详见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)。
 
