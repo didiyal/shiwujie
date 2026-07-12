@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视无界 管理后台 — 设计预览 v4</title>
+<style>
+/* ============================================================
+   TOKENS — Apple blue-white (保留 v3 配色)
+   ============================================================ */
+:root {
+  --bg:        #f5f5f7;
+  --surface:   #ffffff;
+  --primary:   #0071e3;
+  --primary-h: #0060c0;
+  --primary-t: rgba(0,113,227,.10);
+  --text:      #1d1d1f;
+  --text-2:    #6e6e73;
+  --text-3:    #aeaeb2;
+  --sidebar:   #1d1d1f;
+  --border:    #d2d2d7;
+  --border-l:  #e8e8ed;
+  --success:   #34c759;
+  --warning:   #ff9500;
+  --danger:    #ff3b30;
+  --teal:      #1e8a9e;
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 16px;
+  --font:      -apple-system, "SF Pro Display", "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  --font-mono: "SF Mono", "Menlo", "Monaco", "PingFang SC", monospace;
+  --tr: .18s cubic-bezier(.25,.1,.25,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{font-family:var(--font);font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);min-height:100vh;}
+
+/* Signature: accessibility-attuned focus ring (产品服务视障群体，焦点可见是品牌内核) */
+*:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px;}
+
+/* Icons */
+.icon{width:18px;height:18px;display:inline-block;vertical-align:middle;flex-shrink:0;}
+.icon-sm{width:14px;height:14px;}
+.icon-lg{width:22px;height:22px;}
+
+/* ============================================================
+   BUTTONS — 胶囊形，纯色，无渐变
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:34px;padding:0 16px;font-family:var(--font);font-size:13px;font-weight:500;
+  border:none;border-radius:18px;cursor:pointer;transition:var(--tr);
+  white-space:nowrap;user-select:none;text-decoration:none;line-height:1;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-h);}
+.btn-secondary{background:var(--border-l);color:var(--text);}
+.btn-secondary:hover{background:var(--border);}
+.btn-ghost{background:transparent;color:var(--primary);}
+.btn-ghost:hover{background:var(--primary-t);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{background:#e0352b;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);}
+.btn-outline:hover{background:var(--bg);border-color:var(--text-3);}
+.btn-sm{height:28px;padding:0 12px;font-size:12px;border-radius:14px;}
+.btn-lg{height:42px;padding:0 22px;font-size:15px;border-radius:21px;}
+.btn:disabled{opacity:.45;pointer-events:none;}
+.btn-link{background:none;color:var(--primary);padding:0 4px;height:auto;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);}
+.btn-link:hover{text-decoration:underline;}
+.btn-link.danger{color:var(--danger);}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+.input{
+  width:100%;height:36px;padding:0 12px;font-family:var(--font);font-size:13px;color:var(--text);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  transition:var(--tr);appearance:none;
+}
+.input:hover{border-color:var(--text-3);}
+.input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-t);}
+.input::placeholder{color:var(--text-3);}
+.input.lg{height:42px;padding:0 14px;font-size:14px;border-radius:10px;}
+.input.readonly{background:var(--bg);color:var(--text-2);cursor:not-allowed;}
+.textarea{
+  width:100%;min-height:84px;padding:10px 12px;font-family:var(--font);font-size:13px;color:var(--text);line-height:1.6;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);resize:vertical;transition:var(--tr);
+}
+.textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-t);}
+.textarea::placeholder{color:var(--text-3);}
+select.input{
+  cursor:pointer;padding-right:30px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.label{display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--text);}
+.label .req{color:var(--danger);margin-left:2px;}
+.hint{display:block;margin-top:4px;font-size:11px;color:var(--text-2);}
+.form-group{margin-bottom:16px;}
+.form-row{display:flex;gap:14px;}
+.form-row .form-group{flex:1;}
+
+/* ============================================================
+   BADGE / TAG
+   ============================================================ */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;
+  font-size:11px;font-weight:600;border-radius:11px;white-space:nowrap;line-height:1;
+}
+.badge::before{content:'';width:6px;height:6px;border-radius:3px;flex-shrink:0;}
+.b-success{color:#14753a;background:rgba(52,199,89,.12);}.b-success::before{background:var(--success);}
+.b-warning{color:#9c5d00;background:rgba(255,149,0,.12);}.b-warning::before{background:var(--warning);}
+.b-danger{color:#b82c24;background:rgba(255,59,48,.12);}.b-danger::before{background:var(--danger);}
+.b-info{color:var(--primary);background:var(--primary-t);}.b-info::before{background:var(--primary);}
+.b-default{color:var(--text-2);background:rgba(0,0,0,.06);}.b-default::before{background:var(--text-2);}
+.b-teal{color:var(--teal);background:rgba(48,176,199,.12);}.b-teal::before{background:var(--teal);}
+
+/* ============================================================
+   TABLE — Apple Numbers 风，紧凑管理密度
+   ============================================================ */
+.table-wrap{overflow-x:auto;border:1px solid var(--border-l);border-radius:var(--radius);background:var(--surface);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{
+  text-align:left;padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.04em;background:var(--bg);
+  border-bottom:1px solid var(--border-l);white-space:nowrap;user-select:none;
+}
+thead th:first-child{padding-left:18px;}
+thead th:last-child{padding-right:18px;}
+tbody td{padding:12px 14px;color:var(--text);border-bottom:1px solid var(--border-l);vertical-align:middle;}
+tbody td:first-child{padding-left:18px;}
+tbody td:last-child{padding-right:18px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:rgba(0,113,227,.025);}
+.t-sub{color:var(--text-2);font-size:12px;}
+.t-mono{font-family:var(--font-mono);font-size:12px;color:var(--text-2);}
+.cell-strong{font-weight:600;color:var(--text);}
+.cell-stack{display:flex;flex-direction:column;gap:1px;}
+.row-actions{display:flex;gap:10px;justify-content:flex-end;}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.card{background:var(--surface);border:1px solid var(--border-l);border-radius:var(--radius);padding:20px;}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-l);}
+.card-title{font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;}
+.card-sub{font-size:12px;color:var(--text-2);font-weight:400;}
+
+/* ============================================================
+   STAT CARD — 紧凑，带功能图标块
+   ============================================================ */
+.stat-card{background:var(--surface);border:1px solid var(--border-l);border-radius:var(--radius);padding:16px 18px;display:flex;flex-direction:column;gap:10px;transition:var(--tr);}
+.stat-card:hover{border-color:var(--border);}
+.stat-top{display:flex;align-items:center;justify-content:space-between;}
+.stat-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.stat-label{font-size:12px;color:var(--text-2);font-weight:500;}
+.stat-value{font-size:26px;font-weight:700;color:var(--text);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.stat-change{font-size:11px;font-weight:500;display:flex;align-items:center;gap:2px;}
+.stat-change.up{color:var(--success);}
+.stat-change.down{color:var(--danger);}
+.tint-blue{background:rgba(0,113,227,.10);color:var(--primary);}
+.tint-green{background:rgba(52,199,89,.12);color:#1a9e3f;}
+.tint-orange{background:rgba(255,149,0,.12);color:#cc7000;}
+.tint-teal{background:rgba(48,176,199,.12);color:var(--teal);}
+.tint-gray{background:rgba(0,0,0,.06);color:var(--text-2);}
+
+/* ============================================================
+   GRID
+   ============================================================ */
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.gap-b{margin-bottom:20px;}
+
+/* ============================================================
+   LOGIN — 居中卡片（管理后台风，非营销分屏）
+   ============================================================ */
+.login-page{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:40px 20px;background:var(--bg);
+}
+.login-page.register-mode{align-items:flex-start;}
+.login-card{
+  width:100%;max-width:420px;background:var(--surface);
+  border:1px solid var(--border-l);border-radius:var(--radius-lg);
+  padding:36px;box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.login-card.wide{max-width:720px;padding:32px;}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.login-logo{width:38px;height:38px;border-radius:9px;background:var(--sidebar);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.login-wordmark{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.2;}
+.login-subbrand{font-size:11px;color:var(--text-2);margin-top:1px;}
+.login-title{font-size:20px;font-weight:600;margin-bottom:2px;}
+.login-sub{font-size:13px;color:var(--text-2);margin-bottom:22px;}
+
+.form-tabs{display:flex;gap:4px;margin-bottom:22px;background:var(--bg);padding:3px;border-radius:9px;}
+.form-tab{flex:1;height:32px;border:none;border-radius:7px;font-family:var(--font);font-size:13px;font-weight:500;color:var(--text-2);background:transparent;cursor:pointer;transition:var(--tr);}
+.form-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.05);}
+
+.field-section{margin-bottom:18px;}
+.field-section .sec-label{font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
+.login-actions{margin-top:8px;display:flex;flex-direction:column;gap:12px;}
+.login-foot{text-align:center;font-size:12px;color:var(--text-2);margin-top:18px;}
+
+/* ============================================================
+   APP LAYOUT
+   ============================================================ */
+.app-root{display:none;min-height:100vh;}
+.app-root.active{display:flex;}
+.sidebar{
+  width:232px;min-width:232px;background:var(--sidebar);color:#fff;
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;
+}
+.sidebar-brand{height:52px;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;}
+.sidebar-brand .logo-mark{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;}
+.sb-text{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.sb-text span{color:var(--primary);}
+.sidebar-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:1px;}
+.nav-group{margin-bottom:6px;}
+.nav-group-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.32);text-transform:uppercase;letter-spacing:.06em;padding:10px 12px 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:rgba(255,255,255,.65);cursor:pointer;transition:var(--tr);text-decoration:none;user-select:none;position:relative;}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.06);}
+.nav-item.active{color:#fff;background:rgba(0,113,227,.22);}
+.nav-item.active::after{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:var(--primary);border-radius:0 2px 2px 0;}
+.nav-item .icon{opacity:.6;}
+.nav-item:hover .icon,.nav-item.active .icon{opacity:1;}
+.nav-item.logout{margin-top:auto;color:rgba(255,255,255,.4);}
+.nav-item.logout:hover{color:var(--danger);background:rgba(255,59,48,.12);}
+.sidebar-foot{padding:10px 16px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.avatar{width:28px;height:28px;border-radius:14px;background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+.sb-user{font-size:12px;color:rgba(255,255,255,.8);flex:1;}
+
+.header{
+  position:fixed;top:0;left:232px;right:0;z-index:99;height:52px;
+  background:rgba(245,245,247,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;padding:0 28px;
+}
+.crumb{font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:6px;}
+.crumb .cur{color:var(--text);font-weight:600;}
+.crumb .sep{color:var(--text-3);}
+.head-actions{display:flex;align-items:center;gap:10px;}
+.head-search{position:relative;}
+.head-search input{height:32px;width:220px;padding:0 12px 0 32px;font-size:13px;border-radius:8px;}
+.head-search .icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-3);width:15px;height:15px;}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:none;background:transparent;color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr);}
+.icon-btn:hover{background:var(--border-l);color:var(--text);}
+
+.main{margin-left:232px;padding-top:52px;flex:1;min-width:0;}
+.content{padding:24px 28px;min-height:calc(100vh - 52px);max-width:1400px;}
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.page-head h2{font-size:22px;font-weight:700;letter-spacing:-.01em;}
+.page-head p{font-size:13px;color:var(--text-2);margin-top:2px;}
+
+/* Toolbar / filter bar */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.toolbar .input{width:auto;min-width:200px;}
+.toolbar .grow{flex:1;}
+.toolbar .count{font-size:12px;color:var(--text-2);white-space:nowrap;}
+
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:18px;border-bottom:1px solid var(--border-l);}
+.tab{padding:9px 16px;font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;transition:var(--tr);margin-bottom:-1px;display:flex;align-items:center;gap:6px;}
+.tab .num{font-size:11px;color:var(--text-3);font-weight:600;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.tab.active .num{color:var(--primary);}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:14px;}
+.pg-info{font-size:12px;color:var(--text-2);}
+.pg-btns{display:flex;gap:4px;}
+.pg-btns button{min-width:30px;height:30px;padding:0 8px;border-radius:7px;border:1px solid var(--border-l);background:var(--surface);font-family:var(--font);font-size:12px;color:var(--text);cursor:pointer;transition:var(--tr);}
+.pg-btns button:hover{border-color:var(--border);}
+.pg-btns button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+/* Community card */
+.comm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px;}
+.comm-card{background:var(--surface);border:1px solid var(--border-l);border-radius:var(--radius);overflow:hidden;transition:var(--tr);}
+.comm-card:hover{border-color:var(--border);box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.comm-head{padding:16px 18px;border-bottom:1px solid var(--border-l);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.comm-name{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.comm-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);}
+.comm-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px;}
+.comm-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;}
+.info-item{display:flex;flex-direction:column;gap:2px;}
+.info-item .k{font-size:11px;color:var(--text-2);}
+.info-item .v{font-size:13px;color:var(--text);font-weight:500;}
+.comm-desc{font-size:12px;color:var(--text-2);line-height:1.6;padding:10px 12px;background:var(--bg);border-radius:8px;border-left:3px solid var(--primary);}
+.comm-sub{display:flex;flex-direction:column;gap:6px;}
+.comm-sub-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--border-l);border-radius:8px;font-size:12px;}
+.comm-sub-item .sn{font-weight:600;color:var(--text);}
+.comm-sub-item .sa{color:var(--text-2);}
+
+/* Detail grid (review page) */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;}
+.detail-item{display:flex;flex-direction:column;gap:3px;}
+.detail-item .k{font-size:11px;color:var(--text-2);}
+.detail-item .v{font-size:14px;color:var(--text);font-weight:500;}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.32);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border-l);font-size:16px;font-weight:600;display:flex;justify-content:space-between;align-items:center;}
+.modal-body{padding:22px;}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border-l);display:flex;justify-content:flex-end;gap:8px;}
+
+.hr{height:1px;background:var(--border-l);margin:20px 0;border:none;}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--text-2);}
+.empty svg{opacity:.25;margin-bottom:10px;}
+.empty p{font-size:13px;}
+
+/* Pages */
+.page{display:none;}
+.page.active{display:block;animation:pageIn .3s ease;}
+@keyframes pageIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.sidebar-toggle{display:none;width:34px;height:34px;align-items:center;justify-content:center;border:none;border-radius:8px;background:transparent;cursor:pointer;color:var(--text);}
+.sidebar-toggle:hover{background:var(--border-l);}
+
+/* Preview toolbar */
+.preview-label{position:fixed;bottom:18px;left:18px;z-index:9999;font-size:10px;color:var(--text-3);font-weight:600;letter-spacing:.04em;background:var(--surface);padding:5px 10px;border-radius:6px;border:1px solid var(--border-l);}
+.preview-toolbar{position:fixed;bottom:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:5px;}
+.preview-toolbar button{width:36px;height:36px;border-radius:18px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:11px;font-weight:600;font-family:var(--font);cursor:pointer;transition:var(--tr);box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;}
+.preview-toolbar button:hover{background:var(--bg);border-color:var(--text-3);}
+.preview-toolbar button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:1100px){
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:1fr;}
+  .grid-2{grid-template-columns:1fr;}
+  .head-search input{width:160px;}
+}
+@media (max-width:768px){
+  .login-card{padding:26px 22px;}
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;width:260px;min-width:260px;}
+  .sidebar.open{transform:translateX(0);box-shadow:0 0 0 100vw rgba(0,0,0,.3);}
+  .sidebar-toggle{display:flex;}
+  .header{left:0;padding:0 14px;}
+  .head-search{display:none;}
+  .main{margin-left:0;}
+  .content{padding:16px 14px;}
+  .grid-4{grid-template-columns:1fr;}
+  .form-row{flex-direction:column;gap:0;}
+  .toolbar{flex-direction:column;align-items:stretch;}
+  .toolbar .input{width:100%;}
+  .comm-grid{grid-template-columns:1fr;}
+  .detail-grid{grid-template-columns:1fr;}
+  .page-head{flex-direction:column;gap:12px;}
+}
+@media (max-width:400px){
+  .login-card{padding:22px 18px;}
+  .stat-value{font-size:22px;}
+  .page-head h2{font-size:19px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN (居中卡片)
+     ============================================================ -->
+<div id="login-page" class="login-page page active">
+  <div class="login-card" id="login-card">
+    <div class="login-brand">
+      <div class="login-logo">
+        <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </div>
+      <div>
+        <div class="login-wordmark">视<span style="color:var(--primary);">无</span>界</div>
+        <div class="login-subbrand">社区管理后台</div>
+      </div>
+    </div>
+
+    <div class="form-tabs">
+      <button class="form-tab active" onclick="switchLoginTab('login')">管理员登录</button>
+      <button class="form-tab" onclick="switchLoginTab('register')">社区入驻注册</button>
+    </div>
+
+    <!-- 登录表单 -->
+    <form id="form-login" onsubmit="handleLogin(event)">
+      <div class="login-title">欢迎回来</div>
+      <div class="login-sub">使用手机号和密码登录管理后台</div>
+      <div class="form-group">
+        <label class="label">手机号 <span class="req">*</span></label>
+        <input type="tel" class="input lg" placeholder="请输入手机号" value="13800138000">
+      </div>
+      <div class="form-group">
+        <label class="label">密码 <span class="req">*</span></label>
+        <input type="password" class="input lg" placeholder="请输入密码" value="········">
+      </div>
+      <div class="login-actions">
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">登录</button>
+      </div>
+      <div class="login-foot">管理员账户需在 APP 志愿者端设置密码</div>
+    </form>
+
+    <!-- 注册表单 -->
+    <form id="form-register" style="display:none;" onsubmit="handleRegister(event)">
+      <div class="field-section">
+        <div class="sec-label">注册人信息</div>
+        <div class="form-row">
+          <div class="form-group"><label class="label">姓名 <span class="req">*</span></label><input type="text" class="input" placeholder="请输入姓名" value="张三"></div>
+          <div class="form-group"><label class="label">手机号 <span class="req">*</span></label><input type="tel" class="input" placeholder="请输入手机号" value="13900139000"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="label">性别 <span class="req">*</span></label><select class="input"><option value="">请选择</option><option selected>男</option><option>女</option></select></div>
+          <div class="form-group"><label class="label">微信账号</label><input type="text" class="input" placeholder="选填"></div>
+        </div>
+        <div class="form-group"><label class="label">身份证号 <span class="req">*</span></label><input type="text" class="input" placeholder="请输入身份证号" value="320102199001011234"></div>
+      </div>
+
+      <div class="field-section">
+        <div class="sec-label">社区信息</div>
+        <div class="form-group"><label class="label">社区名称 <span class="req">*</span></label><input type="text" class="input" placeholder="请输入社区名称" value="阳光志愿者协会"></div>
+        <div class="form-group"><label class="label">社区类型 <span class="req">*</span></label>
+          <select class="input"><option value="">请选择</option><option selected>社会团体</option><option>基层群众自治组织</option><option>高校内部成立</option><option>其它公益组织</option></select>
+        </div>
+        <div class="form-group"><label class="label">社区介绍</label><textarea class="textarea" placeholder="选填" rows="2">致力于为视障人士提供陪伴与生活服务</textarea></div>
+      </div>
+
+      <div class="field-section">
+        <div class="sec-label">地址信息</div>
+        <div class="form-row">
+          <div class="form-group"><label class="label">省份 <span class="req">*</span></label><select class="input"><option value="">请选择</option><option>北京市</option><option>上海市</option><option selected>江苏省</option><option>浙江省</option><option>广东省</option></select></div>
+          <div class="form-group"><label class="label">城市 <span class="req">*</span></label><input type="text" class="input" placeholder="请输入城市" value="南京市"></div>
+          <div class="form-group"><label class="label">区县 <span class="req">*</span></label><input type="text" class="input" placeholder="请输入区县" value="鼓楼区"></div>
+        </div>
+        <div class="form-group"><label class="label">具体地址 <span class="req">*</span></label><input type="text" class="input" placeholder="请输入具体地址" value="中山路100号阳光大厦3层"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">提交入驻申请</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP LAYOUT
+     ============================================================ -->
+<div id="app-root" class="app-root">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-mark"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+      <span class="sb-text">视<span>无</span>界</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-label">概览</div>
+        <a class="nav-item active" onclick="switchPage('dashboard',this)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>仪表板</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">管理</div>
+        <a class="nav-item" onclick="switchPage('community',this)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>社区管理</span></a>
+        <a class="nav-item" onclick="switchPage('activity',this)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>活动管理</span></a>
+        <a class="nav-item" onclick="switchPage('helppost',this)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>求助管理</span></a>
+        <a class="nav-item" onclick="switchPage('users',this)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>用户管理</span></a>
+        <a class="nav-item" onclick="switchPage('review',this)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>加入审核</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">数据</div>
+        <a class="nav-item" onclick="switchPage('statistics',this)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>数据统计</span></a>
+      </div>
+      <a class="nav-item logout" onclick="handleLogout()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>退出登录</span></a>
+    </nav>
+    <div class="sidebar-foot"><div class="avatar">李</div><span class="sb-user">李明远</span></div>
+  </aside>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="菜单"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="crumb" id="crumb">管理后台 <span class="sep">/</span> <span class="cur">仪表板</span></div>
+    </div>
+    <div class="head-actions">
+      <div class="head-search"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="input" placeholder="搜索…"></div>
+      <button class="icon-btn" aria-label="通知"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <div class="avatar" style="background:var(--primary-t);color:var(--primary);cursor:pointer;" onclick="handleLogout()">李</div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="page-dashboard" class="page active">
+      <div class="content">
+        <div class="page-head">
+          <div><h2>仪表板</h2><p>2026年7月12日 星期日 · 欢迎回来，李明远</p></div>
+          <button class="btn btn-outline"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>刷新数据</button>
+        </div>
+
+        <div class="grid-4 gap-b">
+          <div class="stat-card">
+            <div class="stat-top"><div class="stat-icon tint-blue"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div></div>
+            <div class="stat-value">24</div>
+            <div class="stat-label">总社区数</div>
+            <div class="stat-change up"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>较上月 +12%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><div class="stat-icon tint-teal"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+            <div class="stat-value">156</div>
+            <div class="stat-label">活跃活动</div>
+            <div class="stat-change up"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>较上月 +8%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><div class="stat-icon tint-orange"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+            <div class="stat-value" style="color:var(--warning);">7</div>
+            <div class="stat-label">待审核申请</div>
+            <div class="stat-change down"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>较上月 −5%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><div class="stat-icon tint-green"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div></div>
+            <div class="stat-value">1,284</div>
+            <div class="stat-label">总用户数</div>
+            <div class="stat-change up"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>较上月 +15%</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>社区活跃度趋势</div><button class="btn btn-ghost btn-sm">查看详情</button></div>
+            <div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-3);"><div style="text-align:center;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p style="margin-top:10px;font-size:13px;">图表区域</p></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>最近活动</div><button class="btn btn-ghost btn-sm">查看全部</button></div>
+            <div>
+              <div style="padding:11px 0;border-bottom:1px solid var(--border-l);display:flex;justify-content:space-between;align-items:center;gap:10px;"><div><div style="font-weight:600;font-size:13px;">视障人士陪伴日</div><div class="t-sub">7月15日 14:00 · 玄武湖公园</div></div><span class="badge b-success">进行中</span></div>
+              <div style="padding:11px 0;border-bottom:1px solid var(--border-l);display:flex;justify-content:space-between;align-items:center;gap:10px;"><div><div style="font-weight:600;font-size:13px;">社区志愿者培训</div><div class="t-sub">7月20日 09:00 · 阳光大厦</div></div><span class="badge b-warning">即将开始</span></div>
+              <div style="padding:11px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;"><div><div style="font-weight:600;font-size:13px;">无障碍设施调研</div><div class="t-sub">7月25日 10:00 · 鼓楼区</div></div><span class="badge b-default">筹备中</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-head"><div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>待处理事项</div><span class="card-sub">7 项待处理</span></div>
+          <div class="table-wrap" style="border:none;">
+            <table>
+              <thead><tr><th>事项</th><th>类型</th><th>提交时间</th><th>状态</th><th style="text-align:right;">操作</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-strong">阳光志愿者协会 · 加入审核</td><td class="t-sub">社区审核</td><td class="t-mono">2026-07-11</td><td><span class="badge b-warning">待审核</span></td><td><div class="row-actions"><button class="btn-link" onclick="switchPage('review',document.querySelectorAll('.nav-item')[4])">审核</button></div></td></tr>
+                <tr><td class="cell-strong">爱心之家 · 志愿者报名确认</td><td class="t-sub">活动管理</td><td class="t-mono">2026-07-10</td><td><span class="badge b-warning">待处理</span></td><td><div class="row-actions"><button class="btn-link">查看</button></div></td></tr>
+                <tr><td class="cell-strong">光明社区 · 求助帖审核</td><td class="t-sub">内容审核</td><td class="t-mono">2026-07-09</td><td><span class="badge b-default">处理中</span></td><td><div class="row-actions"><button class="btn-link">处理</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== COMMUNITY (卡片) ===== -->
+    <div id="page-community" class="page">
+      <div class="content">
+        <div class="page-head"><div><h2>我的社区</h2><p>管理您创建的社区信息</p></div><div style="display:flex;gap:8px;"><button class="btn btn-outline"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>刷新</button></div></div>
+
+        <div class="toolbar">
+          <input class="input" placeholder="输入社区 ID 或名称搜索" style="min-width:280px;">
+          <button class="btn btn-primary"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>搜索</button>
+          <div class="grow"></div>
+          <span class="count">共 3 个社区</span>
+        </div>
+
+        <div class="comm-grid">
+          <div class="comm-card">
+            <div class="comm-head">
+              <div><div class="comm-name">阳光志愿者协会</div><div class="comm-meta"><span class="badge b-success">已审核</span><span>· 注册人 张三</span></div></div>
+              <div style="display:flex;gap:4px;"><button class="icon-btn" onclick="switchPage('edit',document.querySelectorAll('.nav-item')[1])" title="编辑"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
+            </div>
+            <div class="comm-body">
+              <div class="comm-info-grid">
+                <div class="info-item"><span class="k">社区类型</span><span class="v">社会团体</span></div>
+                <div class="info-item"><span class="k">社区等级</span><span class="v">省级</span></div>
+                <div class="info-item"><span class="k">注册人 ID</span><span class="v t-mono" style="font-family:var(--font-mono);">1002003001</span></div>
+                <div class="info-item"><span class="k">成员数</span><span class="v">156</span></div>
+              </div>
+              <div class="comm-desc">致力于为视障人士提供陪伴、出行协助与生活服务，用行动传递温暖。</div>
+              <div>
+                <div class="card-sub" style="margin-bottom:8px;">子社区（2）</div>
+                <div class="comm-sub">
+                  <div class="comm-sub-item"><span class="sn">玄武湖分部</span><span class="sa">南京市玄武区</span></div>
+                  <div class="comm-sub-item"><span class="sn">鼓楼服务点</span><span class="sa">南京市鼓楼区</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="comm-card">
+            <div class="comm-head">
+              <div><div class="comm-name">爱心之家志愿者团队</div><div class="comm-meta"><span class="badge b-warning">待审核</span><span>· 注册人 陈伟</span></div></div>
+              <div style="display:flex;gap:4px;"><button class="icon-btn" title="编辑"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
+            </div>
+            <div class="comm-body">
+              <div class="comm-info-grid">
+                <div class="info-item"><span class="k">社区类型</span><span class="v">其它公益组织</span></div>
+                <div class="info-item"><span class="k">社区等级</span><span class="v">市级</span></div>
+                <div class="info-item"><span class="k">注册人 ID</span><span class="v" style="font-family:var(--font-mono);font-size:12px;">1002003042</span></div>
+                <div class="info-item"><span class="k">成员数</span><span class="v">42</span></div>
+              </div>
+              <div class="comm-desc">高校学生发起的公益团队，定期开展助盲出行与阅读服务。</div>
+              <div><div class="card-sub" style="margin-bottom:8px;">子社区（0）</div><div class="t-sub" style="padding:8px 0;">暂无子社区</div></div>
+            </div>
+          </div>
+
+          <div class="comm-card">
+            <div class="comm-head">
+              <div><div class="comm-name">彩虹桥助盲公益社</div><div class="comm-meta"><span class="badge b-danger">已停用</span><span>· 注册人 赵敏</span></div></div>
+              <div style="display:flex;gap:4px;"><button class="icon-btn" title="编辑"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
+            </div>
+            <div class="comm-body">
+              <div class="comm-info-grid">
+                <div class="info-item"><span class="k">社区类型</span><span class="v">社会团体</span></div>
+                <div class="info-item"><span class="k">社区等级</span><span class="v">区级</span></div>
+                <div class="info-item"><span class="k">注册人 ID</span><span class="v" style="font-family:var(--font-mono);font-size:12px;">1002003067</span></div>
+                <div class="info-item"><span class="k">成员数</span><span class="v">67</span></div>
+              </div>
+              <div class="comm-desc">因长期未活跃已停用，可重新启用恢复运营。</div>
+              <div><div class="card-sub" style="margin-bottom:8px;">子社区（1）</div><div class="comm-sub"><div class="comm-sub-item"><span class="sn">天河服务组</span><span class="sa">广州市天河区</span></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ACTIVITY (搜索 + 表格) ===== -->
+    <div id="page-activity" class="page">
+      <div class="content">
+        <div class="page-head"><div><h2>活动管理</h2><p>发布和管理社区活动</p></div><button class="btn btn-primary"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>创建活动</button></div>
+
+        <div class="grid-4 gap-b">
+          <div class="stat-card"><div class="stat-value" style="font-size:22px;">48</div><div class="stat-label">总活动数</div></div>
+          <div class="stat-card"><div class="stat-value" style="font-size:22px;color:var(--warning);">12</div><div class="stat-label">未开始</div></div>
+          <div class="stat-card"><div class="stat-value" style="font-size:22px;color:var(--primary);">8</div><div class="stat-label">进行中</div></div>
+          <div class="stat-card"><div class="stat-value" style="font-size:22px;color:var(--success);">28</div><div class="stat-label">已结束</div></div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar" style="margin-bottom:16px;">
+            <input class="input" placeholder="搜索活动名称" style="min-width:200px;">
+            <select class="input" style="width:130px;"><option>全部状态</option><option>未开始</option><option>进行中</option><option>已结束</option><option>已取消</option></select>
+            <select class="input" style="width:150px;"><option>全部社区</option><option>阳光志愿者协会</option><option>爱心之家</option></select>
+            <div class="grow"></div>
+            <button class="btn btn-primary btn-sm">搜索</button>
+            <button class="btn btn-outline btn-sm">重置</button>
+          </div>
+          <div class="table-wrap" style="border:none;">
+            <table>
+              <thead><tr><th>活动名称</th><th>所属社区</th><th>开始 / 结束</th><th>报名</th><th>状态</th><th style="text-align:right;">操作</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-strong">视障人士陪伴日</td><td class="t-sub">阳光志愿者协会</td><td><div class="cell-stack"><span>07-15 14:00</span><span class="t-sub">07-15 17:00</span></div></td><td><span class="cell-strong">28</span><span class="t-sub">/50</span></td><td><span class="badge b-success">进行中</span></td><td><div class="row-actions"><button class="btn-link">报名</button><button class="btn-link">编辑</button><button class="btn-link danger">取消</button></div></td></tr>
+                <tr><td class="cell-strong">社区志愿者培训</td><td class="t-sub">星光助盲服务队</td><td><div class="cell-stack"><span>07-20 09:00</span><span class="t-sub">07-20 12:00</span></div></td><td><span class="cell-strong">15</span><span class="t-sub">/30</span></td><td><span class="badge b-warning">未开始</span></td><td><div class="row-actions"><button class="btn-link">报名</button><button class="btn-link">编辑</button></div></td></tr>
+                <tr><td class="cell-strong">无障碍设施调研</td><td class="t-sub">阳光志愿者协会</td><td><div class="cell-stack"><span>07-25 10:00</span><span class="t-sub">07-25 16:00</span></div></td><td><span class="cell-strong">8</span><span class="t-sub">/20</span></td><td><span class="badge b-default">未开始</span></td><td><div class="row-actions"><button class="btn-link">报名</button><button class="btn-link">编辑</button></div></td></tr>
+                <tr><td class="cell-strong">盲文阅读分享会</td><td class="t-sub">爱心之家</td><td><div class="cell-stack"><span>07-08 14:00</span><span class="t-sub">07-08 16:00</span></div></td><td><span class="cell-strong">22</span><span class="t-sub">/25</span></td><td><span class="badge b-success">已结束</span></td><td><div class="row-actions"><button class="btn-link">详情</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination"><div class="pg-info">第 1–4 条，共 48 条</div><div class="pg-btns"><button>‹</button><button class="active">1</button><button>2</button><button>3</button><button>›</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== USERS ===== -->
+    <div id="page-users" class="page">
+      <div class="content">
+        <div class="page-head"><div><h2>用户管理</h2><p>管理志愿者、员工与视障人士</p></div></div>
+        <div class="tabs"><div class="tab active">志愿者 <span class="num">892</span></div><div class="tab">员工 <span class="num">36</span></div><div class="tab">视障人士 <span class="num">356</span></div></div>
+        <div class="card">
+          <div class="toolbar" style="margin-bottom:16px;">
+            <input class="input" placeholder="搜索姓名或手机号" style="min-width:240px;">
+            <select class="input" style="width:140px;"><option>全部状态</option><option>活跃</option><option>待审核</option><option>已禁用</option></select>
+            <div class="grow"></div>
+            <button class="btn btn-outline btn-sm"><svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出</button>
+          </div>
+          <div class="table-wrap" style="border:none;">
+            <table>
+              <thead><tr><th>姓名</th><th>手机号</th><th>所属社区</th><th>注册时间</th><th>状态</th><th style="text-align:right;">操作</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-strong">张三</td><td class="t-mono">139****9000</td><td class="t-sub">阳光志愿者协会</td><td class="t-mono">2026-03-15</td><td><span class="badge b-success">活跃</span></td><td><div class="row-actions"><button class="btn-link">详情</button><button class="btn-link danger">禁用</button></div></td></tr>
+                <tr><td class="cell-strong">王芳</td><td class="t-mono">138****8001</td><td class="t-sub">星光助盲服务队</td><td class="t-mono">2026-04-02</td><td><span class="badge b-success">活跃</span></td><td><div class="row-actions"><button class="btn-link">详情</button><button class="btn-link danger">禁用</button></div></td></tr>
+                <tr><td class="cell-strong">陈伟</td><td class="t-mono">137****7002</td><td class="t-sub">爱心之家</td><td class="t-mono">2026-05-20</td><td><span class="badge b-warning">待审核</span></td><td><div class="row-actions"><button class="btn-link">详情</button><button class="btn-link">审核</button></div></td></tr>
+                <tr><td class="cell-strong">刘洋</td><td class="t-mono">136****6003</td><td class="t-sub">光明社区服务中心</td><td class="t-mono">2026-06-11</td><td><span class="badge b-success">活跃</span></td><td><div class="row-actions"><button class="btn-link">详情</button><button class="btn-link danger">禁用</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination"><div class="pg-info">第 1–4 条，共 892 条</div><div class="pg-btns"><button>‹</button><button class="active">1</button><button>2</button><button>3</button><button>…</button><button>223</button><button>›</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== HELP POST ===== -->
+    <div id="page-helppost" class="page">
+      <div class="content">
+        <div class="page-head"><div><h2>求助管理</h2><p>查看和处理社区求助帖</p></div></div>
+        <div class="tabs"><div class="tab active">全部 <span class="num">47</span></div><div class="tab">待接单 <span class="num">9</span></div><div class="tab">已接单 <span class="num">14</span></div><div class="tab">已完成 <span class="num">24</span></div></div>
+        <div class="card">
+          <div class="toolbar" style="margin-bottom:16px;"><input class="input" placeholder="搜索求助内容" style="min-width:280px;"><button class="btn btn-primary btn-sm">搜索</button><div class="grow"></div></div>
+          <div class="table-wrap" style="border:none;">
+            <table>
+              <thead><tr><th>标题</th><th>发布者</th><th>所属社区</th><th>发布时间</th><th>状态</th><th style="text-align:right;">操作</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-strong">需要周六下午陪伴就医的志愿者</td><td class="t-sub">视障用户 A</td><td class="t-sub">阳光志愿者协会</td><td class="t-mono">2026-07-11</td><td><span class="badge b-warning">待接单</span></td><td><div class="row-actions"><button class="btn-link">查看</button><button class="btn-link danger">下架</button></div></td></tr>
+                <tr><td class="cell-strong">希望有人帮忙读一些纸质文件</td><td class="t-sub">视障用户 B</td><td class="t-sub">星光助盲服务队</td><td class="t-mono">2026-07-10</td><td><span class="badge b-info">已接单</span></td><td><div class="row-actions"><button class="btn-link">查看</button></div></td></tr>
+                <tr><td class="cell-strong">需要志愿者协助外出购物</td><td class="t-sub">视障用户 C</td><td class="t-sub">爱心之家</td><td class="t-mono">2026-07-09</td><td><span class="badge b-default">已完成</span></td><td><div class="row-actions"><button class="btn-link">查看</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EDIT ===== -->
+    <div id="page-edit" class="page">
+      <div class="content" style="max-width:640px;">
+        <div class="page-head"><div><h2>编辑社区信息</h2><p>修改"阳光志愿者协会"的基本信息</p></div></div>
+        <div class="card">
+          <div class="form-group"><label class="label">社区 ID</label><input type="text" class="input readonly" value="1234567890123456789" readonly><span class="hint">社区 ID 不可修改</span></div>
+          <div class="form-group"><label class="label">社区名称 <span class="req">*</span></label><input type="text" class="input lg" value="阳光志愿者协会"></div>
+          <div class="form-group"><label class="label">社区介绍</label><textarea class="textarea" rows="4">致力于为视障人士提供陪伴、出行协助与生活服务，用行动传递温暖。</textarea><span class="hint">最多 500 个字符</span></div>
+          <div class="form-group"><label class="label">状态</label><select class="input"><option selected>已审核 — 正常运营</option><option>待审核</option><option>已停用</option></select></div>
+          <hr class="hr">
+          <div style="display:flex;gap:10px;justify-content:flex-end;"><button class="btn btn-outline" onclick="switchPage('community',document.querySelectorAll('.nav-item')[1])">取消</button><button class="btn btn-primary" onclick="alert('修改已保存');switchPage('community',document.querySelectorAll('.nav-item')[1]);">保存修改</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== REVIEW ===== -->
+    <div id="page-review" class="page">
+      <div class="content">
+        <div class="page-head"><div><h2>加入审核</h2><p>处理志愿者与视障人士的社区加入申请</p></div></div>
+        <div class="card">
+          <div class="toolbar" style="margin-bottom:16px;"><select class="input" style="width:130px;"><option>全部状态</option><option>待审核</option><option>已通过</option><option>已拒绝</option></select><select class="input" style="width:130px;"><option>全部类型</option><option>志愿者</option><option>视障人士</option></select><div class="grow"></div><span class="count">共 9 条待审核</span></div>
+          <div class="table-wrap" style="border:none;">
+            <table>
+              <thead><tr><th>申请类型</th><th>申请人</th><th>申请社区</th><th>申请时间</th><th>状态</th><th style="text-align:right;">操作</th></tr></thead>
+              <tbody>
+                <tr><td><span class="badge b-info">志愿者</span></td><td><div class="cell-stack"><span class="cell-strong">张三</span><span class="t-mono">ID 1002003001</span></div></td><td><div class="cell-stack"><span>阳光志愿者协会</span><span class="t-mono">ID 5001</span></div></td><td class="t-mono">2026-07-11</td><td><span class="badge b-warning">待审核</span></td><td><div class="row-actions"><button class="btn btn-success btn-sm" onclick="alert('已通过')">通过</button><button class="btn btn-outline btn-sm" onclick="openReject()">拒绝</button></div></td></tr>
+                <tr><td><span class="badge b-teal">视障人士</span></td><td><div class="cell-stack"><span class="cell-strong">李四</span><span class="t-mono">ID 1002003050</span></div></td><td><div class="cell-stack"><span>爱心之家</span><span class="t-mono">ID 5042</span></div></td><td class="t-mono">2026-07-10</td><td><span class="badge b-warning">待审核</span></td><td><div class="row-actions"><button class="btn btn-success btn-sm">通过</button><button class="btn btn-outline btn-sm" onclick="openReject()">拒绝</button></div></td></tr>
+                <tr><td><span class="badge b-info">志愿者</span></td><td><div class="cell-stack"><span class="cell-strong">王芳</span><span class="t-mono">ID 1002003011</span></div></td><td><div class="cell-stack"><span>星光助盲服务队</span><span class="t-mono">ID 5011</span></div></td><td class="t-mono">2026-07-09</td><td><span class="badge b-success">已通过</span></td><td><div class="row-actions"><span class="t-sub">已处理</span></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STATISTICS ===== -->
+    <div id="page-statistics" class="page">
+      <div class="content">
+        <div class="page-head"><div><h2>数据统计</h2><p>社区运营数据概览</p></div></div>
+        <div class="tabs"><div class="tab active">社区统计</div><div class="tab">活动统计</div></div>
+        <div class="grid-4 gap-b">
+          <div class="stat-card"><div class="stat-icon tint-blue"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="stat-value" style="font-size:22px;">24</div><div class="stat-label">社区总数</div><div class="stat-change up">+3 本月</div></div>
+          <div class="stat-card"><div class="stat-icon tint-teal"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="stat-value" style="font-size:22px;">156</div><div class="stat-label">本月活动</div><div class="stat-change up">+12%</div></div>
+          <div class="stat-card"><div class="stat-icon tint-green"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-value" style="font-size:22px;">1,284</div><div class="stat-label">注册用户</div><div class="stat-change up">+15%</div></div>
+          <div class="stat-card"><div class="stat-icon tint-orange"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-value" style="font-size:22px;">892</div><div class="stat-label">活跃志愿者</div><div class="stat-change up">+8%</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card" style="min-height:280px;display:flex;align-items:center;justify-content:center;color:var(--text-3);"><div style="text-align:center;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p style="margin-top:10px;font-size:13px;">社区增长趋势</p></div></div>
+          <div class="card" style="min-height:280px;display:flex;align-items:center;justify-content:center;color:var(--text-3);"><div style="text-align:center;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><p style="margin-top:10px;font-size:13px;">用户分布</p></div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- REJECT MODAL -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal">
+    <div class="modal-head">拒绝申请<button class="icon-btn" onclick="closeReject()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body"><div class="form-group"><label class="label">拒绝原因</label><textarea class="textarea" rows="3" placeholder="请输入拒绝原因，将通知申请人…"></textarea></div></div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeReject()">取消</button><button class="btn btn-danger" onclick="closeReject();alert('已拒绝')">确认拒绝</button></div>
+  </div>
+</div>
+
+<!-- PREVIEW TOOLBAR -->
+<div class="preview-label">设计预览 v4 · 管理后台</div>
+<div class="preview-toolbar" id="preview-toolbar">
+  <button title="登录页" class="active" onclick="showView('login')">登</button>
+  <button title="仪表板" onclick="showView('dashboard')">仪</button>
+  <button title="社区管理" onclick="showView('community')">社</button>
+  <button title="活动管理" onclick="showView('activity')">活</button>
+  <button title="用户管理" onclick="showView('users')">户</button>
+  <button title="求助管理" onclick="showView('helppost')">求</button>
+  <button title="编辑" onclick="showView('edit')">编</button>
+  <button title="审核" onclick="showView('review')">审</button>
+  <button title="统计" onclick="showView('statistics')">统</button>
+</div>
+
+<script>
+function showView(name){
+  document.querySelectorAll('#preview-toolbar button').forEach(b=>b.classList.remove('active'));
+  var labels=['login','dashboard','community','activity','users','helppost','edit','review','statistics'];
+  var idx=labels.indexOf(name);
+  if(idx>=0)document.querySelectorAll('#preview-toolbar button')[idx].classList.add('active');
+  // reset login card to login mode when leaving
+  if(name!=='login'){document.getElementById('login-page').classList.remove('active');document.getElementById('app-root').classList.add('active');
+    document.querySelectorAll('#app-root .page').forEach(p=>p.classList.remove('active'));
+    var pe=document.getElementById('page-'+name);if(pe)pe.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    var names={dashboard:'仪表板',community:'社区管理',activity:'活动管理',users:'用户管理',helppost:'求助管理',edit:'编辑社区',review:'加入审核',statistics:'数据统计'};
+    document.getElementById('crumb').innerHTML='管理后台 <span class="sep">/</span> <span class="cur">'+(names[name]||name)+'</span>';
+    document.getElementById('sidebar').classList.remove('open');
+  }else{
+    document.getElementById('app-root').classList.remove('active');
+    document.getElementById('login-page').classList.add('active');
+    document.querySelectorAll('#app-root .page').forEach(p=>p.classList.remove('active'));
+  }
+}
+function switchPage(name,navEl){
+  showView(name);
+  if(navEl){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));navEl.classList.add('active');}
+}
+function switchLoginTab(tab){
+  document.querySelectorAll('.form-tabs .form-tab').forEach(t=>t.classList.remove('active'));
+  var lp=document.getElementById('login-page'),card=document.getElementById('login-card');
+  if(tab==='login'){
+    document.querySelector('.form-tabs .form-tab:first-child').classList.add('active');
+    document.getElementById('form-login').style.display='block';
+    document.getElementById('form-register').style.display='none';
+    lp.classList.remove('register-mode');card.classList.remove('wide');
+  }else{
+    document.querySelector('.form-tabs .form-tab:last-child').classList.add('active');
+    document.getElementById('form-login').style.display='none';
+    document.getElementById('form-register').style.display='block';
+    lp.classList.add('register-mode');card.classList.add('wide');
+  }
+}
+function handleLogin(e){e.preventDefault();showView('dashboard');}
+function handleRegister(e){e.preventDefault();alert('入驻申请已提交，请等待审核');}
+function handleLogout(){switchLoginTab('login');showView('login');}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+function openReject(){document.getElementById('reject-modal').classList.add('open');}
+function closeReject(){document.getElementById('reject-modal').classList.remove('open');}
+document.addEventListener('click',function(e){
+  var sb=document.getElementById('sidebar');
+  if(sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.sidebar-toggle'))sb.classList.remove('open');
+});
+</script>
+</body>
+</html>

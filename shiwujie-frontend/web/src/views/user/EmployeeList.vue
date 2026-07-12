@@ -17,7 +17,7 @@
       <div class="action-bar">
         <div class="action-left">
           <a-button type="primary" @click="handleRefresh" :loading="loading">
-            🔄 刷新
+            刷新
           </a-button>
         </div>
         <div class="action-right">
@@ -69,15 +69,15 @@
                      <div class="employee-actions">
              <a-space>
                <a-button size="small" @click="viewDetail(employee)">
-                 👁️ 查看详情
+                 查看详情
                </a-button>
-               <a-button 
-                 v-if="isRegistrant" 
-                 size="small" 
-                 type="primary" 
+               <a-button
+                 v-if="isRegistrant"
+                 size="small"
+                 type="primary"
                  @click="editEmployee(employee)"
                >
-                 ✏️ 编辑
+                 编辑
                </a-button>
              </a-space>
            </div>
@@ -86,7 +86,6 @@
 
       <!-- 空状态 -->
       <div v-else-if="!loading && employeeList.length === 0" class="empty-state">
-        <div class="empty-icon">👥</div>
         <h3>暂无员工</h3>
         <p>当前社区还没有员工信息</p>
       </div>
@@ -378,151 +377,125 @@ export default {
 
 <style scoped>
 .employee-list {
-  padding: 24px;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
-
 .page-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
+  margin: 0 0 2px 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
 }
-
 .page-header p {
   margin: 0;
-  color: #6b7280;
-  font-size: 14px;
+  color: var(--text-2);
+  font-size: 13px;
 }
-
 .info-alert {
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .action-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 8px;
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
-
-.action-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.action-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .total-count {
-  color: #6b7280;
-  font-size: 14px;
+  color: var(--text-2);
+  font-size: 13px;
   font-weight: 500;
 }
 
 .employee-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 18px;
 }
-
 .employee-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: var(--tr);
 }
-
 .employee-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+  border-color: var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .employee-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
-
 .employee-avatar {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-
 .avatar-text {
-  color: white;
-  font-size: 18px;
+  color: #fff;
+  font-size: 17px;
   font-weight: 600;
 }
-
 .employee-info {
   flex: 1;
   min-width: 0;
 }
-
 .employee-name {
-  margin: 0 0 4px 0;
-  font-size: 16px;
+  margin: 0 0 2px 0;
+  font-size: 15px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .employee-phone {
   margin: 0;
-  font-size: 14px;
-  color: #6b7280;
+  font-size: 13px;
+  color: var(--text-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.employee-status {
-  flex-shrink: 0;
 }
 
 .employee-details {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
-
 .detail-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 13px;
 }
-
 .detail-item .label {
-  color: #6b7280;
-  font-weight: 500;
+  color: var(--text-2);
 }
-
 .detail-item .value {
-  color: #1f2937;
-  font-weight: 600;
+  color: var(--text);
+  font-weight: 500;
 }
 
 .employee-actions {
@@ -532,60 +505,33 @@ export default {
 
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #9ca3af;
+  padding: 48px 20px;
+  color: var(--text-3);
 }
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
 .empty-state h3 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: #6b7280;
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-2);
 }
-
 .empty-state p {
   margin: 0;
-  font-size: 14px;
-  color: #9ca3af;
+  font-size: 13px;
 }
 
 .loading-state {
   text-align: center;
-  padding: 60px 20px;
-}
-
-.loading-content {
-  padding: 20px;
+  padding: 48px 20px;
 }
 
 .pagination-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
-.status-online {
-  color: #10b981;
-  font-weight: 500;
-}
-
-.status-offline {
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.status-busy {
-  color: #f59e0b;
-  font-weight: 500;
-}
-
-.status-unknown {
-  color: #9ca3af;
-  font-weight: 500;
-}
-</style> 
+.status-online { color: var(--success); font-weight: 500; font-size: 12px; }
+.status-offline { color: var(--text-2); font-weight: 500; font-size: 12px; }
+.status-busy { color: var(--warning); font-weight: 500; font-size: 12px; }
+.status-unknown { color: var(--text-3); font-weight: 500; font-size: 12px; }
+</style>

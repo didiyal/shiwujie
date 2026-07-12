@@ -1,176 +1,109 @@
 <template>
-  <div class="login-container">
-    <div class="login-background">
-      <div class="background-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-        <div class="shape shape-4"></div>
-      </div>
-    </div>
-    
-    <div class="login-form">
-      <div class="login-header">
-        <div class="logo-container">
-          <div class="logo-icon">🌟</div>
-          <h1>视无界社区管理</h1>
+  <div class="login-page" :class="{ 'register-mode': isRegister }">
+    <div class="login-card" :class="{ wide: isRegister }">
+      <div class="login-brand">
+        <div class="login-logo"><GlobalOutlined /></div>
+        <div>
+          <div class="login-wordmark">视<span>无</span>界</div>
+          <div class="login-subbrand">社区管理后台</div>
         </div>
-        <p class="subtitle">{{ isRegister ? '社区入驻注册' : '社区管理员登录' }}</p>
       </div>
 
-      <!-- 切换按钮 -->
-      <div class="login-tabs">
-        <a-button 
-          :type="!isRegister ? 'primary' : 'default'"
-          @click="switchToLogin"
-          class="tab-button"
-        >
-          管理员登录
-        </a-button>
-        <a-button 
-          :type="isRegister ? 'primary' : 'default'"
-          @click="switchToRegister"
-          class="tab-button"
-        >
-          社区入驻
-        </a-button>
+      <!-- 切换 -->
+      <div class="form-tabs">
+        <button class="form-tab" :class="{ active: !isRegister }" @click="switchToLogin">管理员登录</button>
+        <button class="form-tab" :class="{ active: isRegister }" @click="switchToRegister">社区入驻注册</button>
       </div>
-      
-      <!-- 管理员登录表单 -->
+
+      <!-- 管理员登录 -->
       <form v-if="!isRegister" class="login-form-native" @submit.prevent="handleLogin">
-        <!-- 密码设置提示 -->
-        <div class="password-tip">
-          <a-alert
-            message="账户安全提示"
-            description="管理员账户安全必须设置密码，可在APP志愿者端设置修改密码。"
-            type="warning"
-            show-icon
-            class="security-alert"
-          />
-        </div>
-        
+        <div class="login-title">欢迎回来</div>
+        <div class="login-sub">使用手机号和密码登录管理后台</div>
+
         <div class="form-group">
-          <label>手机号 *</label>
+          <label class="label">手机号 <span class="req">*</span></label>
           <input
             v-model="loginForm.phone"
             type="tel"
+            class="form-input"
             placeholder="请输入手机号"
             required
             pattern="^1[3-9]\d{9}$"
-            class="form-input"
           />
         </div>
-        
+
         <div class="form-group">
-          <label>密码 *</label>
+          <label class="label">密码 <span class="req">*</span></label>
           <input
             v-model="loginForm.password"
             type="password"
+            class="form-input"
             placeholder="请输入密码"
             required
             minlength="6"
-            class="form-input"
           />
         </div>
-        
-        <div class="form-actions">
-          <button
-            type="submit"
-            :disabled="loading"
-            class="submit-btn"
-          >
-            {{ loading ? '登录中...' : '登录' }}
+
+        <div class="login-actions">
+          <button type="submit" class="submit-btn" :disabled="loading">
+            {{ loading ? '登录中…' : '登录' }}
           </button>
         </div>
+        <div class="login-foot">管理员账户需在 APP 志愿者端设置密码</div>
       </form>
 
-      <!-- 社区入驻注册表单 -->
+      <!-- 社区入驻注册 -->
       <form v-else class="register-form" @submit.prevent="handleRegisterClick">
         <!-- 注册人信息 -->
-        <div class="form-section">
-          <h3 class="section-title">注册人信息</h3>
+        <div class="field-section">
+          <div class="sec-label">注册人信息</div>
           <div class="form-row">
             <div class="form-group">
-              <label>姓名 *</label>
-              <input
-                v-model="registerForm.volunteer.name"
-                type="text"
-                placeholder="请输入姓名"
-                required
-                class="form-input"
-              />
+              <label class="label">姓名 <span class="req">*</span></label>
+              <input v-model="registerForm.volunteer.name" type="text" class="form-input" placeholder="请输入姓名" required />
             </div>
             <div class="form-group">
-              <label>手机号 *</label>
-              <input
-                v-model="registerForm.volunteer.phone"
-                type="tel"
-                placeholder="请输入手机号"
-                required
-                class="form-input"
-              />
+              <label class="label">手机号 <span class="req">*</span></label>
+              <input v-model="registerForm.volunteer.phone" type="tel" class="form-input" placeholder="请输入手机号" required />
             </div>
           </div>
-          
+
           <div class="form-row">
             <div class="form-group">
-              <label>性别 *</label>
-              <select v-model="registerForm.volunteer.gender" required class="form-input">
+              <label class="label">性别 <span class="req">*</span></label>
+              <select v-model="registerForm.volunteer.gender" class="form-input" required>
                 <option value="">请选择性别</option>
                 <option :value="0">男</option>
                 <option :value="1">女</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="optional">微信账号</label>
-              <input
-                v-model="registerForm.volunteer.wechatId"
-                type="text"
-                placeholder="请输入微信账号"
-                class="form-input"
-              />
+              <label class="label">微信账号</label>
+              <input v-model="registerForm.volunteer.wechatId" type="text" class="form-input" placeholder="请输入微信账号" />
             </div>
           </div>
-          
+
           <div class="form-group">
-            <label>身份证号 *</label>
-            <input
-              v-model="registerForm.volunteer.idCard"
-              type="text"
-              placeholder="请输入身份证号"
-              required
-              class="form-input"
-            />
+            <label class="label">身份证号 <span class="req">*</span></label>
+            <input v-model="registerForm.volunteer.idCard" type="text" class="form-input" placeholder="请输入身份证号" required />
           </div>
-          
+
           <div class="form-group">
-            <label class="optional">其它信息</label>
-            <textarea
-              v-model="registerForm.volunteer.otherInfo"
-              placeholder="请输入其它信息"
-              rows="2"
-              class="form-input"
-            ></textarea>
+            <label class="label">其它信息</label>
+            <textarea v-model="registerForm.volunteer.otherInfo" class="form-textarea" placeholder="请输入其它信息" rows="2"></textarea>
           </div>
         </div>
 
         <!-- 社区信息 -->
-        <div class="form-section">
-          <h3 class="section-title">社区信息</h3>
+        <div class="field-section">
+          <div class="sec-label">社区信息</div>
           <div class="form-group">
-            <label>社区名称 *</label>
-            <input
-              v-model="registerForm.communityName"
-              type="text"
-              placeholder="请输入社区名称"
-              required
-              class="form-input"
-            />
+            <label class="label">社区名称 <span class="req">*</span></label>
+            <input v-model="registerForm.communityName" type="text" class="form-input" placeholder="请输入社区名称" required />
           </div>
-          
           <div class="form-group">
-            <label>社区类型 *</label>
-            <select v-model="registerForm.communityType" required class="form-input">
+            <label class="label">社区类型 <span class="req">*</span></label>
+            <select v-model="registerForm.communityType" class="form-input" required>
               <option value="">请选择社区类型</option>
               <option value="社会团体">社会团体</option>
               <option value="基层群众自治组织">基层群众自治组织</option>
@@ -178,25 +111,19 @@
               <option value="其它公益组织">其它公益组织</option>
             </select>
           </div>
-          
           <div class="form-group">
-            <label class="optional">社区介绍</label>
-            <textarea
-              v-model="registerForm.communityDescription"
-              placeholder="请输入社区介绍"
-              rows="2"
-              class="form-input"
-            ></textarea>
+            <label class="label">社区介绍</label>
+            <textarea v-model="registerForm.communityDescription" class="form-textarea" placeholder="请输入社区介绍" rows="2"></textarea>
           </div>
         </div>
 
         <!-- 地址信息 -->
-        <div class="form-section">
-          <h3 class="section-title">地址信息</h3>
+        <div class="field-section">
+          <div class="sec-label">地址信息</div>
           <div class="form-row">
             <div class="form-group">
-              <label>省份 *</label>
-              <select v-model="registerForm.province" @change="handleProvinceChange" required class="form-input">
+              <label class="label">省份 <span class="req">*</span></label>
+              <select v-model="registerForm.province" class="form-input" required @change="handleProvinceChange">
                 <option value="">请选择省份</option>
                 <option value="北京市">北京市</option>
                 <option value="天津市">天津市</option>
@@ -232,56 +159,29 @@
               </select>
             </div>
             <div class="form-group">
-              <label>城市 *</label>
-              <input
-                v-model="registerForm.city"
-                type="text"
-                placeholder="请输入城市"
-                required
-                class="form-input"
-              />
+              <label class="label">城市 <span class="req">*</span></label>
+              <input v-model="registerForm.city" type="text" class="form-input" placeholder="请输入城市" required />
             </div>
             <div class="form-group">
-              <label>区县 *</label>
-              <input
-                v-model="registerForm.district"
-                type="text"
-                placeholder="请输入区县"
-                required
-                class="form-input"
-              />
+              <label class="label">区县 <span class="req">*</span></label>
+              <input v-model="registerForm.district" type="text" class="form-input" placeholder="请输入区县" required />
             </div>
           </div>
-          
+
           <div class="form-group">
-            <label>具体地址 *</label>
-            <input
-              v-model="registerForm.address"
-              type="text"
-              placeholder="请输入具体地址"
-              required
-              class="form-input"
-            />
+            <label class="label">具体地址 <span class="req">*</span></label>
+            <input v-model="registerForm.address" type="text" class="form-input" placeholder="请输入具体地址" required />
           </div>
-          
+
           <div class="form-group">
-            <label class="optional">注册信息</label>
-            <textarea
-              v-model="registerForm.registrationInfo"
-              placeholder="请输入注册信息"
-              rows="2"
-              class="form-input"
-            ></textarea>
+            <label class="label">注册信息</label>
+            <textarea v-model="registerForm.registrationInfo" class="form-textarea" placeholder="请输入注册信息" rows="2"></textarea>
           </div>
         </div>
 
-        <div class="form-actions">
-          <button
-            type="submit"
-            :disabled="loading"
-            class="submit-btn"
-          >
-            {{ loading ? '注册中...' : '注册入驻' }}
+        <div class="login-actions">
+          <button type="submit" class="submit-btn" :disabled="loading">
+            {{ loading ? '注册中…' : '提交入驻申请' }}
           </button>
         </div>
       </form>
@@ -296,20 +196,22 @@ import { useAuthStore } from '@/stores/auth'
 import { communityApi, CommunityLoginModel } from '@/api'
 import { message } from 'ant-design-vue'
 import { addSafeIdToList } from '@/utils/bigIntUtils'
+import { GlobalOutlined } from '@ant-design/icons-vue'
 
 export default {
   name: 'Login',
+  components: { GlobalOutlined },
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
     const loading = ref(false)
     const isRegister = ref(false)
-    
+
     const loginForm = reactive({
       phone: '',
       password: ''
     })
-    
+
     const registerForm = reactive({
       communityName: '',
       communityType: '',
@@ -322,26 +224,21 @@ export default {
       volunteer: {
         name: '',
         phone: '',
-        gender: 0, // 设置默认值为0（男），避免null值
+        gender: 0,
         wechatId: '',
         idCard: '',
         otherInfo: ''
       }
     })
 
-    // 确保响应式对象正确初始化
-    console.log('初始化 registerForm:', registerForm)
-
     const switchToLogin = () => {
       isRegister.value = false
-      // 重置登录表单
       loginForm.phone = ''
       loginForm.password = ''
     }
 
     const switchToRegister = () => {
       isRegister.value = true
-      // 重置注册表单
       Object.assign(registerForm, {
         communityName: '',
         communityType: '',
@@ -354,7 +251,7 @@ export default {
         volunteer: {
           name: '',
           phone: '',
-          gender: 0, // 保持默认值为0（男），避免null值
+          gender: 0,
           wechatId: '',
           idCard: '',
           otherInfo: ''
@@ -362,29 +259,18 @@ export default {
       })
     }
 
-    const handleProvinceChange = (value) => {
-      // 清空城市和区县
+    const handleProvinceChange = () => {
       registerForm.city = ''
       registerForm.district = ''
     }
 
     const handleLogin = async () => {
-      console.log('🚀 handleLogin函数被调用了!')
       loading.value = true
-      
       try {
-        // 添加原始请求调试信息
-        console.log('📤 发送登录请求:', {
-          phone: loginForm.phone,
-          password: loginForm.password
-        })
-        
         await authStore.login(loginForm.phone, loginForm.password)
         message.success('登录成功')
         router.push('/')
       } catch (error) {
-        console.error('❌ 登录失败:', error)
-        // 直接显示错误信息
         message.error(error.message || '登录失败')
       } finally {
         loading.value = false
@@ -392,98 +278,36 @@ export default {
     }
 
     const handleRegisterClick = async () => {
-      console.log('🚀 注册按钮被点击了!')
-      // 检查必填字段
-      console.log('姓名字段值:', registerForm.volunteer.name)
-      console.log('姓名字段是否为空:', !registerForm.volunteer.name)
-      console.log('完整表单数据:', JSON.stringify(registerForm, null, 2))
-      
-      if (!registerForm.volunteer.name) {
-        message.error('请输入姓名')
-        return
-      }
-      if (!registerForm.volunteer.phone) {
-        message.error('请输入手机号')
-        return
-      }
-      if (!registerForm.volunteer.idCard) {
-        message.error('请输入身份证号')
-        return
-      }
-      if (!registerForm.communityName) {
-        message.error('请输入社区名称')
-        return
-      }
-      if (!registerForm.communityType) {
-        message.error('请选择社区类型')
-        return
-      }
-      if (!registerForm.province) {
-        message.error('请选择省份')
-        return
-      }
-      if (!registerForm.city) {
-        message.error('请输入城市')
-        return
-      }
-      if (!registerForm.district) {
-        message.error('请输入区县')
-        return
-      }
-      if (!registerForm.address) {
-        message.error('请输入具体地址')
-        return
-      }
-      console.log('📝 注册表单数据:', registerForm)
-      handleRegister()
+      if (!registerForm.volunteer.name) return message.error('请输入姓名')
+      if (!registerForm.volunteer.phone) return message.error('请输入手机号')
+      if (!registerForm.volunteer.idCard) return message.error('请输入身份证号')
+      if (!registerForm.communityName) return message.error('请输入社区名称')
+      if (!registerForm.communityType) return message.error('请选择社区类型')
+      if (!registerForm.province) return message.error('请选择省份')
+      if (!registerForm.city) return message.error('请输入城市')
+      if (!registerForm.district) return message.error('请输入区县')
+      if (!registerForm.address) return message.error('请输入具体地址')
+      await handleRegister()
     }
 
     const handleRegister = async () => {
-      console.log('🚀 handleRegister函数被调用了!')
-      console.log('📝 注册表单数据:', registerForm)
-      
-      // 直接发送请求，不做前端验证，让后端处理
-      console.log('✅ 直接发送请求到后端')
-      
       loading.value = true
-      
       try {
-        console.log('🔍 前端注册请求:', registerForm)
-        console.log('🔗 API路径:', '/api/community/community/Register')
-        console.log('🔗 完整请求URL:', 'http://43.139.38.62:8081/api/community/community/Register')
-        console.log('📤 发送的数据:', JSON.stringify(registerForm, null, 2))
-        
         const data = await communityApi.register(registerForm)
-        console.log('✅ 后端注册成功返回:', data)
-        
-        // 使用新的模型处理响应数据
         const loginModel = new CommunityLoginModel(data)
-        
-        // 注册成功后自动登录
+
         authStore.token = loginModel.token
         authStore.volunteer = loginModel.volunteer
         authStore.isLoggedIn = true
         localStorage.setItem('token', loginModel.token)
-        
-        // 保存用户创建的社区ID到localStorage
-        // 根据登录响应数据结构，社区ID在 data.data.volunteer.communityId
-        console.log('🔍 注册响应数据结构:', data);
-        console.log('🔍 data.data:', data.data);
-        console.log('🔍 data.data.volunteer:', data.data?.volunteer);
-        console.log('🔍 data.data.volunteer.communityId:', data.data?.volunteer?.communityId);
-        
-        // 保存社区ID到localStorage - 使用安全的大数字处理工具
+
         if (data.data && data.data.volunteer && data.data.volunteer.communityId) {
-          addSafeIdToList('userCommunities', data.data.volunteer.communityId);
-        } else {
-          console.log('❌ 注册响应中没有找到communityId');
+          addSafeIdToList('userCommunities', data.data.volunteer.communityId)
         }
-        
+
         message.success('社区注册成功，已自动登录')
         router.push('/')
       } catch (error) {
-        console.error('❌ 注册失败:', error)
-        // 直接显示错误信息
         message.error(error.message || '注册失败')
       } finally {
         loading.value = false
@@ -507,373 +331,243 @@ export default {
 </script>
 
 <style scoped>
-.login-container {
+.login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-  overflow: hidden;
-  padding: 20px;
-  box-sizing: border-box;
+  padding: 40px 20px;
+  background: var(--bg);
+}
+.login-page.register-mode {
+  align-items: flex-start;
 }
 
-.login-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 0;
-}
-
-.background-shapes {
-  position: relative;
+.login-card {
   width: 100%;
-  height: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.login-card.wide {
+  max-width: 720px;
+  padding: 32px;
 }
 
-.shape {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  animation: float 6s ease-in-out infinite;
-}
-
-.shape-1 {
-  width: 80px;
-  height: 80px;
-  top: 20%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  width: 120px;
-  height: 120px;
-  top: 60%;
-  right: 10%;
-  animation-delay: 2s;
-}
-
-.shape-3 {
-  width: 60px;
-  height: 60px;
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 4s;
-}
-
-.shape-4 {
-  width: 100px;
-  height: 100px;
-  top: 10%;
-  right: 20%;
-  animation-delay: 1s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(180deg);
-  }
-}
-
-.login-form {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  padding: 48px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  position: relative;
-  z-index: 1;
-  animation: slideInUp 0.8s ease-out;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
-  display: flex;
-  flex-direction: column;
-}
-
-.login-form::-webkit-scrollbar {
-  width: 6px;
-}
-
-.login-form::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 3px;
-}
-
-.login-form::-webkit-scrollbar-thumb {
-  background: rgba(102, 126, 234, 0.3);
-  border-radius: 3px;
-}
-
-.login-form::-webkit-scrollbar-thumb:hover {
-  background: rgba(102, 126, 234, 0.5);
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 32px;
-  flex-shrink: 0;
-}
-
-.logo-container {
+.login-brand {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 12px;
-  margin-bottom: 16px;
-}
-
-.logo-icon {
-  font-size: 32px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-.login-header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.subtitle {
-  font-size: 16px;
-  color: #666;
-  margin: 0;
-  font-weight: 400;
-}
-
-.login-tabs {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 32px;
-  background: #f8f9fa;
-  padding: 8px;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
-
-.tab-button {
-  flex: 1;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.tab-button:hover {
-  transform: translateY(-2px);
-}
-
-.security-alert {
   margin-bottom: 24px;
-  border-radius: 12px;
-  border: 1px solid #fff3cd;
-  background: #fffbf0;
 }
-
-.login-form-native,
-.register-form {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.form-section {
-  margin-bottom: 32px;
-  padding: 24px;
-  background: #f8f9fa;
-  border-radius: 16px;
-  border: 1px solid #e9ecef;
-}
-
-.section-title {
+.login-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: var(--sidebar);
+  color: #fff;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
   font-size: 18px;
+  flex-shrink: 0;
+}
+.login-wordmark {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.login-wordmark span {
+  color: var(--primary);
+}
+.login-subbrand {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 1px;
+}
+
+.form-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 22px;
+  background: var(--bg);
+  padding: 3px;
+  border-radius: 9px;
+}
+.form-tab {
+  flex: 1;
+  height: 32px;
+  border: none;
+  border-radius: 7px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: transparent;
+  cursor: pointer;
+  transition: var(--tr);
+}
+.form-tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.login-title {
+  font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e9ecef;
+  margin-bottom: 2px;
+}
+.login-sub {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-bottom: 22px;
+}
+
+.field-section {
+  margin-bottom: 22px;
+}
+.sec-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
 }
 
 .form-row {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 14px;
 }
-
 .form-row .form-group {
   flex: 1;
 }
-
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
-
-.form-group label {
+.label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
   font-weight: 600;
-  color: #333;
-  font-size: 14px;
+  color: var(--text);
+}
+.label .req,
+.form-group label:not(.optional)::after {
+  color: var(--danger);
+}
+.form-group label:not(.optional)::after {
+  content: ' *';
+  font-weight: 400;
+}
+.label .req {
+  display: none; /* 用 ::after 统一标记 */
 }
 
 .form-input {
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
-  font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-  box-sizing: border-box;
+  height: 40px;
+  padding: 0 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--tr);
+  appearance: none;
 }
-
 .form-input:hover {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--text-3);
 }
-
 .form-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-t);
 }
-
 .form-input::placeholder {
-  color: #bfbfbf;
+  color: var(--text-3);
+}
+select.form-input {
+  cursor: pointer;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.form-textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  transition: var(--tr);
+}
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-t);
+}
+.form-textarea::placeholder {
+  color: var(--text-3);
 }
 
-.form-actions {
-  margin-top: 32px;
-  flex-shrink: 0;
+.login-actions {
+  margin-top: 8px;
 }
-
 .submit-btn {
   width: 100%;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  height: 44px;
   border: none;
+  border-radius: 22px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--primary);
+  color: #fff;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition: var(--tr);
 }
-
 .submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+  background: var(--primary-h);
 }
-
+.submit-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
 .submit-btn:disabled {
-  background: #d9d9d9;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+}
+.login-foot {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 16px;
 }
 
-/* 必填字段标记 */
-.form-group label:not(.optional)::after {
-  content: " *";
-  color: #ff4d4f;
-  font-weight: normal;
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
-  .login-container {
-    padding: 16px;
+  .login-page {
+    padding: 24px 16px;
     align-items: flex-start;
-    min-height: 100vh;
   }
-  
-  .login-form {
-    margin: 20px 0;
-    padding: 32px 24px;
-    border-radius: 20px;
-    max-height: calc(100vh - 40px);
+  .login-card {
+    padding: 26px 22px;
   }
-  
-  .login-header h1 {
-    font-size: 24px;
-  }
-  
   .form-row {
     flex-direction: column;
     gap: 0;
   }
-  
-  .form-section {
-    padding: 20px;
-  }
 }
-
-/* 深色主题适配 */
-@media (prefers-color-scheme: dark) {
-  .login-form {
-    background: rgba(30, 30, 30, 0.95);
-    color: white;
-  }
-  
-  .form-section {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: #444;
-  }
-  
-  .section-title {
-    color: white;
-    border-bottom-color: #444;
-  }
-  
-  .form-group label {
-    color: #ccc;
-  }
-  
-  .form-input {
-    background: #2a2a2a;
-    border-color: #444;
-    color: white;
-  }
-}
-</style> 
+</style>

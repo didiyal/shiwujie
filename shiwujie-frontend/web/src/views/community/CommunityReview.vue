@@ -17,7 +17,7 @@
       <div class="table-header">
         <div class="header-left">
           <a-button type="primary" @click="loadReviewList" :loading="loading">
-            🔄 刷新列表
+            刷新列表
           </a-button>
         </div>
         <div class="header-right">
@@ -76,22 +76,22 @@
             <!-- 根据审核状态显示不同的内容 -->
             <template v-if="record.reviewStatus === '待审核'">
               <a-space v-if="canReviewRecord(record)">
-                <a-button 
-                  type="primary" 
-                  size="small" 
+                <a-button
+                  type="primary"
+                  size="small"
                   @click="approve(record)"
                   :loading="processingId === record.reviewId"
                 >
-                  ✅ 通过
+                  通过
                 </a-button>
-                <a-button 
-                  type="default" 
-                  size="small" 
+                <a-button
+                  type="default"
+                  size="small"
                   danger
                   @click="reject(record)"
                   :loading="processingId === record.reviewId"
                 >
-                  ❌ 拒绝
+                  拒绝
                 </a-button>
               </a-space>
               <span v-else class="no-permission">
@@ -101,12 +101,12 @@
             
             <!-- 已通过的申请 -->
             <template v-else-if="record.reviewStatus === '已通过'">
-              <a-tag color="green">✅ 已通过</a-tag>
+              <a-tag color="green">已通过</a-tag>
             </template>
-            
+
             <!-- 已拒绝的申请 -->
             <template v-else-if="record.reviewStatus === '已拒绝'">
-              <a-tag color="red">❌ 已拒绝</a-tag>
+              <a-tag color="red">已拒绝</a-tag>
             </template>
             
             <!-- 其他状态 -->
@@ -119,7 +119,6 @@
 
       <!-- 空状态 -->
       <div v-if="!loading && reviewList.length === 0" class="empty-state">
-        <div class="empty-icon">📋</div>
         <h3>暂无待审核申请</h3>
         <p>当前没有志愿者或盲人的社区加入申请需要审核</p>
       </div>
@@ -408,11 +407,11 @@ export default {
     const getStatusText = (status) => {
       switch (status) {
         case '待审核':
-          return '⏳ 待审核';
+          return '待审核';
         case '已通过':
-          return '✅ 已通过';
+          return '已通过';
         case '已拒绝':
-          return '❌ 已拒绝';
+          return '已拒绝';
         default:
           return status || '未知状态';
       }
@@ -499,98 +498,81 @@ export default {
 
 <style scoped>
 .community-review {
-  padding: 24px;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
-
 .page-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
+  margin: 0 0 2px 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
 }
-
 .page-header p {
   margin: 0;
-  color: #6b7280;
-  font-size: 14px;
+  color: var(--text-2);
+  font-size: 13px;
 }
-
 .permission-warning {
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .review-count {
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: var(--text-2);
   font-weight: 500;
 }
-
 .pending-count {
-  color: #ff6b35;
+  color: var(--warning);
   font-weight: 600;
 }
 
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #999;
+  padding: 48px 20px;
+  color: var(--text-3);
 }
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
 .empty-state h3 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: #666;
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-2);
 }
-
 .empty-state p {
   margin: 0;
-  font-size: 14px;
-  color: #999;
+  font-size: 13px;
 }
 
-.user-info, .community-info {
+.user-info,
+.community-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
-
-.user-name, .community-name {
-  font-weight: 500;
-  color: #333;
+.user-name,
+.community-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
 }
-
-.user-id, .community-id {
+.user-id,
+.community-id {
   font-size: 12px;
-  color: #999;
+  color: var(--text-2);
+  font-family: var(--font-mono);
 }
 
 .no-permission {
@@ -598,31 +580,4 @@ export default {
   align-items: center;
   justify-content: center;
 }
-
-:deep(.ant-table-thead > tr > th) {
-  background: #f9fafb;
-  font-weight: 600;
-}
-
-:deep(.ant-table-tbody > tr:hover > td) {
-  background: #f0f9ff;
-}
-
-/* 状态标签样式 */
-.status-pending {
-  font-weight: 500;
-}
-
-.status-approved {
-  font-weight: 500;
-}
-
-.status-rejected {
-  font-weight: 500;
-}
-
-.status-unknown {
-  font-weight: 400;
-  opacity: 0.7;
-}
-</style> 
+</style>

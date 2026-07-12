@@ -1,6 +1,6 @@
 <template>
   <div class="activity-sign-detail">
-    <a-card :title="pageTitle" class="management-card">
+    <a-card class="management-card" :bordered="false">
       <!-- 活动信息头部 -->
       <div class="activity-header-section">
         <a-row :gutter="16">
@@ -44,40 +44,16 @@
       <div class="stats-section">
         <a-row :gutter="16">
           <a-col :span="6">
-            <div class="stat-card total">
-              <div class="stat-icon">📊</div>
-              <div class="stat-content">
-                <div class="stat-value">{{ totalCount }}</div>
-                <div class="stat-title">总报名数</div>
-              </div>
-            </div>
+            <a-statistic title="总报名数" :value="totalCount" />
           </a-col>
           <a-col :span="6">
-            <div class="stat-card pending">
-              <div class="stat-icon">📝</div>
-              <div class="stat-content">
-                <div class="stat-value">{{ pendingCount }}</div>
-                <div class="stat-title">已报名</div>
-              </div>
-            </div>
+            <a-statistic title="已报名" :value="pendingCount" :value-style="{ color: '#ff9500' }" />
           </a-col>
           <a-col :span="6">
-            <div class="stat-card checked-in">
-              <div class="stat-icon">✅</div>
-              <div class="stat-content">
-                <div class="stat-value">{{ checkedInCount }}</div>
-                <div class="stat-title">已签到</div>
-              </div>
-            </div>
+            <a-statistic title="已签到" :value="checkedInCount" :value-style="{ color: '#0071e3' }" />
           </a-col>
           <a-col :span="6">
-            <div class="stat-card checked-out">
-              <div class="stat-icon">🏁</div>
-              <div class="stat-content">
-                <div class="stat-value">{{ checkedOutCount }}</div>
-                <div class="stat-title">已签退</div>
-              </div>
-            </div>
+            <a-statistic title="已签退" :value="checkedOutCount" :value-style="{ color: '#34c759' }" />
           </a-col>
         </a-row>
       </div>
@@ -432,180 +408,74 @@ export default {
 
 <style scoped>
 .activity-sign-detail {
-  padding: 24px;
-  background: #f5f5f5;
-  min-height: 100vh;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .management-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
+/* 活动信息头部：清爽表面，去紫色渐变 */
 .activity-header-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  color: white;
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  background: var(--bg);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
-
 .activity-info h2 {
-  color: white;
-  margin: 0 0 16px 0;
-  font-size: 24px;
+  color: var(--text);
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
-
 .activity-meta {
   display: flex;
-  gap: 24px;
+  gap: 20px;
   flex-wrap: wrap;
 }
-
 .meta-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-2);
 }
 
 .stats-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  border-left: 4px solid;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.stat-card.total {
-  border-left-color: #722ed1;
-}
-
-.stat-card.pending {
-  border-left-color: #faad14;
-}
-
-.stat-card.checked-in {
-  border-left-color: #1890ff;
-}
-
-.stat-card.checked-out {
-  border-left-color: #52c41a;
-}
-
-.stat-icon {
-  font-size: 32px;
-  margin-right: 16px;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #262626;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-
-.stat-title {
-  font-size: 14px;
-  color: #8c8c8c;
-  font-weight: 500;
+  margin-bottom: 18px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .search-section {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
-}
-
-.search-section :deep(.ant-input),
-.search-section :deep(.ant-select-selector),
-.search-section :deep(.ant-picker) {
-  border-radius: 6px;
-}
-
-.management-table {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.management-table :deep(.ant-table-thead > tr > th) {
-  background: #fafafa;
-  font-weight: 600;
-  color: #262626;
-}
-
-.management-table :deep(.ant-table-tbody > tr:hover > td) {
-  background: #f0f8ff;
+  margin-bottom: 18px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border-l);
+  border-radius: var(--radius);
 }
 
 .time-cell {
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.5;
+  color: var(--text-2);
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
-  .activity-sign-detail {
-    padding: 16px;
-  }
-  
-  .activity-header-section {
-    padding: 16px;
-  }
-  
-  .stats-section {
-    padding: 16px;
-  }
-  
-  .search-section {
-    padding: 16px;
-  }
-  
   .activity-meta {
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
 }
-
-/* 动画效果 */
-.management-card {
-  transition: all 0.3s ease;
-}
-
-.management-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.activity-header-section {
-  transition: all 0.3s ease;
-}
-
-.activity-header-section:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
 </style>
+
