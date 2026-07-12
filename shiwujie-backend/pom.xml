@@ -31,13 +31,15 @@
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <hutool.version>5.8.25</hutool.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
+        <!-- Spring AI（原 ai 模块独立 DM，合并后集中到父 pom；v3.0.0 两模块） -->
+        <spring-ai.version>1.0.0</spring-ai.version>
+        <spring-ai-alibaba.version>1.0.0.2</spring-ai-alibaba.version>
     </properties>
 
     <modules>
         <module>shiwujie-model</module>
         <module>shiwujie-common-web</module>
         <!-- v3.0.0 单体化阶段2.1：删 gateway 模块（路由职责下沉到单体 controller 内化前缀） -->
-        <module>shiwujie-ai</module>
         <module>shiwujie-bootstrap</module>
     </modules>
 
@@ -56,11 +58,36 @@
                 <artifactId>shiwujieCommonWeb</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!-- v3.0.0 单体化阶段2.1：ai 版本同为 0.0.1-SNAPSHOT，统一进 DM，bootstrap 无版本引用；user/call/community 已并入 bootstrap -->
+            <!-- Spring AI（原 ai 模块独立 DM，合并后集中到父 pom；ai 已并入 bootstrap） -->
             <dependency>
-                <groupId>com.swj</groupId>
-                <artifactId>shiwujieAi</artifactId>
-                <version>${project.version}</version>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-bom</artifactId>
+                <version>${spring-ai-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- ai 特殊依赖版本集中（paho 单消费者，不值当抽属性，硬编） -->
+            <dependency>
+                <groupId>org.eclipse.paho</groupId>
+                <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+                <version>1.2.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.esotericsoftware</groupId>
+                <artifactId>kryo</artifactId>
+                <version>5.6.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.19.1</version>
             </dependency>
 
             <!-- v3.0.0 单体化阶段2.3：删 Dubbo(dubbo/dubbo-nacos) + Nacos(spring-cloud-starter-alibaba-nacos-discovery) DM -->
@@ -109,5 +136,15 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <!-- Spring AI 1.0.0 产物在 milestone 仓库（原 ai 模块独立 repositories，合并后集中到父 pom） -->
+    <repositories>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+    </repositories>
 
 </project>
