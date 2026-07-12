@@ -186,9 +186,10 @@ public class WebSocketService extends Service {
         
         heartbeatExecutor = Executors.newScheduledThreadPool(1);
 
+        // 间隔必须短于 NAT/代理的空闲断开阈值（通常 60-120s），否则长连接会被网络设备静默掐断
         heartbeatExecutor.scheduleAtFixedRate(() -> {
             sendHeartbeat();
-        }, 2, 2, TimeUnit.HOURS); // 每30秒发送一次心跳包
+        }, 30, 30, TimeUnit.SECONDS); // 每30秒发送一次心跳包
         
         isHeartbeatStarted = true;
         Log.d(TAG, "心跳包已启动，间隔30秒");

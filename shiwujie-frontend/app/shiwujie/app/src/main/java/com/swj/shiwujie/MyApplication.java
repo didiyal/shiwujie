@@ -16,8 +16,8 @@ public class MyApplication extends Application {
         try {
             SpeechUtility.createUtility(this, "appid=26fe4713");
             
-            // 以下语句用于设置日志开关（默认开启），设置成false时关闭语音云SDK日志打印
-            Setting.setShowLog(true);
+            // 以下语句用于设置日志开关：仅 DEBUG 包开启，release 关闭避免泄露
+            Setting.setShowLog(BuildConfig.DEBUG);
             
             Log.d(TAG, "讯飞语音识别SDK初始化成功");
         } catch (Exception e) {

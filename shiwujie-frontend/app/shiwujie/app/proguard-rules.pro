@@ -36,3 +36,30 @@
 -keep class com.iflytek.**{*;}
 -keep class com.iflytek.cloud.**{*;}
 -keep class com.iflytek.speech.**{*;}
+
+# ===== 以下为 release 混淆补充（R8）=====
+
+# 保留泛型签名（Gson/TypeToken/Retrofit 必需）、注解、源文件与行号（便于线上堆栈定位）
+-keepattributes Signature, *Annotation*, SourceFile,LineNumberTable
+
+# Gson：保留 @SerializedName 字段；保留 TypeToken 及其子类（AiFragment 用匿名 TypeToken 反序列化历史）
+-keepclassmembers,allowobfuscation class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
+
+# AiFragment 内被 Gson 序列化的对话数据类（不在 data.model 包，需显式保留字段名）
+-keep class com.swj.shiwujie.blind.ui.ai.AiFragment$Message { *; }
+-keep class com.swj.shiwujie.blind.ui.ai.AiFragment$Conversation { *; }
+
+# Retrofit / OkHttp（其 consumer rules 通常已含，此处显式兜底，避免 release 调用崩）
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn retrofit2.**
+-keep class retrofit2.** { *; }
+
+# slf4j：java-websocket 传递依赖拉进 slf4j-api，但 App 未打包 binding 实现。
+# 运行期 slf4j 无 binding 时退化为 NOP（java-websocket 仍正常工作），故抑制缺失类告警。
+-dontwarn org.slf4j.**
+-dontwarn org.slf4j.impl.StaticLoggerBinder

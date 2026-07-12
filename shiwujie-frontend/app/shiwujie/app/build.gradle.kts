@@ -19,7 +19,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -32,6 +33,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true   // 生成 BuildConfig（RetrofitClient / MyApplication 按 BuildConfig.DEBUG 守卫日志）
     }
     
     // JNI libs 由 Android Gradle Plugin 自动发现 src/main/jniLibs/，无需手动指定

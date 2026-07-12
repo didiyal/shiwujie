@@ -3812,16 +3812,20 @@ public class AiFragment extends Fragment {
      */
     private void attemptWebSocketReconnect() {
         try {
-            Log.d(TAG, "开始尝试WebSocket重连...");
-            
-            if (webSocketManager != null) {
-                // 尝试重新建立连接
-                // 这里可以调用WebSocketManager的重连方法
-                Log.d(TAG, "WebSocket重连尝试完成");
-            } else {
+            if (webSocketManager == null) {
                 Log.w(TAG, "WebSocketManager为空，无法重连");
+                return;
             }
-            
+            Log.d(TAG, "开始尝试WebSocket重连...");
+            String phone = com.swj.shiwujie.common.utils.SharedPrefsUtil.getPhone();
+            if (getContext() == null || phone == null || phone.isEmpty()) {
+                Log.w(TAG, "上下文或手机号为空，无法重连");
+                return;
+            }
+            // 真正发起重连；connect() 内部对"已连接/连接中"做 no-op，安全
+            boolean isVolunteer = !com.swj.shiwujie.common.utils.SharedPrefsUtil.isBlind();
+            WebSocketManager.connectWebSocket(getContext(), phone, isVolunteer);
+            Log.d(TAG, "WebSocket重连请求已发出");
         } catch (Exception e) {
             Log.e(TAG, "WebSocket重连失败", e);
         }

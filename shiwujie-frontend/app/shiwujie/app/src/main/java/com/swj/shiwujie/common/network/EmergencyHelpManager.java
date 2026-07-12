@@ -21,14 +21,20 @@ import retrofit2.Response;
  */
 public class EmergencyHelpManager {
     private static final String TAG = "EmergencyHelpManager";
-    
+
+    /** 家属无响应超时：超过该时长未接听则自动复位状态，避免 isInEmergencyHelp 永真导致用户无法再次求助 */
+    private static final long EMERGENCY_HELP_TIMEOUT_MS = 60_000L; // 60秒
+
     private static EmergencyHelpManager instance;
     private Context context;
     private Handler mainHandler;
-    
+
     // 当前紧急求助状态
     private EmergencyHelpData currentHelpData;
     private boolean isInEmergencyHelp = false;
+
+    // 超时兜底任务（复用 mainHandler，主线程触发）
+    private Runnable emergencyTimeoutRunnable;
     
     // 回调接口
     public interface EmergencyHelpCallback {
@@ -39,6 +45,8 @@ public class EmergencyHelpManager {
         void onHelpResponseFailed(String error);
         void onHelpHangupSuccess();
         void onHelpHangupFailed(String error);
+        /** 家属在超时窗口内未响应，状态已自动复位（用户可再次发起求助） */
+        default void onHelpTimeout() {}
     }
     
     private EmergencyHelpCallback callback;
@@ -138,6 +146,8 @@ public class EmergencyHelpManager {
                                 if (callback != null) {
                                     callback.onHelpRequestSuccess();
                                 }
+                                // 求助已成功发出，启动"家属无响应"超时兜底
+                                scheduleEmergencyTimeout();
                             } else {
                                 Log.e(TAG, "紧急求助请求失败: " + baseResponse.getMessage());
                               /*  showToast("紧急求助请求失败: " + baseResponse.getMessage());*/
@@ -213,6 +223,8 @@ public class EmergencyHelpManager {
                             if (baseResponse.getCode() == 1 && Boolean.TRUE.equals(baseResponse.getData())) {
                                 Log.d(TAG, "取消紧急求助成功");
                                 showToast("紧急求助已取消");
+
+                                cancelEmergencyTimeout();
                                 
                                 // 重置状态，允许重新发起求助
                                 currentHelpData = null;
@@ -271,6 +283,8 @@ public class EmergencyHelpManager {
                             if (baseResponse.getCode() == 1 && Boolean.TRUE.equals(baseResponse.getData())) {
                                 Log.d(TAG, "响应紧急求助成功");
                                 showToast("响应紧急求助成功");
+
+                                cancelEmergencyTimeout();
                                 
                                 if (callback != null) {
                                     callback.onHelpResponseSuccess();
@@ -336,6 +350,8 @@ public class EmergencyHelpManager {
                             if (baseResponse.getCode() == 1 && Boolean.TRUE.equals(baseResponse.getData())) {
                                 Log.d(TAG, "挂断紧急求助成功");
                                 showToast("通话已结束");
+
+                                cancelEmergencyTimeout();
                                 
                                 // 更新状态
                                 if (currentHelpData != null) {
@@ -389,26 +405,55 @@ public class EmergencyHelpManager {
                 ", volunteerPhone: " + volunteerPhone + ", channelId: " + channelId);
         
         if (requestType == 2) {
-            // 家属视频初始化成功
+            // 家属视频初始化成功 → 通话已建立，取消"家属无响应"超时
             Log.d(TAG, "收到家属视频初始化成功消息");
-            
+            cancelEmergencyTimeout();
+
             if (currentHelpData != null) {
                 // 更新紧急求助数据
                 currentHelpData.setVolunteerPhone(volunteerPhone);
                 currentHelpData.setChannelId(channelId);
                 currentHelpData.setStatus(2); // 通话中
                 currentHelpData.setMessage("通话已开始");
-                
+
                 Log.d(TAG, "紧急求助状态已更新为通话中");
             }
         }
     }
     
     /**
+     * 调度"家属无响应"超时任务。仅在求助成功发出后启用；任何终态（取消/挂断/响应/通话建立）都应取消。
+     */
+    private void scheduleEmergencyTimeout() {
+        cancelEmergencyTimeout();
+        emergencyTimeoutRunnable = () -> {
+            Log.w(TAG, "=== 紧急求助超时，未收到家属响应，自动复位状态 ===");
+            currentHelpData = null;
+            isInEmergencyHelp = false;
+            if (callback != null) {
+                callback.onHelpTimeout();
+            }
+        };
+        mainHandler.postDelayed(emergencyTimeoutRunnable, EMERGENCY_HELP_TIMEOUT_MS);
+        Log.d(TAG, "已调度紧急求助超时任务: " + EMERGENCY_HELP_TIMEOUT_MS + "ms");
+    }
+
+    /**
+     * 取消"家属无响应"超时任务
+     */
+    private void cancelEmergencyTimeout() {
+        if (emergencyTimeoutRunnable != null && mainHandler != null) {
+            mainHandler.removeCallbacks(emergencyTimeoutRunnable);
+        }
+        emergencyTimeoutRunnable = null;
+    }
+
+    /**
      * 重置紧急求助状态
      */
     public void resetEmergencyHelp() {
         Log.d(TAG, "=== 重置紧急求助状态 ===");
+        cancelEmergencyTimeout();
         currentHelpData = null;
         isInEmergencyHelp = false;
     }
@@ -418,6 +463,7 @@ public class EmergencyHelpManager {
      */
     public void destroy() {
         Log.d(TAG, "=== 销毁紧急求助管理器 ===");
+        cancelEmergencyTimeout();
         resetEmergencyHelp();
         callback = null;
         context = null;
