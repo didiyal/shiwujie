@@ -534,4 +534,34 @@ export default {
 .status-offline { color: var(--text-2); font-weight: 500; font-size: 12px; }
 .status-busy { color: var(--warning); font-weight: 500; font-size: 12px; }
 .status-unknown { color: var(--text-3); font-weight: 500; font-size: 12px; }
+
+@media (max-width: 768px) {
+  .employee-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .employee-card {
+    padding: 14px;
+  }
+  .employee-avatar {
+    width: 36px; height: 36px;
+  }
+  .employee-name {
+    font-size: 14px;
+  }
+  :deep(.ant-card-body) {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .employee-grid {
+    grid-template-columns: 1fr;
+  }
+  .action-bar {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+}
 </style>

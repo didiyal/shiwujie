@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视无界 — 更新日志设计预览</title>
+<style>
+/* ============================================================
+   TOKENS — 与官网/管理端统一
+   ============================================================ */
+:root {
+  --bg:        #f5f5f7;
+  --surface:   #ffffff;
+  --primary:   #0071e3;
+  --primary-h: #0060c0;
+  --primary-t: rgba(0,113,227,.08);
+  --text:      #1d1d1f;
+  --text-2:    #6e6e73;
+  --text-3:    #aeaeb2;
+  --border:    #d2d2d7;
+  --border-l:  #e8e8ed;
+  --font:      -apple-system, "SF Pro Display", "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  --font-mono: "SF Mono", "Menlo", "Monaco", "PingFang SC", monospace;
+  --tr: .25s cubic-bezier(.25,.1,.25,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{
+  font-family:var(--font);
+  font-size:14px;
+  line-height:1.5;
+  color:var(--text);
+  background:var(--bg);
+  min-height:100vh;
+}
+
+/* ============================================================
+   NAVBAR — 与首页一致
+   ============================================================ */
+.navbar{
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:1000;
+  height:56px;
+  background:rgba(245,245,247,.88);
+  backdrop-filter:saturate(180%) blur(24px);
+  -webkit-backdrop-filter:saturate(180%) blur(24px);
+  border-bottom:1px solid rgba(0,0,0,.06);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 40px;
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.navbar-brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  text-decoration:none;
+  color:var(--text);
+}
+.brand-icon{
+  width:32px;height:32px;
+  border-radius:8px;
+  background:linear-gradient(135deg, #0071e3 0%, #40a9ff 100%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+}
+.brand-text{
+  font-size:17px;
+  font-weight:700;
+  letter-spacing:-.01em;
+  color:var(--text);
+}
+.brand-text span{color:var(--primary);}
+
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  list-style:none;
+}
+.nav-links a{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  height:34px;
+  padding:0 14px;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:500;
+  color:var(--text-2);
+  text-decoration:none;
+  transition:var(--tr);
+  cursor:pointer;
+  white-space:nowrap;
+}
+.nav-links a:hover,
+.nav-links a.active{
+  color:var(--text);
+  background:rgba(0,0,0,.04);
+}
+.nav-links a svg{width:16px;height:16px;opacity:.6;}
+
+.btn-admin{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  height:34px;
+  padding:0 16px;
+  border-radius:17px;
+  border:none;
+  background:#1d1d1f;
+  color:#fff;
+  font-size:13px;
+  font-weight:600;
+  font-family:var(--font);
+  cursor:pointer;
+  transition:var(--tr);
+  white-space:nowrap;
+}
+.btn-admin:hover{
+  background:#000;
+  transform:scale(1.02);
+}
+.btn-admin:active{transform:scale(.98);}
+
+/* ============================================================
+   PAGE HEADER
+   ============================================================ */
+.page-header{
+  padding:120px 40px 60px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.page-header::before{
+  content:'';
+  position:absolute;
+  top:-40%;left:50%;
+  transform:translateX(-50%);
+  width:500px;height:500px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(0,113,227,.06) 0%, transparent 70%);
+  pointer-events:none;
+}
+.page-header h1{
+  font-size:clamp(32px, 5vw, 48px);
+  font-weight:800;
+  letter-spacing:-.03em;
+  position:relative;
+}
+.page-header h1 span{
+  background:linear-gradient(135deg, #0071e3 0%, #40a9ff 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.page-header p{
+  font-size:16px;
+  color:var(--text-2);
+  margin-top:12px;
+  position:relative;
+}
+
+/* ============================================================
+   CHANGELOG TIMELINE
+   ============================================================ */
+.changelog{
+  max-width:720px;
+  margin:0 auto;
+  padding:0 40px 100px;
+  position:relative;
+}
+
+/* Timeline line */
+.changelog::before{
+  content:'';
+  position:absolute;
+  left:calc(40px + 19px);
+  top:0;bottom:0;
+  width:1px;
+  background:var(--border-l);
+}
+
+/* Version block */
+.version{
+  position:relative;
+  padding-left:64px;
+  margin-bottom:48px;
+}
+.version:last-child{margin-bottom:0;}
+
+/* Timeline dot */
+.version-dot{
+  position:absolute;
+  left:calc(40px + 12px);
+  top:4px;
+  width:15px;height:15px;
+  border-radius:50%;
+  background:var(--primary);
+  border:3px solid var(--bg);
+  box-shadow:0 0 0 3px rgba(0,113,227,.15);
+  z-index:1;
+}
+.version:first-child .version-dot{
+  width:19px;height:19px;
+  left:calc(40px + 10px);
+  top:2px;
+  box-shadow:0 0 0 6px rgba(0,113,227,.1);
+}
+
+/* Version header */
+.version-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.version-tag{
+  display:inline-flex;
+  align-items:center;
+  height:26px;
+  padding:0 10px;
+  border-radius:13px;
+  background:var(--primary);
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  font-family:var(--font-mono);
+  letter-spacing:.02em;
+}
+.version-date{
+  font-size:13px;
+  color:var(--text-3);
+  font-family:var(--font-mono);
+}
+.version-badge{
+  display:inline-flex;
+  align-items:center;
+  height:22px;
+  padding:0 8px;
+  border-radius:6px;
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.version-badge.new{background:#34c759;color:#fff;}
+.version-badge.improve{background:rgba(0,113,227,.1);color:var(--primary);}
+.version-badge.fix{background:rgba(255,149,0,.12);color:var(--warning);}
+
+.version-body{
+  background:var(--surface);
+  border:1px solid var(--border-l);
+  border-radius:14px;
+  padding:24px;
+}
+.version-body h4{
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:-.01em;
+  margin-bottom:6px;
+}
+.version-body > p{
+  font-size:14px;
+  color:var(--text-2);
+  margin-bottom:16px;
+  line-height:1.6;
+}
+
+/* Changelog items */
+.cl-items{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+.cl-item{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:8px 0;
+  font-size:14px;
+  color:var(--text);
+  line-height:1.5;
+}
+.cl-item + .cl-item{border-top:1px solid var(--border-l);}
+.cl-item .tag{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  height:20px;
+  padding:0 7px;
+  border-radius:5px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.03em;
+  margin-top:1px;
+}
+.cl-item .tag.feature{background:rgba(52,199,89,.12);color:#34c759;}
+.cl-item .tag.improve{background:rgba(0,113,227,.1);color:var(--primary);}
+.cl-item .tag.fix{background:rgba(255,149,0,.1);color:#ff9500;}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:768px){
+  .navbar{padding:0 16px;}
+  .nav-links a{padding:0 10px;font-size:12px;}
+  .btn-admin{padding:0 12px;font-size:12px;}
+  .page-header{padding:100px 20px 40px;}
+  .changelog{padding:0 20px 60px;}
+  .changelog::before{left:19px;}
+  .version{padding-left:48px;}
+  .version-dot{left:12px;}
+  .version:first-child .version-dot{left:10px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== NAVBAR ==================== -->
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <div class="brand-icon">视</div>
+    <div class="brand-text">视<span>无</span>界</div>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      产品
+    </a></li>
+    <li><a href="/changelog" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      更新日志
+    </a></li>
+    <li><a href="https://github.com" target="_blank">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      GitHub
+    </a></li>
+  </ul>
+
+  <button class="btn-admin" onclick="location.href='/admin'">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    管理端入口
+  </button>
+</nav>
+
+<!-- ==================== PAGE HEADER ==================== -->
+<header class="page-header">
+  <h1>更新<span>日志</span></h1>
+  <p>追踪视无界每一次迭代与改进</p>
+</header>
+
+<!-- ==================== CHANGELOG ==================== -->
+<div class="changelog">
+
+  <!-- v3.0.0 -->
+  <div class="version">
+    <div class="version-dot"></div>
+    <div class="version-header">
+      <span class="version-tag">v3.0.0</span>
+      <span class="version-date">2026-07-08</span>
+      <span class="version-badge new">Major</span>
+    </div>
+    <div class="version-body">
+      <h4>官网全新上线 🎉</h4>
+      <p>视无界正式推出品牌官网，提供产品介绍、下载入口与更新日志，管理端同步升级至全新 Apple 风格设计系统。</p>
+      <ul class="cl-items">
+        <li class="cl-item">
+          <span class="tag feature">新增</span>
+          <span>全新品牌官网首页，科技概念视觉设计</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag feature">新增</span>
+          <span>官网导航栏：产品介绍、更新日志、GitHub、管理端入口</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag improve">优化</span>
+          <span>管理端整体 UI 升级，采用 Apple 设计语言，统一圆角/间距/字体体系</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag improve">优化</span>
+          <span>暗色侧栏 + 毛玻璃顶栏，提升视觉层次</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v2.5.0 -->
+  <div class="version">
+    <div class="version-dot"></div>
+    <div class="version-header">
+      <span class="version-tag">v2.5.0</span>
+      <span class="version-date">2026-06-20</span>
+      <span class="version-badge improve">改进</span>
+    </div>
+    <div class="version-body">
+      <h4>社区与活动功能增强</h4>
+      <p>完善社区管理流程，新增活动签到管理功能。</p>
+      <ul class="cl-items">
+        <li class="cl-item">
+          <span class="tag feature">新增</span>
+          <span>活动签到管理：支持签到列表查看、签到详情追踪</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag improve">优化</span>
+          <span>社区编辑表单重构，提升数据录入效率</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag fix">修复</span>
+          <span>修复社区列表分页在移动端的显示问题</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v2.4.0 -->
+  <div class="version">
+    <div class="version-dot"></div>
+    <div class="version-header">
+      <span class="version-tag">v2.4.0</span>
+      <span class="version-date">2026-05-15</span>
+      <span class="version-badge improve">改进</span>
+    </div>
+    <div class="version-body">
+      <h4>数据统计模块上线</h4>
+      <p>新增社区与活动数据统计分析功能，支持多维度可视化。</p>
+      <ul class="cl-items">
+        <li class="cl-item">
+          <span class="tag feature">新增</span>
+          <span>社区统计看板：成员增长、活跃度、地域分布</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag feature">新增</span>
+          <span>活动统计看板：参与率、签到率、活动趋势</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag improve">优化</span>
+          <span>仪表板首页改版，关键指标卡片重新设计</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v2.3.0 -->
+  <div class="version">
+    <div class="version-dot"></div>
+    <div class="version-header">
+      <span class="version-tag">v2.3.0</span>
+      <span class="version-date">2026-04-10</span>
+      <span class="version-badge new">新增</span>
+    </div>
+    <div class="version-body">
+      <h4>用户管理与审核系统</h4>
+      <p>完善用户管理功能，新增社区加入审核流程。</p>
+      <ul class="cl-items">
+        <li class="cl-item">
+          <span class="tag feature">新增</span>
+          <span>志愿者、员工、视障人士三类用户分页管理</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag feature">新增</span>
+          <span>社区加入审核：审批志愿者入群申请</span>
+        </li>
+        <li class="cl-item">
+          <span class="tag fix">修复</span>
+          <span>修复登录状态在页面刷新后丢失的问题</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

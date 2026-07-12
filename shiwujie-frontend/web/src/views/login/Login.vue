@@ -269,7 +269,7 @@ export default {
       try {
         await authStore.login(loginForm.phone, loginForm.password)
         message.success('登录成功')
-        router.push('/')
+        router.push('/admin')
       } catch (error) {
         message.error(error.message || '登录失败')
       } finally {
@@ -306,7 +306,7 @@ export default {
         }
 
         message.success('社区注册成功，已自动登录')
-        router.push('/')
+        router.push('/admin')
       } catch (error) {
         message.error(error.message || '注册失败')
       } finally {

@@ -2,14 +2,29 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/login/Login.vue'),
-    meta: { requiresAuth: false }
-  },
+  // ==================== 官网 ====================
   {
     path: '/',
+    component: () => import('@/views/official/OfficialLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'home',
+        component: () => import('@/views/official/HomePage.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'changelog',
+        name: 'changelog',
+        component: () => import('@/views/official/ChangelogPage.vue'),
+        meta: { requiresAuth: false }
+      }
+    ]
+  },
+
+  // ==================== 管理端 ====================
+  {
+    path: '/admin',
     component: () => import('@/views/layout/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
@@ -79,6 +94,14 @@ const routes = [
         component: () => import('@/views/statistics/ActivityStats.vue')
       }
     ]
+  },
+
+  // ==================== 登录 ====================
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/Login.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 
@@ -91,18 +114,16 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('token')
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth) {
     if (!token) {
       console.log('🚫 无token，重定向到登录页')
       next('/login')
       return
     }
-    
-    // 先初始化store，恢复用户信息
+
     await authStore.init()
-    
-    // 如果有token，检查本地状态
+
     if (!authStore.isLoggedIn) {
       try {
         console.log('🔍 本地状态未登录，检查登录状态...')
@@ -114,20 +135,17 @@ router.beforeEach(async (to, from, next) => {
         next('/login')
       }
     } else {
-      // 本地状态已登录，直接通过
       console.log('✅ 本地状态已登录，直接通过')
       next()
     }
   } else {
-    // 不需要认证的页面
     if (token && to.path === '/login') {
-      // 已登录用户访问登录页面，重定向到首页
-      console.log('🔄 已登录用户访问登录页，重定向到首页')
-      next('/')
+      console.log('🔄 已登录用户访问登录页，重定向到管理端')
+      next('/admin')
     } else {
       next()
     }
   }
 })
 
-export default router 
+export default router
