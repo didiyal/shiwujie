@@ -17,6 +17,8 @@ v2.1.0 的测试现状 / 环境表 / 验证点 / 缺口继续适用，见 [../v2
 ## v3.0.0 验证点（随两阶段落地滚动补充）
 
 > **当前状态（2026-07-11）**：阶段 1 全 reactor `mvn install` 全绿、各模块 `contextLoads` 全绿（新 nacos-client 2023.0.1.0 修好 JDK21 坑）；阶段 2 单 jar **启动级验证通过**——8.8s 干净启动、4 模块 HTTP 路由全注册且 `/api/{user,call,community,ai}/**` 前缀对（OpenAPI 文档实测）、`BaseResponse` 信封 + 业务码 `40010 NOT_LOGIN` 不变、WS `/api/ws/call` 握手 101。**功能级回归待 App/Web 手动联调**：下方「阶段 2」清单中的 WS 12 信令往返 / 跨模块本地调用 / 事务级联 / 鉴权滑动 / 合库字段映射 / AI SSE 仍需带 token 客户端起栈验证。
+>
+> **增量（2026-07-12，用户本地实测）**：本地单 jar 启动 ✅、WS 视频求助信令往返 ✅、事务级联回归 ✅（删志愿者/删社区单 `@Transactional` 一致性确认，配方见下方「事务回归配方」；`deleteVolunteer` 的 synchronized/@Transactional 边界错位属已登记技术债，见 [known-issues](../../../shiwujie-backend/docs/known-issues.md)）；AI SSE ⏭️ 跳过（即将新开发）；token 滑动会话续期 + 合库字段映射 ⏳ 待补。
 
 **阶段 1（升 SB 3.4.5/Java21，仍微服务）**：
 
@@ -33,3 +35,16 @@ v2.1.0 的测试现状 / 环境表 / 验证点 / 缺口继续适用，见 [../v2
 - 鉴权回归：4 处 `LoginCheckInterceptor` 收敛为 common-web 1 处后，鉴权行为（含 v2.1.0 修复的 token 滑动会话续期 + 删用户清 token）不回归。
 - 合库回归：13 表数据完整导入 `shiwujie`；call 实体 snake→camel 后查询/写入字段映射正确（DB 列名未变）。
 - AI 回归：多模型对话 + 工具路由 + 流式 SSE + ChatMemory（Redis + MySQL 双写）正常。
+
+## 事务回归配方（删志愿者 / 删社区，2026-07-12 补）
+
+> 单体化阶段 2.6 把原跨库写场景（社区入驻/审核/删志愿者/删社区）升为单 `@Transactional(rollbackFor=Exception.class)`。下表为收尾 2.7 的事务级联回归配方，本地起栈逐项过。
+
+| 场景 | 步骤 | 期望 |
+|---|---|---|
+| 删志愿者·happy | 删一个**有家庭 + 是社区注册人**的志愿者 | 家庭成员 `familyId` 清空、级联删社区、token 清掉、无残留 |
+| 删志愿者·回滚 | 在 `VolunteerServiceImpl.deleteVolunteer` 的 `removeById` 前临时抛异常 | 之前清的 `familyId` / 删的社区**全部回滚不残留** |
+| 删社区·happy | 删一个有成员的社区 | 盲人/志愿者 `communityId` 清空、管理记录删、社区删 |
+| 删社区·回滚 | 在 `CommunityServiceImpl.deleteCommunity` 的 `removeById(communityId)` 前临时抛异常 | 前三步级联（清 communityId ×2 + 删管理记录）全部回滚 |
+
+> 已确认（静态审计 2026-07-12）：两条级联方法均 `@Transactional` + public + 经代理调用 → 事务激活；`rollbackFor=Exception.class` 覆盖 `BusinessException`；内部 `removeCommunityId` / `removeByCommunityId` 不吞异常 → 单线程级联回滚正确。唯一技术债：`deleteVolunteer` 的 `synchronized` 边界错位（见 [known-issues](../../../shiwujie-backend/docs/known-issues.md)），不阻塞封版。

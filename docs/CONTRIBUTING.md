@@ -20,7 +20,7 @@
 ```text
 Phase2/                              ← 仓库根（工作区恒设此层）
   README.md                          仓库入口（指向 docs + 子项目）
-  CLAUDE.md                          /init 生成的本地代码地图；gitignore，不上传（可重跑再生）
+  CLAUDE.md                          Agent 工作向导（手写，tracked 随仓库走）；规则真值在 CONTRIBUTING，本文件为导航速查
   docs/                              ← 平台层：外部可见（概览 + 用户契约 + 规范 + 方向/明细）
     CONTRIBUTING.md                  ★ 本文件（规则真值，唯一一处）
     README.md                        文档中心首页：当前工作版本 + 入口 + 历史时期指针
@@ -130,14 +130,17 @@ Phase2/                              ← 仓库根（工作区恒设此层）
 
 ## 七、流程约束
 
-- **代码改 → 文档同步**：任何行为/特性变更须更新 CHANGELOG（必要时报 ROADMAP、刷 `product/<进行中版本>/` 契约），勿留陈旧。
+- **代码改 → 补对应文档**：任何代码变更须同步**对应层级**的文档，勿留陈旧——
+  - **行为/特性变更** → CHANGELOG（必要时报 ROADMAP、刷 `product/<进行中版本>/` 契约）；
+  - **内部实现变更**（核心类/数据流/配置/缺陷/技术债）→ 随代码就近的 development 文档：子项目 `modules/*.md` / `known-issues.md` / `deployment.md`、根 `architecture/*.md`、版本三件套 `development/vX.Y.Z/`；
+  - **引用漂移**：改了某文件，就更新引用它的文档（`file:line`、路径、符号名漂移及时修）。
 - **提交**：Conventional Commits（`docs: …` / `feat: …` / `fix: …`），**绝不带作者署名**（无 `Co-Authored-By` / `Generated with`）。
 - **分支与合并**：常规单人开发直推 `master`；**禁止本地 `git merge`**（跨分支合并走远程 PR）；rebase 可用；**推送需用户明确同意**。
 - **不动历史**：不回溯给阶段 0–9 打 tag、不建历史版本目录。
 
 ### 子项目内用 Agent 开发时必读
 
-从**仓库根**（`Phase2/`）打开工作区，根 `CLAUDE.md`（/init 生成的本地代码地图）会自动载入并指向本规范。开发任意子项目前，Agent 必读：
+从**仓库根**（`Phase2/`）打开工作区，根 `CLAUDE.md`（tracked，Agent 工作向导）会自动载入并指向本规范。开发任意子项目前，Agent 必读：
 
 1. `docs/CONTRIBUTING.md`——本规范（规则与内容边界）。
 2. `docs/product/current.md`——当前版本入口；进入 `product/<进行中版本>/` 查该子项目实现的契约（FR/AC/HTTP 路径/WebSocket 码/Dubbo 接口/表）。
