@@ -89,13 +89,6 @@ public class EmergencyHelpManager {
     }
     
     /**
-     * 获取当前紧急求助数据
-     */
-    public EmergencyHelpData getCurrentHelpData() {
-        return currentHelpData;
-    }
-    
-    /**
      * 检查是否在紧急求助中
      */
     public boolean isInEmergencyHelp() {
@@ -253,74 +246,6 @@ public class EmergencyHelpManager {
     }
     
     /**
-     * 家属响应紧急求助
-     */
-    public void respondToEmergencyHelp(String blindPhone) {
-        Log.d(TAG, "=== 家属响应紧急求助 ===");
-        Log.d(TAG, "求助盲人手机号: " + blindPhone);
-        
-        // 获取token
-        String token = SharedPrefsUtil.getToken();
-        if (token == null || token.isEmpty()) {
-            Log.e(TAG, "Token为空，无法响应紧急求助");
-            showToast("登录状态异常，请重新登录");
-            if (callback != null) {
-                callback.onHelpResponseFailed("登录状态异常");
-            }
-            return;
-        }
-        
-        // 发送HTTP请求
-        RetrofitClient.getInstance().createService(ApiService.class).familyJoinUrgenthelp("Bearer " + token, blindPhone)
-                .enqueue(new Callback<BaseResponse<Boolean>>() {
-                    @Override
-                    public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
-                        Log.d(TAG, "响应紧急求助响应: " + response.code());
-                        
-                        if (response.isSuccessful() && response.body() != null) {
-                            BaseResponse<Boolean> baseResponse = response.body();
-                            Log.d(TAG, "响应数据: " + baseResponse.toString());
-                            
-                            if (baseResponse.getCode() == 1 && Boolean.TRUE.equals(baseResponse.getData())) {
-                                Log.d(TAG, "响应紧急求助成功");
-                                showToast("响应紧急求助成功");
-
-                                cancelEmergencyTimeout();
-                                
-                                if (callback != null) {
-                                    callback.onHelpResponseSuccess();
-                                }
-                            } else {
-                                Log.e(TAG, "响应紧急求助失败: " + baseResponse.getMessage());
-                                showToast("响应紧急求助失败: " + baseResponse.getMessage());
-                                
-                                if (callback != null) {
-                                    callback.onHelpResponseFailed(baseResponse.getMessage());
-                                }
-                            }
-                        } else {
-                            Log.e(TAG, "响应紧急求助失败，响应码: " + response.code());
-                            showToast("网络请求失败，请检查网络连接");
-                            
-                            if (callback != null) {
-                                callback.onHelpResponseFailed("网络请求失败");
-                            }
-                        }
-                    }
-                    
-                    @Override
-                    public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
-                        Log.e(TAG, "响应紧急求助异常", t);
-                        showToast("网络请求异常: " + t.getMessage());
-                        
-                        if (callback != null) {
-                            callback.onHelpResponseFailed("网络请求异常: " + t.getMessage());
-                        }
-                    }
-                });
-    }
-    
-    /**
      * 挂断紧急求助视频通话
      */
     public void hangupEmergencyHelp() {
@@ -459,14 +384,4 @@ public class EmergencyHelpManager {
         isInEmergencyHelp = false;
     }
     
-    /**
-     * 销毁管理器
-     */
-    public void destroy() {
-        Log.d(TAG, "=== 销毁紧急求助管理器 ===");
-        cancelEmergencyTimeout();
-        resetEmergencyHelp();
-        callback = null;
-        context = null;
-    }
 } 

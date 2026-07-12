@@ -32,8 +32,6 @@ public class WebSocketManager {
     private boolean isConnecting = false;
     private boolean isConnected = false;
     
-    // 连接状态监听器
-    private ConnectionStatusListener connectionStatusListener;
     private MessageListener messageListener;
     
     // 全局消息监听器列表
@@ -623,20 +621,6 @@ public class WebSocketManager {
      */
     public boolean isConnected() {
         return isConnected && webSocketClient != null && webSocketClient.isOpen();
-    }
-    
-    /**
-     * 获取SocketData
-     */
-    public SocketDataV0 getSocketData() {
-        return socketData;
-    }
-    
-    /**
-     * 设置连接状态监听器
-     */
-    public void setConnectionStatusListener(ConnectionStatusListener listener) {
-        this.connectionStatusListener = listener;
     }
     
     /**

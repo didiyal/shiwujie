@@ -46,8 +46,6 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
-    implementation(libs.lifecycle.livedata.ktx)
-    implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
@@ -67,18 +65,6 @@ dependencies {
     implementation(files("libs/rtc-release-4.3.1.3.aar"))
     // iFlytek MSC SDK (TTS/语音识别)
     implementation(files("libs/Msc.jar"))
-
-    // ===== 障碍物检测功能依赖 - 严格按照backend_service.py的摄像头功能需求 =====
-    // 改造说明：将Python后端的OpenCV摄像头功能转换为Android CameraX实现
-    
-    // CameraX - 对应原Python代码的cv2摄像头功能
-    implementation("androidx.camera:camera-core:1.3.1")
-    implementation("androidx.camera:camera-camera2:1.3.1")
-    implementation("androidx.camera:camera-lifecycle:1.3.1")
-    implementation("androidx.camera:camera-view:1.3.1")
-    
-    // 图像处理 - 对应原Python代码的numpy和cv2图像处理功能
-    implementation("androidx.camera:camera-extensions:1.3.1")
 
     // Test
     testImplementation(libs.junit)

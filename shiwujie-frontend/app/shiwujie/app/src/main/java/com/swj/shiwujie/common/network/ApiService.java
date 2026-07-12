@@ -15,11 +15,6 @@ import com.swj.shiwujie.data.model.ActivitysignVO;
 import com.swj.shiwujie.data.model.ActivitySignAddRequest;
 import com.swj.shiwujie.data.model.Page;
 import com.swj.shiwujie.data.model.HelppostUpdateRequest;
-import com.swj.shiwujie.data.model.AiChatRequest;
-import com.swj.shiwujie.data.model.AiChatResponse;
-import com.swj.shiwujie.data.model.ObstacleDetectionSessionResponse;
-import com.swj.shiwujie.data.model.ObstacleDetectionResultResponse;
-import com.swj.shiwujie.data.model.ObstacleDetectionHealthResponse;
 
 import java.util.List;
 
@@ -713,20 +708,5 @@ public interface ApiService {
     @POST("api/process_frame")
     Call<String> processFrameForObstacleDetection(@Body RequestBody requestBody);
 
-    /**
-     * 健康检查接口 - 对应原Python代码的health_check接口
-     * 对应原代码：@app.route('/health', methods=['GET'])
-     * @return 健康状态响应
-     */
-    @GET("health")
-    Call<ObstacleDetectionHealthResponse> getObstacleDetectionHealthStatus();
-
-    /**
-     * 简单健康检查接口 - 对应原Python代码的health_check_simple接口
-     * 对应原代码：@app.route('/health/simple', methods=['GET'])
-     * @return 简单健康状态
-     */
-    @GET("health/simple")
-    Call<String> getObstacleDetectionHealthStatusSimple();
 
 }

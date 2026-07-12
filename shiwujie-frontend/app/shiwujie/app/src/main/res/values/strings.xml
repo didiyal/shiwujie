@@ -4,12 +4,7 @@
     <string name="choose_identity">选择你的身份</string>
     <string name="i_am_volunteer">我是志愿者</string>
     <string name="i_am_blind">我是盲人</string>
-    
-    <!-- 底部导航栏 -->
-    <string name="title_home">首页</string>
-    <string name="title_dashboard">任务</string>
-    <string name="title_notifications">消息</string>
-    
+
     <!-- 登录页面 -->
     <string name="phone_number_not_available">无法获取手机号</string>
     <string name="quick_login">本机号码一键登录</string>
@@ -18,31 +13,4 @@
     <string name="auth_provider">中国移动提供认证服务</string>
     <string name="agreement_text">我已阅读并同意中国移动认证服务条款和用户服务协议并使用本机号码登录</string>
     <string name="globe_icon">地球图标</string>
-    <string name="blind_count">641,982</string>
-    <string name="volunteer_count">7,432,736</string>
-    <string name="blind_label">盲人</string>
-    <string name="volunteer_label">志愿者</string>
-    <string name="register_date">注册于 %1$s</string>
-    <string name="chinese">中文</string>
-    <string name="english">English</string>
-    <string name="learn_call">学习接听电话</string>
-    <string name="help_notification">当有人需要你的帮助时，您将收到通知。</string>
-    
-    <!-- TTS音频流类型配置 -->
-    <string-array name="stream_entries">
-        <item>通话</item>
-        <item>系统</item>
-        <item>铃声</item>
-        <item>音乐</item>
-        <item>闹铃</item>
-        <item>通知</item>
-    </string-array>
-    <string-array name="stream_values">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-    </string-array>
 </resources>

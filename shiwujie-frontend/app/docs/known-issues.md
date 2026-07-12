@@ -38,14 +38,14 @@
 ## 功能
 
 7. ~~**心跳频率 bug**~~ ✅（2026-07-12 已修，见上「已修复」）：`WebSocketService` 心跳间隔已对齐为 30s。
-8. **避障模型未接**：`ObstacleDetectionManager` 用模拟数据，且避障服务内网不可达（见 #2）。
+8. ~~**避障模型未接（mock 数据部分）**~~ ✅（2026-07-12 批次B 已清）：mock 管理器 `ObstacleDetectionManager`（纯模拟数据、零调用方）+ 3 个未用响应模型已删；真实避障路径走 `ObstacleDetectionRetrofitClient` + `ApiService.startObstacleDetectionSession/processFrame`。**「避障服务内网不可达」本体仍未修**（见 #2，待避障服务上 TLS / 挂账后端）。
 9. **`MessageFragment` 全 mock 数据**：志愿者消息 Tab 无真实接口。
-10. **`SegmentedTTSManager` 空文件**：占位类，未实现。
+10. ~~**`SegmentedTTSManager` 空文件**~~ ✅（2026-07-12 批次B 已清）：0 字节占位空文件已删。
 11. ~~**紧急求助无超时机制**~~ ✅（2026-07-12 已修，见上「已修复」）：`EmergencyHelpManager` 已加 60s "家属无响应"超时兜底。
 
 ## 架构
 
-12. **`CameraPreviewManager` 用 Camera2**：依赖声明提及 CameraX，**实际用 Camera2**，与任务/依赖描述不符。
+12. ~~**`CameraPreviewManager` 用 Camera2，依赖声明却提 CameraX**~~ ✅（2026-07-12 批次B 已清）：未用的 CameraX 整组依赖（5 个 `implementation`）已删，依赖声明现与「实际用 Camera2」一致。
 13. **`NavigationManager` 未集成高德 SDK**：仅 URI 调起高德地图 App，非 SDK 集成。
 14. **讯飞 appid 重复两处**：硬编码于两个文件，改一处易漏。
 15. ~~**token 无统一拦截器**~~ ✅（2026-07-12 已修，见上「已修复」）：`RetrofitClient` 已加拦截器，未带 `Authorization` 头时自动注入 `Bearer <token>`。各调用点手拼 header 的清理属结构重构批，待后续。
