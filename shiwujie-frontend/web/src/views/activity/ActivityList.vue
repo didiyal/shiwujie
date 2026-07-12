@@ -3,8 +3,8 @@
     <a-card class="management-card" :bordered="false">
       <!-- 搜索和操作栏 -->
       <div class="search-section">
-        <a-row :gutter="16" align="middle">
-          <a-col :span="6">
+        <a-row :gutter="[16, 12]" align="middle">
+          <a-col :xs="24" :sm="12" :md="6">
             <a-input-search
               v-model="searchForm.keyword"
               placeholder="搜索活动名称"
@@ -17,7 +17,7 @@
               </template>
             </a-input-search>
           </a-col>
-          <a-col :span="4">
+          <a-col :xs="24" :sm="12" :md="4">
             <a-select
               v-model="searchForm.status"
               placeholder="活动状态"
@@ -32,7 +32,7 @@
             <a-select-option value="已取消">已取消</a-select-option>
             </a-select>
           </a-col>
-          <a-col :span="4">
+          <a-col :xs="24" :sm="12" :md="4">
             <a-select
               v-model="searchForm.communityId"
               placeholder="选择社区"
@@ -50,7 +50,7 @@
               </a-select-option>
             </a-select>
           </a-col>
-          <a-col :span="6">
+          <a-col :xs="24" :sm="12" :md="6">
             <a-range-picker
               v-model="searchForm.dateRange"
               @change="handleSearch"
@@ -58,7 +58,7 @@
               size="large"
             />
           </a-col>
-          <a-col :span="4" style="text-align: right">
+          <a-col :xs="24" :sm="24" :md="4" style="text-align: right">
             <a-button type="primary" @click="showCreateModal" size="large">
               <template #icon>
                 <PlusOutlined />
@@ -71,17 +71,17 @@
 
       <!-- 统计信息 -->
       <div class="stats-section">
-        <a-row :gutter="16">
-          <a-col :span="6">
+        <a-row :gutter="[16, 12]">
+          <a-col :xs="12" :sm="6">
             <a-statistic title="总活动数" :value="totalCount" />
           </a-col>
-          <a-col :span="6">
+          <a-col :xs="12" :sm="6">
             <a-statistic title="未开始" :value="pendingCount" :value-style="{ color: '#faad14' }" />
           </a-col>
-          <a-col :span="6">
+          <a-col :xs="12" :sm="6">
             <a-statistic title="进行中" :value="ongoingCount" :value-style="{ color: '#1890ff' }" />
           </a-col>
-          <a-col :span="6">
+          <a-col :xs="12" :sm="6">
             <a-statistic title="已结束" :value="completedCount" :value-style="{ color: '#52c41a' }" />
           </a-col>
         </a-row>
@@ -96,6 +96,7 @@
         @change="handleTableChange"
         row-key="activityId"
         class="management-table"
+        :scroll="{ x: 900 }"
       >
         <template #bodyCell="{ column, record }">
           <!-- 活动时间列 -->
@@ -150,7 +151,7 @@
     <a-modal
       :open="createModalVisible"
       title="创建活动"
-      width="800px"
+      :width="windowWidth < 768 ? '100%' : 800"
       @ok="handleCreate"
       @cancel="handleCancel"
       @update:open="createModalVisible = $event"
@@ -277,7 +278,7 @@
      <a-modal
        :open="editModalVisible"
        title="编辑活动"
-       width="800px"
+       :width="windowWidth < 768 ? '100%' : 800"
        @ok="handleUpdate"
        @cancel="handleEditCancel"
        @update:open="editModalVisible = $event"
@@ -403,7 +404,7 @@
  </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { 
@@ -433,6 +434,7 @@ export default {
     const authStore = useAuthStore()
     const loading = ref(false)
     const createLoading = ref(false)
+    const windowWidth = ref(window.innerWidth)
     const activityList = ref([])
     const communityList = ref([])
     const createModalVisible = ref(false)
@@ -989,9 +991,14 @@ export default {
     }
 
     // 组件挂载时获取数据
+    const handleResize = () => { windowWidth.value = window.innerWidth }
     onMounted(() => {
+      window.addEventListener('resize', handleResize)
       fetchCommunityList()
       fetchActivityList()
+    })
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize)
     })
 
     return {
@@ -1008,6 +1015,7 @@ export default {
       editFormErrors,
       pagination,
       columns,
+      windowWidth,
       totalCount,
       pendingCount,
       ongoingCount,
@@ -1138,9 +1146,49 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .search-section {
+    padding: 12px;
+  }
+  .search-section .ant-row {
+    row-gap: 8px;
+  }
+  .stats-section {
+    padding: 12px;
+  }
+  .stats-section .ant-col {
+    margin-bottom: 8px;
+  }
   .form-row {
     flex-direction: column;
     gap: 0;
+  }
+  .management-table :deep(.ant-table) {
+    font-size: 12px;
+  }
+  /* 弹窗全屏 */
+  :deep(.ant-modal) {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px;
+  }
+  :deep(.ant-modal-body) {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .management-card :deep(.ant-card-body) {
+    padding: 12px;
+  }
+  .ant-btn > span:not(.anticon) {
+    font-size: 0;
+  }
+  .ant-btn > span:not(.anticon)::after {
+    content: none;
+  }
+  .form-input,
+  .form-select {
+    height: 40px;
+    font-size: 16px; /* 防止 iOS 缩放 */
   }
 }
 </style>

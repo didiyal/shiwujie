@@ -3,8 +3,8 @@
     <a-card class="management-card" :bordered="false">
       <!-- 搜索和操作栏 -->
       <div class="search-section">
-        <a-row :gutter="16" align="middle">
-          <a-col :span="8">
+        <a-row :gutter="[16, 12]" align="middle">
+          <a-col :xs="24" :sm="12" :md="8">
             <a-input-search
               v-model="searchForm.keyword"
               placeholder="搜索姓名或手机号"
@@ -17,7 +17,7 @@
               </template>
             </a-input-search>
           </a-col>
-          <a-col :span="4">
+          <a-col :xs="12" :sm="6" :md="4">
             <a-select
               v-model="searchForm.gender"
               placeholder="性别"
@@ -30,7 +30,7 @@
               <a-select-option :value="2">女</a-select-option>
             </a-select>
           </a-col>
-          <a-col :span="4">
+          <a-col :xs="12" :sm="6" :md="4">
             <a-select
               v-model="searchForm.onlineStatus"
               placeholder="在线状态"
@@ -44,7 +44,7 @@
               <a-select-option :value="2">忙碌</a-select-option>
             </a-select>
           </a-col>
-          <a-col :span="4">
+          <a-col :xs="12" :sm="6" :md="4">
             <a-select
               v-model="searchForm.joinStatus"
               placeholder="加入状态"
@@ -57,7 +57,7 @@
               <a-select-option :value="0">未加入</a-select-option>
             </a-select>
           </a-col>
-          <a-col :span="4" style="text-align: right">
+          <a-col :xs="12" :sm="6" :md="4" style="text-align: right">
             <a-button type="primary" @click="handleRefresh" size="large">
               <template #icon>
                 <ReloadOutlined />
@@ -70,17 +70,17 @@
 
       <!-- 统计信息 -->
       <div class="stats-section">
-        <a-row :gutter="16">
-          <a-col :span="6">
+        <a-row :gutter="[16, 12]">
+          <a-col :xs="12" :sm="6">
             <a-statistic title="总人数" :value="totalCount" />
           </a-col>
-          <a-col :span="6">
+          <a-col :xs="12" :sm="6">
             <a-statistic title="在线" :value="onlineCount" :value-style="{ color: '#52c41a' }" />
           </a-col>
-          <a-col :span="6">
+          <a-col :xs="12" :sm="6">
             <a-statistic title="已加入" :value="joinedCount" :value-style="{ color: '#1890ff' }" />
           </a-col>
-          <a-col :span="6">
+          <a-col :xs="12" :sm="6">
             <a-statistic title="平均评分" :value="averageRating" :precision="1" :value-style="{ color: '#faad14' }" />
           </a-col>
         </a-row>
@@ -95,6 +95,7 @@
         @change="handleTableChange"
         row-key="volunteerId"
         class="management-table"
+        :scroll="{ x: 800 }"
       >
         <template #bodyCell="{ column, record }">
           <!-- 性别列 -->
@@ -230,7 +231,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { 
   SearchOutlined, 
@@ -256,6 +257,7 @@ export default {
   setup() {
     const authStore = useAuthStore()
     const loading = ref(false)
+    const windowWidth = ref(window.innerWidth)
     const volunteerList = ref([])
     const detailModalVisible = ref(false)
     const selectedVolunteer = ref(null)
@@ -576,13 +578,18 @@ export default {
       }
     }
 
-    // 组件挂载时获取数据
+    const handleResize = () => { windowWidth.value = window.innerWidth }
     onMounted(() => {
+      window.addEventListener('resize', handleResize)
       fetchVolunteerList()
+    })
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize)
     })
 
     return {
       loading,
+      windowWidth,
       volunteerList,
       searchForm,
       detailModalVisible,
@@ -648,5 +655,33 @@ export default {
 
 .detail-content {
   padding: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .search-section {
+    padding: 12px;
+  }
+  .stats-section {
+    padding: 12px;
+  }
+  .stats-section .ant-col {
+    margin-bottom: 8px;
+  }
+  :deep(.ant-table) {
+    font-size: 12px;
+  }
+  :deep(.ant-modal) {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px;
+  }
+  :deep(.ant-modal-body) {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  :deep(.ant-card-body) {
+    padding: 12px;
+  }
 }
 </style>

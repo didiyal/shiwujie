@@ -2,8 +2,8 @@
   <div class="helppost-list">
     <a-card :bordered="false">
       <div class="action-bar">
-        <a-row :gutter="16" align="middle">
-          <a-col :span="8">
+        <a-row :gutter="[16, 12]" align="middle">
+          <a-col :xs="24" :sm="12" :md="8">
             <a-input-search
               v-model="searchForm.keyword"
               placeholder="搜索求助内容"
@@ -11,7 +11,7 @@
               allow-clear
             />
           </a-col>
-          <a-col :span="4">
+          <a-col :xs="24" :sm="12" :md="4">
             <a-select
               v-model="searchForm.status"
               placeholder="状态"
@@ -24,7 +24,7 @@
               <a-select-option value="2">已完成</a-select-option>
             </a-select>
           </a-col>
-          <a-col :span="12" style="text-align: right">
+          <a-col :xs="24" :sm="24" :md="12" style="text-align: right">
             <a-button @click="handleRefresh">刷新</a-button>
           </a-col>
         </a-row>
@@ -37,6 +37,7 @@
         :pagination="pagination"
         @change="handleTableChange"
         row-key="helppostId"
+        :scroll="{ x: 800 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
@@ -64,7 +65,7 @@
       :open="detailModalVisible"
       @update:open="detailModalVisible = $event"
       title="求助帖详情"
-      width="600px"
+      :width="windowWidth < 768 ? '100%' : 600"
       :footer="null"
       :confirm-loading="detailLoading"
     >
@@ -106,7 +107,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { communityApi } from '@/api/community'
 
@@ -114,6 +115,7 @@ export default {
   name: 'HelpPostList',
   setup() {
     const loading = ref(false)
+    const windowWidth = ref(window.innerWidth)
     const helppostList = ref([])
     const detailModalVisible = ref(false)
     const currentDetail = ref(null)
@@ -273,20 +275,18 @@ export default {
     // const deleteHelpPost = (record) => { ... }
 
     // 组件挂载时获取数据
+    const handleResize = () => { windowWidth.value = window.innerWidth }
     onMounted(() => {
-      // 检查token状态
-      const token = localStorage.getItem('token')
-      console.log('🔍 HelpPostList组件挂载 - token状态:', token ? '存在' : '不存在')
-      if (token) {
-        console.log('🔍 token长度:', token.length)
-        console.log('🔍 token前20个字符:', token.substring(0, 20) + '...')
-      }
-      
+      window.addEventListener('resize', handleResize)
       fetchHelppostList()
+    })
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize)
     })
 
     return {
       loading,
+      windowWidth,
       helppostList,
       searchForm,
       pagination,
@@ -341,5 +341,37 @@ export default {
 .loading-content {
   text-align: center;
   padding: 40px 0;
+}
+
+@media (max-width: 768px) {
+  .action-bar {
+    padding: 12px;
+  }
+  :deep(.ant-table) {
+    font-size: 12px;
+  }
+  :deep(.ant-modal) {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px;
+  }
+  :deep(.ant-modal-body) {
+    padding: 16px;
+  }
+  :deep(.ant-descriptions) {
+    font-size: 12px;
+  }
+  .help-content {
+    font-size: 13px;
+    max-height: 150px;
+  }
+}
+
+@media (max-width: 640px) {
+  :deep(.ant-card-body) {
+    padding: 12px;
+  }
+  :deep(.ant-descriptions-view) {
+    display: block;
+  }
 }
 </style>
