@@ -6,20 +6,14 @@
 
 ### v3.0.0（单体化改造）
 
-> 反思 v2.1.0 微服务对当前体量过度设计，去微服务、按当前规模精简为单体。下列项随单体化落地或因单体化而废弃。
+> 反思 v2.1.0 微服务对当前体量过度设计，去微服务、精简为单体（**已落地**，待 tag 封版）；并规划安全加固、能力补全与 AI 模块 LangChain/LangGraph 重写（Agent 驱动）。
 
 ```text
-[ ] 单体重写：去 Spring Cloud / Dubbo，合并 user / call / community / ai 为单体应用（保留模块化分包，统一 Spring Boot 版本）
-[ ] 安全加固：关闭 ai 默认用户兜底、恢复 Helppost/Community 删改权限检查、/ws/call 与社区/家庭审核补鉴权、密码 MD5→BCrypt/Argon2、TOKEN_SECRETKEY 走环境变量、前端 TLS + 移除硬编码 SDK Key
-[ ] 能力补全：App 集成高德 SDK
-[ ] Docker 化部署
-[ ] 压力测试 + 性能基线 + AiLogs 索引调优
-~~引入分布式事务（Seata）~~（单体化后单库，无需跨库事务）
-~~网关统一鉴权~~（单体化后单拦截器，4 处 LoginCheckInterceptor 重复自然消除）
-~~Knife4j 聚合 ai 服务~~（单体化后统一 Spring Boot 版本，无 SB2/SB3 文档协议割裂）
+[x] 单体重写：去 Spring Cloud / Dubbo，合并 user / call / community / ai 为单体应用（保留模块化分包，统一 Spring Boot 版本）——工程已落地，启动级 + WS/事务功能级验证通过，待 tag 仪式封版
+[ ] 安全加固：恢复 Helppost/Community 删改权限检查、密码加盐（MD5→BCrypt/Argon2）
+[ ] 能力补全：App 集成高德 SDK；软件介绍主页；软件下载功能；社区页面集成到主页
+[ ] AI 重写（Agent 驱动）：ai 模块采用 LangChain / LangGraph 重写，整体改 Agent 驱动；若 Agent 完成且表现良好，可简化安卓端（只保留部分页面）
 ```
-
-> 🔴 安全加固项的代码定位与机制见 [shiwujie-backend/docs/known-issues.md](../shiwujie-backend/docs/known-issues.md) 与 [architecture/auth.md](architecture/auth.md)；此处登记为 v3.0.0 方向。删除线项因单体化不再适用，自原 v2.1.0 待办移除。
 
 ## 已完成（过去时期，开发后抽取）
 
