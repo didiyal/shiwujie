@@ -3,10 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- 继承 SB3.4.5/Java21：6 个业务模块（model/common-web/gateway/user/call/community）通过本 pom 统一管理。
-         v3.0.0 单体化阶段 1：消除 SB2.7/SB3.4.5 双栈——本父 pom 由 SB2.7.0 升至 SB3.4.5，与 ai 对齐。
-         ai 仍不继承本 pom（自带 spring-boot-starter-parent:3.4.5，版本已与本 pom 一致），
-         但列入下方 <modules>，与其余模块在同一个 reactor 里一条 mvn install 构建。 -->
+    <!-- 父 pom：聚合 2 模块（v3.0.0 两模块定型）——shiwujie-model（契约层）+ shiwujie-bootstrap
+         （唯一 app：聚合原 common-web 公共层 + user/call/community/ai 全部业务代码，唯一 repackage）。
+         继承 SB3.4.5/Java21（v3.0.0 阶段1 消除 SB2.7/SB3.4.5 双栈）。spring-ai BOM/版本/spring-milestones
+         仓库随 ai 并入集中到本 pom（见 dependencyManagement / repositories）。 -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
