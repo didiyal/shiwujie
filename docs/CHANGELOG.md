@@ -53,6 +53,24 @@
 - **修正 `deleteCommunityManager` 自删 bug**：原实现忽略请求体、恒删调用者自己的管理记录；改为按请求体目标删除并鉴权。
 - **口令存储 MD5 → BCrypt**：新增 `PasswordUtils`（Hutool `BCrypt`，cost=10，盐内嵌），盲人/志愿者/社区登录注册与改密全改 BCrypt；存量无盐 MD5 行于首次以原明文口令登录通过时**懒升级**为 BCrypt（对用户透明，无离线迁移脚本）。身份证/残疾证等 PII 单向哈希仍用 MD5（与口令无关）。`password varchar(100)` 足装 60 字符 BCrypt 串，不加 salt 列、不改 DDL。
 
+**App 前端 P0 快速止血（2026-07-12）**
+
+> 落地 [`问题.md`](../问题.md) 视频通话/紧急求助前后端问题分析 + 本轮 App 代码审查中核实仍存在的前端阻断/高危项。最小修复，不触碰结构（blind/volunteer 合并、AiFragment 拆分、ViewModel 引入等留待结构重构批）。对外 HTTP/WS 契约零变更。明细见 [App known-issues](../shiwujie-frontend/app/docs/known-issues.md)「已修复（P0 快速止血）」。`assembleDebug` + `assembleRelease`（R8 混淆+资源压缩+lintVital）均已通过。
+
+**修复**
+- **WS 心跳间隔 2 小时 → 30 秒**：`WebSocketService` 心跳实际间隔为 `HOURS`、注释与日志却写 30s，长连接被 NAT 静默掐断，紧急求助/视频信令不可靠送达。对齐为 30s。
+- **视频通话监听器泄漏**：blind/volunteer 两份 `VideoCallActivity.onDestroy` 误调 `removeXxxListener(null)`（`List.remove(null)` 为 no-op），匿名监听器永不移除，Activity 销毁后仍收 WS 回调致 NPE/泄漏。改为存字段、按真实引用移除。
+- **紧急求助"无法再次求助"死锁**：`EmergencyHelpManager` 求助成功后 `isInEmergencyHelp` 仅在失败/取消/挂断时复位，家属无响应时永真，用户无法再次求助。新增 60s "家属无响应"超时兜底（复用主线程 Handler，取消/挂断/响应/通话建立时取消），超时自动复位；回调接口加 `default onHelpTimeout()`（不破坏既有实现）。
+- **AI 页 WebSocket 断线不重连**：`AiFragment.attemptWebSocketReconnect` 仅打日志从不调 `connect`、却谎报"重连完成"，AI 推送（5001~5006）断线后永不恢复。改为真正调 `WebSocketManager.connectWebSocket`。
+
+**变更**
+- **统一 token 注入拦截器**：`RetrofitClient` 新增 OkHttp 拦截器，仅当请求未自带 `Authorization` 头时从本地注入 `Bearer <token>`，兜住历史漏带；既有手拼 `"Bearer "+token` 调用不受影响（已有头则跳过），调用点清理留待结构批。HTTP BODY 日志改为仅 DEBUG 包打印（release 关闭）。
+- **release 构建加固**：开启 R8 混淆 + 资源压缩，补 ProGuard keep（Gson 泛型/`@SerializedName`、`TypeToken`、`AiFragment` 内被 Gson 序列化的内部数据类 `Message`/`Conversation`、anyRTC/讯飞/Retrofit、`org.slf4j` 缺失类抑制——java-websocket 传递依赖拉进 slf4j-api 但无 binding，运行期退化 NOP 不影响功能）；`AndroidManifest` `allowBackup=false`；讯飞 SDK `setShowLog` 按 `BuildConfig.DEBUG` 守卫；`buildFeatures.buildConfig=true` 以生成 `BuildConfig`。`assembleDebug` + `assembleRelease`（R8 混淆+资源压缩+lintVital）均已通过。
+
+**移除**
+- `network_security_config` 中把 CIDR（`192.168.0.0/16` 等）当作 `<domain>` 的无效条目（语法不支持、本就不生效）。生产 IP 明文 HTTP 放行暂保留（待后端 TLS）。
+- `gradle-wrapper.properties` 失效的 macOS 本地分发路径 `file:/Users/luna/...`（仅该开发机可用），切回腾讯镜像远程 URL（已本地缓存）。
+
 > 架构现状（已落地）见 [architecture/tech-stack.md](architecture/tech-stack.md) / [architecture/data-model.md](architecture/data-model.md) / [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) 的「v3.0.0 单体化（已落地）」段；交付 spec 见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。
 
 ---
