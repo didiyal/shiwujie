@@ -38,11 +38,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
-        <!-- 其余业务模块（community/ai 仍独立；含 Dubbo 接缝点 v3.0.0 阶段2.2 转本地后同进程注入） -->
-        <dependency>
-            <groupId>com.swj</groupId>
-            <artifactId>shiwujieCommunity</artifactId>
-        </dependency>
+        <!-- 其余业务模块（ai 仍独立；含 Dubbo 接缝点 v3.0.0 阶段2.2 转本地后同进程注入） -->
         <dependency>
             <groupId>com.swj</groupId>
             <artifactId>shiwujieAi</artifactId>
