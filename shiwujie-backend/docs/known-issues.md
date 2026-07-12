@@ -76,8 +76,9 @@
 
 ## 跨切面技术债
 
-- ✅ ~~无分布式事务（Seata）~~：v3.0.0 单体化阶段2.6（`a157991`）合并为单库 `shiwujie`，原跨库写场景（社区入驻/审核通过/删志愿者/删社区）升 `@Transactional(rollbackFor=Exception.class)` 单事务，中途异常不残留脏数据；`synchronized(phone.intern())` 保留作同库并发护栏。user 模块 seata 依赖已随去微服务清理。
+- ✅ ~~无分布式事务（Seata）~~：v3.0.0 单体化阶段2.6（`a157991`）合并为单库 `shiwujie`，原跨库写场景（社区入驻/审核通过/删志愿者/删社区）升 `@Transactional(rollbackFor=Exception.class)` 单事务，中途异常不残留脏数据；`synchronized(phone.intern())` 表面保留作同库并发护栏，**实有 synchronized/@Transactional 边界错位缺陷（见下条「假原子」）**。user 模块 seata 依赖已随去微服务清理。
 - **反模式：QueryWrapper 跨模块传递**（v3.0.0 起同进程）：`InnerCommunityjoinreviewService.getOne(QueryWrapper)` 原跨 Dubbo 传（强耦合 + 序列化风险）；Dubbo 移除后改同进程注入，**序列化风险消失**，但 QueryWrapper 作跨模块参数的强耦合仍在（建议改传 DTO/条件参数）。见 [architecture/data-model.md](../../docs/architecture/data-model.md)。
 - ✅ ~~冗余 Inner 契约~~：v3.0.0 阶段2.2（`199e6f3`）删除 community 的 `InnerActivityService`/`InnerActivitysignService`/`InnerHelppostService`（全局无消费方的冗余契约）。
 - **单机 JVM 锁多实例失效**：`synchronized(loginUserPhone.intern())` 在多实例部署下无法防并发写。v3.0.0 单体默认单实例部署，当前有效；若未来横向扩展多实例仍需换分布式锁。
+- **synchronized/@Transactional 边界错位（同库并发「假原子」，2026-07-12 登记）**：`VolunteerServiceImpl.deleteVolunteer:372` 的 `synchronized(loginUserPhone.intern()){...}` 包在 `@Transactional(rollbackFor=Exception.class)` 方法体内——锁在方法体末尾（`:413`）释放，而事务提交发生在代理层、方法 return 之后，**锁先于事务提交释放**。故同一登录手机号的并发删除请求，后者拿到锁时读到的是前者提交前的快照（MySQL RR 隔离），`synchronized` 给的是「假原子」。来源：跨库时代的 JVM 级护栏，合库 + `@Transactional` 后既冗余又错位。影响窄（仅同手机号并发删除有竞态，单线程/正常操作不受影响），不阻塞单体化封版。正解（均属行为变更，待独立决策）：① 删 `synchronized`，让 DB 事务 + 行锁兜底原子性；② 或把 `synchronized` 上提到 `@Transactional` 之外（controller / wrapper 方法），使 锁获取→开事务→提交→释放锁 顺序正确。回归配方见 [testing-strategy](../../docs/development/v3.0.0/testing-strategy.md) 事务回归段。
 - **单体 bean 循环依赖（已用配置还原 阶段2.7 `5f21cf4`）**：`@DubboReference→@Resource`（阶段2.2）后，社区↔志愿者↔社区管理员级联删除的双向耦合显化为 Spring bean 环（`communityServiceImpl↔volunteerServiceImpl↔communitymanagerServiceImpl`，启动报 `BeanCurrentlyInCreationException`）。Dubbo 时代远程代理天然解耦构造期，单体以 `spring.main.allow-circular-references: true`（早期引用）等价还原，行为不变；后续可改 `@Lazy` 精细化解环、消除全局开关。
