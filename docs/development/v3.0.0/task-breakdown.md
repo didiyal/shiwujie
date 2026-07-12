@@ -8,7 +8,7 @@
 
 > 文档先写：v3.0.0 架构目标态已写入 [tech-stack](../../architecture/tech-stack.md) / [data-model](../../architecture/data-model.md) / [gateway-dubbo](../../architecture/gateway-dubbo.md) 的「v3.0.0 单体化（已落地）」段；本节为实现 spec。两阶段推进，验证点见 [testing-strategy](testing-strategy.md)。
 
-> ✅ **工程已落地（2026-07-11，启动级验证通过）**：阶段 1（1.1–1.7）+ 阶段 2（2.1–2.6）全部完成；2.7 启动级验证通过，功能级联调待 App/Web。回卷文档已转 as-built（CHANGELOG / architecture / 模块文档 / known-issues）。
+> ✅ **工程已落地（2026-07-11，启动级验证通过）**：阶段 1（1.1–1.7）+ 阶段 2（2.1–2.6 + 2.8 模块合并）全部完成；2.7 启动级验证通过，功能级联调待 App/Web。回卷文档已转 as-built（CHANGELOG / architecture / 模块文档 / known-issues）。
 
 **契约保护铁律**（全程不得违反）：对外 HTTP 路径 `/api/{user,call,community,ai}/**`、WebSocket `/api/ws/call` + 12 信令码（`-1/0/1/2/3/4/5001~5006`）、HTTP/业务状态码、返回字段名——**零变更**，前端 App/Web 不改即可对接。
 
@@ -33,6 +33,8 @@
 - [x] 2.5 收敛重复：4 份 `LoginCheckInterceptor` + 4 份 `WebConfig` → common-web 各 1 份；ai 删自带 common-web 副本（JwtUtils/RedisTemplateConfig/拦截器/异常/BaseResponse 等）改用 common-web；model vs common-web 去重（PageRequest/CommonConstant/UserConstants） `35b81ed`
 - [x] 2.6 合库：bootstrap 单一 datasource（yml 指向 `shiwujie`）✅；call 实体字段 snake→camel + 全局 `map-underscore-to-camel-case: true`（DB 列名不动，call 2 个 Mapper XML 的 resultMap property 同步改名）`61cb18a`；跨库写场景改单 `@Transactional`（删志愿者/删社区/社区审核/家庭审核；`synchronized` 保留作同库并发护栏）`a157991`；mysqldump 旧 4 库导入 `shiwujie`（`47.112.114.139`，sed 反引号库名改名 + ai 仅结构）✅ 远程 `shiwujie` 库 16 表已验证（user4+call2+community9+ai1；步骤见 [release-checklist](release-checklist.md)「合库执行步骤」）
 - [ ] 2.7 验证（**启动级 ✅ / 功能级待手动联调**）：`mvn install` 全 reactor ✅；启动单 jar ✅（8.8s 无错，远程 `shiwujie` 库 16 表可连）；修 Dubbo→本地 bean 环——`spring.main.allow-circular-references: true`（社区↔志愿者↔社区管理员级联双向耦合，Dubbo 远程代理时代天然解耦）`5f21cf4`；契约回归启动级 ✅——4 模块 HTTP 路由全注册且 `/api/{user,call,community,ai}/**` 前缀对（OpenAPI 文档实测）+ BaseResponse 信封/业务码 `40010 NOT_LOGIN` 不变 + WS `/api/ws/call` 握手 101；⏳ 功能级待手动联调：WS 12 信令链往返 + ai SSE 流 + 事务回归（删用户级联）+ token 滑动会话（需 App/Web 起栈或带 token 客户端）
+
+- [x] 2.8 模块合并（model + bootstrap 两模块）：common-web + user/call/community/ai 五模块 src 与资源（mapper XML ×13 / `logback-spring.xml` / prompttemplate ×3）并入 `shiwujie-bootstrap`，model 保留；父 pom `<modules>`={model, bootstrap}、spring-ai BOM/版本/spring-milestones 仓库迁父 pom；7→2 模块。对外契约零变更（同包根 `com.swj.shiwujie.*` 搬迁，不改 import）。commit 序列：`f8d3ef3`(WebConfig 消解) → `572ab1f`(user) → `ab097e7`(call) → `2d43a2a`(community) → `8babfe6`(ai) → `a215d9e`(common-web) → `2ddd673`(收尾验证)
 
 ### 🔴 安全加固（v2.1.0 收尾遗留项平移，详见 [known-issues.md](../../../shiwujie-backend/docs/known-issues.md) + [auth.md](../../architecture/auth.md)）
 

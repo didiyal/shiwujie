@@ -10,7 +10,7 @@
 
 ## v3.0.0（进行中，未发布）
 
-> 单体化改造版本。反思 v2.1.0 微服务对当前体量过度设计，去微服务、合并 user/call/community/ai 为单体（保留模块化分包、统一 Spring Boot 版本）。用户可见契约原则上不变（继承 v2.1.0），变更以工程架构为主。大方向见 [ROADMAP.md](ROADMAP.md) 待实现段；交付任务见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。打 tag 时补精确日期。
+> 单体化改造版本。反思 v2.1.0 微服务对当前体量过度设计，去微服务、合并 user/call/community/ai 为单体（收敛为 model 契约层 + bootstrap 唯一 app 两模块、统一 Spring Boot 版本）。用户可见契约原则上不变（继承 v2.1.0），变更以工程架构为主。大方向见 [ROADMAP.md](ROADMAP.md) 待实现段；交付任务见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。打 tag 时补精确日期。
 
 **架构决策（2026-07-11）**
 
@@ -30,6 +30,7 @@
 - **路径内化（保对外契约）**（阶段2.4 `03c0d96`）：单体 context-path 置空，原各服务 context-path 前缀下沉到 controller 类级 `@RequestMapping`——`/api/{user,call,community,ai}/**` 与 WS `/api/ws/call` 对外不变。
 - **收敛重复**（阶段2.5 `35b81ed`）：4 份 `LoginCheckInterceptor` + 4 份 `WebConfig` → common-web 各 1 份；ai 删自带 common-web 副本（JwtUtils/拦截器/异常/BaseResponse 等）改用 common-web；model vs common-web 重复类（PageRequest/CommonConstant/UserConstants）去重。
 - **合库 + 跨库写升单事务**（阶段2.6 `61cb18a` / `a157991` / `9afd831`）：4 分库 → 单库 `shiwujie`（mysqldump 导入，远程 16 表已验证）；call 实体 snake_case→camelCase + 全局 `map-underscore-to-camel-case: true`（DB 列名不动，2 个 Mapper XML resultMap property 同步改名）；社区入驻/审核通过/删志愿者/删社区 4 场景升 `@Transactional` 单事务（`synchronized` 保留作同库并发护栏）。
+- **模块合并（7→2）**（阶段2.8 `a215d9e`）：common-web + user/call/community/ai 五模块 src 与资源（mapper XML ×13 / `logback-spring.xml` / prompttemplate ×3）并入 `shiwujie-bootstrap`，model 保留为唯一库模块；父 pom `<modules>` 收敛为 {model, bootstrap}，spring-ai BOM/版本/spring-milestones 仓库随 ai 并入迁父 pom 集中管理。同包根 `com.swj.shiwujie.*` 搬迁，不改 import、不改契约。
 
 **新增**
 - `shiwujie-bootstrap` 模块：单体唯一启动入口（`@SpringBootApplication(scanBasePackages=...)` + `@MapperScan` + `@EnableAsync`）+ 合并后 `application.yml`（单 datasource 指向 `shiwujie`、redis db=2、统一 SB3 配置 key），`spring-boot-maven-plugin` repackage 产出自包含 fat jar（约 64M，单 jar 部署）。（阶段2.1 `4f10d11`）

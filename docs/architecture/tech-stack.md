@@ -37,7 +37,7 @@
 
 ## v3.0.0 单体化（已落地，启动级验证通过 2026-07-11）
 
-> 反思 v2.1.0 微服务对当前体量过度设计，v3.0.0 去微服务、合并 user/call/community/ai 为单体（**保留模块化分包**）。上方「SB 双栈割裂与 model/common-web 两层结构」为 **v2.1.0 现状**；v3.0.0 已逐项消解：
+> 反思 v2.1.0 微服务对当前体量过度设计，v3.0.0 去微服务、合并 user/call/community/ai 为单体（**收敛为 model 契约层 + bootstrap 唯一 app 两模块**）。上方「SB 双栈割裂与 model/common-web 两层结构」为 **v2.1.0 现状**；v3.0.0 已逐项消解：
 
 - ✅ **统一 SB 3.4.5 / Java 21**（阶段1.1 `9997b89`）：业务模块从 SB 2.7/Java17 升到与 ai 一致。Spring AI 1.0 强制 SB3，无回退。
 - ✅ **两层结构根因消失**（阶段2.5 `35b81ed`）：SB 统一后 common-web（jakarta）可被 ai 依赖——ai 删自带 common-web 副本（JwtUtils/拦截器/异常/BaseResponse 等），model/common-web 重复类（PageRequest/CommonConstant/UserConstants）去重。
@@ -45,8 +45,9 @@
 - ✅ **坐标升级**（阶段1.1–1.5）：MyBatis-Plus 3.5.1→3.5.9（`mybatis-plus-spring-boot3-starter`）；knife4j openapi2→openapi3-jakarta（83 处注解重写 `4db2c53`）；mysql 驱动换 `mysql-connector-j`（`af162c9`）。nacos 随去微服务整体移除，JDK21+nacos-client 测试坑随之 moot。
 - ✅ **去微服务**（阶段2.1–2.3 `4f10d11`/`199e6f3`/`106902b`）：删 gateway / Spring Cloud / Dubbo / Nacos，`Inner*Service` 从 Dubbo RPC 退化为本地 Bean 注入（详见 [`gateway-dubbo.md`](gateway-dubbo.md)）。
 - ✅ **合库**（阶段2.6 `61cb18a`）：4 分库 → 单库 `shiwujie`（远程 16 表已导入验证，详见 [`data-model.md`](data-model.md)）。
+- ✅ **模块合并（7→2）**（阶段2.8 `a215d9e`）：common-web + user/call/community/ai 五模块 src 与资源（mapper XML ×13 / `logback-spring.xml` / prompttemplate ×3）并入 `shiwujie-bootstrap`，model 保留为唯一库模块；spring-ai BOM/版本/spring-milestones 仓库随 ai 并入迁父 pom 集中管理。同包根搬迁，不改 import、不改契约。
 
-> 当前单体态：唯一入口 `shiwujie-bootstrap`（port 8100 复用原 gateway，单 datasource 指向 `shiwujie` 库，统一 SB3.4.5/Java21）。**部署即单 jar**——bootstrap 虽是 thin 装配点（仅 `ShiwujieBootstrapApplication` + `application.yml`），`spring-boot-maven-plugin` repackage 把 4 业务模块 + model + common-web + 全部第三方依赖打成 **1 个自包含 fat jar**（约 64M），拷一个 jar `java -jar` 即可，无 Nacos/Dubbo。两阶段交付（先升版本后合并）见 [`development/v3.0.0/task-breakdown.md`](../development/v3.0.0/task-breakdown.md)。契约（HTTP 路径 / WS 信令 / 状态码）启动级回归零变更，功能级待 App/Web 联调。
+> 当前单体态：2 模块——`shiwujie-model`（契约层）+ `shiwujie-bootstrap`（唯一 app：原 common-web 公共层 + user/call/community/ai 全部业务代码，port 8100 复用原 gateway，单 datasource 指向 `shiwujie` 库，统一 SB3.4.5/Java21）。**部署即单 jar**——`spring-boot-maven-plugin` repackage 把 bootstrap（含 model）+ 全部第三方依赖打成 **1 个自包含 fat jar**，拷一个 jar `java -jar` 即可，无 Nacos/Dubbo。两阶段交付（先升版本后合并）见 [`development/v3.0.0/task-breakdown.md`](../development/v3.0.0/task-breakdown.md)。契约（HTTP 路径 / WS 信令 / 状态码）启动级回归零变更，功能级待 App/Web 联调。
 
 ## 前端技术栈
 

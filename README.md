@@ -7,7 +7,7 @@
 ```text
 Phase2/
 ├── docs/                  ← 文档中心（规则 + 产品契约 + 跨切面概览 + 方向/明细）
-├── shiwujie-backend/      ← Spring Cloud 微服务（gateway/user/call/community/ai + model/common-web）
+├── shiwujie-backend/      ← 单体后端（v3.0.0：model 契约层 + bootstrap 唯一 app，含原 user/call/community/ai/common-web）
 └── shiwujie-frontend/
     ├── app/shiwujie/      ← 原生 Android 客户端（视障者 + 志愿者双端）
     └── web/               ← Vue3 社区管理后台
@@ -29,7 +29,7 @@ Phase2/
 
 ## 技术栈速览
 
-- **后端**：Spring Cloud + Nacos + Dubbo 3.3.0；业务模块 Spring Boot 2.7 / Java 17，AI 模块 Spring Boot 3.4.5 / Java 21（Spring AI Alibaba 强制）；MyBatis-Plus + MySQL 分库 + Redis（db=2 共享）。
+- **后端**：v3.0.0 单体（model 契约层 + bootstrap 唯一 app）；统一 Spring Boot 3.4.5 / Java 21（Spring AI Alibaba 强制）；MyBatis-Plus + MySQL 单库（shiwujie）+ Redis（db=2）；无 gateway/Nacos/Dubbo。
 - **前端 App**：原生 Android（Java + ViewBinding，compileSdk 35），anyRTC / 讯飞 TTS+ASR / Camera2 / 高德。
 - **前端 Web**：Vue 3.3 + Ant Design Vue 4 + Pinia + Vite 4。
 

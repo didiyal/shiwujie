@@ -13,6 +13,7 @@
 - ✅ **路径内化（保对外契约）**（阶段2.4 `03c0d96`）：单体 context-path 置空，原各服务 context-path 前缀下沉到 controller 类级 `@RequestMapping`——`/api/user/**`、`/api/call/**`、`/api/community/**`、`/api/ai/**`、WebSocket `/api/ws/call` 对外不变（启动级回归通过）。
 - ✅ **单端口入口**（阶段2.1）：原 gateway:8100 分发到 user:8200 / call:8300 / community:8400 / ai:8500，合并为单体单端口 bootstrap:8100（复用原 gateway 对外端口）。
 - ✅ **Dubbo 端口 21200–21500 全消失**（避让 Hyper-V/WSL 保留段的端口迁出设计随 Dubbo 移除而废弃）。
+- ✅ **模块合并（7→2）**（阶段2.8 `a215d9e`）：common-web + user/call/community/ai 并入 `shiwujie-bootstrap`，model 保留为唯一库模块（`<modules>`={model, bootstrap}）；spring-ai BOM/版本/spring-milestones 仓库随 ai 并入迁**父 pom** 集中管理。对外契约零变更。
 
 > 4 处 `LoginCheckInterceptor`（各服务自带鉴权副本）已收敛为 common-web 单份（阶段2.5 `35b81ed`）；用户可见鉴权契约不变，见 [`auth.md`](auth.md)。
 
