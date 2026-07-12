@@ -13,11 +13,27 @@
     <description>视无界单体启动模块（v3.0.0 单体化：唯一 @SpringBootApplication 入口，聚合 user/call/community/ai，repackage 产出可执行 jar）</description>
 
     <dependencies>
-        <!-- 四业务模块（含 Dubbo 接缝点 v3.0.0 阶段2.2 转本地后同进程注入）；common-web/model 随传递依赖引入 -->
+        <!-- 契约层 + 公共层（user 已并入本模块，bootstrap 直接持有用其类的代码） -->
         <dependency>
             <groupId>com.swj</groupId>
-            <artifactId>shiwujieUser</artifactId>
+            <artifactId>shiwujieModel</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.swj</groupId>
+            <artifactId>shiwujieCommonWeb</artifactId>
+        </dependency>
+        <!-- user 的外部依赖（web/redis/session 经 common-web 传递；mysql 需直接；lombok optional 不传递，需直接声明） -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- 其余业务模块（call/community/ai 仍独立；含 Dubbo 接缝点 v3.0.0 阶段2.2 转本地后同进程注入） -->
         <dependency>
             <groupId>com.swj</groupId>
             <artifactId>shiwujieCall</artifactId>

@@ -37,7 +37,6 @@
         <module>shiwujie-model</module>
         <module>shiwujie-common-web</module>
         <!-- v3.0.0 单体化阶段2.1：删 gateway 模块（路由职责下沉到单体 controller 内化前缀） -->
-        <module>shiwujie-user</module>
         <module>shiwujie-call</module>
         <module>shiwujie-community</module>
         <module>shiwujie-ai</module>
@@ -59,12 +58,7 @@
                 <artifactId>shiwujieCommonWeb</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!-- v3.0.0 单体化阶段2.1：四业务模块（ai 版本同为 0.0.1-SNAPSHOT）统一进 DM，bootstrap 无版本引用 -->
-            <dependency>
-                <groupId>com.swj</groupId>
-                <artifactId>shiwujieUser</artifactId>
-                <version>${project.version}</version>
-            </dependency>
+            <!-- v3.0.0 单体化阶段2.1：三业务模块（ai 版本同为 0.0.1-SNAPSHOT）统一进 DM，bootstrap 无版本引用；user 已并入 bootstrap -->
             <dependency>
                 <groupId>com.swj</groupId>
                 <artifactId>shiwujieCall</artifactId>
