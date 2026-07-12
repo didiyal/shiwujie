@@ -55,7 +55,9 @@ public class WebSocketManager {
     // 重连相关
     private int reconnectAttempts = 0;
     private static final int MAX_RECONNECT_ATTEMPTS = 5;
-    private static final long RECONNECT_DELAY = 3000; // 3秒
+    private static final long RECONNECT_DELAY = 3000; // 3秒（快速重连窗口内）
+    // 快速重连用尽后转慢速持续重连，避免弱网下永久静默失活（A2）
+    private static final long SLOW_RECONNECT_DELAY = 60_000; // 60秒
     
     // 业务状态相关
     private boolean isInVideoCall = false; // 是否正在进行视频通话
@@ -200,8 +202,8 @@ public class WebSocketManager {
                         }
                     });
                     
-                    // 自动重连
-                    if (remote && reconnectAttempts < MAX_RECONNECT_ATTEMPTS && canReconnect()) {
+                    // 自动重连：业务中不重连（canReconnect 兜底）；快速重连用尽后转慢速持续重连，不再静默放弃（A2）
+                    if (remote && canReconnect()) {
                         scheduleReconnect();
                     } else if (!canReconnect()) {
                         Log.d(TAG, "业务活动进行中，跳过自动重连");
@@ -324,17 +326,23 @@ public class WebSocketManager {
                     SocketDataV0 data = gson.fromJson(socketDataJson, SocketDataV0.class);
                     if (data != null) {
                         Log.d(TAG, "消息解析成功: " + data.toString());
-                        Log.d(TAG, "消息详情 - 类型: " + data.getRequestType() + 
-                              ", 盲人手机号: " + data.getBlindPhone() + 
-                              ", 志愿者手机号: " + data.getVolunteerPhone() + 
+                        Log.d(TAG, "消息详情 - 类型: " + data.getRequestType() +
+                              ", 盲人手机号: " + data.getBlindPhone() +
+                              ", 志愿者手机号: " + data.getVolunteerPhone() +
                               ", 频道ID: " + data.getChannelId());
-                        
+
                         // 更新Socket数据
                         socketData = data;
-                        
+
                         // 处理视频通话消息
                         Log.d(TAG, "开始处理视频通话消息");
                         videoCallManager.handleWebSocketMessage(data);
+
+                        // 紧急求助信令分发：type=2（家属接听/匹配成功）取消 60s 求助超时，避免通话中误触发（A1）。
+                        // 原本 EmergencyHelpManager.handleSocketMessage 是死代码，求助超时会在通话进行中 fire、误复位。
+                        EmergencyHelpManager.getInstance().handleSocketMessage(
+                                data.getRequestType(), data.getBlindPhone(),
+                                data.getVolunteerPhone(), data.getChannelId());
                         
                         // 处理心跳包响应
                         if (data.getRequestType() == -1) {
@@ -381,17 +389,22 @@ public class WebSocketManager {
                 
                 if (data != null) {
                     Log.d(TAG, "直接解析成功: " + data.toString());
-                    Log.d(TAG, "消息详情 - 类型: " + data.getRequestType() + 
-                          ", 盲人手机号: " + data.getBlindPhone() + 
-                          ", 志愿者手机号: " + data.getVolunteerPhone() + 
+                    Log.d(TAG, "消息详情 - 类型: " + data.getRequestType() +
+                          ", 盲人手机号: " + data.getBlindPhone() +
+                          ", 志愿者手机号: " + data.getVolunteerPhone() +
                           ", 频道ID: " + data.getChannelId());
-                    
+
                     // 更新Socket数据
                     socketData = data;
-                    
+
                     // 处理视频通话消息
                     Log.d(TAG, "开始处理视频通话消息");
                     videoCallManager.handleWebSocketMessage(data);
+
+                    // 紧急求助信令分发：type=2 取消 60s 求助超时，避免通话中误触发（A1，对称第二处）
+                    EmergencyHelpManager.getInstance().handleSocketMessage(
+                            data.getRequestType(), data.getBlindPhone(),
+                            data.getVolunteerPhone(), data.getChannelId());
                     
                     // 处理心跳包响应
                     if (data.getRequestType() == -1) {
@@ -513,7 +526,7 @@ public class WebSocketManager {
             } else {
                 // 连接状态变为断开，尝试自动重连
                 Log.d(TAG, "检测到连接断开，尝试自动重连");
-                if (!isConnecting && reconnectAttempts < MAX_RECONNECT_ATTEMPTS && canReconnect()) {
+                if (!isConnecting && canReconnect()) {
                     scheduleReconnect();
                 } else if (!canReconnect()) {
                     Log.d(TAG, "业务活动进行中，跳过连接状态检查重连");
@@ -538,8 +551,25 @@ public class WebSocketManager {
      */
     private void scheduleReconnect() {
         reconnectAttempts++;
-        Log.d(TAG, "Scheduling reconnect attempt " + reconnectAttempts);
-        
+        // 快速重连窗口（< MAX 次）用 3s，用尽后转 60s 慢速持续重连，不再静默放弃（A2）
+        boolean fastMode = reconnectAttempts < MAX_RECONNECT_ATTEMPTS;
+        long delay = fastMode ? RECONNECT_DELAY : SLOW_RECONNECT_DELAY;
+        Log.d(TAG, "Scheduling reconnect attempt " + reconnectAttempts
+                + " (delay=" + delay + "ms, " + (fastMode ? "fast" : "slow") + ")");
+
+        // 进入慢速重连的首次（快速窗口刚用尽）：通知 UI 连接需要关注（如提示网络异常）
+        if (!fastMode && reconnectAttempts == MAX_RECONNECT_ATTEMPTS) {
+            mainHandler.post(() -> {
+                for (ConnectionStatusListener listener : globalConnectionStatusListeners) {
+                    try {
+                        listener.onReconnectNeeded();
+                    } catch (Exception e) {
+                        Log.e(TAG, "通知连接状态监听器失败", e);
+                    }
+                }
+            });
+        }
+
         mainHandler.postDelayed(() -> {
             if (!isConnected && !isConnecting && canReconnect()) {
                 Log.d(TAG, "Attempting to reconnect...");
@@ -573,7 +603,7 @@ public class WebSocketManager {
             } else if (!canReconnect()) {
                 Log.d(TAG, "业务活动进行中，取消重连");
             }
-        }, RECONNECT_DELAY);
+        }, delay);
     }
     
     /**

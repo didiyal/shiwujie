@@ -242,7 +242,7 @@ public class HomeFragment extends Fragment {
               ", 志愿者手机号: " + data.getVolunteerPhone() + 
               ", 频道ID: " + data.getChannelId());
         
-        if (data.getRequestType() == 2) {
+        if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_VIDEO_INIT) {
             // 视频初始化成功通知，进入视频通话页面
             Log.d(TAG, "收到视频初始化成功通知，准备进入视频通话页面");
             Log.d(TAG, "频道ID: " + data.getChannelId() + ", 志愿者手机号: " + data.getVolunteerPhone());
@@ -281,13 +281,13 @@ public class HomeFragment extends Fragment {
                 Log.e(TAG, "启动视频通话Activity失败", e);
                 isVideoCallStarted = false; // 启动失败时重置标志
             }
-        } else if (data.getRequestType() == 5) {
+        } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_CALL_END) {
             // 通话结束，重置视频通话启动标志
             Log.d(TAG, "收到通话结束(type=5)消息，重置isVideoCallStarted");
             isVideoCallStarted = false;
             // 重置紧急求助状态
             isEmergencyHelpMatching = false;
-        } else if (data.getRequestType() == 0) {
+        } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_LOGIN) {
             // 收到登录确认消息
             Log.d(TAG, "收到登录确认消息");
         } else {

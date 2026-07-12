@@ -8,6 +8,7 @@ import android.widget.Toast;
 
 import com.swj.shiwujie.data.model.BaseResponse;
 import com.swj.shiwujie.data.model.EmergencyHelpData;
+import com.swj.shiwujie.data.model.SocketDataV0;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 
 import retrofit2.Call;
@@ -404,8 +405,8 @@ public class EmergencyHelpManager {
         Log.d(TAG, "requestType: " + requestType + ", blindPhone: " + blindPhone + 
                 ", volunteerPhone: " + volunteerPhone + ", channelId: " + channelId);
         
-        if (requestType == 2) {
-            // 家属视频初始化成功 → 通话已建立，取消"家属无响应"超时
+        if (requestType == SocketDataV0.REQUEST_TYPE_VIDEO_INIT) {
+            // 家属视频初始化成功（type=2）→ 通话已建立，取消"家属无响应"超时
             Log.d(TAG, "收到家属视频初始化成功消息");
             cancelEmergencyTimeout();
 

@@ -5,6 +5,18 @@ import com.google.gson.annotations.SerializedName;
 /**
  * Socket数据模型
  * 用于管理WebSocket连接状态和消息数据
+ *
+ * requestType 真值表（前端视角，与 问题.md 协议表对齐；正式 product 契约码表待前后端联调落档）：
+ *   -1  心跳                收/发   createHeartbeatMessage（客户端发）/ WebSocketService 心跳
+ *    0  Socket 登录          收/发   createLoginMessage（客户端发）/ VideoCallManager.handleSocketLogin
+ *    1  匹配成功通知          收     VideoCallManager.handleMatchSuccess；createMatchSuccess 死代码
+ *    2  视频初始化成功        收     VideoCallManager.handleVideoInitSuccess；并触发 EmergencyHelpManager
+ *                                    取消求助超时（A1）；createVideoInitMessage 死代码
+ *    3  紧急求助来电通知      收     volunteer/HomeFragment 弹接听框；createVideoHelpRequest 死代码
+ *    4  紧急求助取消通知      收     volunteer/HomeFragment 撤回弹框；createVolunteerAccept 死代码（命名误导）
+ *    5  通话结束通知          收     blind/HomeFragment；createCallEnd 死代码
+ *   5001~5006  AI/页面跳转类通知     收（见下方常量）
+ * 注：3/4/5 为紧急求助通知（接收型，客户端不发），不在 VideoCallManager 职责内（见 A6 结论）。
  */
 public class SocketDataV0 {
     
@@ -49,10 +61,10 @@ public class SocketDataV0 {
         this.channelId = channelId;
     }
     
-    // 创建登录消息的静态方法
+    // 创建登录消息的静态方法（requestType=0，客户端发送）
     public static SocketDataV0 createLoginMessage(String phone, boolean isVolunteer) {
         SocketDataV0 data = new SocketDataV0();
-        data.setRequestType(0);
+        data.setRequestType(REQUEST_TYPE_LOGIN);
         if (isVolunteer) {
             data.setVolunteerPhone(phone);
             data.setBlindPhone("");
@@ -64,10 +76,15 @@ public class SocketDataV0 {
         return data;
     }
     
-    // 创建视频初始化成功消息
+    /**
+     * 创建视频初始化成功消息（requestType=2，服务端下发；客户端不发）。
+     * @deprecated 零调用点（死代码）。type=2 实际由服务端下发、VideoCallManager.handleVideoInitSuccess 接收，
+     *             并触发 EmergencyHelpManager 取消求助超时。保留待批次 D 统一清理。
+     */
+    @Deprecated
     public static SocketDataV0 createVideoInitMessage(String phone, boolean isVolunteer, long channelId) {
         SocketDataV0 data = new SocketDataV0();
-        data.setRequestType(2);
+        data.setRequestType(REQUEST_TYPE_VIDEO_INIT);
         if (isVolunteer) {
             data.setVolunteerPhone(phone);
             data.setBlindPhone("");
@@ -79,30 +96,44 @@ public class SocketDataV0 {
         return data;
     }
     
-    // 创建视频求助请求消息
+    /**
+     * 创建视频求助请求消息（requestType=3，服务端下发的「紧急求助来电」通知；客户端不发）。
+     * @deprecated 零调用点（死代码）。type=3 实际由 volunteer/HomeFragment 接收并弹接听框。
+     *             保留待批次 D 统一清理。
+     */
+    @Deprecated
     public static SocketDataV0 createVideoHelpRequest(String blindPhone) {
         SocketDataV0 data = new SocketDataV0();
-        data.setRequestType(3);
+        data.setRequestType(REQUEST_TYPE_EMERGENCY_INCOMING);
         data.setBlindPhone(blindPhone);
         data.setVolunteerPhone("");
         data.setChannelId(0);
         return data;
     }
     
-    // 创建志愿者接听消息
+    /**
+     * createVolunteerAccept（requestType=4，服务端下发的「紧急求助取消」通知；客户端不发）。
+     * 命名误导：名为"接听"实为"取消"。type=4 实际由 volunteer/HomeFragment 接收并撤回接听弹框。
+     * @deprecated 零调用点（死代码）。保留待批次 D 统一清理。
+     */
+    @Deprecated
     public static SocketDataV0 createVolunteerAccept(String volunteerPhone, String blindPhone, String callId) {
         SocketDataV0 data = new SocketDataV0();
-        data.setRequestType(4);
+        data.setRequestType(REQUEST_TYPE_EMERGENCY_CANCELLED);
         data.setVolunteerPhone(volunteerPhone);
         data.setBlindPhone(blindPhone);
         data.setChannelId(0);
         return data;
     }
     
-    // 创建通话结束消息
+    /**
+     * 创建通话结束消息（requestType=5，服务端下发的通话结束通知；客户端不发）。
+     * @deprecated 零调用点（死代码）。type=5 实际由 blind/HomeFragment 接收。保留待批次 D 统一清理。
+     */
+    @Deprecated
     public static SocketDataV0 createCallEnd(String callId, String phone, boolean isVolunteer) {
         SocketDataV0 data = new SocketDataV0();
-        data.setRequestType(5);
+        data.setRequestType(REQUEST_TYPE_CALL_END);
         if (isVolunteer) {
             data.setVolunteerPhone(phone);
             data.setBlindPhone("");
@@ -114,20 +145,25 @@ public class SocketDataV0 {
         return data;
     }
     
-    // 创建匹配成功消息
+    /**
+     * 创建匹配成功消息（requestType=1，服务端下发；客户端不发）。
+     * @deprecated 零调用点（死代码）。type=1 实际由 VideoCallManager.handleMatchSuccess 接收。
+     *             保留待批次 D 统一清理。
+     */
+    @Deprecated
     public static SocketDataV0 createMatchSuccess(String blindPhone, String volunteerPhone, String callId) {
         SocketDataV0 data = new SocketDataV0();
-        data.setRequestType(1); // 匹配成功
+        data.setRequestType(REQUEST_TYPE_MATCH_SUCCESS);
         data.setBlindPhone(blindPhone);
         data.setVolunteerPhone(volunteerPhone);
         data.setChannelId(0);
         return data;
     }
     
-    // 创建心跳包消息
+    // 创建心跳包消息（requestType=-1，客户端发送）
     public static SocketDataV0 createHeartbeatMessage(String phone, boolean isVolunteer) {
         SocketDataV0 data = new SocketDataV0();
-        data.setRequestType(-1); // 心跳包类型
+        data.setRequestType(REQUEST_TYPE_HEARTBEAT);
         if (isVolunteer) {
             data.setVolunteerPhone(phone);
             data.setBlindPhone("");
@@ -139,7 +175,16 @@ public class SocketDataV0 {
         return data;
     }
     
-    // 新增的requesttype常量定义
+    // ===== 核心信令码常量（requestType 真值，命名按实际语义；见类头真值表）=====
+    public static final int REQUEST_TYPE_HEARTBEAT = -1;          // 心跳（收/发）
+    public static final int REQUEST_TYPE_LOGIN = 0;               // Socket 登录（收/发）
+    public static final int REQUEST_TYPE_MATCH_SUCCESS = 1;       // 匹配成功通知（收）
+    public static final int REQUEST_TYPE_VIDEO_INIT = 2;          // 视频初始化成功（收；兼触发取消求助超时）
+    public static final int REQUEST_TYPE_EMERGENCY_INCOMING = 3;  // 紧急求助来电通知（收）
+    public static final int REQUEST_TYPE_EMERGENCY_CANCELLED = 4; // 紧急求助取消通知（收）
+    public static final int REQUEST_TYPE_CALL_END = 5;            // 通话结束通知（收）
+
+    // AI/页面跳转类通知码常量定义
     public static final int REQUEST_TYPE_AI_PHOTO_RECOGNITION = 5001; // 启动AI页面的拍照识别按钮和功能
     public static final int REQUEST_TYPE_JUMP_TO_BLINDHOME = 5002;    // 跳转到blindhome页面并开启连线志愿者按钮和功能
     public static final int REQUEST_TYPE_EMERGENCY_HELP = 5003;       // 紧急求助，跳转到blindhome页面并开启紧急求助功能

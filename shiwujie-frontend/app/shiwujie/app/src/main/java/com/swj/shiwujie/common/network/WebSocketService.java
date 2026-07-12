@@ -14,6 +14,7 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
 import com.swj.shiwujie.R;
+import com.swj.shiwujie.blind.BlindHomeActivity;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.volunteer.VolunteerHomeActivity;
 
@@ -143,7 +144,11 @@ public class WebSocketService extends Service {
      */
     private Notification createNotification() {
         try {
-            Intent notificationIntent = new Intent(this, VolunteerHomeActivity.class);
+            // 按当前账号角色跳对应首页（A5）：盲人→BlindHomeActivity，志愿者→VolunteerHomeActivity
+            Class<?> homeActivity = SharedPrefsUtil.isBlind()
+                    ? BlindHomeActivity.class
+                    : VolunteerHomeActivity.class;
+            Intent notificationIntent = new Intent(this, homeActivity);
             PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, notificationIntent, 
                 PendingIntent.FLAG_IMMUTABLE

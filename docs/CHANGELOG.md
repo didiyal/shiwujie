@@ -71,6 +71,20 @@
 - `network_security_config` 中把 CIDR（`192.168.0.0/16` 等）当作 `<domain>` 的无效条目（语法不支持、本就不生效）。生产 IP 明文 HTTP 放行暂保留（待后端 TLS）。
 - `gradle-wrapper.properties` 失效的 macOS 本地分发路径 `file:/Users/luna/...`（仅该开发机可用），切回腾讯镜像远程 URL（已本地缓存）。
 
+**App 前端 批次A：协议对齐 + 超时竞态止血（2026-07-12）**
+
+> 接 P0 快速止血后的下一批。修 P0 引入的高危竞态 + WS 重连失活 + 线程安全，并把散落的 requestType 魔数常量化、固化信令真值表。不碰结构（blind/volunteer 合并、AiFragment 拆分等留批次 D）。对外 HTTP/WS 契约零变更（requestType 码值不变，仅前端常量替换）。明细见 [App known-issues](../shiwujie-frontend/app/docs/known-issues.md)。
+
+**修复**
+- **紧急求助超时在通话中误触发（P0 副作用，高危）**：P0 给紧急求助加了 60s "家属无响应"超时兜底，但取消该超时的 `EmergencyHelpManager.handleSocketMessage(type=2)` 是死代码——`WebSocketManager.handleMessage` 从不调它，导致家属正常接听、通话进行中时 60s 后超时仍 fire、误复位 `isInEmergencyHelp`。`WebSocketManager` 收到消息后现补发 `EmergencyHelpManager.handleSocketMessage`（type=2 取消超时+更新状态，其他 type 仅打日志），超时不再在通话中误触发。
+- **WS 重连用尽后静默永久失活**：`MAX_RECONNECT_ATTEMPTS=5` 用尽后 `onClose`/`checkConnectionStatus` 的重连门槛永假，弱网下断连 >5 次即永久断开、无 UI 提示。改为：快速重连窗口（<5 次）内 3s 重试，用尽后转 60s 慢速持续重试（不再放弃），并在进入慢速首次通知 `onReconnectNeeded`；通话/匹配中仍跳过重连（`canReconnect` 不变）。
+- **`VideoCallManager` 监听器回调跑在子线程**：`notifyStatusChanged`/`notifyMessageReceived` 在 java-websocket 读线程直接 for-loop 调监听器，Activity 回调改 UI 可能触发 "Only the original thread..." 崩溃。两处统一切到主线程 `Handler.post`（与 `WebSocketManager` 自身一致）。
+
+**变更**
+- **前台通知按角色跳首页**：`WebSocketService` 前台通知点击 Intent 原硬编码 `VolunteerHomeActivity`，盲人账号点通知进错志愿者首页；改为按 `SharedPrefsUtil.isBlind()` 选 `BlindHomeActivity`/`VolunteerHomeActivity`。
+- **避障客户端 HTTP BODY 日志守卫 DEBUG**：`ObstacleDetectionRetrofitClient` 日志拦截器原无条件 `Level.BODY`，release 也会打印请求体；改为仅 DEBUG 打印（与 P0 对 `RetrofitClient` 的改法一致，补漏）。
+- **信令码常量化 + 固化真值表（零行为变更）**：`SocketDataV0` 补 requestType -1~5 命名常量（按实际语义）+ 类头真值表注释；`VideoCallManager` switch 与 blind/volunteer `HomeFragment`、`EmergencyHelpManager` 的魔数比较改用常量。审查修正：原报告称「`VideoCallManager` 应补 type 3/4/5 处理」系误判——3/4/5 是紧急求助通知（接收型），已在 volunteer/blind `HomeFragment` 正确处理，落 `VideoCallManager` default 合理。`SocketDataV0` 5 个零调用点工厂方法标 `@Deprecated`（命名误导，如 `createVolunteerAccept=4` 实为"取消"），不删（删属批次 D）。
+
 **后端单元测试层（2026-07-12，ai 外）**
 
 > 给 ai 模块外的后端补纯单元测试（用户决策：纯 Mockito、不起 Spring/DB/Redis、零新依赖；覆盖优先级「先深耕安全热路径再铺广」）。`spring-boot-starter-test`（test scope）已在 bootstrap pom，提供 JUnit5 + Mockito5（inline mock maker）+ AssertJ。20 个测试类 / 286 例，`mvn test` 全绿，覆盖 utils/common/exception（`PasswordUtils` BCrypt、`JwtUtils`、`LoginUtils`、`ResultUtils`、`ConverterUtils`、`ThrowUtils`、`ErrorCode`）、拦截器 `LoginCheckInterceptor` 全分支、user 域（Blind/Volunteer/Family/FamilyJoinReview）、community 域（Community/Communitymanager/Helppost/Activity/Activitysign/Communityjoinreview）、call 域（Urgenthelp/Videohelp）。MyBatis-Plus 3.5.9 单测三坑（`ServiceImpl.baseMapper` 需 `ReflectionTestUtils` 注入、`getOne(QueryWrapper)` 走两参 `selectOne`、`insert`/`updateById`/`deleteById` 多态重载须 typed matcher）已踩平固化进模板，明细见 [testing-strategy](development/v3.0.0/testing-strategy.md)「自动化单元测试」段。ai 模块、`@SpringBootTest` 集成测试（需测试用 DB/Redis profile 或 H2/Testcontainers）本轮暂不覆盖。
