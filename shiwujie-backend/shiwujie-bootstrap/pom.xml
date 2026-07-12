@@ -13,14 +13,50 @@
     <description>视无界单体启动模块（v3.0.0 单体化：唯一 @SpringBootApplication 入口，聚合 user/call/community/ai，repackage 产出可执行 jar）</description>
 
     <dependencies>
-        <!-- 契约层 + 公共层（user 已并入本模块，bootstrap 直接持有用其类的代码） -->
+        <!-- 契约层（唯一内部库依赖；common-web 已并入本模块，不再作依赖） -->
         <dependency>
             <groupId>com.swj</groupId>
             <artifactId>shiwujieModel</artifactId>
         </dependency>
+        <!-- 公共层（原 common-web 外部依赖，合并后转直接；版本由父 pom DM 管） -->
         <dependency>
-            <groupId>com.swj</groupId>
-            <artifactId>shiwujieCommonWeb</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
         </dependency>
         <!-- user 的外部依赖（web/redis/session 经 common-web 传递；mysql 需直接；lombok optional 不传递，需直接声明） -->
         <dependency>

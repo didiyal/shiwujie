@@ -38,7 +38,6 @@
 
     <modules>
         <module>shiwujie-model</module>
-        <module>shiwujie-common-web</module>
         <!-- v3.0.0 单体化阶段2.1：删 gateway 模块（路由职责下沉到单体 controller 内化前缀） -->
         <module>shiwujie-bootstrap</module>
     </modules>
@@ -47,15 +46,10 @@
         <dependencies>
             <!-- v3.0.0 单体化阶段2.3：删 spring-cloud-dependencies（gateway 已删，业务模块不再用 spring-cloud） -->
 
-            <!-- 内部模块：统一版本，子模块引用时省略 <version> -->
+            <!-- 内部模块：统一版本（common-web/user/call/community/ai 已并入 bootstrap，仅留 model） -->
             <dependency>
                 <groupId>com.swj</groupId>
                 <artifactId>shiwujieModel</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.swj</groupId>
-                <artifactId>shiwujieCommonWeb</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- Spring AI（原 ai 模块独立 DM，合并后集中到父 pom；ai 已并入 bootstrap） -->
