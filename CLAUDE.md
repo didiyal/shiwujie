@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # 构建 2 模块 reactor（model 契约层 + bootstrap 单体 app）
 mvn -f shiwujie-backend/pom.xml install -DskipTests
 
-# 测试（当前后端 0 测试类，surefire 跑空）
+# 测试（20 个纯单元测试类 / 286 例，纯 Mockito，不起 Spring/DB/Redis；ai 模块暂未覆盖）
 mvn -f shiwujie-backend/pom.xml test
 
 # 运行：单 jar，仅需 MySQL（库 shiwujie）+ Redis（db=2）；无 Nacos/Dubbo

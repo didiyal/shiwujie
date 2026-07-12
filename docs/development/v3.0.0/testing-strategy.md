@@ -6,6 +6,28 @@
 
 v2.1.0 的测试现状 / 环境表 / 验证点 / 缺口继续适用，见 [../v2.1.0/testing-strategy.md](../v2.1.0/testing-strategy.md)。
 
+## 自动化单元测试（2026-07-12 新增，ai 外）
+
+> v2.1.0 基线「后端无自动化测试」自本版本起**部分打破**：给 ai 模块外的后端补了一层纯单元测试。决策（用户）：**纯 Mockito**——不起 Spring 上下文、不连 DB/Redis、**零新依赖**（`spring-boot-starter-test` test scope 已在 bootstrap pom，提供 JUnit5 + Mockito5 inline mock maker + AssertJ）；覆盖优先级「**先深耕安全热路径再铺广**」——优先给本轮安全加固动过的代码（口令 BCrypt、JWT、`LoginCheckInterceptor`、community/helppost 权限、登录注册）补回归网，再铺其余 Service。
+
+**现状**：20 个测试类 / 286 例，`mvn -f shiwujie-backend/pom.xml test` 全绿（0 failures / 0 errors）。
+
+| 域 | 测试类 | 例数 | 覆盖点 |
+|---|---|---|---|
+| utils/common/exception | `PasswordUtilsTest` / `JwtUtilsTest` / `LoginUtilsTest` / `ResultUtilsTest` / `ConverterUtilsTest` / `ThrowUtilsTest` / `ErrorCodeTest` | 64 | BCrypt `hash`/`matches`/`isLegacyMd5`、HS256 签发校验、登录上下文（MockedStatic `RequestContextHolder`）、`ThrowUtils` 分支、`ErrorCode` |
+| interceptor | `LoginCheckInterceptorTest` | 14 | `preHandle` 全分支：OPTIONS/登录类 URL 放行、无头/坏 token/Redis 空/不匹配 → `NOT_LOGIN`、成功注入 blind/volunteer |
+| user | `BlindServiceImplTest` / `VolunteerServiceImplTest` / `FamilyServiceImplTest` / `FamilyJoinReviewServiceImplTest` | 65 | 登录注册（BCrypt + 存量 MD5 懒升级）、改密、token 签发、家庭 CRUD/加入审核 |
+| community | `CommunityServiceImplTest` / `CommunitymanagerServiceImplTest` / `HelppostServiceImplTest` / `ActivityServiceImplTest` / `ActivitysignServiceImplTest` / `CommunityjoinreviewServiceImplTest` | 110 | 社区登录、删改权限（注册人相等）、社区管理员 CRUD（末位注册人护栏）、求助帖删改（作者/管理员）、活动/签到/审核 CRUD |
+| call | `UrgenthelpServiceImplTest` / `VideohelpServiceImplTest` | 33 | 紧急/视频求助创建/加入/退出、Redis 队列匹配 |
+
+**MyBatis-Plus 3.5.9 单测三坑（已固化进模板，新增 Service 测试照抄）**：
+
+1. `ServiceImpl<M,T>` 继承的 `baseMapper` 字段 `@InjectMocks` 不会注入 → `@BeforeEach` 用 `ReflectionTestUtils.setField(service, "baseMapper", mapperMock)` 手填，否则 `MybatisPlusException: baseMapper can not be null`。
+2. `this.getOne(QueryWrapper)` 经 `AbstractServiceImpl` 调的是**两参** `baseMapper.selectOne(qw, true)` → stub 须 `when(mapper.selectOne(any(QueryWrapper.class), anyBoolean())).thenReturn(...)`（裸 `selectOne(any())` 漏第二参 → `PotentialStubbingProblem`）。
+3. `insert(T)`/`insert(Collection<T>)`、`updateById(T)`/`updateById(Collection<T>)`、`deleteById(Serializable)`/`deleteById(Object,boolean)`/`deleteById(T)` 多态重载 → 裸 `any()` 编译歧义或运行期命中错重载，须 typed matcher `any(Entity.class)` / `anyLong()`。
+
+**暂未覆盖（后续）**：ai 模块（用户明确排除，待 Agent 重写后另立）；`@SpringBootTest` 集成测试需测试专用 DB/Redis profile 或 H2 / embedded-redis / Testcontainers，本轮不引入。
+
 ## 契约保护铁律（v3.0.0 单体化硬约束）
 
 单体化是工程架构内部重构，**对外行为零变更**。下列契约在阶段 1/2 完成后必须逐一回归通过，前端 App/Web 不改即可对接：

@@ -71,6 +71,13 @@
 - `network_security_config` 中把 CIDR（`192.168.0.0/16` 等）当作 `<domain>` 的无效条目（语法不支持、本就不生效）。生产 IP 明文 HTTP 放行暂保留（待后端 TLS）。
 - `gradle-wrapper.properties` 失效的 macOS 本地分发路径 `file:/Users/luna/...`（仅该开发机可用），切回腾讯镜像远程 URL（已本地缓存）。
 
+**后端单元测试层（2026-07-12，ai 外）**
+
+> 给 ai 模块外的后端补纯单元测试（用户决策：纯 Mockito、不起 Spring/DB/Redis、零新依赖；覆盖优先级「先深耕安全热路径再铺广」）。`spring-boot-starter-test`（test scope）已在 bootstrap pom，提供 JUnit5 + Mockito5（inline mock maker）+ AssertJ。20 个测试类 / 286 例，`mvn test` 全绿，覆盖 utils/common/exception（`PasswordUtils` BCrypt、`JwtUtils`、`LoginUtils`、`ResultUtils`、`ConverterUtils`、`ThrowUtils`、`ErrorCode`）、拦截器 `LoginCheckInterceptor` 全分支、user 域（Blind/Volunteer/Family/FamilyJoinReview）、community 域（Community/Communitymanager/Helppost/Activity/Activitysign/Communityjoinreview）、call 域（Urgenthelp/Videohelp）。MyBatis-Plus 3.5.9 单测三坑（`ServiceImpl.baseMapper` 需 `ReflectionTestUtils` 注入、`getOne(QueryWrapper)` 走两参 `selectOne`、`insert`/`updateById`/`deleteById` 多态重载须 typed matcher）已踩平固化进模板，明细见 [testing-strategy](development/v3.0.0/testing-strategy.md)「自动化单元测试」段。ai 模块、`@SpringBootTest` 集成测试（需测试用 DB/Redis profile 或 H2/Testcontainers）本轮暂不覆盖。
+
+**新增**
+- `shiwujie-bootstrap/src/test/`：20 个纯单元测试类，286 例。
+
 > 架构现状（已落地）见 [architecture/tech-stack.md](architecture/tech-stack.md) / [architecture/data-model.md](architecture/data-model.md) / [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) 的「v3.0.0 单体化（已落地）」段；交付 spec 见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。
 
 ---
