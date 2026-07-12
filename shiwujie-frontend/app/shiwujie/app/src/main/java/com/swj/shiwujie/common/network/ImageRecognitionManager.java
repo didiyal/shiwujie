@@ -349,13 +349,6 @@ public class ImageRecognitionManager {
     }
     
     /**
-     * 是否正在流式输出
-     */
-    public boolean isStreaming() {
-        return isStreaming;
-    }
-    
-    /**
      * 释放资源
      */
     public void destroy() {
@@ -381,13 +374,5 @@ public class ImageRecognitionManager {
             this.typingSpeed = speed;
             Log.d(TAG, "设置打字机速度: " + speed + "ms");
         }
-    }
-    
-    /**
-     * 获取当前打字机效果速度
-     * @return 字符间延迟，单位毫秒
-     */
-    public int getTypingSpeed() {
-        return this.typingSpeed;
     }
 }

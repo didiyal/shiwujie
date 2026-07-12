@@ -34,11 +34,14 @@ public class VideoCallManager {
     
     // 全局监听器列表
     private List<VideoCallStatusListener> statusListeners = new ArrayList<>();
-    private List<VideoCallMessageListener> messageListeners = new ArrayList<>();
     
     // 上下文，用于显示Toast
     private Context context;
-    
+
+    // 监听器回调统一切到主线程：handleWebSocketMessage 跑在 java-websocket 读线程，
+    // 直接 for-loop 调监听器会让 Activity 回调改 UI 触发 "Only the original thread..." 崩溃（A3）
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+
     private VideoCallManager() {}
     
     public static synchronized VideoCallManager getInstance() {
@@ -70,7 +73,7 @@ public class VideoCallManager {
     /**
      * 更新通话状态
      */
-    public void updateCallStatus(int status, String callId, String blindPhone, String volunteerPhone) {
+    private void updateCallStatus(int status, String callId, String blindPhone, String volunteerPhone) {
         Log.d(TAG, "更新通话状态: " + status + ", callId: " + callId);
         
         this.currentCallStatus = status;
@@ -105,22 +108,21 @@ public class VideoCallManager {
         Log.e(TAG, "消息内容: " + data.toString());
         
         switch (data.getRequestType()) {
-            case 0: // Socket登录
+            case SocketDataV0.REQUEST_TYPE_LOGIN:          // 0 Socket登录
                 handleSocketLogin(data);
                 break;
-            case 1: // 志愿者匹配成功通知
+            case SocketDataV0.REQUEST_TYPE_MATCH_SUCCESS:  // 1 志愿者匹配成功通知
                 handleMatchSuccess(data);
                 break;
-            case 2: // 视频初始化成功通知
+            case SocketDataV0.REQUEST_TYPE_VIDEO_INIT:     // 2 视频初始化成功通知
                 handleVideoInitSuccess(data);
                 break;
             default:
-                Log.d(TAG, "未知消息类型: " + data.getRequestType());
+                // 3/4/5（紧急求助通知）与 5001~5006（AI/跳转）不在视频通话职责内：
+                // 3/4 由 volunteer/HomeFragment 处理，5 由 blind/HomeFragment 处理，落 default 合理（A6 结论）。
+                Log.d(TAG, "非视频通话消息类型，忽略: " + data.getRequestType());
                 break;
         }
-        
-        // 通知消息监听器
-        notifyMessageReceived(data);
     }
     
 
@@ -183,26 +185,15 @@ public class VideoCallManager {
      * 通知状态变化
      */
     private void notifyStatusChanged(int status, String callId, String blindPhone, String volunteerPhone) {
-        for (VideoCallStatusListener listener : statusListeners) {
-            try {
-                listener.onCallStatusChanged(status, callId, blindPhone, volunteerPhone);
-            } catch (Exception e) {
-                Log.e(TAG, "通知状态监听器失败: " + e.getMessage());
+        mainHandler.post(() -> {
+            for (VideoCallStatusListener listener : statusListeners) {
+                try {
+                    listener.onCallStatusChanged(status, callId, blindPhone, volunteerPhone);
+                } catch (Exception e) {
+                    Log.e(TAG, "通知状态监听器失败: " + e.getMessage());
+                }
             }
-        }
-    }
-    
-    /**
-     * 通知消息接收
-     */
-    private void notifyMessageReceived(SocketDataV0 data) {
-        for (VideoCallMessageListener listener : messageListeners) {
-            try {
-                listener.onVideoCallMessageReceived(data);
-            } catch (Exception e) {
-                Log.e(TAG, "通知消息监听器失败: " + e.getMessage());
-            }
-        }
+        });
     }
     
     /**
@@ -222,50 +213,6 @@ public class VideoCallManager {
     }
     
     /**
-     * 添加消息监听器
-     */
-    public void addMessageListener(VideoCallMessageListener listener) {
-        if (!messageListeners.contains(listener)) {
-            messageListeners.add(listener);
-        }
-    }
-    
-    /**
-     * 移除消息监听器
-     */
-    public void removeMessageListener(VideoCallMessageListener listener) {
-        messageListeners.remove(listener);
-    }
-    
-    /**
-     * 获取当前通话状态
-     */
-    public int getCurrentCallStatus() {
-        return currentCallStatus;
-    }
-    
-    /**
-     * 获取当前通话ID
-     */
-    public String getCurrentCallId() {
-        return currentCallId;
-    }
-    
-    /**
-     * 获取匹配的盲人手机号
-     */
-    public String getMatchedBlindPhone() {
-        return matchedBlindPhone;
-    }
-    
-    /**
-     * 获取匹配的志愿者手机号
-     */
-    public String getMatchedVolunteerPhone() {
-        return matchedVolunteerPhone;
-    }
-    
-    /**
      * 获取通话开始时间
      */
     public long getCallStartTime() {
@@ -273,35 +220,10 @@ public class VideoCallManager {
     }
     
     /**
-     * 获取通话时长（毫秒）
-     */
-    public long getCallDuration() {
-        if (callStartTime > 0 && currentCallStatus == CALL_STATUS_IN_CALL) {
-            return System.currentTimeMillis() - callStartTime;
-        }
-        return 0;
-    }
-    
-    /**
-     * 检查是否在通话中
-     */
-    public boolean isInCall() {
-        return currentCallStatus == CALL_STATUS_IN_CALL;
-    }
-    
-    /**
-     * 检查是否在等待匹配
-     */
-    public boolean isWaitingForMatch() {
-        return currentCallStatus == CALL_STATUS_WAITING;
-    }
-    
-    /**
      * 清理资源
      */
     public void destroy() {
         statusListeners.clear();
-        messageListeners.clear();
         context = null;
         instance = null;
     }
@@ -311,12 +233,5 @@ public class VideoCallManager {
      */
     public interface VideoCallStatusListener {
         void onCallStatusChanged(int status, String callId, String blindPhone, String volunteerPhone);
-    }
-    
-    /**
-     * 视频通话消息监听器接口
-     */
-    public interface VideoCallMessageListener {
-        void onVideoCallMessageReceived(SocketDataV0 data);
     }
 } 

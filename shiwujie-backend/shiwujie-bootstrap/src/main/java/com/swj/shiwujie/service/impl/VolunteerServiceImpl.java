@@ -28,10 +28,13 @@ import com.swj.shiwujie.service.VolunteerService;
 import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import com.swj.shiwujie.utils.JwtUtils;
+import com.swj.shiwujie.utils.PasswordUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 import jakarta.annotation.Resource;
 import java.time.Duration;
@@ -132,16 +135,19 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         // 密码格式校验
         boolean isMatch = this.validatePassword(password);
         ThrowUtils.throwIf(!isMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-        String md5Password = SecureUtil.md5(password);// 加密
 
 
         // 有账号直接登录
         Volunteer volunteer = this.getByPhone(phone);
         if (ObjUtil.isNotNull(volunteer)) {
 
-            //校验密码是否正确
+            //校验密码是否正确（兼容历史 MD5，通过即懒升级为 BCrypt）
             String volunteerPassword = volunteer.getPassword();
-            ThrowUtils.throwIf(!md5Password.equals(volunteerPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
+            ThrowUtils.throwIf(!PasswordUtils.matches(password, volunteerPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
+            if (PasswordUtils.isLegacyMd5(volunteerPassword)) {
+                volunteer.setPassword(PasswordUtils.hash(password));
+                this.updateById(volunteer);
+            }
 
             //生成token并存入redis
             String token = this.generateLoginToken(volunteer);
@@ -155,7 +161,7 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
         // 无账号自动注册
         Volunteer newVolunteer = new Volunteer();
         newVolunteer.setPhone(phone);
-        newVolunteer.setPassword(md5Password);
+        newVolunteer.setPassword(PasswordUtils.hash(password));
         boolean save = this.save(newVolunteer);
         ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
 
@@ -175,34 +181,32 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
     @Override
     public boolean updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword) {
 
-        // 校验密码格式
         String newPassword = volunteerUpdatePassword.getNewPassword();
         String originPassword = volunteerUpdatePassword.getOriginPassword();
 
         Volunteer volunteer = this.getById(volunteerUpdatePassword.getVolunteerId());
-        // 若用户没有密码则设置密码
-        if(StrUtil.isNotBlank(originPassword)){
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.PARAMS_ERROR, "用户不存在");
+
+        if (StrUtil.isBlank(volunteer.getPassword())) {
+            // 当前无密码（快注册用户）首次设密：调用者所有权已在 controller 校验，无需原密码
+            ThrowUtils.throwIf(StrUtil.isBlank(newPassword), ErrorCode.PARAMS_ERROR, "新密码不能为空");
+        } else {
+            // 已设密码：原密码必填且须匹配（修复账户接管：原 originPassword 留空即跳过整段校验）
+            ThrowUtils.throwIf(StrUtil.isBlank(originPassword), ErrorCode.PARAMS_ERROR, "原密码不能为空");
             boolean isOriginMatch = this.validatePassword(originPassword);
             ThrowUtils.throwIf(!isOriginMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-
-            ThrowUtils.throwIf(StrUtil.isBlank(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
-            //检查原密码
-            String md5OriginPassword = SecureUtil.md5(originPassword);
-            ThrowUtils.throwIf(!md5OriginPassword.equals(volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+            //检查原密码（兼容历史 MD5 与 BCrypt）
+            ThrowUtils.throwIf(!PasswordUtils.matches(originPassword, volunteer.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
         }
 
         boolean isNewMatch = this.validatePassword(newPassword);
         ThrowUtils.throwIf(!isNewMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
 
-
-
-        // 密码加密更新
-        volunteer.setPassword(SecureUtil.md5(newPassword));
-
+        // 密码加密更新（BCrypt）
+        volunteer.setPassword(PasswordUtils.hash(newPassword));
 
         boolean result = this.updateById(volunteer);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
-
 
         return true;
     }
@@ -384,8 +388,9 @@ public class VolunteerServiceImpl extends ServiceImpl<VolunteerMapper, Volunteer
                 Long communityId = volunteer.getCommunityId();
                 if(ObjUtil.isNotNull(communityId)){
                     Community community = innerCommunityService.getById(communityId);
+                    ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
                     //判断是否是社区注册人
-                    boolean equals = community.getRegisterVolunteerId().equals(volunteerId);
+                    boolean equals = Objects.equals(community.getRegisterVolunteerId(), volunteerId);
                     if(equals){
                         boolean b = innerCommunityService.deleteCommunity(communityId, volunteerId);
                         ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR, "删除社区失败");

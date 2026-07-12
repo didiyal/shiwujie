@@ -94,7 +94,4 @@ public abstract class ApiCallback<T> implements Callback<BaseResponse<T>> {
 
     public abstract void onSuccess(T response);
 
-    public Context getContext() {
-        return context;
-    }
 }

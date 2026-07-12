@@ -234,17 +234,17 @@ public class BlindController {
      */
     @PostMapping("/update/password")
     @Operation(summary = "设置/修改视障人士密码")
-    public BaseResponse<Boolean> updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword) {
+    public BaseResponse<Boolean> updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword, HttpServletRequest request) {
         //鉴空
         ThrowUtils.throwIf(ObjUtil.hasEmpty(blindUpdatePassword), ErrorCode.PARAMS_ERROR);
-
+        // 只能修改自己的密码（修复账户接管：原接口不校验调用者 == body.blindId）
+        Long loginBlindId = LoginUtils.getLoginBlindId(request);
+        ThrowUtils.throwIf(ObjUtil.isNull(loginBlindId) || !Objects.equals(loginBlindId, blindUpdatePassword.getBlindId()),
+                ErrorCode.NO_AUTH, "只能修改自己的密码");
 
         boolean result = blindService.updateBlindPassword(blindUpdatePassword);
 
-
         return ResultUtils.success(result);
-
-
     }
 
 

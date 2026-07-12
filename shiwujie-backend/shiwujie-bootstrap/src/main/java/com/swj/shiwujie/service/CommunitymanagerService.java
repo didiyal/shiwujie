@@ -39,6 +39,15 @@ public interface CommunitymanagerService extends IService<Communitymanager> {
      */
     boolean updateCommunityManager(CommunityManagerRequest request, Long loginVolunteerId);
 
+    /**
+     * 删除社区管理成员(志愿者)
+     *
+     * @param targetVolunteerId 目标志愿者ID
+     * @param communityId       社区ID
+     * @param loginVolunteerId  操作人ID
+     */
+    boolean deleteCommunityManager(Long targetVolunteerId, Long communityId, Long loginVolunteerId);
+
 
     //region 工具方法
 

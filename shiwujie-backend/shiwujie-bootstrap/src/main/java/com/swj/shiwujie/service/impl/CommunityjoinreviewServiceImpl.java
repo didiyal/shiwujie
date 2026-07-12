@@ -108,6 +108,7 @@ public class CommunityjoinreviewServiceImpl extends ServiceImpl<Communityjoinrev
     public List<CommunityJoinReviewVO> getCommunityJoinReviewVOList(Long loginVolunteerId) {
         // 查询管理员所在社区的审核记录
         Volunteer volunteer = innerVolunteerService.getById(loginVolunteerId);
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.PARAMS_ERROR, "用户不存在");
         Community community = communityMapper.selectOne(new QueryWrapper<Community>().eq("community_id", volunteer.getCommunityId()));
         ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "管理员未关联社区");
 

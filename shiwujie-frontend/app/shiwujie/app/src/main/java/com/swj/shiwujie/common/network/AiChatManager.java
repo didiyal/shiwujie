@@ -5,8 +5,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import com.swj.shiwujie.data.model.BaseResponse;
-import com.swj.shiwujie.data.model.AiChatRequest;
-import com.swj.shiwujie.data.model.AiChatResponse;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -350,81 +348,10 @@ public class AiChatManager {
     }
     
     /**
-     * 开始流式输出
-     * @param fullResponse 完整的AI回复
-     */
-    private void startStreamingOutput(String fullResponse) {
-        if (fullResponse == null || fullResponse.isEmpty()) {
-            if (streamingListener != null) {
-                streamingListener.onStreamingError("AI回复为空");
-            }
-            return;
-        }
-        
-        isStreaming = true;
-        currentResponse = "";
-        
-        // 通知开始流式输出
-        if (streamingListener != null) {
-            mainHandler.post(() -> streamingListener.onStreamingStart());
-        }
-        
-        // 在后台线程中模拟流式输出
-        executorService.execute(() -> {
-            try {
-                // 按字符流式输出，模拟打字机效果
-                for (int i = 0; i < fullResponse.length(); i++) {
-                    if (!isStreaming) {
-                        break; // 如果被中断则停止
-                    }
-                    
-                    char currentChar = fullResponse.charAt(i);
-                    currentResponse += currentChar;
-                    
-                    // 在主线程中更新UI
-                    final String currentText = currentResponse;
-                    mainHandler.post(() -> {
-                        if (streamingListener != null) {
-                            streamingListener.onStreamingText(currentText);
-                        }
-                    });
-                    
-                    // 控制输出速度，模拟真实打字效果
-                    Thread.sleep(typingSpeed); // 使用配置的打字机速度
-                }
-                
-                // 流式输出完成
-                mainHandler.post(() -> {
-                    isStreaming = false;
-                    if (streamingListener != null) {
-                        streamingListener.onStreamingComplete(fullResponse);
-                    }
-                });
-                
-            } catch (InterruptedException e) {
-                Log.w(TAG, "流式输出被中断", e);
-                mainHandler.post(() -> {
-                    isStreaming = false;
-                    if (streamingListener != null) {
-                        streamingListener.onStreamingComplete(currentResponse);
-                    }
-                });
-            }
-        });
-    }
-    
-    /**
      * 停止流式输出
      */
     public void stopStreaming() {
         isStreaming = false;
-    }
-    
-    /**
-     * 是否正在流式输出
-     */
-    public boolean isStreaming() {
-        return isStreaming;
     }
     
     /**
@@ -480,14 +407,6 @@ public class AiChatManager {
             this.typingSpeed = speed;
             Log.d(TAG, "设置打字机速度: " + speed + "ms");
         }
-    }
-    
-    /**
-     * 获取当前打字机效果速度
-     * @return 字符间延迟，单位毫秒
-     */
-    public int getTypingSpeed() {
-        return typingSpeed;
     }
     
     /**

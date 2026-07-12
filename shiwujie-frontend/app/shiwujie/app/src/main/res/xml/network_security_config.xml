@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- 生产后端当前为明文 HTTP（v3.0.0 单体，base url http://47.112.114.139:8100），暂放行；
+         待后端启用 TLS 后切 HTTPS 并移除此条 cleartext 放行。 -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">47.112.114.139</domain>
     </domain-config>
-    
-    <!-- 允许访问本地开发服务器 -->
+
+    <!-- 避障检测服务（自签证书的内网地址，当前不可达），保留放行以备联调 -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">192.168.100.248</domain>
     </domain-config>
-    
-    <!-- 允许访问本地网络 -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">192.168.0.0/16</domain>
-        <domain includeSubdomains="true">10.0.0.0/8</domain>
-        <domain includeSubdomains="true">172.16.0.0/12</domain>
-    </domain-config>
-</network-security-config> 
+
+    <!-- 注：曾误把 192.168.0.0/16 等 CIDR 当作 <domain> 写入，<domain> 不支持 CIDR 语法、本就不生效，已移除。 -->
+</network-security-config>

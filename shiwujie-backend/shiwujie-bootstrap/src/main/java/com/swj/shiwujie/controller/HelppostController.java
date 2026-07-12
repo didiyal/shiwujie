@@ -83,7 +83,7 @@ public class HelppostController {
 
         Long loginBlindId = LoginUtils.getLoginBlindId(httpRequest);
         Long loginVolunteerId = LoginUtils.getLoginVolunteerId(httpRequest);
-        ThrowUtils.throwIf(loginBlindId == null, ErrorCode.NOT_LOGIN, "未登录");
+        ThrowUtils.throwIf(loginBlindId == null && loginVolunteerId == null, ErrorCode.NOT_LOGIN, "未登录");
 
         boolean result = helppostService.deleteHelppost(helppostId, loginBlindId,loginVolunteerId);
         return ResultUtils.success(result);

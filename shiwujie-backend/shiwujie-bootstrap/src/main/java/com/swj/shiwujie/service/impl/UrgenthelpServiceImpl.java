@@ -137,6 +137,7 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
 
         //4. 更新求助表内容
         Blind blind = innerBlindService.getByPhone(blindPhone);
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "求助用户不存在");
         Urgenthelp urgenthelp = this.getWaitingByBlindId(blind.getBlindId());
         ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp), ErrorCode.PARAMS_ERROR, "对方没有在求助");
 

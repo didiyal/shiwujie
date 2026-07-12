@@ -39,9 +39,10 @@
 ### 🔴 安全加固（v2.1.0 收尾遗留项平移，详见 [known-issues.md](../../../shiwujie-backend/docs/known-issues.md) + [auth.md](../../architecture/auth.md)）
 
 - [ ] 关闭 ai 默认用户兜底
-- [ ] 恢复 Helppost / Community 删除/更新权限检查
+- [x] 恢复 Helppost / Community 删除/更新权限检查（2026-07-12；求助帖=作者或注册人/管理员、社区=注册人、社区管理员=注册人/管理员+末位注册人护栏；`deleteCommunityManager` 自删 bug 一并修正。**仍待办**：Activity/Communityjoinreview/Activitysign 同类未网关）
 - [ ] /ws/call 与社区/家庭审核补鉴权
-- [ ] 密码 MD5 → BCrypt/Argon2；`TOKEN_SECRETKEY` 走环境变量
+- [x] 密码 MD5 → BCrypt（2026-07-12，Hutool `BCrypt` cost=10 + 存量懒升级；分支 `fix/v3.0.0-security-hardening`）
+- [ ] `TOKEN_SECRETKEY` 走环境变量（硬编码弱密钥，待办）
 - [ ] 前端 TLS + 移除硬编码 SDK Key
 
 ### 能力补全

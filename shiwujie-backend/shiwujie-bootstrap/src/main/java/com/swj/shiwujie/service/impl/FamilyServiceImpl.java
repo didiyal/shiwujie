@@ -115,9 +115,11 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
         synchronized (loginUserPhone.intern()) {
             // 家主
             Volunteer creatorVolunteer = volunteerService.getById(loginVolunteerId);
+            ThrowUtils.throwIf(ObjUtil.isNull(creatorVolunteer), ErrorCode.PARAMS_ERROR, "用户不存在");
 
             //2. 删除家庭
             Long familyId = creatorVolunteer.getFamilyId();
+            ThrowUtils.throwIf(ObjUtil.isNull(familyId), ErrorCode.PARAMS_ERROR, "当前用户未创建家庭");
 
 
             QueryWrapper<Blind> blindQueryWrapper = new QueryWrapper<>();

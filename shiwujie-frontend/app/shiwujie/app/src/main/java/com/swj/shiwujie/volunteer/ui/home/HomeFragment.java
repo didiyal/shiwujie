@@ -165,7 +165,7 @@ public class HomeFragment extends Fragment {
               ", 志愿者手机号: " + data.getVolunteerPhone() + 
               ", 频道ID: " + data.getChannelId());
         
-        if (data.getRequestType() == 3) {
+        if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_EMERGENCY_INCOMING) {
             // 志愿者端来电提醒弹窗
             // 检查权限并启动紧急求助响铃
             if (PermissionManager.hasRingerPermissions(requireContext())) {
@@ -193,7 +193,7 @@ public class HomeFragment extends Fragment {
             });
             emergencyHelpIncomingWindow.show();
             currentBlindIdForHelp = data.getBlindPhone();
-        } else if (data.getRequestType() == 4) {
+        } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_EMERGENCY_CANCELLED) {
             // 盲人取消紧急求助，家属端关闭弹窗
             Log.d(TAG, "收到紧急求助取消通知，关闭弹窗");
             // 停止响铃
@@ -201,7 +201,7 @@ public class HomeFragment extends Fragment {
             if (emergencyHelpIncomingWindow != null) {
                 emergencyHelpIncomingWindow.hide();
             }
-        } else if (data.getRequestType() == 1) {
+        } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_MATCH_SUCCESS) {
             // 志愿者匹配成功通知
             Log.d(TAG, "收到匹配成功通知，准备进入视频通话页面");
             Log.d(TAG, "频道ID: " + data.getChannelId() + ", 盲人手机号: " + data.getBlindPhone());
@@ -228,7 +228,7 @@ public class HomeFragment extends Fragment {
             } catch (Exception e) {
                 Log.e(TAG, "启动视频通话Activity失败", e);
             }
-        } else if (data.getRequestType() == 0) {
+        } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_LOGIN) {
             // 收到登录确认消息
             Log.d(TAG, "收到登录确认消息");
         } else {

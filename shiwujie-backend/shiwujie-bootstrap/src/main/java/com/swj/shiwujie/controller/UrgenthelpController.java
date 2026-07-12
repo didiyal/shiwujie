@@ -99,6 +99,7 @@ public class UrgenthelpController {
 
 
         Urgenthelp urgenthelp = urgenthelpService.getByBlindId(loginBlindId);
+        ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp), ErrorCode.PARAMS_ERROR, "未找到进行中的紧急求助");
         urgenthelp.setVideoPath(videoPath);
 
         //3.处理

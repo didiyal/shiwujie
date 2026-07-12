@@ -24,9 +24,11 @@ public class ObstacleDetectionRetrofitClient {
     private final Retrofit retrofit;
 
     private ObstacleDetectionRetrofitClient() {
-        // 创建日志拦截器
+        // 创建日志拦截器：仅 DEBUG 打印 BODY，release 关闭（与 RetrofitClient 一致，A4）
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        loggingInterceptor.setLevel(com.swj.shiwujie.BuildConfig.DEBUG
+                ? HttpLoggingInterceptor.Level.BODY
+                : HttpLoggingInterceptor.Level.NONE);
 
         // 创建信任所有证书的TrustManager
         TrustManager[] trustAllCerts = new TrustManager[]{

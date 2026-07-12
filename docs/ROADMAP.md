@@ -10,8 +10,8 @@
 
 ```text
 [x] 单体重写：去 Spring Cloud / Dubbo，合并 user / call / community / ai 为单体应用（保留模块化分包，统一 Spring Boot 版本）——工程已落地，启动级 + WS/事务功能级验证通过，待 tag 仪式封版
-[ ] 安全加固：恢复 Helppost/Community 删改权限检查、密码加盐（MD5→BCrypt/Argon2）
-[ ] 能力补全：App 集成高德 SDK；软件介绍主页；软件下载功能；社区页面集成到主页
+[x] 安全加固：恢复 Helppost/Community 删改权限检查、密码加盐（MD5→BCrypt；`fix/v3.0.0-security-hardening`，2026-07-12）
+[ ] 能力补全：App 集成高德 SDK；软件介绍主页；软件下载功能；社区页面集成到主页，Web页面美化
 [ ] AI 重写（Agent 驱动）：ai 模块采用 LangChain / LangGraph 重写，整体改 Agent 驱动；若 Agent 完成且表现良好，可简化安卓端（只保留部分页面）
 ```
 

@@ -27,12 +27,14 @@ import com.swj.shiwujie.service.CommunityService;
 import com.swj.shiwujie.service.CommunitymanagerService;
 import com.swj.shiwujie.service.user.InnerBlindService;
 import com.swj.shiwujie.service.user.InnerVolunteerService;
+import com.swj.shiwujie.utils.PasswordUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -66,6 +68,7 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
     @Override
     public VolunteerVO checkLogin(Long loginVolunteerId) {
         Volunteer volunteer = innerVolunteerService.getById(loginVolunteerId);
+        ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.NOT_LOGIN, "用户不存在");
         ThrowUtils.throwIf(ObjUtil.isNull(volunteer.getCommunityId()), ErrorCode.NO_AUTH);
         Communitymanager communitymanager = communitymanagerService.getByVolunteerIdAndCommunityId(
                 volunteer.getVolunteerId(), volunteer.getCommunityId());
@@ -192,10 +195,14 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         Volunteer volunteer = innerVolunteerService.getByPhone(volunteerLARRequest.getPhone());
         ThrowUtils.throwIf(ObjUtil.isNull(volunteer), ErrorCode.OPERATION_ERROR, "用户不存在");
 
-        // 2. 验证密码
-        String encryptPassword = SecureUtil.md5(volunteerLARRequest.getPassword());
-        ThrowUtils.throwIf(!encryptPassword.equals(volunteer.getPassword()),
+        // 2. 验证密码（兼容历史 MD5，通过即懒升级为 BCrypt）
+        String password = volunteerLARRequest.getPassword();
+        ThrowUtils.throwIf(!PasswordUtils.matches(password, volunteer.getPassword()),
                 ErrorCode.PARAMS_ERROR, "密码错误");
+        if (PasswordUtils.isLegacyMd5(volunteer.getPassword())) {
+            volunteer.setPassword(PasswordUtils.hash(password));
+            innerVolunteerService.updateById(volunteer);
+        }
 
         // 3. 检查该志愿者是否为社区管理员
         long count = communitymanagerService.getCountByVolunteerIdAndCommunityId(volunteer.getVolunteerId(), volunteer.getCommunityId());
@@ -226,6 +233,10 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         // 检查社区是否存在
         Community community = this.getById(communityId);
         ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 权限检查：仅社区注册人可修改
+        ThrowUtils.throwIf(!Objects.equals(community.getRegisterVolunteerId(), volunteerId),
+                ErrorCode.NO_AUTH, "仅社区注册人可修改");
 
         // 更新字段（仅非空值）
         if (ObjUtil.isNotNull(communityName) && !communityName.trim().isEmpty()) {
@@ -258,6 +269,10 @@ public class CommunityServiceImpl extends ServiceImpl<CommunityMapper, Community
         // 检查社区是否存在
         Community community = this.getById(communityId);
         ThrowUtils.throwIf(ObjUtil.isNull(community), ErrorCode.PARAMS_ERROR, "社区不存在");
+
+        // 权限检查：仅社区注册人可删除
+        ThrowUtils.throwIf(!Objects.equals(community.getRegisterVolunteerId(), volunteerId),
+                ErrorCode.NO_AUTH, "仅社区注册人可删除");
 
         // 将社区内所有视障人士移出社区
         boolean blindResult = innerBlindService.removeCommunityId(communityId);

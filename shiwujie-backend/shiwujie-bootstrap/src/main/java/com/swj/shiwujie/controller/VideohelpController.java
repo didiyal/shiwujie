@@ -125,6 +125,7 @@ public class VideohelpController {
 
 
         Videohelp videohelp = videohelpService.getByBlindId(loginBlindId);
+        ThrowUtils.throwIf(ObjUtil.isNull(videohelp), ErrorCode.PARAMS_ERROR, "未找到进行中的视频求助");
         videohelp.setVideoPath(videoPath);
 
         //3.处理

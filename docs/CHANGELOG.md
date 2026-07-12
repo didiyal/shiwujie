@@ -44,6 +44,74 @@
 - **call `netty-all` 死依赖**（阶段1.5 `af162c9`）：源码零 Netty 引用，删冗余 `netty-all:4.1.50.Final`。
 - **pagehelper 死依赖**（阶段1.4 `4db2c53`）：全代码 0 处 `PageHelper.startPage`。
 
+**安全加固（2026-07-12，`fix/v3.0.0-security-hardening`）**
+
+> 落地 ROADMAP「安全加固」项。对外 HTTP 路径 / WS 信令 / 业务码（`NO_AUTH` 40030）不变；权限边界**收紧**与口令算法升级为行为变更。明细见 [known-issues](../shiwujie-backend/docs/known-issues.md) #2/#6、[architecture/auth.md](architecture/auth.md) 风险 #4/#9。
+
+**变更**
+- **恢复社区域删改权限检查**：求助帖删改——仅作者（盲人本人）或本社区注册人/管理员可操作，员工（EMPLOYEE）无权，违者返 `NO_AUTH`；社区修改/删除——仅注册人；社区管理员增删改——仅注册人/管理员，并加「末位注册人护栏」（禁降级/删除唯一注册人、禁新增第二个注册人）。此前这些检查被注释或缺失，任意登录用户可删/改任意求助帖与社区、随意增删管理员。
+- **修正 `deleteCommunityManager` 自删 bug**：原实现忽略请求体、恒删调用者自己的管理记录；改为按请求体目标删除并鉴权。
+- **口令存储 MD5 → BCrypt**：新增 `PasswordUtils`（Hutool `BCrypt`，cost=10，盐内嵌），盲人/志愿者/社区登录注册与改密全改 BCrypt；存量无盐 MD5 行于首次以原明文口令登录通过时**懒升级**为 BCrypt（对用户透明，无离线迁移脚本）。身份证/残疾证等 PII 单向哈希仍用 MD5（与口令无关）。`password varchar(100)` 足装 60 字符 BCrypt 串，不加 salt 列、不改 DDL。
+
+**App 前端 P0 快速止血（2026-07-12）**
+
+> 落地 [`问题.md`](../问题.md) 视频通话/紧急求助前后端问题分析 + 本轮 App 代码审查中核实仍存在的前端阻断/高危项。最小修复，不触碰结构（blind/volunteer 合并、AiFragment 拆分、ViewModel 引入等留待结构重构批）。对外 HTTP/WS 契约零变更。明细见 [App known-issues](../shiwujie-frontend/app/docs/known-issues.md)「已修复（P0 快速止血）」。`assembleDebug` + `assembleRelease`（R8 混淆+资源压缩+lintVital）均已通过。
+
+**修复**
+- **WS 心跳间隔 2 小时 → 30 秒**：`WebSocketService` 心跳实际间隔为 `HOURS`、注释与日志却写 30s，长连接被 NAT 静默掐断，紧急求助/视频信令不可靠送达。对齐为 30s。
+- **视频通话监听器泄漏**：blind/volunteer 两份 `VideoCallActivity.onDestroy` 误调 `removeXxxListener(null)`（`List.remove(null)` 为 no-op），匿名监听器永不移除，Activity 销毁后仍收 WS 回调致 NPE/泄漏。改为存字段、按真实引用移除。
+- **紧急求助"无法再次求助"死锁**：`EmergencyHelpManager` 求助成功后 `isInEmergencyHelp` 仅在失败/取消/挂断时复位，家属无响应时永真，用户无法再次求助。新增 60s "家属无响应"超时兜底（复用主线程 Handler，取消/挂断/响应/通话建立时取消），超时自动复位；回调接口加 `default onHelpTimeout()`（不破坏既有实现）。
+- **AI 页 WebSocket 断线不重连**：`AiFragment.attemptWebSocketReconnect` 仅打日志从不调 `connect`、却谎报"重连完成"，AI 推送（5001~5006）断线后永不恢复。改为真正调 `WebSocketManager.connectWebSocket`。
+
+**变更**
+- **统一 token 注入拦截器**：`RetrofitClient` 新增 OkHttp 拦截器，仅当请求未自带 `Authorization` 头时从本地注入 `Bearer <token>`，兜住历史漏带；既有手拼 `"Bearer "+token` 调用不受影响（已有头则跳过），调用点清理留待结构批。HTTP BODY 日志改为仅 DEBUG 包打印（release 关闭）。
+- **release 构建加固**：开启 R8 混淆 + 资源压缩，补 ProGuard keep（Gson 泛型/`@SerializedName`、`TypeToken`、`AiFragment` 内被 Gson 序列化的内部数据类 `Message`/`Conversation`、anyRTC/讯飞/Retrofit、`org.slf4j` 缺失类抑制——java-websocket 传递依赖拉进 slf4j-api 但无 binding，运行期退化 NOP 不影响功能）；`AndroidManifest` `allowBackup=false`；讯飞 SDK `setShowLog` 按 `BuildConfig.DEBUG` 守卫；`buildFeatures.buildConfig=true` 以生成 `BuildConfig`。`assembleDebug` + `assembleRelease`（R8 混淆+资源压缩+lintVital）均已通过。
+
+**移除**
+- `network_security_config` 中把 CIDR（`192.168.0.0/16` 等）当作 `<domain>` 的无效条目（语法不支持、本就不生效）。生产 IP 明文 HTTP 放行暂保留（待后端 TLS）。
+- `gradle-wrapper.properties` 失效的 macOS 本地分发路径 `file:/Users/luna/...`（仅该开发机可用），切回腾讯镜像远程 URL（已本地缓存）。
+
+**App 前端 批次A：协议对齐 + 超时竞态止血（2026-07-12）**
+
+> 接 P0 快速止血后的下一批。修 P0 引入的高危竞态 + WS 重连失活 + 线程安全，并把散落的 requestType 魔数常量化、固化信令真值表。不碰结构（blind/volunteer 合并、AiFragment 拆分等留批次 D）。对外 HTTP/WS 契约零变更（requestType 码值不变，仅前端常量替换）。明细见 [App known-issues](../shiwujie-frontend/app/docs/known-issues.md)。
+
+**修复**
+- **紧急求助超时在通话中误触发（P0 副作用，高危）**：P0 给紧急求助加了 60s "家属无响应"超时兜底，但取消该超时的 `EmergencyHelpManager.handleSocketMessage(type=2)` 是死代码——`WebSocketManager.handleMessage` 从不调它，导致家属正常接听、通话进行中时 60s 后超时仍 fire、误复位 `isInEmergencyHelp`。`WebSocketManager` 收到消息后现补发 `EmergencyHelpManager.handleSocketMessage`（type=2 取消超时+更新状态，其他 type 仅打日志），超时不再在通话中误触发。
+- **WS 重连用尽后静默永久失活**：`MAX_RECONNECT_ATTEMPTS=5` 用尽后 `onClose`/`checkConnectionStatus` 的重连门槛永假，弱网下断连 >5 次即永久断开、无 UI 提示。改为：快速重连窗口（<5 次）内 3s 重试，用尽后转 60s 慢速持续重试（不再放弃），并在进入慢速首次通知 `onReconnectNeeded`；通话/匹配中仍跳过重连（`canReconnect` 不变）。
+- **`VideoCallManager` 监听器回调跑在子线程**：`notifyStatusChanged`/`notifyMessageReceived` 在 java-websocket 读线程直接 for-loop 调监听器，Activity 回调改 UI 可能触发 "Only the original thread..." 崩溃。两处统一切到主线程 `Handler.post`（与 `WebSocketManager` 自身一致）。
+
+**变更**
+- **前台通知按角色跳首页**：`WebSocketService` 前台通知点击 Intent 原硬编码 `VolunteerHomeActivity`，盲人账号点通知进错志愿者首页；改为按 `SharedPrefsUtil.isBlind()` 选 `BlindHomeActivity`/`VolunteerHomeActivity`。
+- **避障客户端 HTTP BODY 日志守卫 DEBUG**：`ObstacleDetectionRetrofitClient` 日志拦截器原无条件 `Level.BODY`，release 也会打印请求体；改为仅 DEBUG 打印（与 P0 对 `RetrofitClient` 的改法一致，补漏）。
+- **信令码常量化 + 固化真值表（零行为变更）**：`SocketDataV0` 补 requestType -1~5 命名常量（按实际语义）+ 类头真值表注释；`VideoCallManager` switch 与 blind/volunteer `HomeFragment`、`EmergencyHelpManager` 的魔数比较改用常量。审查修正：原报告称「`VideoCallManager` 应补 type 3/4/5 处理」系误判——3/4/5 是紧急求助通知（接收型），已在 volunteer/blind `HomeFragment` 正确处理，落 `VideoCallManager` default 合理。`SocketDataV0` 5 个零调用点工厂方法标 `@Deprecated`（命名误导，如 `createVolunteerAccept=4` 实为"取消"），不删（删属批次 D）。
+
+**App 前端 批次B：死代码 / 死资源 / 死依赖清理（2026-07-12）**
+
+> 接批次A后的「简化」批。三个 Explore agent 扫描 + 人工逐项 grep 复核，把全 App 核实**零引用**的死代码、死资源、死依赖、一个无效权限一次性清除。对外 HTTP/WS 契约、信令码值零变更（纯删除死代码——R8 release 本就裁掉其中大部分，源码层面仍在拖慢 debug 构建、污染自动补全、制造假信号）。无 `getIdentifier` 动态查资源，删除均由 build 兜底验证。明细见 [App known-issues](../shiwujie-frontend/app/docs/known-issues.md) #8/#10/#12。`assembleDebug` + `assembleRelease`（R8 混淆+资源压缩+lintVital）+ 全量 `lint` 均已通过（全量 lint 16 项既有错误零新增）。
+
+**移除**
+- **未用类（15）**：Compose 模板残留（`MainActivity.kt` + `ui/theme/{Color,Theme,Type}.kt`——launcher 实为 `ChooseIdentityActivity`、App 全 View 体系，`MainActivity.kt` 不在 manifest）；空占位/未用 POJO（`SegmentedTTSManager` 0 字节空文件、`User`/`UserInfo`/`BlindLoginSuccessVO`/`ActivityQueryRequest`/`AiChatRequest`/`AiChatResponse`）；避障 mock 脚手架（`ObstacleDetectionManager` 纯模拟数据零调用方 + 3 个 `ObstacleDetection{Health,Result,Session}Response`——真实避障路径走 `ObstacleDetectionRetrofitClient` + `ApiService.startObstacleDetectionSession/processFrame`，均 `Call<String>` 不碰这些模型）。
+- **类内死方法 / 字段 / 接口**：`SocketDataV0` 删批次A标的 5 个 `@Deprecated` 工厂 + `setContent`/`checkConnectionStatus`（保留 `getContent`——`AiFragment` 在用）；`ApiService` 删 2 个避障健康检查方法 + 相关 import；`WebSocketManager` 删 `getSocketData`/`setConnectionStatusListener` + 字段（实际走 `globalConnectionStatusListeners` 列表）；`VideoCallManager` 删 `addMessageListener`/`removeMessageListener` + 接口 `VideoCallMessageListener`、7 个未用查询方法（`getCurrentCallStatus/Id`/`getMatchedBlindPhone`/`getMatchedVolunteerPhone`/`getCallDuration`/`isInCall`/`isWaitingForMatch`）、`updateCallStatus` 收为 `private`（保留 `getCallStartTime` + 状态监听器——VideoCallActivity 在用）；`EmergencyHelpManager` 删 `getCurrentHelpData`/`respondToEmergencyHelp(String)`（volunteer HomeFragment 自己直调 API）/`destroy`；`EmergencyHelpData` 删 3 个未用工厂 + 9 个未用 getter + 5 个状态判定方法 + `getStatusDescription`（保留对应 setter——manager 内部在用）；`ApiCallback.getContext`；`AiChatManager` 删 `startStreamingOutput`/`isStreaming`/`getTypingSpeed`、`ImageRecognitionManager` 删 `isStreaming`/`getTypingSpeed`（保留 `setTypingSpeed`）。
+- **死资源（57 文件 + strings 12 项 / 2 数组）**：布局 9（`activity_main`/`fragment_community`/`fragment_dashboard`/`fragment_notifications`/`card_join_request_status`/`ifly_layout_mnotice_image`/`fragment_blind_community_joined`/`fragment_blind_community_no_join`/`fragment_volunteer_community`）；菜单 2（`menu_bottom_nav`/`menu_top_app_bar`）；`xml/tts_setting.xml`（无 PreferenceFragment 加载）→ 级联删 string-array `stream_entries`/`stream_values`；drawable 顶层 20 项 + 整目录 `drawable/icon/`（25 项）；strings 12 项（`title_home/dashboard/notifications`/`blind_count`/`volunteer_count`/`blind_label`/`volunteer_label`/`register_date`/`chinese`/`english`/`learn_call`/`help_notification`）。注：`drawable/icon/` 子目录因与顶层资源同名冲突、本就不是合法 Android 资源目录（其文件从未打进 APK），删它是纯源码树清理。
+- **死依赖**：`app/build.gradle.kts` 删 lifecycle livedata/viewmodel ktx + 整组 CameraX（5 个 `implementation`——对应已知问题 #12「依赖声明 CameraX、实用 Camera2」）；`gradle/libs.versions.toml` 同步删版本与 library 声明。
+- **无效权限**：`AndroidManifest.xml` 删 `READ_PRIVILEGED_PHONE_STATE`（signature/system 级，第三方 app 拿不到、声明无效；代码只用 `READ_PHONE_STATE`/`READ_PHONE_NUMBERS`）。
+
+**后端单元测试层（2026-07-12，ai 外）**
+
+> 给 ai 模块外的后端补纯单元测试（用户决策：纯 Mockito、不起 Spring/DB/Redis、零新依赖；覆盖优先级「先深耕安全热路径再铺广」）。`spring-boot-starter-test`（test scope）已在 bootstrap pom，提供 JUnit5 + Mockito5（inline mock maker）+ AssertJ。20 个测试类 / 286 例，`mvn test` 全绿，覆盖 utils/common/exception（`PasswordUtils` BCrypt、`JwtUtils`、`LoginUtils`、`ResultUtils`、`ConverterUtils`、`ThrowUtils`、`ErrorCode`）、拦截器 `LoginCheckInterceptor` 全分支、user 域（Blind/Volunteer/Family/FamilyJoinReview）、community 域（Community/Communitymanager/Helppost/Activity/Activitysign/Communityjoinreview）、call 域（Urgenthelp/Videohelp）。MyBatis-Plus 3.5.9 单测三坑（`ServiceImpl.baseMapper` 需 `ReflectionTestUtils` 注入、`getOne(QueryWrapper)` 走两参 `selectOne`、`insert`/`updateById`/`deleteById` 多态重载须 typed matcher）已踩平固化进模板，明细见 [testing-strategy](development/v3.0.0/testing-strategy.md)「自动化单元测试」段。ai 模块、`@SpringBootTest` 集成测试（需测试用 DB/Redis profile 或 H2/Testcontainers）本轮暂不覆盖。
+
+**新增**
+- `shiwujie-bootstrap/src/test/`：20 个纯单元测试类，286 例。
+
+**后端代码审查 P0 止血（2026-07-12，`fix/v3.0.0-security-hardening`）**
+
+> 安全加固 + 单测落地后的一次独立全量审查（ai 外）。验证刚落地的加固（BCrypt + 权限恢复）正确；并修掉一批**新发现**的 P0 高危（账户接管、Redis 队列序列化断裂、TTL 单位错、NPE 簇）。对外 HTTP 路径 / WS 信令 / 业务码（`NO_AUTH` 40030、`PARAMS_ERROR` 40000）零变更，前端零改。明细见 [known-issues](../shiwujie-backend/docs/known-issues.md) #4/#5/#9 + 跨切面 ✅ 段、[architecture/auth.md](architecture/auth.md) 权限矩阵。`mvn install -DskipTests` + `mvn test`（287 例，+1 回归）全绿。
+
+**修复**
+- **改密账户接管**：`BlindController`/`VolunteerController` 改密接口原不校验登录人 == body 目标 id，且 service 侧原密码校验整段在 `if(isNotBlank(originPassword))` 内——originPassword 留空即跳过原密码校验。组合 `{blindId:<受害者>, newPassword, originPassword:""}` 可改任意账号密码。加 ownership 校验（不等即 `NO_AUTH`）+ 已设密码用户 originPassword 必填且须 `PasswordUtils.matches` 通过；首次设密（当前确实无密码）免 origin，此时所有权已过。
+- **视频求助匹配队列序列化断裂 + TTL 单位错**：`RedisUtils` 双注入（`@Resource` 字段 + `StringRedisTemplate` 构造器）致实际用 `StringRedisTemplate`，存 `LinkedList<Long>` 队列首写即 `ClassCastException`（token 等 String 值正常，故 WS 信令测过未暴露）；且队列写回 `setToRedis(key,queue,30L)` 走硬编码 `TimeUnit.DAYS` = **30 天**（非登记的 30s），僵尸志愿者 id 滞留队列头致盲人匹配失败。删构造器、字段改 `@Resource RedisTemplate<String,Object>` 走配置 bean（JDK 序列化兜底两类值）；新增 `setToRedis(key,value,timeout,TimeUnit)` 重载，`CallConstant.VOLUNTEER_QUEUE_TTL_SECONDS=30L`，三处队列写回改 `TimeUnit.SECONDS`。
+- **NPE 簇加固**：`removeVolunteerFromVideohelp` Redis 无队列 key 时原对 null queue 调 `contains` 必现 NPE，改直接抛 `PARAMS_ERROR("您不在匹配之中")`；并补多处取实体后未判空即解引用（Blind/Volunteer/Family 删除路径、Community `checkLogin`、Communityjoinreview 列表、Urgenthelp `joinUrgenthelp`、Videohelp/Urgenthelp 上传视频路径）统一 `ObjUtil.isNull` 判空。
+
 > 架构现状（已落地）见 [architecture/tech-stack.md](architecture/tech-stack.md) / [architecture/data-model.md](architecture/data-model.md) / [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) 的「v3.0.0 单体化（已落地）」段；交付 spec 见 [development/v3.0.0/task-breakdown.md](development/v3.0.0/task-breakdown.md)。
 
 ---

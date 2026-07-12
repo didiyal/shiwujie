@@ -206,14 +206,16 @@ public class VolunteerController {
      * @return 是否成功
      */
     @PostMapping("/update/password")
-    @Operation(summary = "设置/修改视障人士密码")
-    public BaseResponse<Boolean> updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword) {
+    @Operation(summary = "设置/修改志愿者密码")
+    public BaseResponse<Boolean> updateVolunteerPassword(VolunteerUpdatePasswordRequest volunteerUpdatePassword, HttpServletRequest request) {
         //鉴空
         ThrowUtils.throwIf(ObjUtil.hasEmpty(volunteerUpdatePassword), ErrorCode.PARAMS_ERROR);
-
+        // 只能修改自己的密码（修复账户接管：原接口不校验调用者 == body.volunteerId）
+        Long loginVolunteerId = LoginUtils.getLoginVolunteerId(request);
+        ThrowUtils.throwIf(ObjUtil.isNull(loginVolunteerId) || !Objects.equals(loginVolunteerId, volunteerUpdatePassword.getVolunteerId()),
+                ErrorCode.NO_AUTH, "只能修改自己的密码");
 
         boolean result = volunteerService.updateVolunteerPassword(volunteerUpdatePassword);
-
 
         return ResultUtils.success(result);
     }

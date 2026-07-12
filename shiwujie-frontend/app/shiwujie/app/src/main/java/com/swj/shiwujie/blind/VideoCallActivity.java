@@ -89,6 +89,10 @@ public class VideoCallActivity extends AppCompatActivity {
 
     private boolean hasHandledMatchSuccess = false;
 
+    // 监听器引用：onDestroy 必须按真实引用移除；removeXxxListener(null) 是 no-op 会导致监听器泄漏
+    private WebSocketManager.MessageListener socketMsgListener;
+    private VideoCallManager.VideoCallStatusListener callStatusListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -184,21 +188,23 @@ public class VideoCallActivity extends AppCompatActivity {
         webSocketManager = WebSocketManager.getInstance();
         videoCallManager = webSocketManager.getVideoCallManager();
         
-        // 添加全局Socket消息监听
-        webSocketManager.addMessageListener(new WebSocketManager.MessageListener() {
+        // 添加全局Socket消息监听（保存引用以便 onDestroy 移除）
+        socketMsgListener = new WebSocketManager.MessageListener() {
             @Override
             public void onMessageReceived(SocketDataV0 data) {
                 runOnUiThread(() -> handleWebSocketMessage(data));
             }
-        });
-        
-        // 添加状态监听器
-        videoCallManager.addStatusListener(new VideoCallManager.VideoCallStatusListener() {
+        };
+        webSocketManager.addMessageListener(socketMsgListener);
+
+        // 添加状态监听器（保存引用以便 onDestroy 移除）
+        callStatusListener = new VideoCallManager.VideoCallStatusListener() {
             @Override
             public void onCallStatusChanged(int status, String callId, String blindPhone, String volunteerPhone) {
                 runOnUiThread(() -> updateCallStatus(status, callId, blindPhone, volunteerPhone));
             }
-        });
+        };
+        videoCallManager.addStatusListener(callStatusListener);
     }
     
 
@@ -715,13 +721,13 @@ public class VideoCallActivity extends AppCompatActivity {
             callDurationHandler.removeCallbacks(callDurationRunnable);
         }
         
-        // 移除监听器
-        if (videoCallManager != null) {
-            videoCallManager.removeStatusListener(null);
+        // 移除监听器（按真实引用移除）
+        if (videoCallManager != null && callStatusListener != null) {
+            videoCallManager.removeStatusListener(callStatusListener);
         }
-        
-        if (webSocketManager != null) {
-            webSocketManager.removeMessageListener(null);
+
+        if (webSocketManager != null && socketMsgListener != null) {
+            webSocketManager.removeMessageListener(socketMsgListener);
         }
         
         // 销毁RtcEngine

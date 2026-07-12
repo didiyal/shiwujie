@@ -25,6 +25,7 @@ import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.community.InnerCommunityjoinreviewService;
 import com.swj.shiwujie.service.community.InnerCommunitymanagerService;
 import com.swj.shiwujie.utils.JwtUtils;
+import com.swj.shiwujie.utils.PasswordUtils;
 import com.swj.shiwujie.utils.RedisUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -134,16 +135,19 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 密码格式校验
         boolean isMatch = this.validatePassword(password);
         ThrowUtils.throwIf(!isMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-        String md5Password = SecureUtil.md5(password);// 加密
 
 
         // 有账号直接登录
         Blind blind = this.getByPhone(phone);
         if (ObjUtil.isNotNull(blind)) {
 
-            //校验密码是否正确
+            //校验密码是否正确（兼容历史 MD5，通过即懒升级为 BCrypt）
             String blindPassword = blind.getPassword();
-            ThrowUtils.throwIf(!md5Password.equals(blindPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
+            ThrowUtils.throwIf(!PasswordUtils.matches(password, blindPassword), ErrorCode.PARAMS_ERROR, "密码未设置或密码错误");
+            if (PasswordUtils.isLegacyMd5(blindPassword)) {
+                blind.setPassword(PasswordUtils.hash(password));
+                this.updateById(blind);
+            }
 
             //生成token并存入redis
             String token = this.generateLoginToken(blind);
@@ -157,7 +161,7 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 无账号自动注册
         Blind newBlind = new Blind();
         newBlind.setPhone(phone);
-        newBlind.setPassword(md5Password);
+        newBlind.setPassword(PasswordUtils.hash(password));
         boolean save = this.save(newBlind);
         ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR, "系统繁忙,请稍后再试");
 
@@ -176,30 +180,31 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
     @Override
     public boolean updateBlindPassword(BlindUpdatePasswordRequest blindUpdatePassword) {
 
-        // 校验密码格式
         String newPassword = blindUpdatePassword.getNewPassword();
         String originPassword = blindUpdatePassword.getOriginPassword();
 
         Blind blind = this.getById(blindUpdatePassword.getBlindId());
-        // 若用户没有密码则设置密码
-        if(StrUtil.isNotBlank(originPassword)){
+        ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "用户不存在");
+
+        if (StrUtil.isBlank(blind.getPassword())) {
+            // 当前无密码（快注册用户）首次设密：调用者所有权已在 controller 校验，无需原密码
+            ThrowUtils.throwIf(StrUtil.isBlank(newPassword), ErrorCode.PARAMS_ERROR, "新密码不能为空");
+        } else {
+            // 已设密码：原密码必填且须匹配（修复账户接管：原 originPassword 留空即跳过整段校验）
+            ThrowUtils.throwIf(StrUtil.isBlank(originPassword), ErrorCode.PARAMS_ERROR, "原密码不能为空");
             boolean isOriginMatch = this.validatePassword(originPassword);
             ThrowUtils.throwIf(!isOriginMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-
-            ThrowUtils.throwIf(StrUtil.isBlank(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码未设置");
-            //检查原密码
-            String md5OriginPassword = SecureUtil.md5(originPassword);
-            ThrowUtils.throwIf(!md5OriginPassword.equals(blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
+            //检查原密码（兼容历史 MD5 与 BCrypt）
+            ThrowUtils.throwIf(!PasswordUtils.matches(originPassword, blind.getPassword()), ErrorCode.PARAMS_ERROR, "原密码输入错误");
         }
 
         boolean isNewMatch = this.validatePassword(newPassword);
         ThrowUtils.throwIf(!isNewMatch, ErrorCode.PARAMS_ERROR, "密码必须包含字符和数字");
-        // 密码加密更新
-        blind.setPassword(SecureUtil.md5(newPassword));
+        // 密码加密更新（BCrypt）
+        blind.setPassword(PasswordUtils.hash(newPassword));
 
         boolean result = this.updateById(blind);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR);
-
 
         return true;
     }
@@ -421,7 +426,9 @@ public class BlindServiceImpl extends ServiceImpl<BlindMapper, Blind>
         // 检查操作者权限（必须是社区创建者或管理员）
         // 通过社区管理服务获取志愿者角色
         Communitymanager communitymanager = innerCommunitymanagerService.getByVolunteerIdAndCommunityId(currentVolunteerId, communityId);
+        ThrowUtils.throwIf(ObjUtil.isNull(communitymanager), ErrorCode.NO_AUTH, "无权限执行此操作");
         Long rolePermissionId = communitymanager.getRolePermissionId();
+        ThrowUtils.throwIf(rolePermissionId == null, ErrorCode.NO_AUTH, "无权限执行此操作");
         CommunityRolePermissionEnum volunteerRole = CommunityRolePermissionEnum.getById(rolePermissionId);
         ThrowUtils.throwIf(volunteerRole == CommunityRolePermissionEnum.EMPLOYEE, ErrorCode.NO_AUTH, "无权限执行此操作");
 
