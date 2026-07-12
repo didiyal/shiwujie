@@ -13,7 +13,7 @@
 
 四层各司其职、互不重复：**ROADMAP 定方向 → CHANGELOG 记全部明细 → product 写用户能看见/能验收的契约 → development 写怎么实现**。
 
-> 与母版的关键差异：本项目是**前后端 + 微服务多子项目**的工程，不是单体。故 development 层**双维度**——按**组件**随代码就近分散在各子项目 `docs/`（`shiwujie-backend/docs/`、`shiwujie-frontend/app/docs/`、`shiwujie-frontend/web/docs/`）+ 根 `docs/architecture/`（跨切面概览）；按**版本**集中在根 `docs/development/vX.Y.Z/`（每版本三件套）。product / ROADMAP / CHANGELOG 仍**只集中在根 `docs/`** 一处——契约是全局的、实现按组件分散、交付按版本切片。
+> 与母版的关键差异：本项目是**前后端 + Android/Web 多子项目**的工程（后端 v3.0.0 已单体化为 model 契约层 + bootstrap 唯一 app 两模块，但 backend / app / web 仍按子项目分库分 docs）。故 development 层**双维度**——按**组件**随代码就近分散在各子项目 `docs/`（`shiwujie-backend/docs/`、`shiwujie-frontend/app/docs/`、`shiwujie-frontend/web/docs/`）+ 根 `docs/architecture/`（跨切面概览）；按**版本**集中在根 `docs/development/vX.Y.Z/`（每版本三件套）。product / ROADMAP / CHANGELOG 仍**只集中在根 `docs/`** 一处——契约是全局的、实现按组件分散、交付按版本切片。
 
 ## 二、目录骨架
 
@@ -123,7 +123,7 @@ Phase2/                              ← 仓库根（工作区恒设此层）
   > Dubbo **接口名**（`InnerSocket`/`InnerBlindService`…）允许出现在 product 的契约清单里；命中的应是接口名而非注解/路径。
 
 - **链接有效性**：`docs/README.md`、各 product/architecture 文件、子项目 `docs/README.md` 内相对链接可达；`product/current/`、`development/current/` 目录**不应存在**（`current` 是 `.md` 指针文件，非目录）。
-- **目录完整**：`product/current.md` 指针在 + `product/v2.1.0/` 4 文件齐；`development/current.md` 指针在 + `development/v2.1.0/` 三件套齐；`shiwujie-backend/docs/modules/` 6 篇齐（gateway/model-commonweb/user/call/community/ai）；frontend app/web 各有 docs。
+- **目录完整**：`product/current.md` 指针在 + 进行中 `product/v3.0.0/` 4 文件齐 + 封版 `product/v2.1.0/` 4 文件齐；`development/current.md` 指针在 + 进行中 `development/v3.0.0/` 三件套齐 + 封版 `development/v2.1.0/` 三件套齐；`shiwujie-backend/docs/modules/` 现况 = bootstrap + model-commonweb（+ gateway 历史标记）；frontend app/web 各有 docs。
 - **去重**：`grep -rniE 'FR-[A-Z]+-[0-9]+|AC-[A-Z]+-[0-9]+' docs/ | grep -v 'docs/product/'` 期望**零命中**（FR/AC 不出现在 product 之外）。
 - **三处版本号一致**：`product/current.md` + `development/current.md` + `docs/README.md` 写同一个当前版本号。
 - **无信息丢失**：未开发路线全在 ROADMAP、缺陷全在 known-issues、历史全在 CHANGELOG、试错移除三处归位（CHANGELOG 移除 + development 残留 + product 非目标）。

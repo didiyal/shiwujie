@@ -4,7 +4,7 @@
 
 ## v3.0.0 单体部署（当前）
 
-**单 jar 自包含**：`shiwujie-bootstrap` 经 `spring-boot-maven-plugin` repackage，把 user/call/community/ai + model + common-web + 全部第三方依赖打成 1 个 fat jar（约 64M，`BOOT-INF/lib` 内嵌 6 个 shiwujie 模块 jar）。部署只需这一个文件，**不存在「一堆 jar」**。
+**单 jar 自包含**：`shiwujie-bootstrap` 经 `spring-boot-maven-plugin` repackage，把原 user/call/community/ai + common-web 全部代码（阶段2.8 并入）+ model 契约层 + 全部第三方依赖打成 1 个 fat jar（约 64M，`BOOT-INF/lib` 内嵌 `shiwujie-model` jar）。部署只需这一个文件，**不存在「一堆 jar」**。
 
 **外部依赖**（仅 2 项）：
 - MySQL `47.112.114.139:3306` 库 `shiwujie`（16 表，合库导入见 [release-checklist](../../docs/development/v3.0.0/release-checklist.md)「合库执行步骤」）
@@ -13,7 +13,7 @@
 **构建 + 启动**：
 
 ```bash
-# 构建（仓库根，全 7 模块 reactor）
+# 构建（仓库根，2 模块 reactor：model + bootstrap）
 mvn -f shiwujie-backend/pom.xml install -DskipTests
 # 部署：拷单 jar 到服务器，起进程（端口 8100 复用原 gateway 对外端口）
 java -jar shiwujie-backend/shiwujie-bootstrap/target/shiwujieBootstrap-0.0.1-SNAPSHOT.jar

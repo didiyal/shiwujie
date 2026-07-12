@@ -4,14 +4,14 @@
 
 ## 一句话
 
-**视无界（shiwujie）** 是面向视障人士的无障碍服务平台，以 Spring Cloud 微服务后端 + 原生 Android 客户端 + Vue3 管理后台落地「AI 助手 + 远程人工协助 + 社区互助」三条路径。
+**视无界（shiwujie）** 是面向视障人士的无障碍服务平台，以单体后端（v3.0.0：原 Spring Cloud 微服务已合并为 model 契约层 + bootstrap 唯一 app）+ 原生 Android 客户端 + Vue3 管理后台落地「AI 助手 + 远程人工协助 + 社区互助」三条路径。
 
 ## 架构文档地图
 
 | 想了解 | 进入 |
 |---|---|
-| 技术栈与 SB 2.7 / SB 3.4.5 版本割裂根因 | [tech-stack.md](tech-stack.md) |
-| 网关路由表 + Dubbo 接口契约 + RPC 调用图/时序图 | [gateway-dubbo.md](gateway-dubbo.md) |
+| 技术栈与版本割裂消除（v3.0.0 统一 SB 3.4.5/Java21） | [tech-stack.md](tech-stack.md) |
+| 网关/Dubbo 历史 + v3.0.0 本地调用契约 + 调用图/时序图 | [gateway-dubbo.md](gateway-dubbo.md) |
 | JWT + Redis 单点鉴权链路图 | [auth.md](auth.md) |
 | 分库设计 + 表字典（数据契约）+ 共享缓存 | [data-model.md](data-model.md) |
 
@@ -19,10 +19,10 @@
 
 ## 结构关键事实
 
-- **后端微服务**：gateway（8100，仅路由+LB）+ user（8200）/ call（8300）/ community（8400）/ ai（8500），Dubbo provider 端口 21200–21500。完整路由表与调用图见 [gateway-dubbo.md](gateway-dubbo.md)。
-- **版本双栈**：业务模块 Spring Boot 2.7 / Java 17；ai 模块 Spring Boot 3.4.5 / Java 21（Spring AI 强制）。逼出 model（契约层，全模块可依赖）/ common-web（公共层，仅 SB2 可依赖）两层。见 [tech-stack.md](tech-stack.md)。
-- **分库**：user / call / community / ai 各一独立库，共享 Redis db=2；跨库访问走 Dubbo RPC，不走 JOIN。见 [data-model.md](data-model.md)。
-- **鉴权**：JWT + Redis 单点，网关不鉴权、各业务服务各复制一份拦截器。见 [auth.md](auth.md)。
-- **AI 推送唯一落地点**：ai 经 Dubbo 调 call 的 `InnerSocket`，再由 call 经 WebSocket 推前端（5xxx 信令）。
-- **dev/prod 拓扑差异**：dev 期 Nacos 走本机、MySQL/Redis 连服务器；prod 期全部连服务器。生产 Dubbo 注册 IP 坑见 [../../shiwujie-backend/docs/deployment.md](../../shiwujie-backend/docs/deployment.md)。
+- **后端单体**（v3.0.0）：唯一 app `bootstrap`（端口 8100，复用原 gateway），聚合原 user/call/community/ai/common-web 全部代码；`model` 为独立契约层 jar。原 7 模块已收敛为 2 模块，完整路由表与调用图见 [gateway-dubbo.md](gateway-dubbo.md)。
+- **技术栈统一**：Spring Boot 3.4.5 / Java 21（Spring AI 强制 SB3/Java21）。v2.1.0 的 SB 2.7/SB 3.4.5 双栈割裂已消除，common-web 随阶段2.8 并入 bootstrap。见 [tech-stack.md](tech-stack.md)。
+- **单库**：原 user/call/community/ai 四库合并为单库 `shiwujie`（共享 Redis db=2）；原跨库 Dubbo RPC 改同进程 Bean 注入。见 [data-model.md](data-model.md)。
+- **鉴权**：JWT + Redis 单点；v2.1.0 的 4 份 `LoginCheckInterceptor` 重复已收敛为 1（common-web，现处 bootstrap）+ ai 的 `AiLoginCheckInterceptor`。见 [auth.md](auth.md)。
+- **AI 推送**：ai 同进程调 call 的 `InnerSocket`，再经 WebSocket 推前端（5xxx 信令）。
+- **部署**：单 jar + MySQL（库 shiwujie）+ Redis（db=2），无 Nacos/Dubbo；dev/prod profile 随 Nacos 移除暂无覆盖项。见 [../../shiwujie-backend/docs/deployment.md](../../shiwujie-backend/docs/deployment.md)。
 - **诚实缺口**：无压测、无 Docker 化、无索引调优、统计页未实现（同步进 [../ROADMAP.md](../ROADMAP.md)）。
