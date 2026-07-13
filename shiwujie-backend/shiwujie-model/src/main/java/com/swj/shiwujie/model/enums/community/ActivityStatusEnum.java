@@ -24,7 +24,13 @@ public enum ActivityStatusEnum {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
 
+    public int getPostStatus() {
+        return postStatus;
+    }
 
     public static ActivityStatusEnum getByName(String name){
         for (ActivityStatusEnum value : ActivityStatusEnum.values()) {
