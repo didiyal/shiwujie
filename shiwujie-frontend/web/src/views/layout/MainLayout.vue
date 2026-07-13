@@ -47,6 +47,10 @@
         <a class="nav-item logout" @click="handleLogout">
           <LogoutOutlined class="nav-icon" /><span>退出登录</span>
         </a>
+
+        <a class="nav-item back-home" @click="goHome">
+          <HomeOutlined class="nav-icon" /><span>返回首页</span>
+        </a>
       </nav>
 
       <div class="sidebar-foot">
@@ -152,6 +156,10 @@ export default {
       router.push('/login')
     }
 
+    const goHome = () => {
+      window.open('/', '_blank')
+    }
+
     return {
       sidebarOpen,
       route,
@@ -162,7 +170,8 @@ export default {
       isCommunity,
       isUser,
       go,
-      handleLogout
+      handleLogout,
+      goHome
     }
   }
 }
@@ -283,6 +292,13 @@ export default {
 .nav-item.logout:hover {
   color: var(--danger);
   background: rgba(255, 59, 48, 0.12);
+}
+.nav-item.back-home {
+  color: rgba(255, 255, 255, 0.4);
+}
+.nav-item.back-home:hover {
+  color: var(--primary, #0071e3);
+  background: rgba(0, 113, 227, 0.12);
 }
 
 .sidebar-foot {

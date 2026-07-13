@@ -433,6 +433,7 @@ export default {
   cursor: pointer; transition: var(--tr);
   box-shadow: 0 4px 20px rgba(0,113,227,.3);
   text-decoration: none;
+  position: relative; z-index: 10;
 }
 .btn-download:hover {
   background: var(--primary-h);
@@ -454,6 +455,7 @@ export default {
   z-index:2; display:flex; flex-direction:column; align-items:center; gap:6px;
   color: var(--text-3); font-size:11px;
   animation: bounce 2s ease-in-out infinite;
+  pointer-events: none;
 }
 .scroll-hint svg { width:16px; height:16px; }
 @keyframes bounce {
