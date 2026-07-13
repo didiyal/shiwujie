@@ -58,3 +58,7 @@ logging:
   config: classpath:logback-spring.xml
 search-api:
   api-key: ${SEARCH_API_KEY:4qkQ96eSGHAbAQKS5wbs8WyT}
+# APK 下载配置
+app:
+  download:
+    apk-path: ${APK_PATH:/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk}
