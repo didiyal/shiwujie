@@ -43,13 +43,18 @@ Phase2/                              ← 仓库根（工作区恒设此层）
         release-checklist.md         发布检查清单（含三处版本号同步）
   shiwujie-backend/docs/             ← 后端 development 细化（内部·详细·按组件）
     README.md / modules/*.md / known-issues.md / deployment.md
+  shiwujie-ai/docs/                  ← Python AI 服务 development 细化（AI 重写·按组件，设计敲定待实现）
+    README.md / design.md / known-issues.md / deployment.md / fallback.md
   shiwujie-frontend/
     app/docs/                        ← Android development 细化（按组件）
     web/docs/                        ← Web development 细化（按组件）
+  scripts/                           ← 双进程启停脚本（start/stop/logs/export/import/clear.sh，AI 重写·设计敲定待实现）
+  docker/                            ← 两进程编排（docker-compose.yml：Java + Python，AI 重写·设计敲定待实现）
+  config/                            ← 环境配置（.env / .env.example，AI 重写·设计敲定待实现）
 ```
 
 - **product 每版 4 文件**：overview（是什么）/ functional-requirements（`FR-<MODULE>-<NN>`）/ acceptance-criteria（`AC-<MODULE>-<NN>`）/ changelog。
-- **development 双维度**：① 按**组件**随代码就近（子项目 `docs/`：每微服务 `modules/<svc>.md` + `known-issues.md` + `deployment.md`；根 `architecture/` 跨切面）；② 按**版本**集中在根 `development/vX.Y.Z/`（task-breakdown / testing-strategy / release-checklist 三件套）。两维度正交、不重复。
+- **development 双维度**：① 按**组件**随代码就近（子项目 `docs/`：每微服务 `modules/<svc>.md` + `known-issues.md` + `deployment.md`；AI 重写新增 `shiwujie-ai/docs/` 作 Python 服务组件，其 `docs/` 同构——README / design / known-issues / deployment / fallback；根 `architecture/` 跨切面）；② 按**版本**集中在根 `development/vX.Y.Z/`（task-breakdown / testing-strategy / release-checklist 三件套）。两维度正交、不重复。
 - **版本分级模型**：`current.md` 指针 + 每版本一个 `vX.Y.Z/` 目录。工作直接写在进行中版本的目录里；发布时冻结该目录、新建下一版、`current.md` 改指新版本；历史版本目录保留不删。`current.md` ×2（product + development）+ `docs/README.md` **三处版本号必须一致**。
 
 ## 三、各层撰写规则
@@ -126,6 +131,7 @@ Phase2/                              ← 仓库根（工作区恒设此层）
 - **目录完整**：`product/current.md` 指针在 + 进行中 `product/v3.0.0/` 4 文件齐 + 封版 `product/v2.1.0/` 4 文件齐；`development/current.md` 指针在 + 进行中 `development/v3.0.0/` 三件套齐 + 封版 `development/v2.1.0/` 三件套齐；`shiwujie-backend/docs/modules/` 现况 = bootstrap + model-commonweb（+ gateway 历史标记）；frontend app/web 各有 docs。
 - **去重**：`grep -rniE 'FR-[A-Z]+-[0-9]+|AC-[A-Z]+-[0-9]+' docs/ | grep -v 'docs/product/'` 期望**零命中**（FR/AC 不出现在 product 之外）。
 - **三处版本号一致**：`product/current.md` + `development/current.md` + `docs/README.md` 写同一个当前版本号。
+- **shiwujie-ai/docs 文件清单一致**：AI 重写新增的 `shiwujie-ai/docs/` 文件清单（README / design / known-issues / deployment / fallback）须与本规范第二节目录骨架、`README.md` / `docs/README.md` 文档地图登记一致——AI 重写落地后此自检生效（设计阶段 `shiwujie-ai/docs/` 目录与文件随 Phase 5 建立，建立即对齐）。
 - **无信息丢失**：未开发路线全在 ROADMAP、缺陷全在 known-issues、历史全在 CHANGELOG、试错移除三处归位（CHANGELOG 移除 + development 残留 + product 非目标）。
 
 ## 七、流程约束

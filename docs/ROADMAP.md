@@ -6,14 +6,20 @@
 
 ### v3.0.0（单体化改造）
 
-> 反思 v2.1.0 微服务对当前体量过度设计，去微服务、精简为单体（**已落地**，待 tag 封版）；并规划安全加固、能力补全与 AI 模块 LangChain/LangGraph 重写（Agent 驱动）。
+> 反思 v2.1.0 微服务对当前体量过度设计，去微服务、精简为单体（**已落地**，待 tag 封版）；并规划安全加固、能力补全与 AI 模块重写（polyglot：Java 业务单体 + Python LangGraph 智能体）。单体化 + 安全加固 + 能力补全**已落地**；AI 重写**设计已敲定（Phase 1-4 梳理完成，见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)），实现待 Phase 5**——本段全部 `[ ]` 均未勾，诚实反映尚未落地。
 
 ```text
 [x] 单体重写：去 Spring Cloud / Dubbo，合并 user / call / community / ai 为单体应用（保留模块化分包，统一 Spring Boot 版本）——工程已落地，启动级 + WS/事务功能级验证通过，待 tag 仪式封版
 [x] 安全加固：恢复 Helppost/Community 删改权限检查、密码加盐（MD5→BCrypt；`fix/v3.0.0-security-hardening`，2026-07-12）
 [x] 能力补全：软件介绍主页；软件下载功能；社区页面集成到主页，Web页面美化（官网首页 + 全端响应式 + Android 下载 + 整体 UI redesign + APK 下载接口，分头开发合入，2026-07-12~14）
 [ ] 高德适配：App 集成高德 SDK
-[ ] AI 重写（Agent 驱动）：ai 模块采用 LangChain / LangGraph 重写，整体改 Agent 驱动；若 Agent 完成且表现良好，可简化安卓端（只保留部分页面）
+[ ] AI 重写-设计：Phase 1-4 梳理（功能/技术/方案/整合）已敲定，见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)（polyglot Java 业务单体 + Python LangGraph 智能体两进程）
+[ ] AI 重写-Python：LangGraph graph + 14 tool（6 Python-native + 8 Java-MCP）+ read_skill 元工具 + navigation skill + BM25 功能 KB + 两层记忆（短期 checkpoint / 长期偏好）
+[ ] AI 重写-Java：WS 改造（ticket 鉴权 / 流式中继 / 并发安全）+ MCP server 8 工具（业务 4 + 信令 4）
+[ ] AI 重写-删旧：删 Java AI 模块（工作流式 prompt-as-router / 自研 ChatMemory / 半残留 RAG / qwen 止血）；MyManus 自研 ReAct 骨架冻结保留作 Java-graph 回退起跑线
+[ ] AI 重写-部署：两进程 Docker（Java 单体 + Python AI，根级 scripts/ + docker/ + config/ 编排）
+[ ] AI 重写-前端：APK SSE→WS 全合一对话 + SocketData destination 载荷 + 4-button 重写
+[ ] AI 重写-安全门：紧急求助确认门（prepare/confirm 双工具 + 同轮 token 拒绝 + App 显式确认面）+ update_profile 字段门（schema 硬卡 + 窄 DTO 单测）+ qwen FC spike 前置（≥90% 通过率 + MCP strict 校验 + tool-name 白名单两护栏）
 ```
 
 ## 已完成（过去时期，开发后抽取）

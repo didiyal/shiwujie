@@ -64,6 +64,43 @@
 **新增**
 - `AiSmokeTest`：AI 集成冒烟测试（文本模型返回非空 / 裸 HTTP 对照隔离 / 图像模型识别三用例），`@EnabledIfSystemProperty(ai.smoke=true)` 守卫，默认跳过、不污染常规 `mvn test`（与现有 286 例纯 Mockito 单测性质不同）。临时验证用，AI 重构后丢弃。
 
+**AI 模块重写（设计敲定·实现待 Phase 5）**
+
+> 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。
+
+**设计决策（polyglot 双进程）**
+- **Java 业务单体 = 网关 / 业务真相源 / MCP server**：保留 WS 终结点 + JWT/Redis 鉴权 + 全部业务真相，新增对外 MCP server（streamable HTTP，暴露 8 工具）。**Python LangGraph = 计算大脑**（agent loop + 工具 + 记忆 + KB）。Python 不持用户 JWT，Java 鉴权后内部传 `blind_id`。
+- **选 Python 的诚实三条理由**（**非**「Java 做不到」——红队已证伪：spring-ai-alibaba-graph 1.0 GA 在本项目已用的 alibaba-bom 1.0.0.2 内确有 graph/checkpoint/interrupt 原语）：
+  1. **成熟参考实现**——LangGraph 是原版、生态成熟；spring-ai-alibaba-graph 是其 1.0 移植，HITL-resume（跨轮中断恢复）路径有 open bug，而紧急求助确认门恰需跨轮恢复。
+  2. **解耦已反复踩坑的 Alibaba 模型绑定**——项目已踩坑（见上文「AI 文本路径止血」：spring-ai-alibaba 1.0.0.2 的 `DashScopeChatModel` 调 qwen3.x 文本模型报 url error，止血改 `OpenAiChatModel`）；LangGraph 经 OpenAI 兼容端点解耦模型绑定，降低再被坑风险。
+  3. **学可迁移的设计层**——AI 时代语言渐非约束，真正可迁移的是容错/并发/架构设计（语言无关）；成熟 Python 实现是更好的老师；且 alibaba-graph 本是 LangGraph 移植、设计相通，Java 知识不丢。
+- **反转 gate（备选 Decision B-prime）**：Java AI 框架（spring-ai-alibaba-graph）生产稳定约满 1 年后，重新考虑回 Java-graph；前置 spike 先验其 HITL-resume 在本 qwen3.x 栈是否被 open bug（#3297/#3266）咬中。
+- **两条缝取代旧 SSE + 信令中继**：缝 A（对话流）= App↔Java WS 全合一（单双向通道，承载文本/语音/位置/图片/流式回/5001-6 信令/未来主动推送；Java↔Python 逐 turn 内部 HTTP 流式回）；缝 C（Java 能力）= Python↔Java MCP streamable HTTP（Python 零业务/信令代码）。原「缝 B 信令中继」已并入缝 C。
+- **意图识别溶进 agent loop（Decision A）**：主 LLM 原生 function-calling 即「意图识别+工具选择」一步，杀旧 2-call 税；依赖 qwen FC 稳（spike 前置，建议 ≥90% 通过率）。
+- **两层记忆**：短期 = LangGraph checkpoint（Redis db=2，`thread_id=blind_id`，Python 用 `ai:ckpt:` 前缀避撞 spring-session/JWT key；超 token 阈值滚动压缩、recent-tail 永不压缩护导航状态、崩溃可恢复）；长期 = 偏好（跨会话、后台异步抽取、用户不可见、merge-with-latest 入 Redis hash + MySQL、turn 起注 system prompt 短段、绝不阻塞）。AiLogs 旧表降级为追加只写审计/可观测日志（不再当记忆读）。
+- **BM25 功能 KB（非向量 RAG）**：~10-40 篇 markdown（frontmatter title/aliases/tags/summary），启动载入内存，`search_kb` 返回整篇给主 LLM；>100 篇或非结构化语料才升向量 RAG。
+- **Pi 式 read-on-demand**：`read_skill(name)` 元工具按需加载技能文档，作自建 loop 的「金标准契约」参考。
+
+**行为变更预告（全部「设计敲定·未落地」，落地后回卷进 product 契约）**
+- **AI 通道 SSE → WS**：`/api/ai/ai/{doChatByText,doChatByImage,NewApp}` SSE 废弃，迁 `/api/ws/call` 新 AI-turn 消息类型（入站新 requestType + 出站流式 token 帧）；属本次重写范围，App 同步改，**非违约**（AI 通道本就重写）；`/NewApp` 重复端点随 SSE 清。业务契约 user/call/community **零变更**。
+- **SocketData / SocketVO（Java model）+ SocketDataV0（Android）加可选 `destination{name,lat,lng,address}`**：加字段不改名，5006 首次具备终点载荷能力；6 信令码 5001-5006 码值不变（5006 仅多可选 destination 载荷）；WS 12 信令码框架不变。
+- **App 4-button 重写**：AI 页交互重写以适配新对话通道 + 显式确认面（紧急求助第三道门）。
+- **导航多步人工确认（HITL）**：navigation skill 6 步流程（poi→报选项→问交通方式[HITL]→route→朗读摘要→launch），问交通方式处插人工确认。
+- **偏好记忆**：跨会话记住说话方式/常用 APP/导航习惯等软事实（用户不可见、不阻塞）。
+- **删 Java AI 模块**：工作流式 prompt-as-router + 自研 ChatMemory + 半残留 RAG + qwen 止血整体替换；**MyManus 自研 ReAct 骨架冻结保留非删**（342 行作 Java-graph B-prime 回退起跑线）。
+- **两进程 Docker 部署**：Java 发布 8100:8100（公网），Python 不发布端口（仅内网，Java 经服务名调）；新增根级 `scripts/`（start/stop/logs/export/import/clear.sh）+ `docker/docker-compose.yml` + `config/.env`；非 docker 本地模式仍可。灰度 = 硬切换（后端镜像 + APK 同批发，SSE↔WS 不兼容须版本配对）。
+
+**WS 必修改造（缝 A，设计敲定·未落地）**
+- ticket 鉴权（堵 phone 冒充）：盲人经已鉴权 HTTP 换短时 WS ticket，type=0 登录带 ticket 非自报 phone；流式中继 `getBasicRemote()`→`getAsyncRemote()`（非阻塞推 token，保留 `@ServerEndpoint`）；两 `static HashMap`→`ConcurrentHashMap`；拦「收到客户端的数据」回显（AI 类消息不发）；删 AI 拦截器 dev 后门（无 token 静默登录 blind id=1，见 [known-issues](../shiwujie-backend/docs/known-issues.md) #1 / [architecture/auth.md](architecture/auth.md) 风险 #6）；顺手修 AI 拦截器 Redis 续期错 key bug（漏 `-blind-` 前缀，见 [known-issues](../shiwujie-backend/docs/known-issues.md) #3）；图片仍走 HTTP multipart（文本 turn 走 WS）。
+
+**硬修正（红队推动·非协商）**
+- 紧急求助确认门做对：`request_emergency_help` 拆 `prepare()`/`confirm()` 双工具；qwen 请求对可达紧急工具强制 `parallel_tool_calls=False`（堵单轮并行 prepare + 伪造 confirm）；Redis token 绑 `(blind_id, thread_id, issuing_turn)`，`confirm()` 拒绝同轮 token；v1 即做 App 侧显式确认面经非-MCP HTTP 端点消费 token（盲人单声道无视觉冗余，第三道门）。
+- update_profile 字段门：MCP 工具 inputSchema 只暴露 nickname/phone/gender（password/idCard/disabilityCard 结构上不在 schema）；Java 绑窄 DTO（非泛 Blind 实体）+ 单测断言 DTO 无敏感字段 setter（防约定腐烂）——明示是 schema 校验硬卡，非提示词约束。
+- qwen FC spike 前置：无论 spike 结果都上两护栏（MCP 服务端 strict JSON-schema 校验 + tool-name 白名单拒未注册名，堵幻觉名冒充 confirm）。
+
+**测试（设计敲定·未落地）**
+- 现有 20 单测类 / 286 例（纯 Mockito）零 AI 引用 → **不动保绿**；`AiSmokeTest` → 删（throwaway），「打 DashScope」价值迁 Python pytest（mock + 真 qwen FC spike）；新增 Java WS 契约测试（AI-turn roundtrip，mock Python）+ Python tool 单测 + graph 集成测试。
+
 **App 前端 P0 快速止血（2026-07-12）**
 
 > 落地 [`问题.md`](../问题.md) 视频通话/紧急求助前后端问题分析 + 本轮 App 代码审查中核实仍存在的前端阻断/高危项。最小修复，不触碰结构（blind/volunteer 合并、AiFragment 拆分、ViewModel 引入等留待结构重构批）。对外 HTTP/WS 契约零变更。明细见 [App known-issues](../shiwujie-frontend/app/docs/known-issues.md)「已修复（P0 快速止血）」。`assembleDebug` + `assembleRelease`（R8 混淆+资源压缩+lintVital）均已通过。

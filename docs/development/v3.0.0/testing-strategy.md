@@ -70,3 +70,26 @@ v2.1.0 的测试现状 / 环境表 / 验证点 / 缺口继续适用，见 [../v2
 | 删社区·回滚 | 在 `CommunityServiceImpl.deleteCommunity` 的 `removeById(communityId)` 前临时抛异常 | 前三步级联（清 communityId ×2 + 删管理记录）全部回滚 |
 
 > 已确认（静态审计 2026-07-12）：两条级联方法均 `@Transactional` + public + 经代理调用 → 事务激活；`rollbackFor=Exception.class` 覆盖 `BusinessException`；内部 `removeCommunityId` / `removeByCommunityId` 不吞异常 → 单线程级联回滚正确。唯一技术债：`deleteVolunteer` 的 `synchronized` 边界错位（见 [known-issues](../../../shiwujie-backend/docs/known-issues.md)），不阻塞封版。
+
+## AI 重写测试关系（设计敲定·待 Phase 5）
+
+> **状态：设计敲定（Phase 1–4）· 实现待 Phase 5。** AI 重写（现有 Java AI 模块 → Python LangGraph 智能体）的测试范围与现有单体化测试基线的关系，详见 [task-breakdown](task-breakdown.md)「AI 重写」3.9 子任务与 [architecture/tech-stack](../../architecture/tech-stack.md) AI 重写段。本节实现尚未落地，下列 `[ ]` 全部待办。
+
+**对现有基线的影响（零回归保证）**：
+
+- **20 单测类 / 286 例（纯 Mockito，零 AI 引用）不动保绿**——AI 模块本就被用户明确排除在单测覆盖外（见上方「自动化单元测试」「暂未覆盖」），删 Java AI 模块（`app/agent/tools/advisor/chatmemory` + `AiConfig`/`AiConstants`/`ChatServiceImpl`/`ChatController`）不触这 286 例任何一例；`mvn -f shiwujie-backend/pom.xml test` 期望依旧 0 failures / 0 errors。
+- **`AiSmokeTest` 删除**（throwaway 冒烟，非回归资产）。
+- **「打 DashScope」价值迁移**：原 Java 侧打真实 DashScope 的连通验证，价值迁到 **Python pytest**——既做 mock 单测（工具/节点），又复用为真实 **qwen function-calling spike**（前置 spike：本工具集 + 本 prompt 通过率，建议 >=90%，见 [task-breakdown](task-breakdown.md) AI 重写前置 spike）。
+
+**新增测试（全 `[ ]`，待 Phase 5 落地）**：
+
+| 域 | 测试 | 覆盖点 |
+|---|---|---|
+| Java WS 契约 | AI-turn roundtrip（mock Python） | 缝 A：App<->Java WS 新 AI-turn 入站消息类型 + 流式 token 帧出站往返；ticket 鉴权（堵 phone 冒充）；`getAsyncRemote()` 非阻塞推送；拦「收到客户端的数据」回显（AI 类消息不发） |
+| Python tool | 工具单测（mock 外部 API） | 6 native（`recognize_photo`/`web_search`/`get_weather`/`gaode_poi_search`/`gaode_route`/`search_kb` BM25）+ `read_skill` + 高德 3 wrapper 出参剪裁（盲人朗读友好） |
+| Python graph | 集成测试（mock LLM） | 标准环（entry fork→agent FC→ToolNode→回环）；checkpoint 恢复（`thread_id=blind_id`，崩溃/中途截止续跑）；HITL 两处（导航交通方式 / 紧急确认门）自然 turn + checkpoint |
+| 安全门 | 紧急确认 token | `request_emergency_help` 拆 `prepare()`/`confirm()`；token 绑 `(blind_id, thread_id, issuing_turn)`，`confirm()` 拒同轮 token；`parallel_tool_calls=False` 堵单轮并行 prepare + 伪造 confirm；App 非-MCP HTTP 端点消费 token（第三道门） |
+| 安全门 | `update_profile` 字段门 | MCP inputSchema 硬卡 `{nickname, phone, gender}`；Java 窄 DTO（非泛 `Blind`）+ 单测断言 DTO 无 `password`/`idCard`/`disabilityCard` setter（防约定腐烂） |
+| 安全门 | tool-name 白名单 | MCP 服务端拒未注册工具名（堵 LLM 幻觉名冒充 `confirm`）；strict JSON-schema 校验 |
+
+**两条护栏（无论 qwen FC spike 结果都上）**：MCP 服务端 strict JSON-schema 校验 + tool-name 白名单——即Decision A 依赖 qwen FC 稳，但即使 spike 通过率达标，这两条护栏仍强制上，作 FC 不稳时的兜底。

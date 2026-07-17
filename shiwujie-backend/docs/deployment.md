@@ -25,6 +25,35 @@ java -jar shiwujie-backend/shiwujie-bootstrap/target/shiwujieBootstrap-0.0.1-SNA
 
 ---
 
+## v3.0.0 AI 重写后部署：两进程（设计敲定·待 Phase 5）
+
+> **目标态，尚未落地。** 当前部署仍是上一节的单 jar（单体化已落地）；AI 重写落地后（Phase 5）变两进程 polyglot。设计全貌见 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md)，Python 服务实现细节见 [shiwujie-ai/docs/](../../shiwujie-ai/docs/)。
+
+**两进程拓扑**：
+
+| 进程 | 角色 | 端口发布 | 职责 |
+|---|---|---|---|
+| Java（`shiwujie-bootstrap`，SB 3.4.5/Java21 fat jar） | 网关 + 业务真相源 + MCP server | **公网 8100:8100** | WS 终结点（`/api/ws/call`）+ JWT/Redis 鉴权 + user/call/community 业务 + 对 Python 暴露 MCP server（8 工具：业务 4 + 信令 4） |
+| Python（`shiwujie-ai`，LangGraph + FastAPI） | 计算大脑（agent loop + 工具 + 记忆 + KB） | **不发布端口（仅内网）** | Java 经服务名 `http://python:8500` 调；不持用户 JWT（Java 鉴权后内部传 `blind_id`） |
+
+> 灰度 = 硬切换：后端镜像 + APK 同批发，旧 SSE 通道与新 WS AI-turn 消息不兼容，须版本配对。
+
+**共享状态**（两进程共用，仍 v3.0.0 单体那两套基础设施，只是多一个消费者）：
+
+- MySQL `47.112.114.139:3306` 库 `shiwujie`：Java 读业务表 + 写 `AiLogs` 审计；Python 仅写 `AiLogs` 审计（降级为追加只写日志）。
+- Redis `47.112.114.139:6379` db=2：Java 用 `spring-session`/JWT token key；Python 用 LangGraph checkpoint（`ai:ckpt:` 前缀，按 `blind_id`/`thread_id`）+ 长期偏好 hash。前缀隔离避撞。
+
+**Docker 编排**（根级新增，对齐参考仓 ctgu-agents）：
+
+- 根级 `scripts/`：`start.sh` / `stop.sh` / `logs.sh` / `export.sh` / `import.sh` / `clear.sh`（bash，本地与 Docker CMD 同款）。
+- 根级 `docker/docker-compose.yml`：两 service（`java` 发布 8100、`python` 不发布端口）；`extra_hosts: host-gateway` 让两 service 经宿主连 `47.112.114.139` 的 MySQL/Redis；`restart: always` + `init: true`；`python` 暴露 `/health`。
+- 根级 `config/.env` + `.env.example`：凭据与模型 key 占位符（沿用 `${ENV:default}` 约定）。
+- 两 `Dockerfile`：`shiwujie-backend/Dockerfile`（多阶段 `maven install` → `eclipse-temurin:21-jre`）；`shiwujie-ai/Dockerfile`（多阶段 `pip`/`uv` → `python:3.12-slim`）。
+
+**非 docker 本地模式仍可**：`mvn -f shiwujie-backend/pom.xml install -DskipTests` + `java -jar shiwujieBootstrap-0.0.1-SNAPSHOT.jar`（Java）+ `uvicorn` 直跑（Python），手动对齐两进程。
+
+---
+
 > ⬇️ 以下为 **v2.1.0 多服务部署历史**（每服务一 jar + Nacos 注册 + Dubbo 注册 IP 坑），随 v3.0.0 单体化废弃，仅作 tag `v2.1.0` 参考。
 
 ## 端口与基础设施
