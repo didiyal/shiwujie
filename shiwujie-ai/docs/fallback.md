@@ -15,6 +15,8 @@
 
 > 上述均须 Phase 5 spike 验证（见 [known-issues](known-issues.md) AI-1）。spike 前 MCP 仍是首选假设。
 
+> **Spike-2 实测落锤（2026-07-18）**：上述 **4 触发条件均未命中**——MCP server 起 streamable HTTP 端点、与 alibaba/dashscope/openai starter 共存、Python `get_tools()` 拿到 8 工具、`langchain-mcp-adapters` #466 未复现（详见 [known-issues](known-issues.md) AI-1 / AI-2）。**缝 C MCP 确认为基线，REST-wrap 降级当前不触发**，本文留作 future fallback——上游回归（spring-ai 1.1.x 破坏性变更 / adapters 引入新阻塞 bug / provisioned 端点策略变更拒 MCP）时再启用。
+
 ## 降级方案
 
 缝 C 改 **Python 8 个薄 REST wrapper**，直调 Java 暴露的对应 REST 端点：

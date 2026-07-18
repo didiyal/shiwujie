@@ -16,6 +16,13 @@
 
 **降级**：若不可共存 → 触发 [fallback.md](fallback.md)（缝 C 改 Python 8 个薄 REST wrapper）。MCP 仍为首选（Python→Java 唯一缝、零胶水）。
 
+> **Spike-2 实测落锤（2026-07-18）**：✅ **全部化解，REST-wrap 未触发**——
+> - spring-ai **1.0.0→1.1.0** + alibaba **1.0.0.2→1.1.0.0**（Boot 维持 3.4.5；1.0.0 的 MCP starter **无 streamable HTTP**，必升 1.1.0，见 [[memory] version-target]）；
+> - `spring-ai-starter-mcp-server-webmvc` 由 1.1.0 BOM 托管；⚠️ **#4204 命中**：1.1.x BOM **不托管** `spring-ai-alibaba-starter-dashscope` → bootstrap pom 显式锁 `<version>1.1.0.0</version>`（其余走 BOM），已落地；
+> - MCP server starter 与 dashscope/openai starter **共存 OK**（#3041 build/test 期不咬），app 启动正常、`McpServerAutoConfiguration` 加载（仅 `@McpTool` scanner 几条噪声告警，用 `ToolCallbackProvider` 不走它）；
+> - Python `MultiServerMCPClient.get_tools()` **拿到 8 工具**、round-trip 通。
+> **→ 缝 C MCP 确认为基线**（[fallback.md](fallback.md) 4 触发条件均未命中）。
+
 ## AI-2. 依赖风险：langchain-mcp-adapters open bug
 
 **背景**：Python 侧 MCP 客户端用 `langchain-mcp-adapters`。
@@ -25,6 +32,8 @@
 - **通知进度丢失 #244**：MCP server → client 的进度通知丢失。
 
 **对本项目影响**：本项目缝 C 是**无状态逐 turn 用法**（Python 每个 turn 拉一次工具列表 / 调一次工具，不长连）——两个 bug 主要影响长连 / 持久会话场景，**对本项目影响小**。但 Phase 5 仍需验证：① client 正常析构不拖垮 agent loop；② 若依赖 MCP 进度通知（v1 不依赖，进度走 stream custom 见 design.md ⑥），需规避 #244。
+
+> **Spike-2 实测落锤（2026-07-18）**：langchain-mcp-adapters **0.3.0** 直接式 `client.get_tools()`（**非** `async with`——0.3.0 禁了 `__aexit__`，抛 NotImplementedError）+ 单连接，**#466 teardown RuntimeError 未复现**（loop 关停噪声交 `__main__` 外层捕，不计失败）。生产多 turn 复用 / 并发连接时仍可能冒，按逐 turn 用法不受非阻塞 teardown 影响；若成 nuisance 再处理。#244（进度通知丢失）v1 不依赖（进度走 stream custom），不受影响。
 
 ## AI-3. 紧急求助确认门：qwen 单轮并行调用洞（🔴 高危，硬修正 1）
 
@@ -51,6 +60,10 @@
 - **tool-name 白名单**（拒未注册名，堵幻觉名冒充 confirm——如模型编出 `confirm_emergency` 伪名绕过 AI-3 的拆工具）。
 
 spike 不达标 → 退回 2-call 路由（Decision A 备选），但护栏仍留。详见 design.md ⑬ 硬修正 3。
+
+> **Spike-1 实测落锤（2026-07-18，720 调用）**：✅ **gate 通过**——qwen3.7-plus `parallel_tool_calls=True` 干净集 pass-rate **95.2%** ≥ 90% → **Decision A 成立**（溶进 loop）。写工具误调用率 **0%**、args-invalid / halluc / errored **全 0**、对抗集 **94.4%**（> 50% 降级线，不触发 B 兜底）。失败聚类：`multi_turn` 83.3%（漏调 `gaode_poi_search` / `get_weather`，recall 不足）、`multi_tool` 94.4%（偶漏 `web_search`）——均「漏调」型非「误调」型，靠 navigation skill + checkpoint 缓解。两护栏仍全上。
+>
+> ⚠️ **模型名核验缺口**：`qwen3.7-plus` 在 provisioned MaaS 端点下 720 调用零错、行为正常，但**是否为公开 `qwen-plus` 别名 / 私有路由未核**（provisioned 部署可能静默降级到更便宜模型）——不影响「溶进 loop 可行」结论（FC 行为是裁 Decision A 的真值），但**生产前建议 `/v1/models` 核确切 model id**。
 
 ## AI-5. AiLogs 图片 offload 去 Phase 5
 

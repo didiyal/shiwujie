@@ -98,6 +98,8 @@
 
 > 文本/图像用不同客户端：spring-ai-alibaba 的 `DashScopeChatModel` 调 qwen3.x 文本模型返 `url error`，故文本路径改用官方 `OpenAiChatModel`（OpenAI 兼容直连）；图像多模态仍用 `DashScopeChatModel`（正常）。详见 [known-issues](../../shiwujie-backend/docs/known-issues.md) #11、[CHANGELOG](../CHANGELOG.md)「AI 文本路径止血」。**这条踩坑史正是重写经 OpenAI 兼容端点解耦模型绑定的动机之一**（见下文选型论证第 2 点）。
 
+> **Spike-2 落锤（2026-07-18）**：为缝 C MCP server，pom 已把 spring-ai **1.0.0→1.1.0**、alibaba **1.0.0.2→1.1.0.0**（Boot **维持 3.4.5**——1.1.0 对齐 Boot 3.4.x，不触发大版本迁移；**不升 2.0**，其硬绑 Boot 4.0 / Framework 7，SB3.4.5 加载不了）。实测 1.1.0 BOM 托管 `spring-ai-starter-mcp-server-webmvc`，但**不托管** `spring-ai-alibaba-starter-dashscope`（#4204）→ bootstrap pom 显式锁 `<version>1.1.0.0</version>`。MCP streamable HTTP 通路打通（Java 8 工具桩 + Python `get_tools()` round-trip），缝 C MCP 成基线。上表「现状」列版本号保留为旧 AI 模块**诞生版本**（1.0.0），整体 pom 实已升 1.1.0；详见 [`../../shiwujie-ai/docs/known-issues.md`](../../shiwujie-ai/docs/known-issues.md) AI-1。
+
 > 现状 Java AI 模块实现详见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)；重写总图与 polyglot 缝、agent 环详见 [`ai-rewrite.md`](ai-rewrite.md)。
 
 ### AI 重写选型论证
