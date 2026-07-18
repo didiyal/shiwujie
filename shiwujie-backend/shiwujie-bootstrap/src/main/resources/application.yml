@@ -46,6 +46,15 @@ spring:
     chat:
       client:
         enabled: true
+    mcp:
+      server:
+        # Phase5 chunk-1 Spike-2 缝 C：MCP server 暴露 8 工具（SpikeMcpTools via ToolCallbackProvider）。
+        # streamable-HTTP 传输（1.1.0 新增）；端点默认 /mcp（WebMVC streamable transport 自动注册），
+        # Python 侧连 http://localhost:8100/mcp（langchain-mcp-adapters 0.3.0 transport:http）。
+        type: SYNC                   # 同步 server：同步 @Tool 方法转 sync 规格（ASYNC 会忽略同步方法）
+        protocol: STREAMABLE         # streamable-HTTP（非 SSE/STDIO/STATELESS）
+        name: shiwujie-mcp
+        version: 1.0.0
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true   # 全局开（阶段2.6 统一 call 实体 snake→camel；DB 列名保持 snake_case）

@@ -97,6 +97,14 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-openai</artifactId>
         </dependency>
+        <!-- Phase5 chunk-1 Spike-2 缝 C：MCP server（streamable-HTTP）——Python 经 langchain-mcp-adapters
+             MultiServerMCPClient.get_tools() 调本单体 8 工具（SpikeMcpTools）。
+             版本由父 pom spring-ai-bom 1.1.0 管（1.1.0 才有 streamable-HTTP；1.0 仅 SSE+STDIO，对缝 C 物理不可行）。
+             同一 starter 用 spring.ai.mcp.server.protocol 切传输（SSE/STREAMABLE/STATELESS）。 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>

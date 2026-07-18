@@ -21,3 +21,6 @@ API_KEY = os.environ.get(
 )
 PRIMARY_MODEL = os.environ.get("SHIWUJIE_AI_MODEL", "qwen3.7-plus")
 VLM_MODEL = os.environ.get("SHIWUJIE_AI_VLM_MODEL", "qwen3-vl-flash")
+#: Java 单体 MCP server 端点（缝 C：spring-ai-starter-mcp-server-webmvc streamable HTTP，暴露 8 工具）。
+#: Spike-2 连本端点验 get_tools() round-trip + #466 teardown。
+JAVA_MCP_URL = os.environ.get("SHIWUJIE_JAVA_MCP_URL", "http://localhost:8100/mcp")
