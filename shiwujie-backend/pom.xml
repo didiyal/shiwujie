@@ -31,9 +31,11 @@
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <hutool.version>5.8.25</hutool.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <!-- Spring AI（原 ai 模块独立 DM，合并后集中到父 pom；v3.0.0 两模块） -->
-        <spring-ai.version>1.0.0</spring-ai.version>
-        <spring-ai-alibaba.version>1.0.0.2</spring-ai-alibaba.version>
+        <!-- Spring AI（原 ai 模块独立 DM，合并后集中到父 pom；v3.0.0 两模块）。
+             Phase5 chunk-1 Spike-2：1.0.0→1.1.0 / 1.0.0.2→1.1.0.0（Boot 维持 3.4.5），
+             为缝 C 的 streamable-HTTP MCP（1.0.x 仅有 SSE+STDIO）。spike 机制提交在本分支。 -->
+        <spring-ai.version>1.1.0</spring-ai.version>
+        <spring-ai-alibaba.version>1.1.0.0</spring-ai-alibaba.version>
     </properties>
 
     <modules>

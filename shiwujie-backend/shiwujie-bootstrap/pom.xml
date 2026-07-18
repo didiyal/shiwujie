@@ -86,10 +86,13 @@
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+            <!-- Phase5 chunk-1 Spike-2：alibaba-bom 1.1.0.0 不再托管本 starter 版本（#4204），
+                 1.0.0.2 时由 BOM 隐式管；升 1.1.0.0 后须显式锁版本，否则 build 报 version missing。 -->
+            <version>1.1.0.0</version>
         </dependency>
         <!-- AI 文本路径走 OpenAI 兼容直连（DashScope compatible-mode）；spring-ai-alibaba 客户端
              调 qwen3.x 文本模型报 url error（旧客户端与新模型请求格式不兼容），改用官方 OpenAiChatModel。
-             版本由父 pom spring-ai-bom 1.0.0 管。图像仍用 dashscope（多模态正常）。 -->
+             版本由父 pom spring-ai-bom 1.1.0 管。图像仍用 dashscope（多模态正常）。 -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-openai</artifactId>
