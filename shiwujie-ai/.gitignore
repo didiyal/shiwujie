@@ -1,0 +1,14 @@
+# Python 字节码 / 缓存
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 虚拟环境（根 .gitignore 已忽略，此处显式）
+.venv/
+
+# Spike 运行产物（机读全量 + 报告；如需归档手动 git add -f）
+reports/
+
+# 临时探针 / 调试
+.tmp/

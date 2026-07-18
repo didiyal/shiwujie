@@ -19,3 +19,12 @@ shiwujie-frontend/app/shiwujie/app/release/app-release.apk
 
 # ===== 运行时日志（单体 jar 运行产物）=====
 /logs/
+
+# ===== Python（shiwujie-ai，Phase 5 引入 uv 工程）=====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+shiwujie-ai/reports/
+# spike 本地便利（prod 配置仍走 yml 内联，与"不 gitignore prod 配置"约定不冲突）
+shiwujie-ai/.env
