@@ -6,7 +6,7 @@
 
 当前工作版本 `v3.0.0`（单体化改造·进行中；反思 v2.1.0 微服务过度设计，去微服务精简为单体）。前一版本 `v2.1.0`（二期微服务封版，tag `v2.1.0`，2026-07-11）；再前 `v2.0.0`（二期初步稳定，2025-11-12）。版本分级模型：`current.md` 指针 + 每版本一个 `vX.Y.Z/` 目录（工作直接写在进行中版本目录里，发布即冻结、目录保留不删）。打 tag 时冻结当前版本目录、`current.md` 改指下一版。
 
-> **v3.0.0 双线**：① **单体化已落地**（业务模块合并为 model 契约层 + bootstrap 唯一 app 两模块，去微服务，统一 SB 3.4.5/Java21，待 tag 封版）；② **AI 重写设计敲定·待实现**（polyglot：Java 单体 + Python 自建 ReAct loop 双进程，Phase 1-4 梳理完成、实现待 Phase 5，总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)）。两条线状态独立——单体化是已落地的工程事实，AI 重写是已敲定但尚未实现的设计。
+> **v3.0.0 双线**：① **单体化已落地**（业务模块合并为 model 契约层 + bootstrap 唯一 app 两模块，去微服务，统一 SB 3.4.5/Java21，待 tag 封版）；② **AI 重写设计敲定·待实现**（polyglot：Java 单体 + Python LangGraph 双进程，Phase 1-4 梳理完成、实现待 Phase 5，总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)）。两条线状态独立——单体化是已落地的工程事实，AI 重写是已敲定但尚未实现的设计。
 
 - **产品需求入口**（指针）：[product/current.md](product/current.md) → `product/v3.0.0/`（4 文件：overview / functional-requirements `FR-<MODULE>-<NN>` / acceptance-criteria `AC-<MODULE>-<NN>` / changelog）
 - **开发交付入口**（指针）：[development/current.md](development/current.md) → `development/v3.0.0/`（三件套：task-breakdown / testing-strategy / release-checklist）
@@ -21,7 +21,7 @@
 | 网关路由 + Dubbo 接口契约 + 调用图 | [architecture/gateway-dubbo.md](architecture/gateway-dubbo.md) |
 | JWT + Redis 单点鉴权链路 | [architecture/auth.md](architecture/auth.md) |
 | 分库设计 + 表字典（数据契约） | [architecture/data-model.md](architecture/data-model.md) |
-| AI 重写总图（polyglot 两进程：Java 单体 + Python 自建 ReAct loop） | [architecture/ai-rewrite.md](architecture/ai-rewrite.md) |
+| AI 重写总图（polyglot 两进程：Java 单体 + Python LangGraph） | [architecture/ai-rewrite.md](architecture/ai-rewrite.md) |
 | 按版本的开发交付（任务 / 测试 / 发布清单） | [development/current.md](development/current.md) |
 | 后端各微服务实现 + 缺陷 + 部署 | [../shiwujie-backend/docs/](../shiwujie-backend/docs/) |
 | Android / Web 前端实现 + 缺陷 | [../shiwujie-frontend/app/docs/](../shiwujie-frontend/app/docs/) · [../shiwujie-frontend/web/docs/](../shiwujie-frontend/web/docs/) |
@@ -40,7 +40,7 @@
 - **product/** = 用户可见契约（能调什么接口、返回什么、状态码、表/字段/枚举）。**禁**源码路径 / 内部符号 / 启动命令 / `file:line`。
 - **architecture/** = 跨切面概览（链路图 / 调用图 / 选型表 / 分库设计概念）。
 - **development/** = 按版本的开发交付（三件套：任务 / 测试 / 发布）；按组件的实现细化在子项目 `docs/`。
-- **子项目 docs/** = development 按组件细化（核心类 / 数据流 / 配置 / 启动命令 / 已知缺陷 / `file:line`）。AI 重写 = polyglot（Java 单体 + Python 自建 ReAct loop）两进程，Python 侧实现细化在 [../shiwujie-ai/docs/](../shiwujie-ai/docs/)。
+- **子项目 docs/** = development 按组件细化（核心类 / 数据流 / 配置 / 启动命令 / 已知缺陷 / `file:line`）。AI 重写 = polyglot（Java 单体 + Python LangGraph）两进程，Python 侧实现细化在 [../shiwujie-ai/docs/](../shiwujie-ai/docs/)。
 - **ROADMAP / CHANGELOG** = 方向与历史，根单中心。
 
 > 子项目内用 Agent 开发时，从**仓库根**起步，必读 [CONTRIBUTING.md](CONTRIBUTING.md) + [product/current.md](product/current.md) + [development/current.md](development/current.md) + 相关 [architecture/](architecture/)；子项目 `docs/` 仅作实现参照。阶段结束执行回卷仪式（见 [CONTRIBUTING.md](CONTRIBUTING.md) 第七节）。

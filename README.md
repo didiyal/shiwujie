@@ -27,7 +27,7 @@
 - **多模型多轮对话**：文本 + 图像双通道，支持流式 TTS 语音播报。
 - **工作流式工具路由**：AI 不止「能说」，更要「能做」——识别意图后触发拍照、导航、跳转应用、视频 / 紧急求助、家庭 / 社区操作等真实设备动作。
 - **拍照识别与避障**：图片瘦身上下文工程，单次交互控制 token 成本。
-- *演进方向*：整体改智能体（Agent）驱动重写——polyglot 双进程（Java 业务单体 + Python 自建 ReAct loop 智能体），**设计已敲定·实现待 Phase 5**，见 [docs/architecture/ai-rewrite.md](docs/architecture/ai-rewrite.md)。
+- *演进方向*：整体改智能体（Agent）驱动重写——polyglot 双进程（Java 业务单体 + Python LangGraph 智能体），**设计已敲定·实现待 Phase 5**，见 [docs/architecture/ai-rewrite.md](docs/architecture/ai-rewrite.md)。
 
 ### 📹 远程视频帮扶
 
@@ -62,7 +62,7 @@
 Phase2/
 ├── docs/                  ← 文档中心（规则 + 产品契约 + 跨切面概览 + 方向/明细）
 ├── shiwujie-backend/      ← 单体后端（v3.0.0：model 契约层 + bootstrap 唯一 app，含原 user/call/community/ai/common-web）
-├── shiwujie-ai/           ← Python AI 服务（自建 ReAct loop 智能体，AI 重写·设计敲定待实现）
+├── shiwujie-ai/           ← Python AI 服务（LangGraph 智能体，AI 重写·设计敲定待实现）
 ├── scripts/               ← 双进程启停脚本（start/stop/logs/export/import/clear.sh，AI 重写·设计敲定待实现）
 ├── docker/                ← 两进程编排（docker-compose.yml：Java + Python，AI 重写·设计敲定待实现）
 ├── config/                ← 环境配置（.env / .env.example，AI 重写·设计敲定待实现）
@@ -90,6 +90,6 @@ Phase2/
 - **后端**：v3.0.0 单体（model 契约层 + bootstrap 唯一 app）；统一 Spring Boot 3.4.5 / Java 21（Spring AI Alibaba 强制）；MyBatis-Plus + MySQL 单库（shiwujie）+ Redis（db=2）；无 gateway/Nacos/Dubbo。
 - **前端 App**：原生 Android（Java + ViewBinding，compileSdk 35），anyRTC / 讯飞 TTS+ASR / Camera2 / 高德。
 - **前端 Web**：Vue 3.3 + Ant Design Vue 4 + Pinia + Vite 4。
-- **AI 重写（设计敲定·待实现）**：polyglot 双进程——Java 单体（业务真相源 + WS 网关 + MCP server）+ Python 自建 ReAct loop 智能体（agent loop + 14 工具 + 两层记忆 + BM25 KB），Docker 编排两进程。总图见 [docs/architecture/ai-rewrite.md](docs/architecture/ai-rewrite.md)。
+- **AI 重写（设计敲定·待实现）**：polyglot 双进程——Java 单体（业务真相源 + WS 网关 + MCP server）+ Python LangGraph 智能体（agent loop + 14 工具 + 两层记忆 + BM25 KB），Docker 编排两进程。总图见 [docs/architecture/ai-rewrite.md](docs/architecture/ai-rewrite.md)。
 
 > 详见 [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md)。

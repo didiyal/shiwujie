@@ -1,6 +1,6 @@
 # Python AI 服务缺陷与风险登记
 
-> Python 自建 ReAct loop 服务的缺陷 / 技术债 / 依赖风险登记。development 层（允许源码符号 / 依赖名 / open bug 编号）。**状态：设计敲定（Phase 1–4）· 实现待 Phase 5**——下列风险项是已识别的设计期风险，实现时须逐项验证 / 化解；非已运行系统的线上缺陷。用户契约在根 [product/current.md](../../docs/product/current.md)；Java 侧缺陷在 backend [known-issues.md](../../shiwujie-backend/docs/known-issues.md)；鉴权风险总览在根 [architecture/auth.md](../../docs/architecture/auth.md)。
+> Python LangGraph 服务的缺陷 / 技术债 / 依赖风险登记。development 层（允许源码符号 / 依赖名 / open bug 编号）。**状态：设计敲定（Phase 1–4）· 实现待 Phase 5**——下列风险项是已识别的设计期风险，实现时须逐项验证 / 化解；非已运行系统的线上缺陷。用户契约在根 [product/current.md](../../docs/product/current.md)；Java 侧缺陷在 backend [known-issues.md](../../shiwujie-backend/docs/known-issues.md)；鉴权风险总览在根 [architecture/auth.md](../../docs/architecture/auth.md)。
 
 > 本文件用自己的局部编号（AI-1, AI-2 …），与 backend `known-issues.md` 的安全漏洞编号（1–9）/ auth.md 的「风险 #N」**互相独立**，交叉引用即可——不发明跨文件统一编号。
 

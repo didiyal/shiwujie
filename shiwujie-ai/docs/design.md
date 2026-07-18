@@ -1,39 +1,37 @@
-# AI 智能体设计圣经（自建 ReAct loop · langchain-core）
+# graph 设计圣经（LangGraph 智能体）
 
-> **实现载体（2026-07-18 终定）**：**自建 ReAct loop**——langchain-core 地基（`ChatModel` / `@tool` / `Message`）+ 手写 `while` loop + 复用 langchain 生态（`langchain-mcp-adapters` / LangSmith）。**不引 LangGraph**：v1 复杂度（标准 ReAct 环 + 自然 turn HITL，无 `interrupt` / 子图 / 状态机）用不上 graph 原语；逐原语核对见下文——除 checkpoint 外全部手写不亏（条件边一行 / ToolNode 十行 / interrupt 本就没用），而 checkpoint 在盲人对话（状态 = 一个 message list）下手写风险低。自建 loop **朝 Pi 金标准契约造**（⑫），学得更深、更可控（prod 出事能直接读代码）。LangGraph 留作撞墙（真需 `interrupt` / 多 agent / 复杂 checkpoint 一致性）时的升级路径，**不预支**；手写 checkpoint 可作 LangGraph 接入前的过渡。下文原 "State / 节点 / 边 / checkpointer" 术语已换 "上下文 / loop 阶段 / while 结构 / 手写 checkpoint" 语境，**设计骨架（工具 / skill / KB / 两层记忆 / HITL / 红队硬修正）全不变**。
->
-> AI 重写的**最详细技术文档**：自建 ReAct loop 智能体的 对话上下文 / loop 阶段 / HITL / checkpoint / 动态反馈 / 工具集 / skill / KB / 两层记忆 / 诚实选型 / Pi 金标准契约 / 硬修正全列。development 层（允许全部技术词与设计符号）。**状态：设计敲定（Phase 1–4）· 实现待 Phase 5**——下文为已敲定设计，非已运行代码。用户契约在根 [product/current.md](../../docs/product/current.md)；polyglot 总图在根 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md)。
+> AI 重写的**最详细技术文档**：LangGraph 智能体的 State schema / 节点 / 边 / HITL / checkpointer / 动态反馈 / 工具集 / skill / KB / 两层记忆 / 诚实选型 / Pi 金标准契约 / 硬修正全列。development 层（允许全部技术词与设计符号）。**状态：设计敲定（Phase 1–4）· 实现待 Phase 5**——下文为已敲定设计，非已运行代码。用户契约在根 [product/current.md](../../docs/product/current.md)；polyglot 总图在根 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md)。
 
 ---
 
-## ① 对话上下文（loop 间传递的状态）
+## ① State schema
 
-自建 loop 不用框架级 State 对象，但需要一个**上下文字典**在 turn 内循环与 turn 间 checkpoint 间传递。本质就是一个 Python 对象，核心是 `messages` 列表：
+LangGraph 的 `State` 是跨节点累积的字典，节点返回的增量经 reducer 合并入状态。本设计用 `MessagesState` 扩展：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `messages` | `list[BaseMessage]` | 对话历史，loop 内**只追加**（system / user / assistant / tool 四类）。turn 结束整体存 checkpoint，下轮载回续跑。 |
+| `messages` | `list[BaseMessage]` | 跨节点累积的对话历史（`add_messages` reducer：节点返回的新消息**追加**而非覆盖）。承载 system / user / assistant / tool 四类消息。 |
 | `blind_id` | `str` | 会话标识 = 记忆 key = checkpoint key（`ai:ckpt:{blind_id}`）。由 Java 鉴权后经缝 A 内部 HTTP header 传入，Python **从不**信任客户端自报。 |
-| `position` | `dict{lat,lng,address} \| None` | **每轮**位置快照。App 在每个 turn 注入当前位置（盲人位置可能漂移）；loop 起步注入 system prompt（供 get_weather / gaode_poi_search / gaode_route 用）。位置**逐轮刷新、不跨轮累积**（只看当前轮）。 |
-| `available_skills` | `list[str]` | 可加载技能名清单（v1 = `["navigation"]`），注入 system prompt 供 loop 判断是否 `read_skill`。 |
+| `position` | `dict{lat,lng,address} \| None` | **每轮**位置快照。App 在每个 turn 注入当前位置（盲人位置可能漂移）；agent 节点读取后注入 system prompt（供 get_weather / gaode_poi_search / gaode_route 用）。位置**逐轮刷新、不跨轮累积**（只看当前轮）。 |
+| `available_skills` | `list[str]` | 可加载技能名清单（v1 = `["navigation"]`），注入 system prompt 供 agent 判断是否 `read_skill`。 |
 | `issuing_turn` | `str \| None` | 紧急求助 token 发行轮次（见 ⑬ 硬修正 1）：confirm 工具拒绝**同轮** token 的判据。 |
 
-`blind_id` / `issuing_turn` 入口写入后基本只读；`position` 每个 turn 起步刷新。无 reducer 概念——loop 内直接 `messages.append(...)`，turn 结束 `save_checkpoint(blind_id, ctx)`。
+`messages` 是唯一需 reducer 的字段（其余全量覆盖即可）。`blind_id` / `issuing_turn` 在 entry 节点写入后基本只读；`position` 每个 turn 入图时刷新。
 
-## ② loop 三个阶段
+## ② 节点
 
-### 阶段 1：入口分流（确定性 fork，非 LLM）
+### entry（确定性 fork，非 LLM）
 
-纯路由逻辑，按 turn 的**入口形态**确定性分流（不走模型，零 token 成本）：
+纯路由节点，按 turn 的**入口形态**确定性分流（不走模型，零 token 成本）：
 
 | 入口形态 | 路由 | 说明 |
 |---|---|---|
-| 拍照按钮 | 直连 `recognize_photo` 工具（绕过 loop） | 盲人单点拍照意图明确，无需 LLM 判意。但 VLM 结果**写回 `messages`**（作为 ToolMessage），下一轮 loop 能看到该描述、可继续追问。 |
-| 语音 / 文本 | 注 `position`（若有）入上下文，进入 loop | 位置写进 system prompt 段（见下），再走标准 ReAct loop。 |
+| 拍照按钮 | 直连 `recognize_photo` 工具（绕过 agent loop） | 盲人单点拍照意图明确，无需 LLM 判意。但 VLM 结果**写回 `messages`**（作为 ToolMessage），下一轮 agent 能看到该描述、可继续追问。 |
+| 语音 / 文本 | 注 `position`（若有）入 state，进入 `agent` 节点 | 位置写进 system prompt 段（见下），再走标准 agent loop。 |
 
-> 之所以拍照绕 loop：省一次 LLM 调用 + 避免误判；但结果必须回灌 `messages`——否则 loop 失去对该轮的上下文。这是「绕 loop 不绕上下文」。
+> 之所以拍照绕 loop：省一次 LLM 调用 + 避免误判；但结果必须回灌 `messages`——否则 agent 失去对该轮的上下文。这是「绕 loop 不绕 state」。
 
-### 阶段 2：调模型（loop 主体）
+### agent（主节点）
 
 绑定 **14 工具 + read_skill**（见 ⑦），system prompt 由三段拼装：
 
@@ -43,50 +41,30 @@
 
 调用模型用**原生 function-calling**（Decision A）：把 14 工具 + read_skill 以 OpenAI 兼容 tools schema 喂给 qwen，模型原生返回 `tool_calls`——「意图识别 + 工具选择」一步完成，**杀掉旧工作流式 prompt-as-router 的 2-call 税**（旧路由先 LLM 判意图、再 LLM 生成回复）。依赖 qwen FC 稳，spike 前置（见 ⑬ 硬修正 3）。
 
-**失败 encode 不抛**（Pi 金标准）：loop 捕获模型层异常（网络 / 超时 / schema 违例），**encode 成一条「系统出错」的 AIMessage 写回 `messages`** 返回，而非抛异常终止 loop。理由：用户应听到「我这边出了点问题，再说一次好吗」而不是连接中断；loop 终止等于 session 死掉，checkpoint 也救不回当前 turn。
+**失败 encode 不抛**（Pi 金标准）：agent 节点捕获模型层异常（网络 / 超时 / schema 违例），**encode 成一条「系统出错」的 AIMessage 写回 `messages`** 返回，而非抛异常终止 graph。理由：用户应听到「我这边出了点问题，再说一次好吗」而不是连接中断；graph 终止等于 session 死掉，checkpoint 也救不回当前 turn。
 
-### 阶段 3：执行 tool_calls
+### tools（ToolNode）
 
-loop 遍历模型返回的 `tool_calls`，把每个工具返回值包成 `ToolMessage` 追加回 `messages`。承载 14 工具 + read_skill（见 ⑦）。工具失败的 encode 见 ⑫「工具失败 = isError observation 回灌自愈」。
+LangGraph `ToolNode` 执行 `agent` 节点返回的 `tool_calls`，把每个工具返回值包成 `ToolMessage` 追加回 `messages`。承载 14 工具 + read_skill（见 ⑦）。工具失败的 encode 见 ⑫「工具失败 = isError observation 回灌自愈」。
 
-## ③ while loop（标准 ReAct 环）
+## ③ 边（标准环）
 
 ```mermaid
 flowchart LR
-    S([turn 起]) --> entry{入口分流}
+    S([START]) --> entry
     entry -->|拍照按钮| vlm[recognize_photo 工具]
-    vlm --> agent[调模型]
+    vlm --> agent
     entry -->|语音/文本| agent
-    agent -->|有 tool_calls| tools[执行 tool_calls]
+    agent -->|有 tool_calls| tools[ToolNode: 14 工具 + read_skill]
     tools --> agent
-    agent -->|无 tool_calls| E([turn 结束, 存 checkpoint])
+    agent -->|无 tool_calls| E([END])
 ```
 
-turn 内核心是一个 `while` 循环：`调模型 → 模型返回 tool_calls? → 执行 → 再调模型 → ... → 无 tool_calls → turn 结束`。等价伪代码（设计 ⑫ 契约落在各行注释处，chunk-2a 以此为 source of truth）：
-
-```python
-ctx = load_checkpoint(blind_id)              # ⑤ 手写 checkpoint 载回
-ctx.messages.append(HumanMessage(text))      # 阶段1 入口分流：语音/文本入 loop
-while True:
-    try:
-        ai = await model.astream(ctx.messages, tools=toolset)  # 阶段2 ⑥动态反馈
-    except Exception as e:
-        ctx.messages.append(encode_error(e)) # ⑫ 失败 encode 不抛
-        break
-    ctx.messages.append(ai)
-    if not ai.tool_calls: break              # 无 tool_calls → turn 结束
-    for tc in ai.tool_calls:                 # 阶段3 执行 tool_calls
-        result = await tool_map[tc["name"]].ainvoke(tc["args"])  # ⑫ isError 回灌
-        ctx.messages.append(ToolMessage(result, tool_call_id=tc["id"]))
-    if should_stop_after_turn(ctx): break    # ⑫ 成本轮次熔断
-save_checkpoint(blind_id, ctx)               # ⑤ turn 结束存回
-```
-
-无子图、无状态机（navigation skill 见 ⑧ 用 checkpoint 串多轮，但本身仍是这个标准 loop，不是独立子图）。条件边判定 = 模型返回的 AIMessage 是否含 `tool_calls`，在自建 loop 里就是 `if not ai.tool_calls: break` 一行——这正是「条件边一行、手写不亏」。
+标准 ReAct 环：`START → entry → agent → [有 tool_calls] → tools → agent → ... → [无 tool_calls] → END`。条件边判定 = `agent` 返回的 AIMessage 是否含 `tool_calls`。无子图、无状态机（除 navigation skill 见 ⑧ 用 checkpoint 串多轮，但本身仍是这个标准环，不是独立子图）。
 
 ## ④ HITL（Human-In-The-Loop，两处）
 
-v1 **两处需用户确认的场景都用「自然 turn + 手写 checkpoint」**实现（自建 loop 本就没有 `interrupt()` 原语，turn 边界停就是天然暂停点）：
+v1 **全程无 `interrupt()`**——两处需用户确认的场景都用「**自然 turn + checkpoint**」实现，而非 graph 级中断：
 
 | 场景 | 实现 |
 |---|---|
@@ -95,33 +73,31 @@ v1 **两处需用户确认的场景都用「自然 turn + 手写 checkpoint」**
 
 > 之所以 v1 不用 `interrupt()`：① 自然 turn 在盲人语音场景更自然（用户说完一句、系统问一句、用户再说一句）；② checkpoint 已能跨轮恢复，interrupt 的「同 turn 内暂停」能力 v1 用不到。**保留 `interrupt()` 作未来 turn 内强暂停**（如长任务中途插入用户决策、非紧急的强制确认）。
 
-## ⑤ 手写 checkpoint（崩溃 / 中途截止恢复）
+## ⑤ checkpointer（崩溃 / 中途截止恢复）
 
 ```text
-短期记忆 = 手写 checkpoint（Redis 存整个上下文对象）
+短期记忆 = LangGraph checkpoint
   存储 = Redis db=2
-  key  = ai:ckpt:{blind_id}        ← blind_id 作 key（等价 LangGraph 的 thread_id）
-  内容 = 全量 messages + 滚动 summary（见 ⑩）+ issuing_turn 等元字段
-  作用 = 崩溃 / 进程重启 / 用户中途截止后继续，loop 从上次状态续跑
+  key  = ai:ckpt:{blind_id}        ← thread_id = blind_id
+  内容 = 全量 messages + 滚动 summary（见 ⑩）
+  作用 = 崩溃 / 进程重启 / 用户中途截止后继续，graph 从上次状态续跑
 ```
 
-手写 checkpoint = turn 结束把整个上下文（messages list + 元字段）序列化（json / pickle）存 Redis，下轮 turn 起 `load_checkpoint(blind_id)` 载回续跑。状态简单（一个 message list），手写无一致性风险——这是「checkpoint 在盲人对话下手写不亏」的根因。`ai:ckpt:` 前缀**刻意**与 Java 侧 Redis key（spring-session / JWT `REDIS_SECRETKEY-*`）隔离，避免双进程误读误写。盲人换设备 / App 重启后仍可按 blind_id 续上对话。
-
-> **何时该升级 LangGraph checkpoint**：若未来需要 turn 内步级快照（每调一次工具存一次可回滚）、多分支 session 树、或跨实例一致 checkpoint——手写会变复杂，那时引 LangGraph 的 per-node checkpointer 值。v1 的「turn 级」粒度不需要。
+`ai:ckpt:` 前缀**刻意**与 Java 侧 Redis key（spring-session / JWT `REDIS_SECRETKEY-*`）隔离，避免双进程误读误写。LangGraph Redis checkpointer 原生支持按 `thread_id` 取历史 state，故盲人换设备 / App 重启后仍可续上对话。
 
 ## ⑥ 动态反馈（流式进度事件）
 
-loop 运行中用 **`model.astream()` + 手写进度事件**：调模型走 `astream` 拿逐 token 流（token 流即进度），工具进入 / loop 起调等处手写 yield 进度事件，经缝 A 内部 HTTP（FastAPI StreamingResponse）回灌 Java，Java 再经 WS 推给 App。自建 loop 的优势：进度事件就在 `while` 循环里手写 yield，无需框架的 `stream_mode` 抽象（事件即代码，可见可控）。
+agent / tools 节点运行中用 LangGraph **`stream_mode="custom"`** 发进度事件，经缝 A 内部 HTTP（FastAPI StreamingResponse）回灌 Java，Java 再经 WS 推给 App：
 
 | 进度事件 | 触发点 | 用户感知 |
 |---|---|---|
-| `thinking`（思考中） | loop 起调模型 | 「让我想想…」 |
+| `thinking`（思考中） | agent 节点开始调模型 | 「让我想想…」 |
 | `searching`（搜索中） | web_search / gaode_poi_search / search_kb 进入 | 「我在查…」 |
 | `recognizing_photo`（拍照中） | recognize_photo 进入 | 「正在看照片…」 |
 | `routing`（算路线中） | gaode_route 进入 | 「正在算路线…」 |
-| token 流（逐字） | `model.astream()` 返回 | 打字机效果 + 流式 TTS |
+| token 流（逐字） | agent 模型流式返回 | 打字机效果 + 流式 TTS |
 
-**6 信令码（5001–5006）的动作信令**（如 launch_navigation 触发 5006）由**对应工具自发副作用**发出（工具执行成功时经缝 A 通知 Java 发对应信令），不走进度事件通道——动作信令是「命令 App 做事」，进度事件是「告诉用户我在想/查」，两通道分离。
+**6 信令码（5001–5006）的动作信令**（如 launch_navigation 触发 5006）由**对应工具自发副作用**发出（工具执行成功时经缝 A 通知 Java 发对应信令），不在 stream custom 通道——动作信令是「命令 App 做事」，进度事件是「告诉用户我在想/查」，两通道分离。
 
 ## ⑦ 14 工具清单 + 来源
 
@@ -158,7 +134,7 @@ navigation 是 v1 唯一技能，`read_skill("navigation")` 加载 `SKILL.md` bo
 6. launch —— launch_navigation（5006）起 App 导航 UI
 ```
 
-**无子图、无状态机**：6 步是 SKILL.md 里的自然语言流程，loop 靠 messages 累积 + checkpoint 跨轮续步。之所以不做成独立子图 / 状态机：① skill 设计目标是「LLM 读文档就会做」，代码化会失去 read-on-demand 的灵活性；② checkpoint 已能串多轮，子图是多余复杂度。
+**无子图、无状态机**：6 步是 SKILL.md 里的自然语言流程，agent 靠 messages 累积 + checkpoint 跨轮续步。之所以不做成独立 graph 子图：① skill 设计目标是「LLM 读文档就会做」，子图会把 skill 变成代码、失去 read-on-demand 的灵活性；② checkpoint 已能串多轮，子图是多余复杂度。
 
 > software-guide 并入 `search_kb`（软件操作指南本就是 KB 文档）；photo-use 降级为 `recognize_photo` 的 description + few-shot（不再单列技能）。
 
@@ -179,7 +155,7 @@ KB = BM25 文本库（非向量 RAG）
 
 | 层 | 机制 | 内容 | 时机 |
 |---|---|---|---|
-| **短期** | 手写 checkpoint（Redis db=2，见 ⑤） | 全量 messages + 压缩 | 每 turn |
+| **短期** | LangGraph checkpoint（Redis db=2，见 ⑤） | 全量 messages + 压缩 | 每 turn |
 | **长期** | 偏好（跨会话） | 说话方式 / 常用 APP / 导航习惯等**软事实** | 后台**异步**抽取 |
 
 **短期压缩策略**：超 token 阈值把**最早一批** messages 压成滚动 summary；**recent-tail（约最近 10 条）永不压缩**——护导航中等需要近期状态连续的场景（用户刚说的终点、刚选的交通方式不能被压没）。崩溃 / 中途截止可从 checkpoint 恢复（含已压缩的 summary）。
@@ -190,31 +166,11 @@ KB = BM25 文本库（非向量 RAG）
 
 ## ⑪ 诚实选型理由
 
-两层选择：**为什么 Python（不 Java）** + **为什么自建 loop（不 LangGraph）**。
+重写采用 Python（LangGraph），**不是因为「Java 做不到 graph / checkpoint / interrupt」**——红队已证伪：spring-ai-alibaba-graph 1.0 GA 在本项目已用的 alibaba-bom 1.0.0.2 内，**确有这些原语**。诚实三条理由：
 
-### 为什么 Python（不 Java）—— 诚实三条，非「Java 做不到」
-
-**不是因为「Java 做不到 graph / checkpoint / interrupt」**——红队已证伪：spring-ai-alibaba-graph 1.0 GA 在本项目已用的 alibaba-bom 1.0.0.2 内，**确有这些原语**。诚实三条理由：
-
-1. **Python AI 生态更成熟** —— 本项目已被 spring-ai-alibaba 从 M6.1 到 1.0.0.2 反复坑（远不止一次）；langchain-core / OpenAI 兼容生态是 agent 主战场，工具链 / 文档 / 社区验证密度高于年轻移植。**反转 gate 明确**：Java AI 框架生产落地稳定约满 1 年后才考虑回 Java。
-2. **解耦已反复踩坑的 Alibaba 模型绑定** —— 项目已踩坑：spring-ai-alibaba 1.0.0.2 的 `DashScopeChatModel` 调 qwen3.x 文本模型报 url error，止血改 `OpenAiChatModel`（见 backend [known-issues](../../shiwujie-backend/docs/known-issues.md) ai #11）。Python 侧 langchain-core `ChatOpenAI` 经 OpenAI 兼容端点解耦模型绑定，降低再被坑风险。
-3. **学可迁移的设计层** —— AI 时代语言渐非约束，真正可迁移的是容错 / 并发 / 架构设计（语言无关）；成熟 Python 生态是更好的老师；且 alibaba-graph 本是 LangGraph 移植、设计相通，**Java 知识不丢**。
-
-### 为什么自建 loop（不 LangGraph）—— v1 复杂度用不上 graph 原语
-
-逐原语核对：v1 是**标准 ReAct 环 + 自然 turn HITL**（无 `interrupt` / 子图 / 状态机 / 多 agent）。把 LangGraph 的每个原语对照 v1 需求——
-
-| LangGraph 原语 | v1 是否需要 | 自建代价 |
-|---|---|---|
-| 条件边（有 tool_calls?） | 需要，但是一行 `if not ai.tool_calls: break` | **一行**，不亏 |
-| ToolNode（执行 tool_calls） | 需要，但是 `for tc: await tool_map[...].ainvoke(...)` | **十行**，不亏 |
-| `interrupt()`（turn 内强暂停） | **不需要**（自然 turn + checkpoint 即够） | **零**（本就没用） |
-| checkpointer（状态持久化） | 需要 | 手写：序列化一个 message list 存 Redis（状态简单，无一致性风险） |
-| stream 多模式 | 需要，但是 `model.astream()` + 手写 yield | **手写，可见可控** |
-
-结论：除 checkpoint 外全部手写不亏；checkpoint 在盲人对话（状态 = 一个 message list）下手写风险低。**自建 loop 朝 Pi 金标准契约（⑫）造**——EventStream / encode-不抛 / isError / session 树 / injection hook / 成本熔断，每一条都在手写代码里显式落地，**学得更深、prod 出事能直接读代码**。LangGraph 的黑盒 checkpointer / stream 反而藏控制流。
-
-**LangGraph 留作撞墙升级路径（不预支）**：当 v1 演进到真需要 `interrupt()`（turn 内强暂停 / 复杂 HITL）/ 多 agent / 步级 checkpoint 回滚 / 多分支 session 树——手写会变复杂，那时引 LangGraph 的这些原语。手写 checkpoint 可作 LangGraph 接入前的过渡（接口对齐即可换）。**靠感到需求去到，不预支。**
+1. **成熟参考实现** —— LangGraph 是原版、生态成熟；spring-ai-alibaba-graph 是其 1.0 移植，**HITL-resume（中断恢复）路径有 open bug**，而本项目的紧急求助确认门恰需跨轮恢复（见 ⑬ 硬修正 1）。
+2. **解耦已反复踩坑的 Alibaba 模型绑定** —— 项目已踩坑：spring-ai-alibaba 1.0.0.2 的 `DashScopeChatModel` 调 qwen3.x 文本模型报 url error，止血改 `OpenAiChatModel`（见 backend [known-issues](../../shiwujie-backend/docs/known-issues.md) ai #11）。LangGraph 经 OpenAI 兼容端点解耦模型绑定，降低再被坑风险。
+3. **学可迁移的设计层** —— AI 时代语言渐非约束，真正可迁移的是容错 / 并发 / 架构设计（语言无关）；成熟 Python 实现是更好的老师；且 alibaba-graph 本是 LangGraph 移植、设计相通，**Java 知识不丢**。
 
 **反转 gate（备选 B-prime）**：Java AI 框架（spring-ai-alibaba-graph）生产稳定约满 1 年后，重新考虑回 Java-graph（= Decision B-prime）。前置 spike 见 ⑬ 硬修正 5 / [known-issues](known-issues.md)。
 
@@ -224,10 +180,10 @@ KB = BM25 文本库（非向量 RAG）
 
 | 契约 | 落点 |
 |---|---|
-| **EventStream 一等公民** | `model.astream()` token 流 + 手写进度事件（见 ⑥），经缝 A StreamingResponse 一路到 App；进度不是事后补的日志，是 loop 运行的实时副产物。 |
-| **失败 encode 不抛** | loop 捕获模型异常 encode 成 AIMessage 返回（见 ②），工具失败 encode 成 isError observation（见下行）；loop **绝不因单点异常终止 session**。 |
-| **工具失败 = isError observation 回灌自愈** | 工具抛异常时 loop 把它 encode 成一条 `is_error=True` 的 ToolMessage 回灌 `messages`，下轮 loop 看到「工具失败了」可自愈（换工具 / 换参数 / 告诉用户）；**不**让异常冒泡杀 loop。 |
-| **session 可回放树** | checkpoint 按 blind_id 存全量上下文（见 ⑤），任意时刻可取历史上下文续跑 / 分叉；崩溃恢复、中途截止续跑、未来分支探索都靠它。 |
+| **EventStream 一等公民** | `stream_mode="custom"` 进度事件（见 ⑥）+ token 流，经缝 A StreamingResponse 一路到 App；进度不是事后补的日志，是 agent 运行的实时副产物。 |
+| **失败 encode 不抛** | agent 节点捕获模型异常 encode 成 AIMessage 返回（见 ②），工具失败 encode 成 isError observation（见下行）；graph **绝不因单点异常终止 session**。 |
+| **工具失败 = isError observation 回灌自愈** | 工具抛异常时 ToolNode 把它 encode 成一条 `is_error=True` 的 ToolMessage 回灌 `messages`，agent 下轮看到「工具失败了」可自愈（换工具 / 换参数 / 告诉用户）；**不**让异常冒泡杀 graph。 |
+| **session 可回放树** | checkpoint 按 `thread_id=blind_id` 存全量 state（见 ⑤），任意时刻可取历史 state 续跑 / 分叉；崩溃恢复、中途截止续跑、未来分支探索都靠它。 |
 | **injection hook** | system prompt 拼装（角色 + 位置 + few-shot + 偏好）走统一 injection 点，便于迭代；新偏好 / 新位置说明只改 hook，不改 agent 逻辑。 |
 | **shouldStopAfterTurn 作成本轮次熔断** | 每个 turn 结束跑一次成本 / 轮次检查（token 超额 / 工具调用次数过多 / 循环迹象）→ 停当前 turn 并 encode 成「我先停一下」AIMessage；防 agent 失控空转烧 token。 |
 

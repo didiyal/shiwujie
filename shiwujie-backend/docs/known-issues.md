@@ -49,7 +49,7 @@
 
 ### ai（试错-移除残留 + 其它发现）
 
-> v3.0.0 AI 重写（设计敲定·实现待 Phase 5）：整个 Java AI 模块将弃用并删除（`app/`/`agent/`/`tools/`/`advisor/`/`chatmemory/` 子包 + `AiConfig`/`AiConstants`/`ChatServiceImpl`/`ChatController` + 依赖 `spring-ai-alibaba-starter-dashscope`/`spring-ai-openai`/`kryo`/`jsoup` 若仅 AI 用），替换为 Python 自建 ReAct loop 服务（见 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md) 与 [shiwujie-ai/docs/](../../shiwujie-ai/docs/)）。下列 ai 缺陷随模块删除消灭。**MyManus（自研 ReAct 雏形）冻结保留非删** —— 作 Java-graph 备选 B-prime 的回退起跑线。AiLogs 图片 offload 去留待 Phase 5。
+> v3.0.0 AI 重写（设计敲定·实现待 Phase 5）：整个 Java AI 模块将弃用并删除（`app/`/`agent/`/`tools/`/`advisor/`/`chatmemory/` 子包 + `AiConfig`/`AiConstants`/`ChatServiceImpl`/`ChatController` + 依赖 `spring-ai-alibaba-starter-dashscope`/`spring-ai-openai`/`kryo`/`jsoup` 若仅 AI 用），替换为 Python LangGraph 服务（见 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md) 与 [shiwujie-ai/docs/](../../shiwujie-ai/docs/)）。下列 ai 缺陷随模块删除消灭。**MyManus（自研 ReAct 雏形）冻结保留非删** —— 作 Java-graph 备选 B-prime 的回退起跑线。AiLogs 图片 offload 去留待 Phase 5。
 >
 > 本节是 AI 实现细节的唯一真值（架构层只指向此处）：AI 拦截器 dev 后门 = 下条 #1（已登记，重写必修删项）；MyManus `@Component` 注释（自研 ReAct 雏形已弃用，现冻结保留）；TextApp Redis TTL 10 分钟（注释谎称 5 天）/ ImageApp 5 天 / kryo 序列化；`ToolChoiceAppChatMemoryRes.saveAll` 空实现——这些细节留在这里，[architecture/auth.md](../../docs/architecture/auth.md) 只指向。
 >

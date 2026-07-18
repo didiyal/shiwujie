@@ -69,16 +69,15 @@
 > 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。
 
 **设计决策（polyglot 双进程）**
-- **Java 业务单体 = 网关 / 业务真相源 / MCP server**：保留 WS 终结点 + JWT/Redis 鉴权 + 全部业务真相，新增对外 MCP server（streamable HTTP，暴露 8 工具）。**Python 自建 ReAct loop（langchain-core）= 计算大脑**（agent loop + 工具 + 记忆 + KB）。Python 不持用户 JWT，Java 鉴权后内部传 `blind_id`。
+- **Java 业务单体 = 网关 / 业务真相源 / MCP server**：保留 WS 终结点 + JWT/Redis 鉴权 + 全部业务真相，新增对外 MCP server（streamable HTTP，暴露 8 工具）。**Python LangGraph = 计算大脑**（agent loop + 工具 + 记忆 + KB）。Python 不持用户 JWT，Java 鉴权后内部传 `blind_id`。
 - **选 Python 的诚实三条理由**（**非**「Java 做不到」——红队已证伪：spring-ai-alibaba-graph 1.0 GA 在本项目已用的 alibaba-bom 1.0.0.2 内确有 graph/checkpoint/interrupt 原语）：
-  1. **Python AI 生态更成熟**——本项目已被 spring-ai-alibaba 从 M6.1 到 1.0.0.2 反复坑；langchain-core / OpenAI 兼容生态验证密度高于年轻移植。
-  2. **解耦已反复踩坑的 Alibaba 模型绑定**——项目已踩坑（见上文「AI 文本路径止血」：spring-ai-alibaba 1.0.0.2 的 `DashScopeChatModel` 调 qwen3.x 文本模型报 url error，止血改 `OpenAiChatModel`）；Python（langchain-core `ChatOpenAI`）经 OpenAI 兼容端点解耦模型绑定，降低再被坑风险。
-  3. **学可迁移的设计层**——AI 时代语言渐非约束，真正可迁移的是容错/并发/架构设计（语言无关）；成熟 Python 生态是更好的老师；且 alibaba-graph 本是 LangGraph 移植、设计相通，Java 知识不丢。
-- **实现载体 = 自建 ReAct loop（不引 LangGraph）**：v1 复杂度（标准 ReAct 环 + 自然 turn HITL，无 interrupt/子图/状态机）用不上 graph 原语——条件边一行、ToolNode 十行、interrupt 本就没用、stream = astream + 手写 yield；唯一需手写的 checkpoint 在盲人对话（状态 = 一个 message list）下手写无一致性风险。自建 loop 朝 Pi 金标准契约造，LangGraph 留作撞墙升级路径（不预支）。逐原语对照见 [shiwujie-ai/docs/design.md](../shiwujie-ai/docs/design.md) ⑪。
+  1. **成熟参考实现**——LangGraph 是原版、生态成熟；spring-ai-alibaba-graph 是其 1.0 移植，HITL-resume（跨轮中断恢复）路径有 open bug，而紧急求助确认门恰需跨轮恢复。
+  2. **解耦已反复踩坑的 Alibaba 模型绑定**——项目已踩坑（见上文「AI 文本路径止血」：spring-ai-alibaba 1.0.0.2 的 `DashScopeChatModel` 调 qwen3.x 文本模型报 url error，止血改 `OpenAiChatModel`）；LangGraph 经 OpenAI 兼容端点解耦模型绑定，降低再被坑风险。
+  3. **学可迁移的设计层**——AI 时代语言渐非约束，真正可迁移的是容错/并发/架构设计（语言无关）；成熟 Python 实现是更好的老师；且 alibaba-graph 本是 LangGraph 移植、设计相通，Java 知识不丢。
 - **反转 gate（备选 Decision B-prime）**：Java AI 框架（spring-ai-alibaba-graph）生产稳定约满 1 年后，重新考虑回 Java-graph；前置 spike 先验其 HITL-resume 在本 qwen3.x 栈是否被 open bug（#3297/#3266）咬中。
 - **两条缝取代旧 SSE + 信令中继**：缝 A（对话流）= App↔Java WS 全合一（单双向通道，承载文本/语音/位置/图片/流式回/5001-6 信令/未来主动推送；Java↔Python 逐 turn 内部 HTTP 流式回）；缝 C（Java 能力）= Python↔Java MCP streamable HTTP（Python 零业务/信令代码）。原「缝 B 信令中继」已并入缝 C。
 - **意图识别溶进 agent loop（Decision A）**：主 LLM 原生 function-calling 即「意图识别+工具选择」一步，杀旧 2-call 税；依赖 qwen FC 稳（spike 前置，建议 ≥90% 通过率）。
-- **两层记忆**：短期 = 手写 checkpoint（Redis db=2，`blind_id` 作 key，Python 用 `ai:ckpt:` 前缀避撞 spring-session/JWT key；超 token 阈值滚动压缩、recent-tail 永不压缩护导航状态、崩溃可恢复）；长期 = 偏好（跨会话、后台异步抽取、用户不可见、merge-with-latest 入 Redis hash + MySQL、turn 起注 system prompt 短段、绝不阻塞）。AiLogs 旧表降级为追加只写审计/可观测日志（不再当记忆读）。
+- **两层记忆**：短期 = LangGraph checkpoint（Redis db=2，`thread_id=blind_id`，Python 用 `ai:ckpt:` 前缀避撞 spring-session/JWT key；超 token 阈值滚动压缩、recent-tail 永不压缩护导航状态、崩溃可恢复）；长期 = 偏好（跨会话、后台异步抽取、用户不可见、merge-with-latest 入 Redis hash + MySQL、turn 起注 system prompt 短段、绝不阻塞）。AiLogs 旧表降级为追加只写审计/可观测日志（不再当记忆读）。
 - **BM25 功能 KB（非向量 RAG）**：~10-40 篇 markdown（frontmatter title/aliases/tags/summary），启动载入内存，`search_kb` 返回整篇给主 LLM；>100 篇或非结构化语料才升向量 RAG。
 - **Pi 式 read-on-demand**：`read_skill(name)` 元工具按需加载技能文档，作自建 loop 的「金标准契约」参考。
 

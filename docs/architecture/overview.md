@@ -25,6 +25,6 @@
 - **单库**：原 user/call/community/ai 四库合并为单库 `shiwujie`（共享 Redis db=2）；原跨库 Dubbo RPC 改同进程 Bean 注入。见 [data-model.md](data-model.md)。
 - **鉴权**：JWT + Redis 单点；v2.1.0 的 4 份 `LoginCheckInterceptor` 重复已收敛为 1（common-web，现处 bootstrap）+ ai 的 `AiLoginCheckInterceptor`。见 [auth.md](auth.md)。
 - **AI 推送**：ai 同进程调 call 的 `InnerSocket`，再经 WebSocket 推前端（5xxx 信令）。
-- **AI 重写（设计敲定·待实现）**：Java 单体 + Python 自建 ReAct loop 两进程，经 WS（对话）+ MCP（Java 能力）两缝连接——Java 作网关 / 真相源 / MCP server，Python 作计算大脑（agent loop + 工具 + 记忆 + KB）。总图与选型论证见 [ai-rewrite.md](ai-rewrite.md)，现状 AI 模块为弃用对象。
+- **AI 重写（设计敲定·待实现）**：Java 单体 + Python LangGraph 两进程，经 WS（对话）+ MCP（Java 能力）两缝连接——Java 作网关 / 真相源 / MCP server，Python 作计算大脑（agent loop + 工具 + 记忆 + KB）。总图与选型论证见 [ai-rewrite.md](ai-rewrite.md)，现状 AI 模块为弃用对象。
 - **部署**：单 jar + MySQL（库 shiwujie）+ Redis（db=2），无 Nacos/Dubbo；dev/prod profile 随 Nacos 移除暂无覆盖项。AI 重写后（设计敲定·待 Phase 5）演进为两进程 + Docker（java 公网 + python 内网）。见 [../../shiwujie-backend/docs/deployment.md](../../shiwujie-backend/docs/deployment.md)。
 - **诚实缺口**：无压测、无 Docker 化、无索引调优、统计页未实现（同步进 [../ROADMAP.md](../ROADMAP.md)）。
