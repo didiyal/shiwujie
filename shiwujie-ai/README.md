@@ -1,10 +1,10 @@
 # shiwujie-ai（视无界 AI 服务）
 
-> **Phase 5 chunk-1：spikes-only。** 本目录当前只含两项前置 spike + 容纳它们的 uv 工程 + go/no-go 报告。**不建**生产 graph / FastAPI 服务骨架 / 纵切。生产实现在 chunk-2（待 go/no-go 结论）。
+> **Phase 5 chunk-1：spikes-only。** 本目录当前只含两项前置 spike + 容纳它们的 uv 工程 + go/no-go 报告。**不建**生产 loop / FastAPI 服务骨架 / 纵切。生产实现在 chunk-2（待 go/no-go 结论）。
 
 ## 为什么
 
-AI 重写（polyglot：Java 业务单体 + Python LangGraph 智能体）有两个前置未知必须先实测、再决定 chunk-2 怎么走：
+AI 重写（polyglot：Java 业务单体 + Python 自建 ReAct loop 智能体）有两个前置未知必须先实测、再决定 chunk-2 怎么走：
 
 - **Spike-1（Decision A）**：qwen3.6-flash 原生 function-calling 在本工具集+本 prompt 下的可靠性。稳（干净集 ≥90%）→ 意图溶进 agent loop（杀现状 2-call 税）；不稳 → 加独立分类节点。
 - **Spike-2（缝 C / Decision C）**：Spring AI 1.1.0 + alibaba 1.1.0.0（留 Boot 3.4.5）能否同 pom 共存 + MCP streamable HTTP server 能起来 + Python `langchain-mcp-adapters` 0.3.0 能连上且关停不崩（#466）。全绿 → 缝 C 首选 MCP；翻车 → Python 8 个 REST wrapper 降级。
@@ -40,4 +40,4 @@ shiwujie-ai/
 └── reports/                              # 中间产物（gitignored）：fc_go_nogo.md / spikes_go_nogo.md
 ```
 
-> 生产 graph / FastAPI / 两层记忆 / KB / Dockerfile 在 chunk-2 加入。本目录 `docs/`（design/known-issues/fallback/deployment/README）已在 Phase 5a 落档，spike 结论反写其中。
+> 生产 loop / FastAPI / 两层记忆 / KB / Dockerfile 在 chunk-2 加入。本目录 `docs/`（design/known-issues/fallback/deployment/README）已在 Phase 5a 落档，spike 结论反写其中。

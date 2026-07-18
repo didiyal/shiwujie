@@ -73,7 +73,7 @@ v2.1.0 的测试现状 / 环境表 / 验证点 / 缺口继续适用，见 [../v2
 
 ## AI 重写测试关系（设计敲定·待 Phase 5）
 
-> **状态：设计敲定（Phase 1–4）· 实现待 Phase 5。** AI 重写（现有 Java AI 模块 → Python LangGraph 智能体）的测试范围与现有单体化测试基线的关系，详见 [task-breakdown](task-breakdown.md)「AI 重写」3.9 子任务与 [architecture/tech-stack](../../architecture/tech-stack.md) AI 重写段。本节实现尚未落地，下列 `[ ]` 全部待办。
+> **状态：设计敲定（Phase 1–4）· 实现待 Phase 5。** AI 重写（现有 Java AI 模块 → Python 自建 ReAct loop 智能体）的测试范围与现有单体化测试基线的关系，详见 [task-breakdown](task-breakdown.md)「AI 重写」3.9 子任务与 [architecture/tech-stack](../../architecture/tech-stack.md) AI 重写段。本节实现尚未落地，下列 `[ ]` 全部待办。
 
 **对现有基线的影响（零回归保证）**：
 
@@ -87,7 +87,7 @@ v2.1.0 的测试现状 / 环境表 / 验证点 / 缺口继续适用，见 [../v2
 |---|---|---|
 | Java WS 契约 | AI-turn roundtrip（mock Python） | 缝 A：App<->Java WS 新 AI-turn 入站消息类型 + 流式 token 帧出站往返；ticket 鉴权（堵 phone 冒充）；`getAsyncRemote()` 非阻塞推送；拦「收到客户端的数据」回显（AI 类消息不发） |
 | Python tool | 工具单测（mock 外部 API） | 6 native（`recognize_photo`/`web_search`/`get_weather`/`gaode_poi_search`/`gaode_route`/`search_kb` BM25）+ `read_skill` + 高德 3 wrapper 出参剪裁（盲人朗读友好） |
-| Python graph | 集成测试（mock LLM） | 标准环（entry fork→agent FC→ToolNode→回环）；checkpoint 恢复（`thread_id=blind_id`，崩溃/中途截止续跑）；HITL 两处（导航交通方式 / 紧急确认门）自然 turn + checkpoint |
+| Python loop | 集成测试（mock LLM） | 标准环（入口分流→调模型 FC→执行 tool_calls→回环）；checkpoint 恢复（key=`blind_id`，崩溃/中途截止续跑）；HITL 两处（导航交通方式 / 紧急确认门）自然 turn + checkpoint |
 | 安全门 | 紧急确认 token | `request_emergency_help` 拆 `prepare()`/`confirm()`；token 绑 `(blind_id, thread_id, issuing_turn)`，`confirm()` 拒同轮 token；`parallel_tool_calls=False` 堵单轮并行 prepare + 伪造 confirm；App 非-MCP HTTP 端点消费 token（第三道门） |
 | 安全门 | `update_profile` 字段门 | MCP inputSchema 硬卡 `{nickname, phone, gender}`；Java 窄 DTO（非泛 `Blind`）+ 单测断言 DTO 无 `password`/`idCard`/`disabilityCard` setter（防约定腐烂） |
 | 安全门 | tool-name 白名单 | MCP 服务端拒未注册工具名（堵 LLM 幻觉名冒充 `confirm`）；strict JSON-schema 校验 |

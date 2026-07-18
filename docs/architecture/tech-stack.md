@@ -49,7 +49,7 @@
 
 > 当前单体态：2 模块——`shiwujie-model`（契约层）+ `shiwujie-bootstrap`（唯一 app：原 common-web 公共层 + user/call/community/ai 全部业务代码，port 8100 复用原 gateway，单 datasource 指向 `shiwujie` 库，统一 SB3.4.5/Java21）。**部署即单 jar**——`spring-boot-maven-plugin` repackage 把 bootstrap（含 model）+ 全部第三方依赖打成 **1 个自包含 fat jar**，拷一个 jar `java -jar` 即可，无 Nacos/Dubbo。两阶段交付（先升版本后合并）见 [`development/v3.0.0/task-breakdown.md`](../development/v3.0.0/task-breakdown.md)。契约（HTTP 路径 / WS 信令 / 状态码）启动级回归零变更，功能级待 App/Web 联调。
 
-> **AI 重写后部署态（设计敲定·待 Phase 5）**：单体 jar 之上新增 Python LangGraph 进程，演进为 **polyglot 两进程 + Docker**——java 发布 8100:8100（公网），python 不发布端口（仅内网，java 经服务名调）；非 docker 本地模式仍可（mvn install + java -jar / uvicorn 直跑）。两进程缝、MCP 接线、Docker compose 详见 [`ai-rewrite.md`](ai-rewrite.md)；Java 业务单体（user/call/community 契约）零变更。
+> **AI 重写后部署态（设计敲定·待 Phase 5）**：单体 jar 之上新增 Python 自建 ReAct loop 进程（langchain-core），演进为 **polyglot 两进程 + Docker**——java 发布 8100:8100（公网），python 不发布端口（仅内网，java 经服务名调）；非 docker 本地模式仍可（mvn install + java -jar / uvicorn 直跑）。两进程缝、MCP 接线、Docker compose 详见 [`ai-rewrite.md`](ai-rewrite.md)；Java 业务单体（user/call/community 契约）零变更。
 
 ## 前端技术栈
 
@@ -83,13 +83,13 @@
 
 ## AI 能力栈
 
-> **重写进行中（设计敲定 Phase 1-4 · 实现待 Phase 5）**：下表「现状」列为现有 Java AI 模块，是**弃用对象**，重写后整体替换为 Python LangGraph（目标态见下文「重写目标态」+ [`ai-rewrite.md`](ai-rewrite.md)）。
+> **重写进行中（设计敲定 Phase 1-4 · 实现待 Phase 5）**：下表「现状」列为现有 Java AI 模块，是**弃用对象**，重写后整体替换为 Python 自建 ReAct loop（langchain-core 地基；目标态见下文「重写目标态」+ [`ai-rewrite.md`](ai-rewrite.md)）。
 
-| 能力 | 现状（Java，待重写·弃用对象） | 重写目标态（Python LangGraph） |
+| 能力 | 现状（Java，待重写·弃用对象） | 重写目标态（Python 自建 ReAct loop） |
 |---|---|---|
 | 文本模型 | DashScope **qwen3.6-flash**，经官方 `OpenAiChatModel`（`spring-ai-openai`）走 OpenAI 兼容端点 `compatible-mode` 直连 | 同 qwen，经 OpenAI 兼容端点解耦模型绑定 |
 | 图像模型 | DashScope **qwen3-vl-flash**，`DashScopeChatModel`（spring-ai-alibaba，多模态 `withMultiModel`） | 同 qwen-vl，统一经兼容端点 |
-| 框架 | Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2 + spring-ai-openai（版本随 spring-ai-bom 1.0.0） | LangGraph（agent loop + checkpoint） |
+| 框架 | Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2 + spring-ai-openai（版本随 spring-ai-bom 1.0.0） | langchain-core 地基（ChatModel/@tool/Message）+ 自建 while loop + 手写 checkpoint（复用 langchain-mcp-adapters + LangSmith） |
 | 记忆 | **自研 ChatMemory**（Redis 精简 + MySQL 全量，kryo 序列化），非 Spring AI 默认 | 两层：短期 checkpoint（Redis db=2，`ai:ckpt:{blind_id}`）+ 长期偏好（Redis hash + MySQL，异步抽取） |
 | 工具路由 | 工作流式（约定 JSON 解析，非原生 function-calling）——2-call 税；具体实现类见 backend [known-issues](../../shiwujie-backend/docs/known-issues.md)「AI 模块（弃用）」 | 主 LLM 原生 function-calling 一步（= 意图识别 + 工具选择） |
 | 检索增强 | RAG **已移除**（半残留 Bean，未启用） | BM25 文本知识库（~10-40 篇 markdown，启动载入内存，`search_kb` 返回整篇）；>100 篇或非结构化语料才升向量 RAG |
@@ -104,17 +104,21 @@
 
 ### AI 重写选型论证
 
-**为什么 LangGraph（诚实三点，非「Java 做不到」）：**
+两层选择。
 
-1. **成熟参考实现**——LangGraph 是原版、生态成熟；`spring-ai-alibaba-graph`（1.0 GA，在本项目已用的 alibaba-bom 1.0.0.2 内，确有 graph/checkpoint/interrupt 原语）是其 1.0 移植，HITL-resume（中断恢复）路径有 open bug，而紧急求助确认门恰需跨轮恢复。
-2. **解耦已反复踩坑的 Alibaba 模型绑定**——项目已踩坑（`DashScopeChatModel` 调 qwen3.x 文本报 `url error`，止血改 `OpenAiChatModel`）；LangGraph 经 OpenAI 兼容端点解耦模型绑定，降低再被坑风险。
-3. **学可迁移的设计层**——AI 时代语言渐非约束，真正可迁移的是容错 / 并发 / 架构设计（语言无关）；成熟 Python 实现是更好的老师；alibaba-graph 本是 LangGraph 移植、设计相通，Java 知识不丢。
+**为什么 Python（不 Java），诚实三点、非「Java 做不到」**（红队已证伪：`spring-ai-alibaba-graph` 1.0 GA 在本项目已用的 alibaba-bom 1.0.0.2 内，确有 graph/checkpoint/interrupt 原语）：
+
+1. **Python AI 生态更成熟**——本项目已被 spring-ai-alibaba 从 M6.1 到 1.0.0.2 反复坑；langchain-core / OpenAI 兼容生态是 agent 主战场，验证密度高于年轻移植。
+2. **解耦已反复踩坑的 Alibaba 模型绑定**——项目已踩坑（`DashScopeChatModel` 调 qwen3.x 文本报 `url error`，止血改 `OpenAiChatModel`）；Python 侧 langchain-core `ChatOpenAI` 经 OpenAI 兼容端点解耦，降低再被坑风险。
+3. **学可迁移的设计层**——AI 时代语言渐非约束，真正可迁移的是容错 / 并发 / 架构设计（语言无关）；成熟 Python 生态是更好的老师；alibaba-graph 本是 LangGraph 移植、设计相通，Java 知识不丢。
+
+**为什么自建 ReAct loop（不 LangGraph）**：v1 复杂度（标准 ReAct 环 + 自然 turn HITL，无 `interrupt` / 子图 / 状态机 / 多 agent）用不上 graph 原语——条件边 = 一行 `if`、ToolNode = 十行 `for`、`interrupt()` 本就没用、stream = `astream()` + 手写 yield；唯一需手写的 checkpoint，在盲人对话（状态 = 一个 message list）下手写无一致性风险。自建 loop 朝 Pi 金标准契约造（见 [`ai-rewrite.md`](ai-rewrite.md) 第九节），学得更深、prod 出事能直接读代码。**LangGraph 留作撞墙升级路径**（真需 `interrupt` / 多 agent / 步级 checkpoint 回滚时再引），不预支。逐原语对照见 [shiwujie-ai/docs/design.md](../../shiwujie-ai/docs/design.md) ⑪。
 
 **反转 gate（Decision B-prime，备选）**：`spring-ai-alibaba-graph` 生产稳定约满 1 年后，重新考虑回 Java-graph（单进程，缝 A 变方法调用、缝 C 变直接 Java 调用，MCP 工具设计语言无关故存活）。前置 spike：先验 alibaba-graph HITL-resume 在本项目 qwen3.x 栈是否被 open bug（#3297 / #3266）咬中。
 
-**为什么不 LangChain-legacy**：不能自然表达循环（agent loop 是其弱项）、社区已弃用转向 LangGraph、过抽象。
+**为什么不 LangChain-legacy（chains/agents 包，非 langchain-core）**：不能自然表达循环（agent loop 是其弱项）、社区已弃用转向 LangGraph、过抽象。注意区分：`langchain-core`（消息 / tool / ChatModel 接口，稳定）= 自建 loop 的**地基，留用**；只有 legacy `langchain` 包跳过。
 
-**为什么不把 Pi（coding-agent 参考实现）当依赖，但偷其哲学**：语言不同（TS ≠ Python）、形状不同（它是 coding-agent，本项目是对话助手）、单维护者 bus factor、MCP 缝弱。但其工程契约（EventStream 一等 / 失败 encode 不抛 / isError observation 回灌 / session 可回放树 / injection hook / shouldStop 成本熔断）语言无关，agent loop 朝此造——见 [`ai-rewrite.md`](ai-rewrite.md) 第九节。
+**为什么不把 Pi（coding-agent 参考实现）当依赖，但偷其哲学**：语言不同（TS ≠ Python）、形状不同（它是 coding-agent，本项目是对话助手）、单维护者 bus factor、MCP 缝弱。但其工程契约（EventStream 一等 / 失败 encode 不抛 / isError observation 回灌 / session 可回放树 / injection hook / shouldStop 成本熔断）语言无关，自建 loop 朝此造——见 [`ai-rewrite.md`](ai-rewrite.md) 第九节。
 
 **高德：自建 REST wrapper vs 官方 MCP**：决策类（poi/route/weather）= 后端 Python 自建 3 个 REST wrapper tool（直调高德 web API，出参剪裁，盲人朗读友好）；执行类（起导航 UI）= App 高德 SDK。**不接高德官方 MCP**（出参不可控 / 进程不经济）。反转条件：高德能力涨到 8-10+ 工具再引官方 MCP。
 

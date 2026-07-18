@@ -38,7 +38,7 @@ Redis 单实例 `47.112.114.139:6379`，所有模块共享 **db=2**：
 | 志愿者匹配队列 | `VOLUNTEER_QUEUE_REDIS_KEY` | 30 秒 |
 | AI 重写后（设计敲定·待 Phase 5） | 短期记忆 `ai:ckpt:{blind_id}`（checkpoint）+ 长期偏好 hash `{blind_id}` | checkpoint 无固定 TTL（随会话） / 偏好长期 |
 
-> **AI 重写后记忆（设计敲定·待 Phase 5）**：短期 = LangGraph checkpoint（Redis db=2，key `ai:ckpt:{blind_id}`，thread_id=blind_id，`ai:ckpt:` 前缀避撞 spring-session / JWT key）；长期 = 偏好（Redis hash `{blind_id}` + MySQL，后台异步抽取）。重写后 Python 用 `ai:ckpt:` 前缀与上表现有 `chat:memory:` / `REDIS_SECRETKEY` key 分离，不互撞。详见 [`ai-rewrite.md`](ai-rewrite.md)。
+> **AI 重写后记忆（设计敲定·待 Phase 5）**：短期 = 手写 checkpoint（Redis db=2，key `ai:ckpt:{blind_id}`，blind_id 作 key，`ai:ckpt:` 前缀避撞 spring-session / JWT key）；长期 = 偏好（Redis hash `{blind_id}` + MySQL，后台异步抽取）。重写后 Python 用 `ai:ckpt:` 前缀与上表现有 `chat:memory:` / `REDIS_SECRETKEY` key 分离，不互撞。详见 [`ai-rewrite.md`](ai-rewrite.md)。
 
 ## 表字典（二期）
 
@@ -84,7 +84,7 @@ Redis 单实例 `47.112.114.139:6379`，所有模块共享 **db=2**：
 
 > **现状（v2.1.0 / 单体化）**：AiLogs 表身兼两职——①对话审计日志；②图片瘦身的对象存储载体（多轮历史中的图片以占位符 `image{logId}` 替换，回放时按 logId 反查还原）。
 >
-> **重写后（设计敲定·待 Phase 5）**：AiLogs **降级为追加只写审计 / 可观测日志**（不再当记忆读——短期记忆迁 LangGraph checkpoint `ai:ckpt:{blind_id}`，长期偏好迁 Redis hash + MySQL）；图片 offload 去留待 Phase 5。kryo 序列化与 TTL 不一致（文本侧 10 分钟 / 图片侧 5 天）详见 [`../../shiwujie-backend/docs/known-issues.md`](../../shiwujie-backend/docs/known-issues.md)，重写后该机制随 AiLogs 记忆职责一并退场。现状实现见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)，重写记忆设计见 [`ai-rewrite.md`](ai-rewrite.md)。
+> **重写后（设计敲定·待 Phase 5）**：AiLogs **降级为追加只写审计 / 可观测日志**（不再当记忆读——短期记忆迁手写 checkpoint `ai:ckpt:{blind_id}`，长期偏好迁 Redis hash + MySQL）；图片 offload 去留待 Phase 5。kryo 序列化与 TTL 不一致（文本侧 10 分钟 / 图片侧 5 天）详见 [`../../shiwujie-backend/docs/known-issues.md`](../../shiwujie-backend/docs/known-issues.md)，重写后该机制随 AiLogs 记忆职责一并退场。现状实现见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)，重写记忆设计见 [`ai-rewrite.md`](ai-rewrite.md)。
 
 ## 全局约定
 

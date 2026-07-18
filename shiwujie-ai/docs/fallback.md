@@ -62,7 +62,7 @@
 
 **MCP 是缝 C 的首选**，理由：
 - **Python→Java 唯一缝**：MCP 把 8 工具统一成一份 schema、一个端点，Python `get_tools()` 自动拿现成工具定义，**零胶水**。
-- **语言无关**：MCP 工具设计语言无关（design.md ⑬ 硬修正 5），Decision A（Python LangGraph）与 Decision B-prime（Java-graph）两套主线下 schema 都存活——降级 REST 反而绑死 Python 调用形态。
+- **语言无关**：MCP 工具设计语言无关（design.md ⑬ 硬修正 5），Decision A（Python 自建 loop）与 Decision B-prime（Java-graph）两套主线下 schema 都存活——降级 REST 反而绑死 Python 调用形态。
 - **窄缝**：单一 MCP 端点 + 统一鉴权，攻击面比 8 个 REST 端点窄。
 
 降级是兜底，不是平替。Phase 5 先 spike MCP（[known-issues](known-issues.md) AI-1），过则用 MCP、不过才走本文 REST-wrap。

@@ -34,14 +34,14 @@ java -jar shiwujie-backend/shiwujie-bootstrap/target/shiwujieBootstrap-0.0.1-SNA
 | 进程 | 角色 | 端口发布 | 职责 |
 |---|---|---|---|
 | Java（`shiwujie-bootstrap`，SB 3.4.5/Java21 fat jar） | 网关 + 业务真相源 + MCP server | **公网 8100:8100** | WS 终结点（`/api/ws/call`）+ JWT/Redis 鉴权 + user/call/community 业务 + 对 Python 暴露 MCP server（8 工具：业务 4 + 信令 4） |
-| Python（`shiwujie-ai`，LangGraph + FastAPI） | 计算大脑（agent loop + 工具 + 记忆 + KB） | **不发布端口（仅内网）** | Java 经服务名 `http://python:8500` 调；不持用户 JWT（Java 鉴权后内部传 `blind_id`） |
+| Python（`shiwujie-ai`，自建 ReAct loop [langchain-core] + FastAPI） | 计算大脑（agent loop + 工具 + 记忆 + KB） | **不发布端口（仅内网）** | Java 经服务名 `http://python:8500` 调；不持用户 JWT（Java 鉴权后内部传 `blind_id`） |
 
 > 灰度 = 硬切换：后端镜像 + APK 同批发，旧 SSE 通道与新 WS AI-turn 消息不兼容，须版本配对。
 
 **共享状态**（两进程共用，仍 v3.0.0 单体那两套基础设施，只是多一个消费者）：
 
 - MySQL `47.112.114.139:3306` 库 `shiwujie`：Java 读业务表 + 写 `AiLogs` 审计；Python 仅写 `AiLogs` 审计（降级为追加只写日志）。
-- Redis `47.112.114.139:6379` db=2：Java 用 `spring-session`/JWT token key；Python 用 LangGraph checkpoint（`ai:ckpt:` 前缀，按 `blind_id`/`thread_id`）+ 长期偏好 hash。前缀隔离避撞。
+- Redis `47.112.114.139:6379` db=2：Java 用 `spring-session`/JWT token key；Python 用手写 checkpoint（`ai:ckpt:` 前缀，按 `blind_id`）+ 长期偏好 hash。前缀隔离避撞。
 
 **Docker 编排**（根级新增，对齐参考仓 ctgu-agents）：
 

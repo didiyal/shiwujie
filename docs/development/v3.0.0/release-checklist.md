@@ -30,7 +30,7 @@
 
 ## AI 重写交付项（设计敲定·待 Phase 5，全 `[ ]`）
 
-> **状态：设计敲定（Phase 1–4）· 实现待 Phase 5。** 把现有 Java AI 模块整体替换为 Python LangGraph 智能体（Agent）驱动，Java 业务单体保留。下列全 `[ ]` 尚未落地；打 v3.0.0 tag 前 AI 重写未完成则视为本版本不收 AI 重写（状态诚实，绝不把设计写成「已落地」）。详见 [task-breakdown](task-breakdown.md)「AI 重写」3.1–3.10、[testing-strategy](testing-strategy.md)「AI 重写测试关系」、[architecture/tech-stack](../../architecture/tech-stack.md) AI 重写段、[product/v3.0.0/](../../product/v3.0.0/) 契约变更。
+> **状态：设计敲定（Phase 1–4）· 实现待 Phase 5。** 把现有 Java AI 模块整体替换为 Python 自建 ReAct loop 智能体（Agent）驱动，Java 业务单体保留。下列全 `[ ]` 尚未落地；打 v3.0.0 tag 前 AI 重写未完成则视为本版本不收 AI 重写（状态诚实，绝不把设计写成「已落地」）。详见 [task-breakdown](task-breakdown.md)「AI 重写」3.1–3.10、[testing-strategy](testing-strategy.md)「AI 重写测试关系」、[architecture/tech-stack](../../architecture/tech-stack.md) AI 重写段、[product/v3.0.0/](../../product/v3.0.0/) 契约变更。
 
 - [ ] **前置 spike**：qwen function-calling 可靠性（本工具集 + 本 prompt 通过率，建议 >=90%，决定 Decision A）/ `spring-ai-starter-mcp-server-webmvc` 与 `spring-ai-bom 1.0.0` + `alibaba-starter` 共存 / alibaba-graph HITL-resume 是否被 open bug（#3297 / #3266）咬中（B-prime 评估）
 - [ ] **3.1 Python graph**：State + 节点 + 标准环 + Redis checkpointer（`ai:ckpt:` 前缀 / `thread_id=blind_id`）+ HITL 两处（导航 / 紧急）+ stream custom 反馈

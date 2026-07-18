@@ -1,6 +1,6 @@
 # Python AI 服务部署
 
-> Python LangGraph 智能体服务的部署。development 层（允许启动命令 / 端口 / 配置）。**状态：设计敲定（Phase 1–4）· 实现待 Phase 5**——下列为本设计的目标部署形态，代码与 Dockerfile 尚未落地。Java 侧部署见 backend [deployment.md](../../shiwujie-backend/docs/deployment.md)；polyglot 双进程 compose 总图见根 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md)。
+> Python 自建 ReAct loop 智能体服务的部署。development 层（允许启动命令 / 端口 / 配置）。**状态：设计敲定（Phase 1–4）· 实现待 Phase 5**——下列为本设计的目标部署形态，代码与 Dockerfile 尚未落地。Java 侧部署见 backend [deployment.md](../../shiwujie-backend/docs/deployment.md)；polyglot 双进程 compose 总图见根 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md)。
 
 > **铁律：Python 服务绝不公网发布端口。** App 只认 Java `:8100`（公网）；Python `:8500` 仅内网可达，Java 经 compose 服务名 `http://python:8500` 调。Python 不持用户 JWT，不直接面向客户端。
 

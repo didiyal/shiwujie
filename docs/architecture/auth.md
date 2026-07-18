@@ -101,7 +101,7 @@ flowchart LR
 
 > AI 重写 polyglot 缝的鉴权边界约定。详见 [`ai-rewrite.md`](ai-rewrite.md)。
 
-Python LangGraph 进程**不持用户 JWT**——它是无状态计算大脑，不面向公网。Java 鉴权后把 blind_id 内部传给 Python：
+Python 自建 ReAct loop 进程**不持用户 JWT**——它是无状态计算大脑，不面向公网。Java 鉴权后把 blind_id 内部传给 Python：
 
 - **缝 A（对话流）**：Java → Python 逐 turn 内部 HTTP 调用，blind_id 作调用参数。
 - **缝 C（Java 能力 MCP）**：Python → Java MCP streamable HTTP，blind_id 经 MCP header `X-Blind-Id` + 内部密钥传递。
