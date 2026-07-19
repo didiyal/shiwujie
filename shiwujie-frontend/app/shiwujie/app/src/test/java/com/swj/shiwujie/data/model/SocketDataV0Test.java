@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
  *       → 字段缺省（后端 toBean 得 null，宽松接收）。</li>
  *   <li>下行 5006 帧带结构化 destination{name,lat,lng,address}（chunk-2e-1，替代旧 volunteerPhone hack），
  *       经 Gson 反序列化（WebSocketManager handleMessage 路径）。</li>
- *   <li>既有信令帧（login=0 / heartbeat=-1）JSON 只有原 4 字段，不含 text/position/destination（向后兼容）。</li>
+ *   <li>既有信令帧不含 text/position/destination（向后兼容）；login 帧（0）chunk-2e-5 起带 ticket（服务端校验绑 session）。</li>
  * </ul>
  */
 public class SocketDataV0Test {
@@ -87,9 +87,9 @@ public class SocketDataV0Test {
     }
 
     @Test
-    public void toSendJson_legacyLoginFrame_unchanged_noTextOrPosition() {
-        // 向后兼容：既有 login 帧（0）JSON 只含 4 字段，不混入 text/position。
-        SocketDataV0 data = SocketDataV0.createLoginMessage("13800000000", false);
+    public void toSendJson_loginFrame_carriesTicket_noTextOrPosition() {
+        // chunk-2e-5：login 帧（0）带 ticket（服务端校验绑 session），仍不混入 text/position。
+        SocketDataV0 data = SocketDataV0.createLoginMessage("13800000000", false, "WSTKT-ABCD1234");
 
         JsonObject obj = toJson(data.toSendJson());
 
@@ -97,8 +97,9 @@ public class SocketDataV0Test {
         assertEquals("13800000000", obj.get("blindPhone").getAsString());
         assertEquals("", obj.get("volunteerPhone").getAsString());
         assertEquals(0L, obj.get("channelId").getAsLong());
-        assertFalse("老帧不应带 text", obj.has("text"));
-        assertFalse("老帧不应带 position", obj.has("position"));
+        assertEquals("WSTKT-ABCD1234", obj.get("ticket").getAsString());
+        assertFalse("login 帧不应带 text", obj.has("text"));
+        assertFalse("login 帧不应带 position", obj.has("position"));
     }
 
     @Test

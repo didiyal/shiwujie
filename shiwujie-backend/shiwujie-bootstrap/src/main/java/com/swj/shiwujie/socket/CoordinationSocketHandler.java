@@ -146,6 +146,16 @@ public class CoordinationSocketHandler {
         return innerBlindService;
     }
 
+    /** 懒取 {@link WsTicketStore}（chunk-2e-5 WS ticket 鉴权），按 session 缓存。 */
+    private WsTicketStore wsTicketStore;
+
+    private WsTicketStore ticketStore() {
+        if (wsTicketStore == null) {
+            wsTicketStore = ApplicationContextHolder.getBean(WsTicketStore.class);
+        }
+        return wsTicketStore;
+    }
+
     // endregion
 
     /**
@@ -188,17 +198,31 @@ public class CoordinationSocketHandler {
      * 初始化socket登录 - 0
      * 返回type,0
      *
-     * @param socketData socketData
+     * <p><b>chunk-2e-5 WS ticket 鉴权</b>：信 ticket 不信自报 phone（堵 known-issues #7 冒充）。ticket 经
+     * 已鉴权 HTTP 端点签发、绑 phone+role，{@link WsTicketStore#consume} 一次性消费。无 ticket / 失效 →
+     * <b>不绑 session、不回初始化成功</b>——客户端收不到信令即知登录失败，重取 ticket 重连。</p>
+     *
+     * @param socketData socketData（ticket 字段必填；自报 blindPhone/volunteerPhone 不作身份依据，仅被真实 phone 覆盖回显）
      * @param session WebSocket会话
      */
     private void websocketLogin(SocketData socketData, Session session) {
-        String phone = socketData.getVolunteerPhone();
-        if (StrUtil.isBlankIfStr(phone)) {
-            phone = socketData.getBlindPhone();
+        WsTicketStore.Bound bound = ticketStore().consume(socketData.getTicket()).orElse(null);
+        if (bound == null) {
+            log.warn("WS 登录被拒：ticket 缺失/失效（sessionId={}），不绑 session", session.getId());
+            return;
+        }
+        String phone = bound.phone();
+        // 回显用 ticket 绑定的真实 phone（非客户端自报），按 role 填对应字段。
+        if ("volunteer".equals(bound.role())) {
+            socketData.setVolunteerPhone(phone);
+            socketData.setBlindPhone("");
+        } else {
+            socketData.setBlindPhone(phone);
+            socketData.setVolunteerPhone("");
         }
         sessionMap.put(phone, session);
         sessionPhoneMap.put(session, phone);
-        log.info(phone + "登录");
+        log.info("{} 登录（ticket 校验通过 role={}）", phone, bound.role());
 
         String response = this.getResponse(0, "初始化成功", 0, socketData);
         sendMessage(session, response);

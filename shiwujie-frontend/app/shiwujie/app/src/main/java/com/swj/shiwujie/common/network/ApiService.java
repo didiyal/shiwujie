@@ -428,6 +428,13 @@ public interface ApiService {
             @Query("token") String emergencyToken
     );
 
+    /**
+     * chunk-2e-5：换取 WS ticket（连 WS 前调，复用 JWT 鉴权；服务端绑 phone+role 一次性消费）。
+     * <p>客户端取 ticket 塞进 type=0 登录消息，堵 known-issues #7 phone 冒充。</p>
+     */
+    @POST("/api/call/ws/ticket")
+    Call<BaseResponse<String>> fetchWsTicket(@Header("Authorization") String token);
+
     // ==================== 社区相关接口 ====================
 
     /**

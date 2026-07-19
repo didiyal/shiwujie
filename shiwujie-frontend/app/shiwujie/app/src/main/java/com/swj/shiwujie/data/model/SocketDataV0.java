@@ -61,6 +61,10 @@ public class SocketDataV0 {
     // chunk-2e-1: WS 5006 下行导航目的地（结构化 destination 替代旧 volunteerPhone hack，与后端 SocketData.destination 对齐）
     @SerializedName("destination")
     private Destination destination; // 导航目的地（{name,lat,lng,address}，仅 requestType=5006 下行）
+
+    // chunk-2e-5: WS 登录 ticket（堵 phone 冒充；客户端连 WS 前经已鉴权 HTTP 换取，仅 requestType=0 登录帧携带）
+    @SerializedName("ticket")
+    private String ticket;
     
     // 构造函数
     public SocketDataV0() {}
@@ -73,7 +77,8 @@ public class SocketDataV0 {
     }
     
     // 创建登录消息的静态方法（requestType=0，客户端发送）
-    public static SocketDataV0 createLoginMessage(String phone, boolean isVolunteer) {
+    // chunk-2e-5: 带 ticket（连 WS 前经已鉴权 HTTP 换取）——服务端校验 ticket 绑 session，不再信自报 phone。
+    public static SocketDataV0 createLoginMessage(String phone, boolean isVolunteer, String ticket) {
         SocketDataV0 data = new SocketDataV0();
         data.setRequestType(REQUEST_TYPE_LOGIN);
         if (isVolunteer) {
@@ -83,6 +88,7 @@ public class SocketDataV0 {
             data.setBlindPhone(phone);
             data.setVolunteerPhone("");
         }
+        data.setTicket(ticket);
         data.setChannelId(0);
         return data;
     }
@@ -249,6 +255,14 @@ public class SocketDataV0 {
         this.destination = destination;
     }
 
+    public String getTicket() {
+        return ticket;
+    }
+
+    public void setTicket(String ticket) {
+        this.ticket = ticket;
+    }
+
     /**
      * 获取消息内容（兼容性方法，与message字段相同）
      */
@@ -293,6 +307,10 @@ public class SocketDataV0 {
         if (requestType == REQUEST_TYPE_AI_TURN_REQUEST) {
             sendData.put("text", text != null ? text : "");
             sendData.put("position", position);
+        }
+        // chunk-2e-5: 登录帧带 ticket（服务端 websocketLogin 校验绑 session，堵 phone 冒充）。其余帧不发。
+        if (requestType == REQUEST_TYPE_LOGIN) {
+            sendData.put("ticket", ticket != null ? ticket : "");
         }
         return new com.google.gson.Gson().toJson(sendData);
     }

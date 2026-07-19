@@ -55,5 +55,13 @@ public class SocketData implements Serializable {
     private Destination destination;
 
 
+    /**
+     * WS 登录 ticket（design chunk-2e-5 WS ticket 鉴权，仅 requestType=0 登录帧携带）。
+     * 客户端连 WS 前经已鉴权 HTTP 端点换取，服务端 {@code websocketLogin} 校验后绑 session——
+     * 堵 known-issues #7 phone 冒充（不再信客户端自报 phone）。其余信令为 null。
+     */
+    private String ticket;
+
+
     private final static long serialVersionUID = 1L;
 }
