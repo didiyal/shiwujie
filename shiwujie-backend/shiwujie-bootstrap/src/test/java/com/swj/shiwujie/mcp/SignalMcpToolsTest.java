@@ -19,6 +19,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -28,14 +30,15 @@ import static org.mockito.Mockito.when;
 /**
  * {@link SignalMcpTools} 单元测试。
  *
- * <p>用 Testable 子类 override {@code resolveBlindId} 返固定 blindId（避免引 mockito-inline mock
- * {@link BlindMcpContext} 静态），@Mock {@link BlindService}/{@link InnerSocket} 经
- * {@link ReflectionTestUtils} 注入字段。聚焦：
+ * <p>用 Testable 子类 override {@code resolveBlindId}/{@code resolveIssuingTurn} 返固定值（避免引
+ * mockito-inline mock {@link BlindMcpContext} 静态），@Mock {@link BlindService}/{@link InnerSocket}/
+ * {@link EmergencyTokenStore} 经 {@link ReflectionTestUtils} 注入字段。聚焦：
  * <ul>
  *   <li>3 信令工具真身推 WS：requestType + SocketData 载荷（destination/appName 塞 volunteerPhone）正确；</li>
  *   <li>open_app 白名单硬卡（design ⑬）：白名单外拒绝、不推 WS；</li>
  *   <li>design ⑫ encode-不抛：无身份 / 盲人不存在 / service 异常都返 status:error JSON、不抛、不推 WS；</li>
- *   <li>emergency 桩不推真实 WS 5003（2b-4b 拆 prepare/confirm 后才接真实信令）。</li>
+ *   <li>紧急求助拆 prepare/confirm（design ⑬ 红队 Q18，2b-4b）：prepare 签 token 不推 WS；confirm 校验
+ *       通过才推 WS 5003，软拒绝返 rejected 不推。</li>
  * </ul>
  */
 @DisplayName("SignalMcpTools 信令 MCP 工具")
@@ -49,13 +52,22 @@ class SignalMcpToolsTest {
     @Mock
     private InnerSocket innerSocket;
 
-    /** Testable 子类：override resolveBlindId 返固定 blindId，绕开 BlindMcpContext 静态调用。 */
+    @Mock
+    private EmergencyTokenStore emergencyTokenStore;
+
+    /** Testable 子类：override resolveBlindId/resolveIssuingTurn 返固定值，绕开 BlindMcpContext 静态调用。 */
     static class TestableSignalMcpTools extends SignalMcpTools {
         Long fixedBlindId = 123L;
+        Integer fixedTurn = 2;
 
         @Override
         protected Long resolveBlindId(ToolContext toolContext) {
             return fixedBlindId;
+        }
+
+        @Override
+        protected int resolveIssuingTurn(ToolContext toolContext) {
+            return fixedTurn == null ? 0 : fixedTurn;
         }
     }
 
@@ -66,6 +78,7 @@ class SignalMcpToolsTest {
         tools = new TestableSignalMcpTools();
         ReflectionTestUtils.setField(tools, "blindService", blindService);
         ReflectionTestUtils.setField(tools, "innerSocket", innerSocket);
+        ReflectionTestUtils.setField(tools, "emergencyTokenStore", emergencyTokenStore);
         lenient().when(blindService.getById(123L)).thenReturn(blindWithPhone("13800138000"));
     }
 
@@ -183,6 +196,23 @@ class SignalMcpToolsTest {
                     .contains("\"status\":\"error\"").contains("blind_id");
             verifyNoInteractions(innerSocket);
         }
+
+        @Test
+        void emergencyPrepare() {
+            assertThat(tools.requestEmergencyHelpPrepare(null, "摔倒"))
+                    .contains("\"status\":\"error\"").contains("blind_id");
+            verify(emergencyTokenStore, never()).issue(anyLong(), anyInt());
+            verifyNoInteractions(innerSocket);
+        }
+
+        @Test
+        void emergencyConfirm() {
+            // 非空 token 才会走到身份校验（空 token 先报「请提供确认码」）；noIdentity 应拦在 store.verify 前。
+            assertThat(tools.requestEmergencyHelpConfirm(null, "EMERG-X"))
+                    .contains("\"status\":\"error\"").contains("blind_id");
+            verify(emergencyTokenStore, never()).verify(any(), any(), anyInt());
+            verifyNoInteractions(innerSocket);
+        }
     }
 
     @Test
@@ -203,11 +233,66 @@ class SignalMcpToolsTest {
         verify(innerSocket, never()).noticeVideoHelp(any());
     }
 
+    // ───── 紧急求助拆 prepare/confirm（design ⑬ 红队 Q18，2b-4b）─────
+
     @Test
-    @DisplayName("emergency 桩 → 返固定 ok，不推真实 WS 5003（2b-4b 才接真实信令）")
-    void emergencyHelp_stub() {
-        String r = tools.requestEmergencyHelp(null);
+    @DisplayName("request_emergency_help_prepare → 签 token（调 store.issue），不推 WS")
+    void emergencyPrepare_issuesToken_noPush() {
+        when(emergencyTokenStore.issue(123L, 2)).thenReturn("EMERG-ABCD1234");
+
+        String r = tools.requestEmergencyHelpPrepare(null, "我摔倒了");
+
+        assertThat(r).contains("\"status\":\"ok\"").contains("EMERG-ABCD1234").contains("token");
+        verify(emergencyTokenStore).issue(123L, 2);
+        verifyNoInteractions(innerSocket);
+    }
+
+    @Test
+    @DisplayName("request_emergency_help_confirm 校验通过 → 推 WS 5003")
+    void emergencyConfirm_verified_pushes5003() {
+        when(emergencyTokenStore.verify("EMERG-ABCD1234", 123L, 2))
+                .thenReturn(EmergencyTokenStore.VerifyResult.pass("已通知所有家属（信令5003）。"));
+
+        String r = tools.requestEmergencyHelpConfirm(null, "EMERG-ABCD1234");
+
         assertThat(r).contains("\"status\":\"ok\"");
+        ArgumentCaptor<SocketData> cap = ArgumentCaptor.forClass(SocketData.class);
+        verify(innerSocket).noticeUrgentHelp(cap.capture());
+        assertThat(cap.getValue().getRequestType()).isEqualTo(5003);
+        assertThat(cap.getValue().getBlindPhone()).isEqualTo("13800138000");
+    }
+
+    @Test
+    @DisplayName("request_emergency_help_confirm 校验拒绝（同轮/错用户/未知）→ 软拒绝返 rejected，不推 WS")
+    void emergencyConfirm_rejected_noPush() {
+        when(emergencyTokenStore.verify("EMERG-X", 123L, 2))
+                .thenReturn(EmergencyTokenStore.VerifyResult.reject("同轮内不能既 prepare 又 confirm——"));
+
+        String r = tools.requestEmergencyHelpConfirm(null, "EMERG-X");
+
+        assertThat(r).contains("\"status\":\"rejected\"").contains("同轮");
+        verify(innerSocket, never()).noticeUrgentHelp(any());
+    }
+
+    @Test
+    @DisplayName("request_emergency_help_confirm 空 token → 报错，不查 store、不推 WS")
+    void emergencyConfirm_blankToken() {
+        assertThat(tools.requestEmergencyHelpConfirm(null, ""))
+                .contains("请提供确认码").contains("\"status\":\"error\"");
+        assertThat(tools.requestEmergencyHelpConfirm(null, "   "))
+                .contains("请提供确认码");
+        verify(emergencyTokenStore, never()).verify(any(), any(), anyInt());
+        verifyNoInteractions(innerSocket);
+    }
+
+    @Test
+    @DisplayName("request_emergency_help_prepare store 抛异常 → encode-不抛，返 error")
+    void emergencyPrepare_storeThrows() {
+        when(emergencyTokenStore.issue(123L, 2)).thenThrow(new IllegalStateException("Redis down"));
+
+        String r = tools.requestEmergencyHelpPrepare(null, null);
+
+        assertThat(r).contains("\"status\":\"error\"").contains("生成确认码失败");
         verifyNoInteractions(innerSocket);
     }
 }

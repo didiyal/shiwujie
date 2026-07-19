@@ -38,6 +38,13 @@ public class McpTransportConfig {
     public static final String KEY_INTERNAL_SECRET = "internal_secret";
 
     /**
+     * transportContext key：当前 issuing_turn（来自 HTTP header {@code X-Issuing-Turn}，design ⑬ 紧急求助
+     * turn-bound token 判据）。Python graph service 层自推 turn（{@code shiwujie-ai/service/app.py}），
+     * per-turn MCP 调用经 header 透传；chunk-2c 真 MCP client 接，chunk-2a stub 不发（缺失 fail-closed）。
+     */
+    public static final String KEY_ISSUING_TURN = "issuing_turn";
+
+    /**
      * 顶掉 Spring AI autoconfigure 的默认 transport bean（{@code @ConditionalOnMissingBean} 按类型），
      * 注入带 header 提取器的 streamable-HTTP transport。endpoint 沿用 {@code /mcp}（与 yml / Spike-2 一致）。
      */
@@ -51,9 +58,10 @@ public class McpTransportConfig {
 
     private McpTransportContextExtractor<ServerRequest> extractBlindHeaders() {
         return serverRequest -> {
-            Map<String, Object> ctx = new HashMap<>(4);
+            Map<String, Object> ctx = new HashMap<>(8);
             ctx.put(KEY_BLIND_ID, serverRequest.headers().firstHeader("X-Blind-Id"));
             ctx.put(KEY_INTERNAL_SECRET, serverRequest.headers().firstHeader("X-Internal-Secret"));
+            ctx.put(KEY_ISSUING_TURN, serverRequest.headers().firstHeader("X-Issuing-Turn"));
             return McpTransportContext.create(ctx);
         };
     }

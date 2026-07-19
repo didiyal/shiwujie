@@ -29,10 +29,11 @@ import java.util.function.Consumer;
  *   <li>{@code open_app} → noticeJumpSoftware（WS 5004），⚠️ 白名单硬卡（design ⑬）</li>
  *   <li>{@code launch_navigation} → noticeNavigation（WS 5006），destination 塞 volunteerPhone
  *       （旧 hack 兼容 Android 5006 读 volunteerPhone 当终点；结构化 {@code destination{name,lat,lng}}
- *       + 三端对齐留 2b-4b/2e）</li>
+ *       + 三端对齐留 2e）</li>
  * </ul>
- * {@code request_emergency_help}（5003）**维持桩**——AI-3 高危项（盲人安全），2b-4b 拆
- * {@code request_emergency_help_prepare} / {@code _confirm} 双工具 + turn-bound token。
+ * {@code request_emergency_help}（5003）拆 {@code request_emergency_help_prepare}（签 turn-bound token，
+ * 不推 WS）+ {@code request_emergency_help_confirm}（校验 token 跨轮通过才推 WS 5003，design ⑬ 红队 Q18
+ * 三道闸之 Java 侧闸 ②；gate ① Python parallel_tool_calls=False / gate ③ App 显式确认面留 2e）。
  *
  * <p><b>工具名 / 参数名 snake_case</b>（@Tool name + 方法参数名）：对齐 Python 侧
  * {@code tools/java_mcp.py} spike schema + design + FC 测试基线（与 {@link BusinessMcpTools} 同）。
@@ -61,6 +62,9 @@ public class SignalMcpTools {
 
     @Resource
     private InnerSocket innerSocket;
+
+    @Resource
+    private EmergencyTokenStore emergencyTokenStore;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -116,15 +120,60 @@ public class SignalMcpTools {
         }, "已发起导航至 " + destination_name, "发起导航失败");
     }
 
-    // ─────────────── emergency 桩（2b-4b 拆 prepare/confirm，AI-3 高危）───────
+    // ─────────────── 紧急求助（design ⑬ 红队 Q18 拆 prepare/confirm + turn-bound token）───────
 
-    @Tool(name = "request_emergency_help", description = "请求紧急求助（推送 WS 5003 信令，通知所有家属）。"
-            + "⚠️ 仅限真实紧急情况；调用前必须先向用户确认「确认发起紧急求助？」；"
-            + "非紧急需求改用 request_video_help。"
-            + "【桩】2b-4b 拆 request_emergency_help_prepare / _confirm 双工具 + turn-bound token（AI-3）。")
-    public String requestEmergencyHelp(ToolContext toolContext) {
-        log.warn("request_emergency_help 桩被调（2b-4b 拆分前临时返固定文案，不推真实 WS 5003）");
-        return ok("紧急求助已发起（桩：2b-4b 拆 prepare/confirm 后接入真实信令）");
+    @Tool(name = "request_emergency_help_prepare", description = "**仅紧急情况**（受伤、迷路遇险、突发疾病、人身安全受威胁）才用。"
+            + "本工具是紧急求助的**第一步：准备**——它生成一个确认码(token)并请你向用户确认，**此时还不会真的通知家属**。"
+            + "可选 reason 简述紧急原因。**非紧急**情况（只是需要帮助、看不清东西）请改用 request_video_help，不要用本工具。")
+    public String requestEmergencyHelpPrepare(ToolContext toolContext,
+            @ToolParam(description = "紧急情况简述，如'我摔倒了'、'胸闷喘不上气'", required = false) String reason) {
+        Long blindId = resolveBlindId(toolContext);
+        if (blindId == null) {
+            return noIdentity();
+        }
+        int turn = resolveIssuingTurn(toolContext);
+        try {
+            String token = emergencyTokenStore.issue(blindId, turn);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("status", "ok");
+            m.put("token", token);
+            m.put("message", "确认码已生成。请向用户确认后，用本 token 调用 request_emergency_help_confirm。");
+            log.info("紧急求助 prepare blindId={} turn={} reason={}", blindId, turn, reason);
+            return json(m);
+        } catch (Exception e) {
+            log.warn("紧急求助 prepare 失败 blindId={} turn={}", blindId, turn, e);
+            return err("生成确认码失败：" + safeMsg(e));
+        }
+    }
+
+    @Tool(name = "request_emergency_help_confirm", description = "紧急求助**第二步：确认**。必须用上一步 request_emergency_help_prepare 返回的 token 才会真正"
+            + "通知所有家属（信令5003 群发）。**绝不**在没有先调用 prepare 的情况下凭空捏造 token 调用；也"
+            + "**不要在同一轮里**既调用 prepare 又调用 confirm——必须先 prepare 并向用户确认后，等用户下一轮"
+            + "明确确认，再用 confirm。token 校验失败会返回 rejected（可向用户解释后重新 prepare）。")
+    public String requestEmergencyHelpConfirm(ToolContext toolContext,
+            @ToolParam(description = "紧急求助确认码——必须由上一步 request_emergency_help_prepare 返回") String token) {
+        if (StrUtil.isBlank(token)) {
+            return err("请提供确认码 token（由 request_emergency_help_prepare 返回）");
+        }
+        Long blindId = resolveBlindId(toolContext);
+        if (blindId == null) {
+            return noIdentity();
+        }
+        int turn = resolveIssuingTurn(toolContext);
+        EmergencyTokenStore.VerifyResult vr = emergencyTokenStore.verify(token, blindId, turn);
+        if (!vr.ok()) {
+            log.warn("紧急求助 confirm 拒绝 blindId={} turn={} reason={}", blindId, turn, vr.message());
+            // 软拒绝（status=rejected），encode-不抛——agent 读拒绝 message 后向用户解释 / 重新确认。
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("status", "rejected");
+            m.put("message", vr.message());
+            return json(m);
+        }
+        // token 跨轮校验通过 → 推 WS 5003（复用 pushSignal 骨架：取 phone → noticeUrgentHelp）。
+        return pushSignal(toolContext, "紧急求助", phone -> {
+            SocketData d = newSocketData(phone, 5003);
+            innerSocket.noticeUrgentHelp(d);
+        }, "紧急求助已发起，已通知所有家属", "发起紧急求助失败");
     }
 
     // ─────────────── 推送骨架（encode-不抛）────────────────
@@ -178,6 +227,14 @@ public class SignalMcpTools {
      */
     protected Long resolveBlindId(ToolContext toolContext) {
         return BlindMcpContext.blindId(toolContext).orElse(null);
+    }
+
+    /**
+     * issuing_turn 取法（design ⑬ 红队 Q18 紧急求助 turn-bound token 判据）。缺失降级 0（fail-closed：
+     * confirm 因同轮被拒，绝不误发 5003）。protected 便单测 subclass override。
+     */
+    protected int resolveIssuingTurn(ToolContext toolContext) {
+        return BlindMcpContext.issuingTurn(toolContext).orElse(0);
     }
 
     // ─────────────── helpers（与 BusinessMcpTools 同构）───────
