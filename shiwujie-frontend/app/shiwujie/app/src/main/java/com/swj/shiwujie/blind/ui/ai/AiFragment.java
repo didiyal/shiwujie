@@ -37,7 +37,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.utils.SpeechRecognitionManager;
-import com.swj.shiwujie.common.network.AiChatManager;
 import com.swj.shiwujie.common.network.AiTurnManager;
 import com.swj.shiwujie.common.network.EmergencyHelpManager;
 import com.swj.shiwujie.common.network.ImageRecognitionManager;
@@ -93,10 +92,9 @@ public class AiFragment extends Fragment {
     private static final String KEY_CURRENT_CONVERSATION = "current_conversation";
     
     private SpeechRecognitionManager speechManager;
-    private AiChatManager aiChatManager;
     private ImageRecognitionManager imageRecognitionManager;
     private TTSManager ttsManager;
-    // chunk-2e-2: AI turn WS 客户端（替代 AiChatManager 的 SSE 通道；AiChatManager 保留作降级）
+    // chunk-2e-2: AI turn WS 客户端（文本/图片 turn 均走此，替代老 SSE 通道）
     private AiTurnManager aiTurnManager;
     private boolean isAiTurnInProgress = false;
     // chunk-2e-4 gate ③：紧急确认 token 弹框（防 agent 重复 prepare 致弹框堆叠；onDestroy 收尾）
@@ -143,27 +141,6 @@ public class AiFragment extends Fragment {
             statusCheckHandler.postDelayed(this, 1000);
         }
     };
-    
-    // 智能播报系统相关
-    private enum StreamingState {
-        IDLE,           // 空闲状态
-        STREAMING,      // 正在流式输出
-        PLAYING         // 正在播报
-    }
-    
-    private StreamingState currentStreamingState = StreamingState.IDLE;
-    private android.os.Handler smartTimerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-    private Runnable smartTimerRunnable;
-    private android.os.Handler streamingPlaybackHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-    private Runnable streamingPlaybackRunnable;
-    private long lastTextTime = 0;      // 最后收到文本的时间
-    private StringBuilder streamingContentBuffer = new StringBuilder();
-    private int lastPlayedContentLength = 0;  // 上次播报的内容长度
-    private long lastPlaybackStartTime = 0;   // 上次播报开始的时间
-    private static final long SHORT_WAIT = 200;    // 短等待：0.5秒
-    private static final long MAX_WAIT = 500;      // 最大等待：1.5秒
-    private static final long IDLE_THRESHOLD = 500; // 空闲阈值：500ms
-    private static final long STREAMING_UPDATE_INTERVAL = 3000; // 流式播报更新间隔：3秒（减少更新频率）
     
     // 优化后的AI回复管理
     private com.google.android.material.card.MaterialCardView currentAiResponseCard = null;
@@ -274,7 +251,6 @@ public class AiFragment extends Fragment {
             initViews(view);
             initData();
             initSpeechManager();
-            initAiChatManager();
             initImageRecognitionManager();
             initTTSManager();
             initAiTurnManager(); // chunk-2e-2: 注册 WS turn 路由（依赖 ttsManager 已初始化）
@@ -915,17 +891,6 @@ public class AiFragment extends Fragment {
         Log.d(TAG, "=== 开始预清理资源，准备页面跳转 ===");
         
         try {
-            // 1. 立即停止所有Handler消息发送
-            if (smartTimerHandler != null) {
-                smartTimerHandler.removeCallbacksAndMessages(null);
-                Log.d(TAG, "智能播报Handler消息已清理");
-            }
-            
-            if (streamingPlaybackHandler != null) {
-                streamingPlaybackHandler.removeCallbacksAndMessages(null);
-                Log.d(TAG, "流式播报Handler消息已清理");
-            }
-            
             if (aiAvoidHandler != null) {
                 aiAvoidHandler.removeCallbacksAndMessages(null);
                 Log.d(TAG, "AI避障Handler消息已清理");
@@ -953,16 +918,6 @@ public class AiFragment extends Fragment {
                     Log.d(TAG, "TTS播报已停止");
                 } catch (Exception e) {
                     Log.w(TAG, "停止TTS播报失败", e);
-                }
-            }
-            
-            // 4. 停止AI聊天流式输出
-            if (aiChatManager != null) {
-                try {
-                    aiChatManager.stopStreaming();
-                    Log.d(TAG, "AI聊天流式输出已停止");
-                } catch (Exception e) {
-                    Log.w(TAG, "停止AI聊天流式输出失败", e);
                 }
             }
             
@@ -1185,58 +1140,6 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 初始化AI对话管理器
-     */
-    private void initAiChatManager() {
-        aiChatManager = new AiChatManager(requireContext());
-        
-        // 配置打字机效果速度（可选）
-        aiChatManager.setTypingSpeed(50); // 50ms延迟，可以根据需要调整
-        
-        aiChatManager.setOnStreamingListener(new AiChatManager.OnStreamingListener() {
-            @Override
-            public void onStreamingStart() {
-                // AI开始回复，显示"正在思考..."状态
-                showAiThinkingStatus();
-                // 启动智能播报系统
-                startSmartPlaybackSystem();
-            }
-            
-            @Override
-            public void onStreamingText(String text) {
-                // 实时更新AI回复的流式输出
-                updateAiResponseStreaming(text);
-                // 处理智能播报逻辑
-                handleSmartPlayback(text);
-            }
-            
-            @Override
-            public void onStreamingChunk(String chunk, int totalLength) {
-                // 流式数据块回调，用于真正的流式播报
-                handleStreamingChunk(chunk, totalLength);
-            }
-            
-            @Override
-            public void onStreamingComplete(String fullResponse) {
-                // 流式输出完成，保存完整回复
-                completeAiResponse(fullResponse);
-                // 完成智能播报
-                completeSmartPlayback(fullResponse);
-            }
-            
-            @Override
-            public void onStreamingError(String error) {
-                // AI回复出错，显示错误信息
-                handleAiResponseError(error);
-                // 重置智能播报状态
-                resetSmartPlaybackState();
-                // 重置AI回复状态
-                resetAiResponseState();
-            }
-        });
-    }
-
-    /**
      * 初始化 AI turn WS 客户端（chunk-2e-2 缝 A）。
      *
      * <p>注册 {@link AiTurnManager} 回调，把 4 类 WS 帧（110/111/112/113）路由到既有流式 UI 方法
@@ -1312,375 +1215,8 @@ public class AiFragment extends Fragment {
      */
     private void initImageRecognitionManager() {
         imageRecognitionManager = new ImageRecognitionManager(requireContext());
-        
-        // 配置打字机效果速度
-        imageRecognitionManager.setTypingSpeed(50);
-        
-        imageRecognitionManager.setOnStreamingListener(new ImageRecognitionManager.OnStreamingListener() {
-            @Override
-            public void onStreamingStart() {
-                // 图片识别开始，显示"正在识别图片..."状态
-                showImageRecognitionStatus();
-                // 启动智能播报系统
-                startSmartPlaybackSystem();
-            }
-            
-            @Override
-            public void onStreamingText(String text) {
-                // 实时更新图片识别结果的流式输出
-                updateImageRecognitionStreaming(text);
-                // 处理智能播报逻辑
-                handleSmartPlayback(text);
-            }
-            
-            @Override
-            public void onStreamingChunk(String chunk, int totalLength) {
-                // 流式数据块回调，用于真正的流式播报
-                handleStreamingChunk(chunk, totalLength);
-            }
-            
-            @Override
-            public void onStreamingComplete(String fullResponse) {
-                // 图片识别完成，保存完整回复
-                completeImageRecognition(fullResponse);
-                // 完成智能播报
-                completeSmartPlayback(fullResponse);
-            }
-            
-            @Override
-            public void onStreamingError(String error) {
-                // 图片识别出错，显示错误信息
-                handleImageRecognitionError(error);
-                // 重置智能播报状态
-                resetSmartPlaybackState();
-                // 重置AI回复状态
-                resetAiResponseState();
-            }
-        });
     }
-    
-    /**
-     * 启动智能播报系统
-     */
-    private void startSmartPlaybackSystem() {
-        currentStreamingState = StreamingState.STREAMING;
-        streamingContentBuffer.setLength(0);
-        lastTextTime = System.currentTimeMillis();
-        
-        // 启动智能计时器
-        startSmartTimer();
-    }
-    
-    /**
-     * 处理智能播报逻辑
-     */
-    private void handleSmartPlayback(String text) {
-        if (currentStreamingState != StreamingState.STREAMING) return;
-        
-        // 更新最后收到文本的时间
-        lastTextTime = System.currentTimeMillis();
-        
-        // 累积内容到缓冲区
-        streamingContentBuffer.append(text);
-        
 
-        
-        // 如果正在播报，动态更新播报内容
-        if (currentStreamingState == StreamingState.PLAYING) {
-            updatePlaybackContent();
-        }
-    }
-    
-    /**
-     * 处理流式数据块，实现真正的流式播报
-     */
-    private void handleStreamingChunk(String chunk, int totalLength) {
-        if (currentStreamingState != StreamingState.STREAMING) return;
-        
-        // 如果还没开始播报，且内容足够长，立即开始播报
-        if (currentStreamingState == StreamingState.STREAMING && chunk.length() >= 80) { // 增加触发阈值
-            startSmartPlayback();
-        }
-    }
-    
-    /**
-     * 启动智能计时器
-     */
-    private void startSmartTimer() {
-        // 取消之前的计时器
-        if (smartTimerRunnable != null) {
-            smartTimerHandler.removeCallbacks(smartTimerRunnable);
-        }
-        
-        smartTimerRunnable = () -> {
-            // 检查是否应该开始播报
-            long currentTime = System.currentTimeMillis();
-            long timeSinceLastText = currentTime - lastTextTime;
-            
-            if (timeSinceLastText >= IDLE_THRESHOLD) {
-                // 超过空闲阈值，开始播报
-                startSmartPlayback();
-            } else {
-                // 继续等待，重新启动计时器
-                startSmartTimer();
-            }
-        };
-        
-        // 启动计时器，等待时间根据当前状态动态调整
-        long waitTime = streamingContentBuffer.length() < 50 ? SHORT_WAIT : MAX_WAIT;
-        smartTimerHandler.postDelayed(smartTimerRunnable, waitTime);
-    }
-    
-    /**
-     * 动态更新播报内容
-     */
-    private void updatePlaybackContent() {
-        // 检查Fragment状态
-        if (!isAdded() || getContext() == null) {
-            Log.w(TAG, "Fragment状态异常，跳过播报内容更新");
-            return;
-        }
-        
-        if (currentStreamingState != StreamingState.PLAYING || ttsManager == null) return;
-        
-        // 获取当前缓冲区的最新内容
-        String currentContent = streamingContentBuffer.toString();
-        
-        // 优化内容长度判断逻辑
-        int contentIncrease = currentContent.length() - lastPlayedContentLength;
-        
-        // 只有当内容增加超过50个字符，且当前播报进度超过70%时才重新播报
-        if (contentIncrease > 50 && getCurrentPlaybackProgress() > 70) {
-            // 停止当前播报，重新开始播报完整内容
-            String contentToSpeak = parseResponseForTTS(currentContent);
-            try {
-                // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
-                if (isReturningToHome) {
-                    Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
-                    return;
-                }
-                
-                ttsManager.stopSpeaking();
-                ttsManager.startSpeaking(contentToSpeak);
-                lastPlayedContentLength = currentContent.length();
-            } catch (Exception e) {
-                Log.e(TAG, "更新播报内容失败", e);
-            }
-        } else if (contentIncrease > 100) {
-            // 如果内容增加超过100个字符，强制重新播报
-            String contentToSpeak = parseResponseForTTS(currentContent);
-            try {
-                // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
-                if (isReturningToHome) {
-                    Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
-                    return;
-                }
-                
-                ttsManager.stopSpeaking();
-                ttsManager.startSpeaking(contentToSpeak);
-                lastPlayedContentLength = currentContent.length();
-            } catch (Exception e) {
-                Log.e(TAG, "强制更新播报内容失败", e);
-            }
-        }
-    }
-    
-    /**
-     * 获取当前播报进度（估算值）
-     */
-    private int getCurrentPlaybackProgress() {
-        // 基于时间估算播报进度
-        if (lastPlayedContentLength == 0) return 0;
-        
-        // 假设播报速度约为每分钟200个字符
-        long estimatedPlaybackTime = (lastPlayedContentLength * 60) / 200; // 秒
-        long elapsedTime = System.currentTimeMillis() - lastPlaybackStartTime;
-        
-        if (estimatedPlaybackTime <= 0) return 0;
-        
-        int progress = (int) ((elapsedTime / 1000.0 / estimatedPlaybackTime) * 100);
-        return Math.min(progress, 100);
-    }
-    
-    /**
-     * 开始智能播报
-     */
-    private void startSmartPlayback() {
-        // 检查Fragment状态
-        if (!isAdded() || getContext() == null) {
-            Log.w(TAG, "Fragment状态异常，跳过智能播报");
-            return;
-        }
-        
-        if (currentStreamingState == StreamingState.PLAYING) return;
-        
-        currentStreamingState = StreamingState.PLAYING;
-        String contentToPlay = streamingContentBuffer.toString();
-        
-        if (contentToPlay.trim().isEmpty()) {
-            currentStreamingState = StreamingState.STREAMING;
-            return;
-        }
-        
-        // 检查TTS管理器状态
-        if (ttsManager == null) {
-            Log.w(TAG, "TTS管理器未初始化，跳过播报");
-            currentStreamingState = StreamingState.STREAMING;
-            return;
-        }
-        
-        // 解析后端响应，决定播报内容
-        String contentToSpeak = parseResponseForTTS(contentToPlay);
-        
-        try {
-            // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
-            if (isReturningToHome) {
-                Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
-                currentStreamingState = StreamingState.STREAMING;
-                return;
-            }
-            
-            ttsManager.startSpeaking(contentToSpeak);
-            lastPlayedContentLength = contentToPlay.length();
-            lastPlaybackStartTime = System.currentTimeMillis(); // 记录播报开始时间
-            
-            // 启动流式播报更新定时器
-            startStreamingPlaybackUpdateTimer();
-        } catch (Exception e) {
-            Log.e(TAG, "TTS播报失败", e);
-            currentStreamingState = StreamingState.STREAMING;
-        }
-    }
-    
-    /**
-     * 解析后端响应，决定播报内容
-     * 只有当code=1时才播报data内容，否则播报description内容
-     */
-    private String parseResponseForTTS(String response) {
-        try {
-            // 尝试解析为JSON格式
-            if (response.trim().startsWith("{")) {
-                // 使用Gson解析JSON
-                com.google.gson.Gson gson = new com.google.gson.Gson();
-                com.google.gson.JsonElement jsonElement = gson.fromJson(response, com.google.gson.JsonElement.class);
-                
-                if (jsonElement.isJsonObject()) {
-                    com.google.gson.JsonObject jsonObject = jsonElement.getAsJsonObject();
-                    
-                    // 检查是否有code字段
-                    if (jsonObject.has("code")) {
-                        int code = jsonObject.get("code").getAsInt();
-                        
-                        if (code == 1) {
-                            // code=1，播报data内容
-                            if (jsonObject.has("data") && !jsonObject.get("data").isJsonNull()) {
-                                String data = jsonObject.get("data").getAsString();
-                                if (data != null && !data.trim().isEmpty()) {
-                                    return data;
-                                }
-                            }
-                        } else {
-                            // code!=1，播报description内容
-                            if (jsonObject.has("description") && !jsonObject.get("description").isJsonNull()) {
-                                String description = jsonObject.get("description").getAsString();
-                                if (description != null && !description.trim().isEmpty()) {
-                                    return description;
-                                }
-                            }
-                            // 如果没有description字段，播报message字段
-                            if (jsonObject.has("message") && !jsonObject.get("message").isJsonNull()) {
-                                String message = jsonObject.get("message").getAsString();
-                                if (message != null && !message.trim().isEmpty()) {
-                                    return message;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // 如果不是JSON格式或解析失败，直接播报原始内容
-            return response;
-            
-        } catch (Exception e) {
-            Log.e(TAG, "解析响应失败，播报原始内容", e);
-            return response;
-        }
-    }
-    
-    /**
-     * 启动流式播报更新定时器
-     */
-    private void startStreamingPlaybackUpdateTimer() {
-        if (streamingPlaybackRunnable != null) {
-            streamingPlaybackHandler.removeCallbacks(streamingPlaybackRunnable);
-        }
-        
-        streamingPlaybackRunnable = () -> {
-            if (currentStreamingState == StreamingState.PLAYING) {
-                // 检查是否有新内容需要播报
-                updatePlaybackContent();
-                
-                // 继续定时器
-                streamingPlaybackHandler.postDelayed(streamingPlaybackRunnable, STREAMING_UPDATE_INTERVAL);
-            }
-        };
-        
-        // 启动定时器
-        streamingPlaybackHandler.postDelayed(streamingPlaybackRunnable, STREAMING_UPDATE_INTERVAL);
-    }
-    
-    /**
-     * 完成智能播报
-     */
-    private void completeSmartPlayback(String fullResponse) {
-        // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
-        if (isReturningToHome) {
-            Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
-            resetSmartPlaybackState();
-            return;
-        }
-        
-        // 解析后端响应，决定播报内容
-        String contentToSpeak = parseResponseForTTS(fullResponse);
-        
-        // 如果还在播报，确保播报完整内容
-        if (currentStreamingState == StreamingState.PLAYING) {
-            // 停止当前播报，重新播报完整内容
-            ttsManager.stopSpeaking();
-            ttsManager.startSpeaking(contentToSpeak);
-        } else if (currentStreamingState == StreamingState.STREAMING) {
-            // 如果还没开始播报，直接播报完整内容
-            ttsManager.startSpeaking(contentToSpeak);
-        }
-        
-        // 重置状态
-        resetSmartPlaybackState();
-    }
-    
-    /**
-     * 重置智能播报状态
-     */
-    private void resetSmartPlaybackState() {
-        currentStreamingState = StreamingState.IDLE;
-        streamingContentBuffer.setLength(0);
-        lastTextTime = 0;
-        lastPlayedContentLength = 0;
-        lastPlaybackStartTime = 0;
-        
-        // 取消智能计时器
-        if (smartTimerRunnable != null) {
-            smartTimerHandler.removeCallbacks(smartTimerRunnable);
-            smartTimerRunnable = null;
-        }
-        
-        // 取消流式播报更新定时器
-        if (streamingPlaybackRunnable != null) {
-            streamingPlaybackHandler.removeCallbacks(streamingPlaybackRunnable);
-            streamingPlaybackRunnable = null;
-        }
-    }
-    
     /**
      * 重置AI回复状态
      */
@@ -2154,7 +1690,7 @@ public class AiFragment extends Fragment {
      * @param userMessage 用户消息
      */
     private void sendAiRequest(String userMessage) {
-        // chunk-2e-2: 走 WS AI-turn 通道（AiTurnManager），替代 AiChatManager 的 HTTP+SSE。
+        // 走 WS AI-turn 通道（AiTurnManager）；chunk-2f-1 老 SSE 文本通道已随 AiChatManager 删除。
         if (aiTurnManager == null) {
             Log.e(TAG, "AiTurnManager未初始化");
             return;
@@ -2391,44 +1927,6 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 显示图片识别状态 - 优化版本
-     * 直接创建AI回复卡片，避免后续重复创建
-     */
-    private void showImageRecognitionStatus() {
-        if (getView() == null) return;
-        
-        try {
-            // 直接创建AI回复卡片，初始显示"正在识别图片..."
-            currentAiResponseCard = createMessageCard(
-                "正在识别图片...", 
-                false,  // AI消息
-                R.color.blue_50,  // AI消息背景色
-                R.color.text_secondary  // 识别状态文字色
-            );
-            
-            // 获取对话容器
-            LinearLayout chatContainer = getView().findViewById(R.id.chat_container);
-            if (chatContainer != null) {
-                // 添加AI回复卡片
-                chatContainer.addView(currentAiResponseCard);
-                
-                // 保存文本视图引用，用于流式更新
-                if (currentAiResponseCard.getChildCount() > 0) {
-                    currentAiResponseTextView = (TextView) currentAiResponseCard.getChildAt(0);
-                }
-                
-                // 滚动到底部
-                scrollToBottom();
-                
-                // 标记为流式状态
-                isAiResponseStreaming = true;
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "显示图片识别状态失败: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
      * 更新AI回复的流式输出 - 优化版本
      * 直接在现有的AI回复卡片上更新内容，避免重复查找
      * @param text 当前流式输出的文本
@@ -2446,27 +1944,6 @@ public class AiFragment extends Fragment {
             }
         } catch (Exception e) {
             Log.e(TAG, "更新AI回复流式输出失败: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
-     * 更新图片识别结果的流式输出 - 优化版本
-     * 直接在现有的AI回复卡片上更新内容，避免重复查找
-     * @param text 当前流式输出的文本
-     */
-    private void updateImageRecognitionStreaming(String text) {
-        if (getView() == null || !isAiResponseStreaming) return;
-        
-        try {
-            // 直接使用保存的文本视图引用进行更新
-            if (currentAiResponseTextView != null) {
-                currentAiResponseTextView.setText(text);
-                
-                // 滚动到底部
-                scrollToBottom();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "更新图片识别流式输出失败: " + e.getMessage(), e);
         }
     }
     
@@ -2509,40 +1986,6 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 完成图片识别 - 优化版本
-     * 直接在现有的AI回复卡片上更新为最终内容，避免重复创建
-     * @param fullResponse 完整的识别结果
-     */
-    private void completeImageRecognition(String fullResponse) {
-        if (getView() == null) return;
-        
-        try {
-            // 直接使用现有的AI回复卡片，更新为最终内容
-            if (currentAiResponseTextView != null && isAiResponseStreaming) {
-                currentAiResponseTextView.setText(fullResponse);
-                
-                // 更新文字颜色为最终状态
-                currentAiResponseTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
-                
-                // 标记流式状态结束
-                isAiResponseStreaming = false;
-                
-                // 创建AI消息对象并添加到对话历史
-                Message aiMsg = new Message(fullResponse, false);
-                currentConversation.add(aiMsg);
-                
-                // 保存对话到历史记录
-                saveCurrentConversationToHistory();
-                
-                // 重置AI回复状态
-                resetAiResponseState();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "完成图片识别失败: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
      * 处理AI回复错误 - 优化版本
      * 直接在现有的AI回复卡片上显示错误信息，避免重复创建
      * @param error 错误信息
@@ -2574,45 +2017,6 @@ public class AiFragment extends Fragment {
             }
         } catch (Exception e) {
             Log.e(TAG, "处理AI回复错误失败: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
-     * 处理图片识别错误
-     * @param error 错误信息
-     */
-    /**
-     * 处理图片识别错误 - 优化版本
-     * 直接在现有的AI回复卡片上显示错误信息，避免重复创建
-     * @param error 错误信息
-     */
-    private void handleImageRecognitionError(String error) {
-        if (getView() == null) return;
-        
-        try {
-            // 直接使用现有的AI回复卡片，显示错误信息
-            if (currentAiResponseTextView != null && isAiResponseStreaming) {
-                String errorMessage = "抱歉，图片识别出现错误：" + error;
-                currentAiResponseTextView.setText(errorMessage);
-                
-                // 更新文字颜色为错误状态
-                currentAiResponseTextView.setTextColor(ContextCompat.getColor(requireContext(), R.color.red));
-                
-                // 标记流式状态结束
-                isAiResponseStreaming = false;
-                
-                // 创建错误消息对象并添加到对话历史
-                Message errorMsg = new Message(errorMessage, false);
-                currentConversation.add(errorMsg);
-                
-                // 保存对话到历史记录
-                saveCurrentConversationToHistory();
-                
-                // 重置AI回复状态
-                resetAiResponseState();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "处理图片识别错误失败: " + e.getMessage(), e);
         }
     }
     
@@ -3204,11 +2608,6 @@ public class AiFragment extends Fragment {
             speechManager.destroy();
         }
         
-        // 释放AI对话管理器资源
-        if (aiChatManager != null) {
-            aiChatManager.destroy();
-        }
-
         // chunk-2e-2: 释放 AI turn WS 客户端（摘 listener + 取消 watchdog + 释放业务锁，不动 WS 连接）
         if (aiTurnManager != null) {
             aiTurnManager.destroy();
@@ -3221,11 +2620,6 @@ public class AiFragment extends Fragment {
         }
         emergencyConfirmDialog = null;
 
-        // 释放图片识别管理器资源
-        if (imageRecognitionManager != null) {
-            imageRecognitionManager.destroy();
-        }
-        
         // 释放TTS资源
         if (ttsManager != null) {
             ttsManager.destroy();
@@ -3239,19 +2633,6 @@ public class AiFragment extends Fragment {
                 Log.e(TAG, "释放摄像头资源失败", e);
             }
         }
-        
-        // 清理智能播报资源
-        if (smartTimerHandler != null) {
-            smartTimerHandler.removeCallbacksAndMessages(null);
-            smartTimerHandler = null;
-            Log.d(TAG, "智能播报Handler已清理");
-        }
-        if (streamingPlaybackHandler != null) {
-            streamingPlaybackHandler.removeCallbacksAndMessages(null);
-            streamingPlaybackHandler = null;
-            Log.d(TAG, "流式播报Handler已清理");
-        }
-        resetSmartPlaybackState();
         
         // 清理AI避障Handler
         if (aiAvoidHandler != null) {
@@ -3345,18 +2726,6 @@ public class AiFragment extends Fragment {
                 }
             }
             
-            // 3. 安全停止AI对话管理器（不关闭线程池，只停止流式输出）
-            if (aiChatManager != null) {
-                Log.d(TAG, "安全停止AI对话管理器");
-                try {
-                    // 只停止流式输出，不销毁线程池
-                    aiChatManager.stopStreaming();
-                    Log.d(TAG, "AI对话流式输出已停止");
-                } catch (Exception e) {
-                    Log.w(TAG, "停止AI对话管理器失败", e);
-                }
-            }
-            
             // 4. 安全停止摄像头预览
             if (cameraManager != null) {
                 Log.d(TAG, "安全停止摄像头预览");
@@ -3391,7 +2760,6 @@ public class AiFragment extends Fragment {
             Log.d(TAG, "检查各功能停止状态...");
             Log.d(TAG, "AI避障状态: " + (isAIAvoidRunning ? "运行中" : "已停止"));
             Log.d(TAG, "TTS播报状态: " + (obstacleDetectionTTSManager != null ? "管理器存在" : "管理器不存在"));
-            Log.d(TAG, "AI对话状态: " + (aiChatManager != null ? "管理器存在" : "管理器不存在"));
             Log.d(TAG, "WebSocket状态: " + (isAIFunctionActive ? "活跃" : "非活跃"));
             
             Log.d(TAG, "所有活动已安全停止，资源状态已设置，等待跳转完成");

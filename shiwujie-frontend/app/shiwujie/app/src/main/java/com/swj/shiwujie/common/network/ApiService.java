@@ -685,18 +685,6 @@ public interface ApiService {
     );
 
     /**
-     * AI文本对话接口
-     * @param token JWT令牌
-     * @param text 用户输入的文本
-     * @return AI对话响应（流式）
-     */
-    @POST("/api/ai/ai/doChatByText")
-    Call<okhttp3.ResponseBody> sendAiTextMessage(
-            @Header("Authorization") String token,
-            @Query("text") String text
-    );
-
-    /**
      * chunk-2e-3：图片 AI-turn（multipart 上传 → Java 中继 Python /ai/turn {image}，流式响应骑 WS 推回）。
      * <p>命中后端 {@code POST /api/call/ai/image-turn}：图片转 base64 data URL → {@code submitImageRelay}
      * → ndjson 经 WS 110/111/112/113 帧推回，{@code AiTurnManager} 现成路由消费（onDelta→文本+TTS /
@@ -712,21 +700,6 @@ public interface ApiService {
             @Header("Authorization") String token,
             @Part okhttp3.MultipartBody.Part image,
             @Part("text") okhttp3.RequestBody text
-    );
-
-    /**
-     * @deprecated 老 SSE 图片识别通道（{@code /api/ai/ai/doChatByImage} 后端 2b-5 已删，调用必 404）。
-     * chunk-2e-3 起图片走 {@link #sendAiImageTurn}（HTTP 上传 + 响应骑 WS）。本声明仅为让
-     * {@code ImageRecognitionManager} 老 SSE 路径（{@code sendImage}/{@code handleStreamingResponse} +
-     * AiFragment 老图片 listener + 智能播报系统）继续编译——它们已无调用方（dormant），整体清理
-     * （删老 SSE 图片死代码 + 智能播报系统）留独立重构切片。
-     */
-    @Deprecated
-    @Multipart
-    @POST("/api/ai/ai/doChatByImage")
-    Call<okhttp3.ResponseBody> sendAiImageMessage(
-            @Header("Authorization") String token,
-            @Part okhttp3.MultipartBody.Part imageFile
     );
 
     // ===== 障碍物检测接口 - 严格按照backend_service.py的API接口实现 =====

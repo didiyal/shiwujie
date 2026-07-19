@@ -77,30 +77,21 @@ if (dest == null) {
 
 ---
 
-## 3. AI 对话客户端：SSE HTTP → WS AI-turn（图片仍 HTTP）
+## 3. AI 对话客户端：WS AI-turn（文本 + 图片，老 SSE 已清）
 
-### 现状
+> ✅ **已落地**（chunk-2e-2 文本 turn WS + chunk-2e-3 图片 turn HTTP+WS + chunk-2f-1 老 SSE 死代码全清）。本节为 as-built 记录。
 
-AI 文本对话走独立 SSE HTTP 通道，与 WS 信令通道**物理分离**：
+### 通道结构（as-built）
 
-- `ApiService.sendAiTextMessage`（`ApiService.java:672`，`@POST("/api/ai/ai/doChatByText")`，返 `ResponseBody`）+ `sendAiImageMessage`（`ApiService.java:685`，`/api/ai/ai/doChatByImage`）。
-- `AiChatManager`（`common/network/AiChatManager.java`）用 `retrofit2` 阻塞读 SSE 流（`handleStreamingResponse` 第 160 行：`BufferedReader` 逐行读 `data: ` 前缀、字符级 `Thread.sleep(typingSpeed=50ms)` 模拟打字机、主线程 `Handler.post` 回 UI），线程池 `Executors.newCachedThreadPool()`。
-- 数据流见 [android.md](android.md)「AI 多轮对话」段。
+缝 A 单双向 WS 通道承载文本/语音/位置/流式回/5001-6 信令；图片大二进制走 HTTP multipart，流式答复骑同一 WS 通路：
 
-### 重写后（设计敲定 · 待 Phase 5）
+- **文本 turn**：经既有 WS `/api/ws/call`（`WebSocketManager` 复用不开新连接）发 `requestType=100`（裸 socketData，含 `text` + `position`），收 `110`/`111`/`112`/`113`（delta/progress/turn_end/error）由 `AiTurnManager`（`common/network/AiTurnManager.java`，chunk-2e-2 新增）路由到 UI + 讯飞 TTS 按句切喂（`feedTtsIncremental`/`flushRemainingTts`）。
+- **图片 turn**（chunk-2e-3）：multipart 上传 `POST /api/call/ai/image-turn`（`ApiService.sendAiImageTurn` + `ImageRecognitionManager.sendImageTurn`），Java 收图转 base64 data URL 调 Python `/ai/turn {image}`，**流式答复骑同一套 WS 中继**（`AiTurnManager` 现成路由，零 Android 重复）。图片 base64 MB 级超 WS 帧上限故走 HTTP。
+- WS 断线重连已修（见 [known-issues.md](known-issues.md)「AI 页 WS 断线不重连」）；`AiTurnManager` turn 中途 `setMatchingStatus(true)` 压制重连防丢 turn_end，45s watchdog 兜底解锁麦克风。
 
-**文本 turn 迁入 WS**（缝 A 单双向通道承载文本/语音/位置/图片/流式回/5001-6 信令/未来主动推送），**图片仍走 HTTP multipart**：
+### 老 SSE 通道（已删 · chunk-2f-1）
 
-- **入站（App→Java）**：WS 新增 AI-turn 消息类型（新 `requestType` + body 携带对话文本/位置）；不再 `POST /api/ai/ai/doChatByText`。
-- **出站（Java→App，流式回）**：WS 推流式 token 帧（token-by-token），替代 SSE 的 `data: ` 文本流。`AiChatManager` 的字符级 `Thread.sleep` 打字机逻辑删除——流式感由后端真实 token 到达节奏提供，App 只负责按帧追加展示 + 流式 TTS 播报。
-- **图片**：仍 `POST /api/ai/ai/doChatByImage` multipart 上传（大二进制不走文本 WS），上传后触发的新 turn 走 WS。
-- **废弃端点**：`/api/ai/ai/doChatByText`、`/api/ai/ai/doChatByImage`、`/NewApp` 三个 SSE 端点随本次重写清除（属重写范围、App 同步改、非违约——AI 通道本就重写）。
-
-**实现要点（待 Phase 5）**：
-
-- `AiChatManager` 改为 WS 帧监听器（注册到 `WebSocketManager` 的 AI-turn 出站帧回调），删 Retrofit SSE 路径与 `typingSpeed`/`isStreaming` 状态机。
-- 复用既有 WS 长连接（不另开连接）；AI-turn 帧与 5001-6 信令帧共用一条 WS，按 `requestType` 分流。
-- WS 断线重连（已修，见 [known-issues.md](known-issues.md)「AI 页 WS 断线不重连」）现在同样护住 AI 对话连续性。
+> 2026-07-20 全清。后端 SSE 端点 `/api/ai/ai/doChatByText`/`doChatByImage`/`/NewApp` 早于 chunk-2b-5 删除，App 侧老 SSE 客户端调 404 成死代码，chunk-2f-1 删净：`AiChatManager.java`（整文件）+ `ImageRecognitionManager` 老 `sendImage`/`OnStreamingListener`/`handleStreamingResponse` + `ApiService.sendAiTextMessage`/`sendAiImageMessage` + `AiFragment` 智能播报系统（11 方法 + `StreamingState` 状态机 + handler/buffer 字段）+ 图片专属 UI 4 方法。chunk-2e-2「AiChatManager 保留作降级」同期撤销（后端已删、降级是 fiction）。详见根 [CHANGELOG](../../../docs/CHANGELOG.md) chunk-2f-1。
 
 ---
 
