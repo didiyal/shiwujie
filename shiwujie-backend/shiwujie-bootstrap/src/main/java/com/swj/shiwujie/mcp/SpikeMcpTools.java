@@ -1,5 +1,6 @@
 package com.swj.shiwujie.mcp;
 
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,17 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class SpikeMcpTools {
+
+    /**
+     * [spike 2b-3] 验证 X-Blind-Id header 经 McpTransportContextExtractor → reactor context →
+     * Spring AI ToolContext 桥的透传链路。返回 transportContext 里看到的 blind_id；Python 端带 header
+     * 调本工具应回显该值。机制验过（2b-3 收尾）后随业务工具真身落地移除——生产 LLM 不应见此工具。
+     */
+    @Tool(description = "[spike] 返回当前 blind_id（仅验证 header 透传，生产忽略）。")
+    public String whoami(ToolContext toolContext) {
+        Long blindId = BlindMcpContext.blindId(toolContext).orElse(null);
+        return "{\"blind_id\":" + blindId + ",\"source\":\"transport_context\"}";
+    }
 
     @Tool(description = "申请加入家庭（盲人加入志愿者所在家庭）。需提供家庭邀请码或家属手机号。")
     public String joinFamily(
