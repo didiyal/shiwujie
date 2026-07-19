@@ -10,9 +10,10 @@ import com.swj.shiwujie.data.model.SocketDataV0;
 /**
  * AI turn WS 路由胶水层（chunk-2e-2 缝 A）。
  *
- * <p>挂全局 {@link WebSocketManager.MessageListener}，把后端 {@code AiWsRelayService} 下发的 4 类帧
- * （110 delta / 111 progress / 112 turn_end / 113 error）路由成 {@link AiTurnListener} 回调，
- * 让 AiFragment 不直接碰协议码；上行（requestType=100）也由此发。</p>
+ * <p>挂全局 {@link WebSocketManager.MessageListener}，把后端 {@code AiWsRelayService} 下发的 5 类帧
+ * （110 delta / 111 progress / 112 turn_end / 113 error / 114 emergency_token）路由成 {@link AiTurnListener}
+ * 回调，让 AiFragment 不直接碰协议码；上行（requestType=100）也由此发。114 不进 turn 状态机
+ * （prepare 在 turn 中途签发，仅透传 token 给 UI 弹确认面——chunk-2e-4 gate ③）。</p>
  *
  * <p><b>防重连 + 超时兜底</b>：turn 进行中置 {@code WebSocketManager.setMatchingStatus(true)} 压制重连
  * （避免 turn_end 被 WS 重连吃掉）；同时挂 45s watchdog——relay 异常断连不发 113 时主动 onError + reset，
@@ -51,6 +52,13 @@ public class AiTurnManager {
 
         /** 113：中继/Python 异常（固定友好文案）或客户端超时。 */
         void onError(String message);
+
+        /**
+         * 114：紧急求助确认 token（chunk-2e-4 gate ③）。
+         * <p>agent {@code request_emergency_help_prepare} 签发，socketData.text=token。App 收到后弹
+         * 显式确认面（盲人无视觉冗余，须屏幕硬选择），用户确认才消费 token（非-MCP HTTP /blind/confirm）。</p>
+         */
+        void onEmergencyToken(String token);
     }
 
     private final WebSocketManager ws;
@@ -137,6 +145,12 @@ public class AiTurnManager {
             case SocketDataV0.REQUEST_TYPE_AI_ERROR: { // 113
                 listener.onError(data.getText());
                 resetTurnState();
+                break;
+            }
+            case SocketDataV0.REQUEST_TYPE_EMERGENCY_TOKEN: { // 114 — gate ③ 紧急确认 token
+                // 不归 turn 状态机：prepare() 在 turn 中途签发，turn 仍正常流转到 112/113。
+                // 仅把 token 透传给 UI 弹确认面，不碰 accumulator / turnActive / watchdog。
+                listener.onEmergencyToken(data.getText());
                 break;
             }
             default:

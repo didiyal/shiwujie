@@ -414,6 +414,20 @@ public interface ApiService {
             @Query("blindPhone") String blindPhone
     );
 
+    /**
+     * chunk-2e-4 gate ③：盲人 App 显式确认紧急求助（消费 AI prepare() 签发的 token）。
+     * <p>命中后端 {@code POST /api/call/urgenthelp/blind/confirm}：{@code consumeByApp} 一次性消费 token
+     * + 推 WS 5003（既有的 blindhome 跳转 + 开启紧急求助 UI 由 5003 触发）。</p>
+     *
+     * @param token         JWT 令牌
+     * @param emergencyToken AI request_emergency_help_prepare 经 114 帧下发的确认码
+     */
+    @POST("/api/call/urgenthelp/blind/confirm")
+    Call<BaseResponse<Boolean>> blindConfirmUrgenthelp(
+            @Header("Authorization") String token,
+            @Query("token") String emergencyToken
+    );
+
     // ==================== 社区相关接口 ====================
 
     /**

@@ -39,6 +39,7 @@ import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.utils.SpeechRecognitionManager;
 import com.swj.shiwujie.common.network.AiChatManager;
 import com.swj.shiwujie.common.network.AiTurnManager;
+import com.swj.shiwujie.common.network.EmergencyHelpManager;
 import com.swj.shiwujie.common.network.ImageRecognitionManager;
 import com.swj.shiwujie.common.utils.TTSManager;
 import com.swj.shiwujie.common.utils.CameraPreviewManager;
@@ -98,6 +99,8 @@ public class AiFragment extends Fragment {
     // chunk-2e-2: AI turn WS 客户端（替代 AiChatManager 的 SSE 通道；AiChatManager 保留作降级）
     private AiTurnManager aiTurnManager;
     private boolean isAiTurnInProgress = false;
+    // chunk-2e-4 gate ③：紧急确认 token 弹框（防 agent 重复 prepare 致弹框堆叠；onDestroy 收尾）
+    private AlertDialog emergencyConfirmDialog;
     // chunk-2e-2: 句切 TTS 累积（讯飞 startSpeaking 每次打断前次，须按句喂，避免逐 token 打断）
     private final StringBuilder ttsSentenceBuffer = new StringBuilder();
     private boolean ttsFirstFlushDone = false;
@@ -1295,6 +1298,12 @@ public class AiFragment extends Fragment {
                     }
                 });
             }
+
+            @Override
+            public void onEmergencyToken(String token) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() -> showEmergencyConfirmDialog(token));
+            }
         });
     }
     
@@ -2182,6 +2191,62 @@ public class AiFragment extends Fragment {
             btnVoice.setEnabled(enabled);
             btnVoice.setAlpha(enabled ? 1.0f : 0.4f);
         }
+    }
+
+    /**
+     * chunk-2e-4 gate ③：弹紧急求助确认面（盲人无视觉冗余，须屏幕硬选择）。
+     *
+     * <p>114 帧到达时机：agent {@code request_emergency_help_prepare} 在 turn 中途签发——此时 AI 正文
+     * 可能正在流式输出 + TTS 朗读。弹框前先用 TTS 打断式播报提示语（紧急优先于正文），让盲人用户
+     * 听到"是否通知家属"，再靠 TalkBack / 大按钮完成物理点击（agent 无法代点 = gate ③ 的红队 Q18 护栏）。</p>
+     *
+     * <p>防堆叠：agent 偶发重复 prepare 会推多个 114 帧 → 已有弹框则先 dismiss 再弹新的（token 不同）。</p>
+     */
+    private void showEmergencyConfirmDialog(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            Log.w(TAG, "gate ③：紧急确认 token 为空，忽略 114 帧");
+            return;
+        }
+        if (ttsManager != null) {
+            ttsManager.startSpeaking("AI 判断您可能遇到紧急情况，是否通知所有家属？请点击屏幕确认。");
+        }
+        if (emergencyConfirmDialog != null && emergencyConfirmDialog.isShowing()) {
+            emergencyConfirmDialog.dismiss(); // 防 agent 重复 prepare 致堆叠
+        }
+        emergencyConfirmDialog = new AlertDialog.Builder(requireContext())
+                .setTitle("紧急求助确认")
+                .setMessage("AI 判断您可能遇到紧急情况。确认要通知所有家属吗？")
+                .setPositiveButton("确认通知", (dialog, which) -> confirmEmergencyToken(token))
+                .setNegativeButton("取消", null)
+                .setCancelable(false) // 盲人须显式选择，禁止点外部消失（gate ③ 硬需求）
+                .show();
+    }
+
+    /**
+     * chunk-2e-4 gate ③：用户确认后消费 token → 委托 {@link EmergencyHelpManager#confirmEmergencyToken}
+     * 命中后端 /blind/confirm（后端消费 token + 推 5003；5003 触发既有 blindhome 跳转 + 开启紧急求助 UI）。
+     */
+    private void confirmEmergencyToken(String token) {
+        EmergencyHelpManager.getInstance().confirmEmergencyToken(token,
+                new EmergencyHelpManager.EmergencyTokenConfirmCallback() {
+                    @Override
+                    public void onConfirmSuccess() {
+                        if (getActivity() == null) return;
+                        getActivity().runOnUiThread(() ->
+                                Toast.makeText(requireContext(), "已通知所有家属", Toast.LENGTH_SHORT).show());
+                    }
+
+                    @Override
+                    public void onConfirmFailed(String reason) {
+                        if (getActivity() == null) return;
+                        getActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), "紧急确认失败：" + reason, Toast.LENGTH_LONG).show();
+                            if (ttsManager != null) {
+                                ttsManager.startSpeaking("紧急确认失败，" + reason);
+                            }
+                        });
+                    }
+                });
     }
 
     /**
@@ -3117,6 +3182,12 @@ public class AiFragment extends Fragment {
             aiTurnManager.destroy();
             aiTurnManager = null;
         }
+
+        // chunk-2e-4 gate ③：dismiss 紧急确认弹框（防泄漏 window）
+        if (emergencyConfirmDialog != null && emergencyConfirmDialog.isShowing()) {
+            emergencyConfirmDialog.dismiss();
+        }
+        emergencyConfirmDialog = null;
 
         // 释放图片识别管理器资源
         if (imageRecognitionManager != null) {

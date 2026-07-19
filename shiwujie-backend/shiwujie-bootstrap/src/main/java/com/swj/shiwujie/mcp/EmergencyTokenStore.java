@@ -113,6 +113,36 @@ public class EmergencyTokenStore {
         return VerifyResult.pass("已通知所有家属（信令5003）。");
     }
 
+    /**
+     * App 侧 gate ③ 消费 token（design ⑬ 红队第三道门，chunk-2e-4）。
+     *
+     * <p>盲人在手机屏幕显式确认面点击确认 → 经非-MCP HTTP 端点（{@code UrgenthelpController /confirm}）
+     * 回传 token。人工屏幕确认天然跨轮、天然用户知情，<b>不做 same-turn 检查</b>（gate ② 轮次闸仅约束
+     * agent 走 confirm() MCP 路径）。仅校验 token 存在 + 属于当前盲人，通过即一次性消费。</p>
+     *
+     * <p>非-MCP 端点 = agent 无此路径（堵 agent 自确认）；HTTP 鉴权链解析 loginBlindId 与 token 绑定盲人比对。</p>
+     *
+     * @param token   App 回传的确认码（来自 114 帧 socketData.text）
+     * @param blindId 当前登录盲人 id（LoginUtils.getLoginBlindId）
+     * @return {@link VerifyResult}（通过即已消费，调用方推 WS 5003）
+     */
+    public VerifyResult consumeByApp(String token, Long blindId) {
+        Object raw = redisUtils.getFromRedis(KEY_PREFIX + token);
+        if (!(raw instanceof String s)) {
+            return VerifyResult.reject("确认码不存在或已失效。");
+        }
+        Stored rec = parse(s);
+        if (rec == null) {
+            return VerifyResult.reject("确认码格式异常。");
+        }
+        if (rec.blindId != blindId) {
+            return VerifyResult.reject("确认码不属于当前用户。");
+        }
+        // gate ③ = 人工屏幕点击确认（超越轮次闸），通过即一次性消费。
+        redisUtils.removeToRedis(KEY_PREFIX + token);
+        return VerifyResult.pass("已通知所有家属（信令5003）。");
+    }
+
     private Stored parse(String json) {
         try {
             return MAPPER.readValue(json, Stored.class);

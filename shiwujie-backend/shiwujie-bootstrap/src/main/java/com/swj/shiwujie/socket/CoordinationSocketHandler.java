@@ -339,6 +339,22 @@ public class CoordinationSocketHandler {
     }
 
     /**
+     * 通知前端紧急求助确认 token 114（design ⑬ gate ③：prepare() 签 token 后推送，App 显式确认面消费）
+     */
+    public void noticeEmergencyToken(SocketData socketData) {
+        if (sessionMap.containsKey(socketData.getBlindPhone())) {
+            Session session = sessionMap.get(socketData.getBlindPhone());
+            String response = this.getResponse(0, "紧急确认", socketData);
+            sendMessage(session, response);
+            log.info("通知前端紧急确认 token - 114");
+        } else {
+            log.info("紧急确认找不到用户{}socket连接：", socketData.getBlindPhone());
+            // 盲人不在线（无 session）：gate ③ 送达失败，encode-不抛——agent 仍可走 confirm() MCP
+            // （gate ② 跨轮 token）兜底发 5003；调用方据送达决定换路。
+        }
+    }
+
+    /**
      * 通知前端跳转软件 5004
      */
     public void noticeJumpSoftware(SocketData socketData) {

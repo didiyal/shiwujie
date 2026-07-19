@@ -11,6 +11,8 @@ package com.swj.shiwujie.ai.relay;
  *   <li>出站（Java→App，流式中继 Python ndjson → WS 帧）：
  *     {@link #OUT_DELTA} 末答切块 / {@link #OUT_PROGRESS} 进度 /
  *     {@link #OUT_TURN_END} turn 收尾 / {@link #OUT_ERROR} 中继异常。</li>
+ *   <li>出站（Java→App，紧急求助确认门 design ⑬ gate ③）：{@link #OUT_EMERGENCY_TOKEN}=114，
+ *     prepare() 签 token 后推送，socketData.text=token，App 显式确认面消费。</li>
  * </ul>
  */
 public final class AiWsTypes {
@@ -30,6 +32,9 @@ public final class AiWsTypes {
 
     /** 出站：中继/Python 异常（socketData.text = 错误摘要）。 */
     public static final int OUT_ERROR = 113;
+
+    /** 出站：紧急求助确认 token（design ⑬ gate ③，prepare() 签发后推送；socketData.text = token）。 */
+    public static final int OUT_EMERGENCY_TOKEN = 114;
 
 
     private AiWsTypes() {

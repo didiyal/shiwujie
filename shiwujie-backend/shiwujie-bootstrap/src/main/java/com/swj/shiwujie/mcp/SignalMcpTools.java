@@ -136,15 +136,37 @@ public class SignalMcpTools {
         int turn = resolveIssuingTurn(toolContext);
         try {
             String token = emergencyTokenStore.issue(blindId, turn);
+            // chunk-2e-4 gate ③：签 token 后推 114 帧给 App（socketData.text=token），App 显式确认面消费。
+            // 推送失败 encode-不抛——App 没收到则 gate ③ 降级，agent 仍持 token 可走 confirm() MCP（gate ②）兜底。
+            pushEmergencyTokenFrame(blindId, token);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("status", "ok");
             m.put("token", token);
-            m.put("message", "确认码已生成。请向用户确认后，用本 token 调用 request_emergency_help_confirm。");
+            m.put("message", "确认码已生成并推送到用户手机屏幕。请提示用户在确认面点击确认（gate ③）；或跨轮用户明确答复后调 request_emergency_help_confirm（gate ②）。");
             log.info("紧急求助 prepare blindId={} turn={} reason={}", blindId, turn, reason);
             return json(m);
         } catch (Exception e) {
             log.warn("紧急求助 prepare 失败 blindId={} turn={}", blindId, turn, e);
             return err("生成确认码失败：" + safeMsg(e));
+        }
+    }
+
+    /**
+     * chunk-2e-4 gate ③：把 token 经 114 帧推给盲人 App（socketData.text=token）。encode-不抛。
+     * 推送失败（盲人不存在 / 无 phone / WS 异常）仅 log——agent 仍持 token 可走 confirm() MCP 兜底发 5003。
+     */
+    private void pushEmergencyTokenFrame(Long blindId, String token) {
+        try {
+            Blind blind = blindService.getById(blindId);
+            if (blind == null || StrUtil.isBlank(blind.getPhone())) {
+                log.warn("紧急确认 114 推送跳过：blindId={} 无有效手机号", blindId);
+                return;
+            }
+            SocketData d = newSocketData(blind.getPhone(), 114); // AiWsTypes.OUT_EMERGENCY_TOKEN
+            d.setText(token);
+            innerSocket.noticeEmergencyToken(d);
+        } catch (Exception e) {
+            log.warn("紧急确认 114 推送失败 blindId={}", blindId, e);
         }
     }
 

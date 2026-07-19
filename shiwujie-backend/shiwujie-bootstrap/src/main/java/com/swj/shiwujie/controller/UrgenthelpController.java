@@ -4,12 +4,18 @@ package com.swj.shiwujie.controller;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 import com.swj.shiwujie.common.BaseResponse;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.ThrowUtils;
+import com.swj.shiwujie.mcp.EmergencyTokenStore;
 import com.swj.shiwujie.model.domain.call.Urgenthelp;
+import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.enums.call.CallHelpStatusEnum;
+import com.swj.shiwujie.model.request.call.SocketData;
+import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.UrgenthelpService;
+import com.swj.shiwujie.service.call.InnerSocket;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.utils.ResultUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,6 +40,16 @@ public class UrgenthelpController {
 
     @Resource
     UrgenthelpService urgenthelpService;
+
+    // chunk-2e-4 gate ③：App 显式确认面消费 token 所需依赖（非-MCP HTTP 端点）
+    @Resource
+    private InnerSocket innerSocket;
+
+    @Resource
+    private EmergencyTokenStore emergencyTokenStore;
+
+    @Resource
+    private BlindService blindService;
 
 
     // region 视障人士操作
@@ -167,5 +183,41 @@ public class UrgenthelpController {
 
         return ResultUtils.success(true);
     }
+
+
+    // region chunk-2e-4 gate ③：App 显式确认面消费 token
+
+    /**
+     * 盲人 App 显式确认紧急求助（gate ③ 消费 token → 推 WS 5003 通知所有家属）。
+     *
+     * <p>非-MCP HTTP 端点——agent 无此路径，红队 Q18 第三道门（盲人单声道无视觉冗余，须屏幕硬确认）。
+     * 镜像 {@code SignalMcpTools.requestEmergencyHelpConfirm} 成功路径，但 token 经
+     * {@link EmergencyTokenStore#consumeByApp} 消费（人工确认超越轮次闸，不做 same-turn 检查）。</p>
+     *
+     * @param token   prepare() 经 114 帧下发、App 回传的确认码
+     */
+    @PostMapping("/blind/confirm")
+    @Operation(summary = "盲人确认紧急求助（gate ③ 消费 token）")
+    public BaseResponse<Boolean> blindConfirmUrgenthelp(@RequestParam String token, HttpServletRequest request) {
+        Long loginBlindId = LoginUtils.getLoginBlindId(request);
+        ThrowUtils.throwIf(ObjUtil.isNull(loginBlindId), ErrorCode.PARAMS_ERROR, "只有视障人士才可以操作");
+        ThrowUtils.throwIf(StrUtil.isBlank(token), ErrorCode.PARAMS_ERROR, "确认码不能为空");
+
+        EmergencyTokenStore.VerifyResult vr = emergencyTokenStore.consumeByApp(token, loginBlindId);
+        ThrowUtils.throwIf(!vr.ok(), ErrorCode.PARAMS_ERROR, vr.message());
+
+        // token 消费通过 → 推 WS 5003（镜像 confirm() MCP：盲人 phone 查 session 推信令）
+        Blind blind = blindService.getById(loginBlindId);
+        ThrowUtils.throwIf(blind == null || StrUtil.isBlank(blind.getPhone()), ErrorCode.PARAMS_ERROR, "用户信息异常");
+        SocketData d = new SocketData();
+        d.setBlindPhone(blind.getPhone());
+        d.setRequestType(5003);
+        innerSocket.noticeUrgentHelp(d);
+        log.info("gate ③ 紧急确认通过 blindId={}，已推 5003", loginBlindId);
+        return ResultUtils.success(true);
+    }
+
+    // endregion
+
 
 }

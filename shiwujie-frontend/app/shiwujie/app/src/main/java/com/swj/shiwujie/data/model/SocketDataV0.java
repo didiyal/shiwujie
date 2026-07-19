@@ -142,6 +142,7 @@ public class SocketDataV0 {
     public static final int REQUEST_TYPE_AI_PROGRESS = 111;     // 出站：工具进度（searching/thinking/recognizing_photo/routing）
     public static final int REQUEST_TYPE_AI_TURN_END = 112;     // 出站：turn 结束（App 收尾 TTS + 解锁输入）
     public static final int REQUEST_TYPE_AI_ERROR    = 113;     // 出站：中继/Python 异常（固定友好文案）
+    public static final int REQUEST_TYPE_EMERGENCY_TOKEN = 114; // 出站：紧急求助确认 token（gate ③，text=token，App 显式确认面消费）
     
     // Getter和Setter方法
     public int getRequestType() {

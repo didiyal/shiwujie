@@ -37,8 +37,8 @@ import static org.mockito.Mockito.when;
  *   <li>3 信令工具真身推 WS：requestType + SocketData 载荷（destination/appName 塞 volunteerPhone）正确；</li>
  *   <li>open_app 白名单硬卡（design ⑬）：白名单外拒绝、不推 WS；</li>
  *   <li>design ⑫ encode-不抛：无身份 / 盲人不存在 / service 异常都返 status:error JSON、不抛、不推 WS；</li>
- *   <li>紧急求助拆 prepare/confirm（design ⑬ 红队 Q18，2b-4b）：prepare 签 token 不推 WS；confirm 校验
- *       通过才推 WS 5003，软拒绝返 rejected 不推。</li>
+ *   <li>紧急求助拆 prepare/confirm（design ⑬ 红队 Q18，2b-4b / 2e-4 gate ③）：prepare 签 token + 推 114 帧
+ *       给 App（gate ③，socketData.text=token）；confirm 校验通过才推 WS 5003（gate ②），软拒绝返 rejected 不推。</li>
  * </ul>
  */
 @DisplayName("SignalMcpTools 信令 MCP 工具")
@@ -238,15 +238,21 @@ class SignalMcpToolsTest {
     // ───── 紧急求助拆 prepare/confirm（design ⑬ 红队 Q18，2b-4b）─────
 
     @Test
-    @DisplayName("request_emergency_help_prepare → 签 token（调 store.issue），不推 WS")
-    void emergencyPrepare_issuesToken_noPush() {
+    @DisplayName("request_emergency_help_prepare → 签 token + 推 114 帧（gate ③，socketData.text=token）")
+    void emergencyPrepare_issuesToken_pushes114() {
         when(emergencyTokenStore.issue(123L, 2)).thenReturn("EMERG-ABCD1234");
 
         String r = tools.requestEmergencyHelpPrepare(null, "我摔倒了");
 
         assertThat(r).contains("\"status\":\"ok\"").contains("EMERG-ABCD1234").contains("token");
         verify(emergencyTokenStore).issue(123L, 2);
-        verifyNoInteractions(innerSocket);
+        // chunk-2e-4 gate ③：prepare 推 114 帧给 App（socketData.text=token，blindPhone 查 session）
+        ArgumentCaptor<SocketData> cap = ArgumentCaptor.forClass(SocketData.class);
+        verify(innerSocket).noticeEmergencyToken(cap.capture());
+        assertThat(cap.getValue().getRequestType()).isEqualTo(114);
+        assertThat(cap.getValue().getBlindPhone()).isEqualTo("13800138000");
+        assertThat(cap.getValue().getText()).isEqualTo("EMERG-ABCD1234");
+        verify(innerSocket, never()).noticeUrgentHelp(any()); // prepare 不发 5003（仅 confirm / HTTP /confirm 发）
     }
 
     @Test

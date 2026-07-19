@@ -164,6 +164,57 @@ class EmergencyTokenStoreTest {
         verify(redisUtils, never()).removeToRedis(any());
     }
 
+    // ───── consumeByApp（chunk-2e-4 gate ③，App 显式确认面消费；非-MCP HTTP 端点调用）─────
+
+    @Test
+    @DisplayName("consumeByApp token 存在 + 用户匹配 → 通过 + 一次性消费（不查轮次）")
+    void consumeByApp_matched_passed_consumed() {
+        stubStored("EMERG-X", 123L, 2);
+
+        EmergencyTokenStore.VerifyResult r = store.consumeByApp("EMERG-X", 123L);
+
+        assertThat(r.ok()).isTrue();
+        assertThat(r.message()).contains("信令5003");
+        verify(redisUtils).removeToRedis("ai:emerg:EMERG-X");
+    }
+
+    @Test
+    @DisplayName("consumeByApp 不查轮次——即使 verify 会判同轮拒的 token，App 人工确认仍放行（gate ③ 超越 gate ②）")
+    void consumeByApp_ignoresTurn_gate3SupersedesGate2() {
+        // token 绑 turn=2；若走 verify(currentTurn=2) 会被 gate ② 同轮拒。但 consumeByApp 是 App 屏幕确认路径，
+        // 人工点击天然跨轮 + 用户知情，不做 same-turn 检查 → 直接放行消费。
+        stubStored("EMERG-X", 123L, 2);
+
+        EmergencyTokenStore.VerifyResult r = store.consumeByApp("EMERG-X", 123L);
+
+        assertThat(r.ok()).isTrue();
+        verify(redisUtils).removeToRedis("ai:emerg:EMERG-X");
+    }
+
+    @Test
+    @DisplayName("consumeByApp 未知 token → 拒，不消费")
+    void consumeByApp_unknownToken_rejected() {
+        when(redisUtils.getFromRedis("ai:emerg:EMERG-NOPE")).thenReturn(null);
+
+        EmergencyTokenStore.VerifyResult r = store.consumeByApp("EMERG-NOPE", 123L);
+
+        assertThat(r.ok()).isFalse();
+        assertThat(r.message()).contains("不存在");
+        verify(redisUtils, never()).removeToRedis(any());
+    }
+
+    @Test
+    @DisplayName("consumeByApp 错用户（token 绑 blindId≠当前登录）→ 拒，不消费")
+    void consumeByApp_wrongUser_rejected() {
+        stubStored("EMERG-X", 123L, 2);
+
+        EmergencyTokenStore.VerifyResult r = store.consumeByApp("EMERG-X", 999L);
+
+        assertThat(r.ok()).isFalse();
+        assertThat(r.message()).contains("不属于当前用户");
+        verify(redisUtils, never()).removeToRedis(any());
+    }
+
     @Test
     @DisplayName("issue Redis 写抛 → 包 IllegalStateException（caller SignalMcpTools encode-不抛兜底）")
     void issue_redisThrows_propagates() {
