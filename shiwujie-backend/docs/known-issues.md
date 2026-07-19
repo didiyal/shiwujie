@@ -52,7 +52,7 @@
 > v3.0.0 AI 重写（Phase 5 进行中）：旧 Java AI 模块**已大部删除（chunk-2b / 2b-5，2026-07-19）** —— 删 `app/`（TextApp/ImageApp/ToolChoiceApp + `app/model/*`）、`controller/ChatController` + `service/{ChatService,impl/ChatServiceImpl}`、`tools/`（ToolChoiceCenter + `tools/app/{FrontendTools,UserTools}` + `tools/mytools/{WebSearchTool,AiModelTools,TerminateTool}`）、`chatmemory/*`（3 个 ChatMemoryRes）、`advisor/MyRagAdvisor`、`common/{AiToolRequest,ToolCallRequest}`、`AiSmokeTest`、`resources/prompttemplate/*`，替换为 Python LangGraph 服务（见 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md) 与 [shiwujie-ai/docs/](../../shiwujie-ai/docs/)）。下列 ai 缺陷随模块删除消灭（保留作历史真相）。
 >
 > **保留集**（冻结 / 待删 / 新增）：
-> - ① `agent/*`（MyManus 自研 ReAct 雏形）**冻结保留非删** —— 作 Java-graph 备选 B-prime 回退起跑线；连带保留其依赖 `advisor/MyLoggerAdvisor`、`config/AiConfig`（`qwenText` bean）、`constants/AiConstants`、`utils/MessageSerializer`（kryo）+ pom 依赖 `spring-ai-alibaba-starter-dashscope`（ToolCallAgent 用 `DashScopeChatOptions`）/`spring-ai-openai`（AiConfig 用）/`jsoup`（BaseAgent 用 `StringUtil`）。⚠️ 侦查修正：MyManus 的 `ToolCallback[]` 是构造器参数外部传入、`@Component` 注释掉无实例化点，**不**注入 FrontendTools/UserTools 等——故 tools/* 可全删。
+> - ① ~~`agent/*`（MyManus 自研 ReAct 雏形）冻结保留~~ **已彻底删（chunk-2b-6b，2026-07-20，撤销原冻结保留决策）** —— 原作 Java-graph 备选 B-prime 回退起跑线冻结保留，撤销理由：零活路径引用、B-prime 用 alibaba-graph 非自建 ReAct、红队 Q2 揭「已弃用」真相；连带删依赖 `advisor/MyLoggerAdvisor`/`config/AiConfig`（`qwenText`/`qwenImage` bean）/`constants/AiConstants`/`utils/MessageSerializer`（kryo 孤儿）= 9 文件 + bootstrap pom 5 依赖（`spring-ai-alibaba-starter-dashscope`/`spring-ai-openai`/`jsoup`/`kryo`/`paho`）+ 父 pom 4 DM + `application.yml` 3 块（`spring.ai.dashscope`/`spring.ai.chat.client`/`search-api`）。⚠️ 历史侦查记录：MyManus 的 `ToolCallback[]` 是构造器参数外部传入、`@Component` 注释掉无实例化点，**不**注入 FrontendTools/UserTools 等——此即 tools/* 早在 2b-5 可全删的依据。
 > - ② `interceptor/AiLoginCheckInterceptor` + `config/AiWebConfig` **已删（2b-6a，2026-07-20）**——dev 后门死代码清理（无 Authorization 静默登录 blind id=1 / phone 19872250169）；`/api/ai/**` 在 2b-5 删 `ChatController` 后已成空集，拦截器拦空集，删除零功能影响；`common/ErrorCode` **保留**（53 个其它引用者，非 AI 专用）。WS phone 冒充（下条 #7）的 ticket 鉴权留 chunk-2e 与 Android WS 改造同批。
 > - ③ **新增** `mcp/*`（BusinessMcpTools/SignalMcpTools/SpikeMcpConfig/McpTransportConfig/BlindMcpContext，8 工具 MCP server）+ `ai/relay/*`（AiWsRelayService 等，缝 A WS 中继）。AiLogs 图片 offload 去留待 Phase 5。
 >
@@ -62,7 +62,7 @@
 
 1. **自研 ReAct Agent 未启用（✅ 坐实）**：`MyManus.java:9` `//@Component` 被注释 → 整条继承链（`BaseAgent`/`ReActAgent`/`ToolCallAgent`/`MyManus`）无 Bean 入容器；`ToolCallAgent` 自维护上下文（`withInternalToolExecutionEnabled(false)` + 自管 messageList）正是「重复调用工具」之源。实际生效路径是注入 `ToolChoiceApp`。弃用原因：自写 ReAct 工具重复调用/调用失败，周期紧放弃，改工作流式路由。
 2. **community 求助帖工具未注入（✅ 坐实）**：community Inner 服务完全未被消费；提示词 `toolChoice-template.txt` 中「处理用户、家庭、社区、活动、求助帖相关操作」是历史残留，ToolChoiceCenter switch 无 community 分支。
-3. **mqtt：已取消但 pom 残留（✅ 坐实）**：MQTT 代码已全删，仅 `pom.xml:30-48` 残留 paho 依赖。grep `mqtt|MqttClient|paho` 命中 0 个 .java 文件。
+3. ✅ ~~**mqtt：已取消但 pom 残留**~~：MQTT 代码早已全删，仅 `pom.xml` 残留 paho 依赖（grep `mqtt|MqttClient|paho` 命中 0 个 .java 文件）；**paho 依赖已删（chunk-2b-6b，2026-07-20）**，随 MyManus 死代码闭环一并清。
 4. **RAG 半残留（✅ 坐实）**：`MyRagAdvisor`（`@Configuration` + Bean，知识库名 `视无界`）启动时仍初始化，但 `TextApp.java:53` 的 `// myRagAdvisor` 被注释未加入 defaultAdvisors → 运行时不参与对话。属「删了一半」。
 5. **ToolChoiceAppChatMemoryRes.saveAll 空实现**：路由阶段不写 Memory（省 token），靠共享 key 读文本侧历史——非显然设计。
 6. **TextApp Redis TTL 注释不一致**：TextApp TTL=10 分钟（注释写「5 天」），ImageApp=5 天。文本侧 10 分钟即过期，可能有意也可能是 bug。

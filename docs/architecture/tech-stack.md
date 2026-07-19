@@ -83,7 +83,7 @@
 
 ## AI 能力栈
 
-> **重写进行中（设计敲定 Phase 1-4 · 实现待 Phase 5）**：下表「现状」列为现有 Java AI 模块，是**弃用对象**，重写后整体替换为 Python LangGraph（目标态见下文「重写目标态」+ [`ai-rewrite.md`](ai-rewrite.md)）。
+> **重写进行中（设计敲定 Phase 1-4 · 实现待 Phase 5）**：下表「现状」列为旧 Java AI 模块（v2.1.0 产物，**chunk-2b/2b-5/2b-6b 已整体删除**），保留作「被替换对象」对比；重写后整体替换为 Python LangGraph（目标态见下文「重写目标态」+ [`ai-rewrite.md`](ai-rewrite.md)）。
 
 | 能力 | 现状（Java，待重写·弃用对象） | 重写目标态（Python LangGraph） |
 |---|---|---|
@@ -118,7 +118,7 @@
 
 **高德：自建 REST wrapper vs 官方 MCP**：决策类（poi/route/weather）= 后端 Python 自建 3 个 REST wrapper tool（直调高德 web API，出参剪裁，盲人朗读友好）；执行类（起导航 UI）= App 高德 SDK。**不接高德官方 MCP**（出参不可控 / 进程不经济）。反转条件：高德能力涨到 8-10+ 工具再引官方 MCP。
 
-> 概念级提一句：现有 Java AI 模块里有「自研 ReAct 雏形（已弃用）」342 行骨架，重写**冻结保留不删**——作 Java-graph B-prime 回退起跑线（类名与 `file:line` 见 backend known-issues）。
+> 概念级提一句：现有 Java AI 模块曾有「自研 ReAct 雏形（已弃用）」342 行骨架，原计划**冻结保留**作 Java-graph B-prime 回退起跑线；**2026-07-20（chunk-2b-6b）撤销该决策、彻底删**——理由：零活路径引用、B-prime 用 alibaba-graph 非自建 ReAct、红队 Q2 揭「已弃用」真相（细节见 backend known-issues「保留集」①）。
 
 ## 基础设施地址
 

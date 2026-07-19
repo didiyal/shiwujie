@@ -16,7 +16,7 @@
 [ ] AI 重写-设计：Phase 1-4 梳理（功能/技术/方案/整合）已敲定，见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)（polyglot Java 业务单体 + Python LangGraph 智能体两进程）
 [ ] AI 重写-Python：LangGraph graph + 14 tool（6 Python-native + 8 Java-MCP）+ read_skill 元工具 + navigation skill + BM25 功能 KB + 两层记忆（短期 checkpoint / 长期偏好）
 [ ] AI 重写-Java：WS 改造（ticket 鉴权 / 流式中继 / 并发安全）+ MCP server 8 工具（业务 4 + 信令 4）
-[ ] AI 重写-删旧：删 Java AI 模块（工作流式 prompt-as-router / 自研 ChatMemory / 半残留 RAG / qwen 止血）；MyManus 自研 ReAct 骨架冻结保留作 Java-graph 回退起跑线
+[ ] AI 重写-删旧：删 Java AI 模块（工作流式 prompt-as-router / 自研 ChatMemory / 半残留 RAG / qwen 止血）；MyManus 自研 ReAct 骨架原计划冻结保留，2026-07-20（chunk-2b-6b）撤销该决策、彻底删（零活引用 + B-prime 用 alibaba-graph 非自建 ReAct + 红队 Q2 揭已弃用）
 [ ] AI 重写-部署：两进程 Docker（Java 单体 + Python AI，根级 scripts/ + docker/ + config/ 编排）
 [ ] AI 重写-前端：APK SSE→WS 全合一对话 + SocketData destination 载荷 + 4-button 重写
 [ ] AI 重写-安全门：紧急求助确认门（prepare/confirm 双工具 + 同轮 token 拒绝 + App 显式确认面）+ update_profile 字段门（schema 硬卡 + 窄 DTO 单测）+ qwen FC spike 前置（≥90% 通过率 + MCP strict 校验 + tool-name 白名单两护栏）

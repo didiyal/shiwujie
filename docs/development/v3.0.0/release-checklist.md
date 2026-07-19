@@ -38,7 +38,7 @@
 - [ ] **3.3 两层记忆**：短期 checkpoint + 压缩（~8–16k，recent-tail~10 不压）/ 长期偏好后台异步抽取
 - [ ] **3.4 Java WS 改造**：ticket 鉴权 / `getBasicRemote`→`getAsyncRemote` / `HashMap`→`ConcurrentHashMap` / 拦回显 / 删 AI 拦截器 dev 后门（[known-issues](../../../shiwujie-backend/docs/known-issues.md) #1 / [auth](../../architecture/auth.md) 风险#6）/ 修 AI 拦截器 Redis 续期错 key
 - [ ] **3.5 Java MCP server 8 工具**：业务 4 + 信令 4；`update_profile` inputSchema 硬卡 `{nickname, phone, gender}` + 窄 DTO + 单测断言无敏感字段 setter
-- [ ] **3.6 删 Java AI 模块**：`app/agent/tools/advisor/chatmemory` + `AiConfig`/`AiConstants`/`ChatServiceImpl`/`ChatController` + 依赖；`MyManus` 冻结保留非删（B-prime 起跑线）
+- [ ] **3.6 删 Java AI 模块**：`app/agent/tools/advisor/chatmemory` + `AiConfig`/`AiConstants`/`ChatServiceImpl`/`ChatController` + 依赖；`MyManus` 原计划冻结保留，2026-07-20（chunk-2b-6b）撤销删除（零活引用 + B-prime 用 alibaba-graph 非自建 ReAct）
 - [ ] **3.7 两进程配置 + Docker**：`scripts/` + `docker-compose.yml` + 两 Dockerfile + `config/.env`；java 公网 `8100:8100` + python 内网（`http://python:8500`）+ `host-gateway`
 - [ ] **3.8 APK 改**：SSE client→WS turn client + `SocketDataV0` 加 `destination` + `AiFragment` 5006 读 `destination` + 4-button 重写 + WS ticket
 - [ ] **3.9 测试**：删 `AiSmokeTest` + Java WS 契约测试（mock Python）+ Python tool 单测 + graph 集成 + 安全门测试
