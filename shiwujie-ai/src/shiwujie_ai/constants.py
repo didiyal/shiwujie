@@ -26,5 +26,5 @@ PROJECT_ROOT = PKG_DIR.parents[1]
 CASES_DIR = PROJECT_ROOT / "data" / "fc_cases"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
-# Spike-2 Java MCP server 端点（spring-boot:run 本地 :8100；缝 C）。
-JAVA_MCP_URL = "http://localhost:8100/mcp"
+# Java MCP server 端点统一在 config.JAVA_MCP_URL（env 覆盖 + 内联默认）——勿在此重复定义。
+

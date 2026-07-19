@@ -2,7 +2,12 @@
 
 重写后由 Java 单体作 MCP server（spring-ai-starter-mcp-server-webmvc，streamable HTTP /mcp）暴露，
 Python 经 langchain-mcp-adapters get_tools() 加载（LLM 视角与 native 无异）。
-spike 阶段这些 @tool 函数体不执行（runner 用 stubs）；chunk-2 生产时改由 MCP 远端工具替代本地桩。
+
+工具体演进：
+- spike 阶段：runner 用 stubs 喂假结果，体不执行（raise NotImplementedError）。
+- chunk-2a（当前）：体走 tools/stubs.stub_result 桩返回——让 graph 的 ToolNode 能真调通，
+  验证控制流（零网络/零 Java）。schema/docstring 护栏措辞不动。
+- chunk-2b：9 工具改由真 MCP server get_tools() 加载，本地桩体废弃（registry 切换）。
 
 🔴 红队硬修正（护栏内嵌 docstring，随 FC 永远发送）：
 - request_emergency_help 拆 prepare / confirm 双工具（硬修正 1）——confirm 必须用 prepare 的 token，
@@ -16,6 +21,9 @@ from typing import Literal, Optional
 
 from langchain_core.tools import tool
 from pydantic import BaseModel, ConfigDict, Field
+
+from .stubs import stub_result
+from ..safety import emergency
 
 
 # ───────────────────────── 业务工具 ─────────────────────────
@@ -93,19 +101,19 @@ class OpenAppArgs(BaseModel):
 def join_family(family_phone: str) -> str:
     """加入一个家庭。需提供该家庭的志愿者手机号或邀请码（family_phone）。加入后用户即隶属该家庭，
     可发起/接收家庭紧急求助。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return stub_result("join_family", {"family_phone": family_phone})
 
 
 @tool(args_schema=LeaveFamilyArgs)
 def leave_family(family_id: Optional[int] = None) -> str:
     """退出当前所在的家庭。family_id 不填则退出当前家庭。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return stub_result("leave_family", {"family_id": family_id})
 
 
 @tool(args_schema=FamilyInfoArgs)
 def family_info() -> str:
     """查询我当前所在家庭的信息（成员、关系等）。无需参数。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return stub_result("family_info", {})
 
 
 @tool(args_schema=UpdateProfileArgs)
@@ -117,7 +125,9 @@ def update_profile(
     """修改我的基本资料。**只允许**改 nickname 昵称、phone 手机号、gender 性别这三种基本字段。
     密码、身份证号、残疾证号等敏感信息**绝不**通过本工具修改——若用户要改这些，必须拒绝并引导到
     专门的修改入口。除上述三个字段外不接受任何其它字段。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return stub_result(
+        "update_profile", {"nickname": nickname, "phone": phone, "gender": gender}
+    )
 
 
 @tool(args_schema=LaunchNavigationArgs)
@@ -129,14 +139,17 @@ def launch_navigation(
 ) -> str:
     """在手机端高德 SDK 起导航（信令5006）。需 destination_name 目的地名称 + lat/lng 经纬度 +
     mode 交通方式。通常在 gaude_route 算好路线之后调用，把目的地交给手机开始导航。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return stub_result(
+        "launch_navigation",
+        {"destination_name": destination_name, "lat": lat, "lng": lng, "mode": mode},
+    )
 
 
 @tool(args_schema=RequestVideoHelpArgs)
 def request_video_help() -> str:
     """请求志愿者视频帮扶（信令5002，从志愿者队列 FIFO 匹配最近可用志愿者）。无需参数。
     用于需要真人当眼睛、但**非紧急**的情况（看不清路牌、不会操作某功能等）。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return stub_result("request_video_help", {})
 
 
 @tool(args_schema=RequestEmergencyHelpPrepareArgs)
@@ -144,7 +157,7 @@ def request_emergency_help_prepare(reason: Optional[str] = None) -> str:
     """**仅紧急情况**（受伤、迷路遇险、突发疾病、人身安全受威胁）才用。本工具是紧急求助的**第一步：
     准备**——它生成一个确认码(token)并请你向用户确认，**此时还不会真的通知家属**。可选 reason
     简述紧急原因。**非紧急**情况（只是需要帮助、看不清东西）请改用 request_video_help，不要用本工具。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return emergency.prepare(reason)
 
 
 @tool(args_schema=RequestEmergencyHelpConfirmArgs)
@@ -153,7 +166,7 @@ def request_emergency_help_confirm(token: str) -> str:
     通知所有家属（信令5003 群发）。**绝不**在没有先调用 prepare 的情况下凭空捏造 token 调用；也
     **不要在同一轮里**既调用 prepare 又调用 confirm——必须先 prepare 并向用户确认后，等用户下一轮
     明确确认，再用 confirm。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return emergency.confirm(token)
 
 
 @tool(args_schema=OpenAppArgs)
@@ -161,7 +174,7 @@ def open_app(app: Literal["wechat", "amap", "phone", "sms", "clock", "calendar",
     """跳转到手机上的某个应用（信令5004）。**只允许通讯/生活类白名单**：wechat 微信、amap 高德、
     phone 电话、sms 短信、clock 时钟、calendar 日历、camera 相机。不在白名单的应用（银行、支付、
     设置、社交帐号等敏感类）**必须拒绝**跳转。"""
-    raise NotImplementedError("spike: runner 用 stubs；chunk-2 由 Java MCP server 提供")
+    return stub_result("open_app", {"app": app})
 
 
 JAVA_MCP_TOOLS = [

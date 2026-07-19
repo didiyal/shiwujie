@@ -24,3 +24,9 @@ VLM_MODEL = os.environ.get("SHIWUJIE_AI_VLM_MODEL", "qwen3-vl-flash")
 #: Java 单体 MCP server 端点（缝 C：spring-ai-starter-mcp-server-webmvc streamable HTTP，暴露 8 工具）。
 #: Spike-2 连本端点验 get_tools() round-trip + #466 teardown。
 JAVA_MCP_URL = os.environ.get("SHIWUJIE_JAVA_MCP_URL", "http://localhost:8100/mcp")
+#: 高德 web 服务 key（design ⑦ 自建 REST wrapper：poi/route/weather）。空 → 走 mock（chunk-2a FREE，
+#: 零网络零 key）；chunk-2c 填真 key + SHIWUJIE_GAODE_FORCE_REAL=1 连 /place/text 等真端点。
+#: （凭据留 env 内联默认，沿用 shiwujie-config-convention；真 key 拿到后 inline 到此默认。）
+GAODE_KEY = os.environ.get("SHIWUJIE_GAODE_KEY", "")
+#: searchapi.io key（web_search 工具，engine=baidu）。空 → mock（2a FREE）；2c 填真 key + FORCE_REAL=1。
+SEARCHAPI_KEY = os.environ.get("SHIWUJIE_SEARCHAPI_KEY", "")

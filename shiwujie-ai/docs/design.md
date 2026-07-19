@@ -1,6 +1,6 @@
 # graph 设计圣经（LangGraph 智能体）
 
-> AI 重写的**最详细技术文档**：LangGraph 智能体的 State schema / 节点 / 边 / HITL / checkpointer / 动态反馈 / 工具集 / skill / KB / 两层记忆 / 诚实选型 / Pi 金标准契约 / 硬修正全列。development 层（允许全部技术词与设计符号）。**状态：设计敲定（Phase 1–4）· 实现待 Phase 5**——下文为已敲定设计，非已运行代码。用户契约在根 [product/current.md](../../docs/product/current.md)；polyglot 总图在根 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md)。
+> AI 重写的**最详细技术文档**：LangGraph 智能体的 State schema / 节点 / 边 / HITL / checkpointer / 动态反馈 / 工具集 / skill / KB / 两层记忆 / 诚实选型 / Pi 金标准契约 / 硬修正全列。development 层（允许全部技术词与设计符号）。**状态：设计敲定（Phase 1–4）· Phase 5 实现进行中**——chunk-2a（Python graph + 14 工具 schema + navigation skill + BM25 KB + 两层记忆 + FastAPI `/ai/turn` 流式 + budget 熔断纯逻辑）已落地、FakeChatModel 全绿 122 测；chunk-2b Java WS+MCP / 2c 真 qwen 端到端 / 2d Docker / 2e APK / 2f 全项目回卷待。下文为已敲定设计，⑫ Pi 契约段含 chunk-2a 已落地注记。用户契约在根 [product/current.md](../../docs/product/current.md)；polyglot 总图在根 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md)。
 
 ---
 
@@ -182,10 +182,10 @@ KB = BM25 文本库（非向量 RAG）
 |---|---|
 | **EventStream 一等公民** | `stream_mode="custom"` 进度事件（见 ⑥）+ token 流，经缝 A StreamingResponse 一路到 App；进度不是事后补的日志，是 agent 运行的实时副产物。 |
 | **失败 encode 不抛** | agent 节点捕获模型异常 encode 成 AIMessage 返回（见 ②），工具失败 encode 成 isError observation（见下行）；graph **绝不因单点异常终止 session**。 |
-| **工具失败 = isError observation 回灌自愈** | 工具抛异常时 ToolNode 把它 encode 成一条 `is_error=True` 的 ToolMessage 回灌 `messages`，agent 下轮看到「工具失败了」可自愈（换工具 / 换参数 / 告诉用户）；**不**让异常冒泡杀 graph。 |
+| **工具失败 = isError observation 回灌自愈** | 工具抛异常时 ToolNode 把它 encode 成一条 `is_error=True` 的 ToolMessage 回灌 `messages`，agent 下轮看到「工具失败了」可自愈（换工具 / 换参数 / 告诉用户）；**不**让异常冒泡杀 graph。实现注（chunk-2a）：LangGraph 默认 handler 只捕 `ToolInvocationError`、其余 re-raise 会崩 graph，本项目注入自定义 `_handle_tool_error` 兜所有异常（见 `graph/nodes.py`）。 |
 | **session 可回放树** | checkpoint 按 `thread_id=blind_id` 存全量 state（见 ⑤），任意时刻可取历史 state 续跑 / 分叉；崩溃恢复、中途截止续跑、未来分支探索都靠它。 |
 | **injection hook** | system prompt 拼装（角色 + 位置 + few-shot + 偏好）走统一 injection 点，便于迭代；新偏好 / 新位置说明只改 hook，不改 agent 逻辑。 |
-| **shouldStopAfterTurn 作成本轮次熔断** | 每个 turn 结束跑一次成本 / 轮次检查（token 超额 / 工具调用次数过多 / 循环迹象）→ 停当前 turn 并 encode 成「我先停一下」AIMessage；防 agent 失控空转烧 token。 |
+| **shouldStopAfterTurn 作成本轮次熔断** | 每个 turn 结束跑一次成本 / 轮次检查（token 超额 / 工具调用次数过多 / 循环迹象）→ 停当前 turn 并 encode 成「我先停一下」AIMessage；防 agent 失控空转烧 token。实现：`graph/budget.py`（纯逻辑 `should_stop_after_turn` + `derive_turn_stats`，18 测，chunk-2a 落地）；live-loop wiring（agent 每步后调熔断）留 chunk-2c——FakeChatModel 脚本模型不会失控，2a 接上也咬不到牙。 |
 
 ## ⑬ 硬修正（红队推动，非协商，必须体现）
 
