@@ -19,7 +19,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: shiwujie
     password: ${MYSQL_PASSWORD:SGaxER3XisXFfRKw}
-    url: jdbc:mysql://47.112.114.139:3306/shiwujie   # 单库（v3.0.0 合库目标，旧 4 库 mysqldump 结构+数据导入；阶段2.6）
+    url: jdbc:mysql://${MYSQL_HOST:47.112.114.139}:3306/shiwujie   # 单库（v3.0.0 合库目标，旧 4 库 mysqldump 结构+数据导入；阶段2.6）。host 可 env 覆盖：默认公网 IP 硬编码（本地 dev 不变）；Docker 设 MYSQL_HOST=host.docker.internal 连宿主（chunk-2d）
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20       # 4 库合一，池大小沿用单库上限
@@ -29,7 +29,7 @@ spring:
       connection-timeout: 30000
   data:
     redis:
-      host: 47.112.114.139
+      host: ${REDIS_HOST:47.112.114.139}    # 默认公网 IP 硬编码（本地 dev 不变）；Docker 设 REDIS_HOST=host.docker.internal 连宿主（chunk-2d）
       port: 6379
       database: 2
       password: ${REDIS_PASSWORD:123456}

@@ -28,3 +28,5 @@ __pycache__/
 shiwujie-ai/reports/
 # spike 本地便利（prod 配置仍走 yml 内联，与"不 gitignore prod 配置"约定不冲突）
 shiwujie-ai/.env
+# Docker 运行时 env（ops 在服务器编辑；模板见 config/.env.example，自动 cp。yml/config.py 默认仍是 committed 真值源）
+config/.env
