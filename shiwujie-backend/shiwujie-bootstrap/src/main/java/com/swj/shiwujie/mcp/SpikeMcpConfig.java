@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * <p>两个 bean 的 @Tool 方法合并注册：
  * <ul>
- *   <li>{@link SpikeMcpTools}：4 信令桩（5002/5003/5004/5006，真身见 2b-4）</li>
+ *   <li>{@link SignalMcpTools}：4 信令（request_video_help/open_app/launch_navigation 真身见 2b-4a；request_emergency_help 桩待 2b-4b）</li>
  *   <li>{@link BusinessMcpTools}：4 业务真身（join_family/leave_family/family_info/update_profile，2b-3b 落地）</li>
  * </ul>
  * 共 8 工具暴露给 Python 侧 {@code get_tools()}。
@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Configuration;
 public class SpikeMcpConfig {
 
     @Bean
-    public MethodToolCallbackProvider spikeMcpToolCallbacks(SpikeMcpTools signalTools, BusinessMcpTools businessTools) {
+    public MethodToolCallbackProvider mcpToolCallbacks(SignalMcpTools signalTools, BusinessMcpTools businessTools) {
         return MethodToolCallbackProvider.builder()
                 .toolObjects(signalTools, businessTools)
                 .build();

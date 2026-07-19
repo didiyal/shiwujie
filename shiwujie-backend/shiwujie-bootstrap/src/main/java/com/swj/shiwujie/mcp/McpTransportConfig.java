@@ -24,8 +24,9 @@ import java.util.Map;
  * {@code X-Internal-Secret} 提取上下文的 extractor。Python 侧 langchain-mcp-adapters 0.3.0 每次
  * JSON-RPC POST 都带这两个 header（httpx client-level 默认头）。</p>
  *
- * <p>spike 验证：{@code SpikeMcpTools#whoami} 读 {@code transportContext.get("blind_id")} 应返回
- * Python 传入值（见 {@code shiwujie-ai} 端 spike 脚本）。生产业务/信令工具经同一 BlindMcpContext 取 blind_id。</p>
+ * <p>2b-3a 端到端验通：whoami spike 工具读 {@code transportContext.get("blind_id")} 返回 Python 传入值
+ * （见 {@code shiwujie-ai} 端 spike 脚本）；whoami 随业务工具真身落地已移除（生产 LLM 不应见调试工具）。
+ * 生产业务（{@link BusinessMcpTools}）/ 信令（{@link SignalMcpTools}）工具经同一 {@link BlindMcpContext} 取 blind_id。</p>
  */
 @Configuration
 public class McpTransportConfig {
