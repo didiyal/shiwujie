@@ -87,7 +87,7 @@
 - **App 4-button 重写**：AI 页交互重写以适配新对话通道 + 显式确认面（紧急求助第三道门）。
 - **导航多步人工确认（HITL）**：navigation skill 6 步流程（poi→报选项→问交通方式[HITL]→route→朗读摘要→launch），问交通方式处插人工确认。
 - **偏好记忆**：跨会话记住说话方式/常用 APP/导航习惯等软事实（用户不可见、不阻塞）。
-- **删 Java AI 模块**：工作流式 prompt-as-router + 自研 ChatMemory + 半残留 RAG + qwen 止血整体替换；**MyManus 自研 ReAct 骨架冻结保留非删**（342 行作 Java-graph B-prime 回退起跑线）。✅ chunk-2b / 2b-5（2026-07-19）已删活路径代码（`app/` + `controller/ChatController` + `service/ChatServiceImpl` + `tools/` + `chatmemory/` + `advisor/MyRagAdvisor` + AI 专用 common DTO + `AiSmokeTest` + `prompttemplate/*`，21 .java + 3 模板 + 1 测试，bootstrap 321 单测绿）；2b-5 侦查证 MyManus 仅依赖 `MyLoggerAdvisor`/`AiConfig`，不注入 tools/* 故可全删；`AiLoginCheckInterceptor`/`AiWebConfig`/`ErrorCode` 待 2b-6 同删。
+- **删 Java AI 模块**：工作流式 prompt-as-router + 自研 ChatMemory + 半残留 RAG + qwen 止血整体替换；**MyManus 自研 ReAct 骨架冻结保留非删**（342 行作 Java-graph B-prime 回退起跑线）。✅ chunk-2b / 2b-5（2026-07-19）已删活路径代码（`app/` + `controller/ChatController` + `service/ChatServiceImpl` + `tools/` + `chatmemory/` + `advisor/MyRagAdvisor` + AI 专用 common DTO + `AiSmokeTest` + `prompttemplate/*`，21 .java + 3 模板 + 1 测试，bootstrap 321 单测绿）；2b-5 侦查证 MyManus 仅依赖 `MyLoggerAdvisor`/`AiConfig`，不注入 tools/* 故可全删；`AiLoginCheckInterceptor`/`AiWebConfig` 已于 2b-6a（2026-07-20）删（dev 后门：无 Authorization 静默登录 blind id=1 / phone 19872250169；`/api/ai/**` 在 2b-5 删 `ChatController` 后已空集，拦截器拦空集，删除零功能影响；`ErrorCode` **保留**，53 个其它引用者）。WS phone 冒充（known-issues #7）的 ticket 鉴权留 chunk-2e 与 Android WS 改造同批。
 - **两进程 Docker 部署**：Java 发布 8100:8100（公网），Python 不发布端口（仅内网，Java 经服务名调）；新增根级 `scripts/`（start/stop/logs/export/import/clear.sh）+ `docker/docker-compose.yml` + `config/.env`；非 docker 本地模式仍可。灰度 = 硬切换（后端镜像 + APK 同批发，SSE↔WS 不兼容须版本配对）。
 
 **WS 必修改造（缝 A，设计敲定·未落地）**

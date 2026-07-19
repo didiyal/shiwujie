@@ -53,7 +53,7 @@
 >
 > **保留集**（冻结 / 待删 / 新增）：
 > - ① `agent/*`（MyManus 自研 ReAct 雏形）**冻结保留非删** —— 作 Java-graph 备选 B-prime 回退起跑线；连带保留其依赖 `advisor/MyLoggerAdvisor`、`config/AiConfig`（`qwenText` bean）、`constants/AiConstants`、`utils/MessageSerializer`（kryo）+ pom 依赖 `spring-ai-alibaba-starter-dashscope`（ToolCallAgent 用 `DashScopeChatOptions`）/`spring-ai-openai`（AiConfig 用）/`jsoup`（BaseAgent 用 `StringUtil`）。⚠️ 侦查修正：MyManus 的 `ToolCallback[]` 是构造器参数外部传入、`@Component` 注释掉无实例化点，**不**注入 FrontendTools/UserTools 等——故 tools/* 可全删。
-> - ② `interceptor/AiLoginCheckInterceptor` + `config/AiWebConfig`（夹带拦截器注册到 `/api/ai/**`）+ `common/ErrorCode`（拦截器用）**待 2b-6**（WS ticket 鉴权 + 删 dev 后门）同删。
+> - ② `interceptor/AiLoginCheckInterceptor` + `config/AiWebConfig` **已删（2b-6a，2026-07-20）**——dev 后门死代码清理（无 Authorization 静默登录 blind id=1 / phone 19872250169）；`/api/ai/**` 在 2b-5 删 `ChatController` 后已成空集，拦截器拦空集，删除零功能影响；`common/ErrorCode` **保留**（53 个其它引用者，非 AI 专用）。WS phone 冒充（下条 #7）的 ticket 鉴权留 chunk-2e 与 Android WS 改造同批。
 > - ③ **新增** `mcp/*`（BusinessMcpTools/SignalMcpTools/SpikeMcpConfig/McpTransportConfig/BlindMcpContext，8 工具 MCP server）+ `ai/relay/*`（AiWsRelayService 等，缝 A WS 中继）。AiLogs 图片 offload 去留待 Phase 5。
 >
 > 本节是 AI 实现细节的唯一真值（架构层只指向此处）：AI 拦截器 dev 后门 = 下条 #1（已登记，重写必修删项）；MyManus `@Component` 注释（自研 ReAct 雏形已弃用，现冻结保留）；TextApp Redis TTL 10 分钟（注释谎称 5 天）/ ImageApp 5 天 / kryo 序列化；`ToolChoiceAppChatMemoryRes.saveAll` 空实现——这些细节留在这里，[architecture/auth.md](../../docs/architecture/auth.md) 只指向。
