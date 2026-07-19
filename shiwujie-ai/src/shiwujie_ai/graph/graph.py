@@ -7,6 +7,8 @@ build_graph(model, tools, system_prompt_builder, checkpointer=None, compress=com
 - checkpointer：MemorySaver（测试）/ Redis（生产，design ⑤）。
 - compress：agent 节点送 model 前的非破坏压缩 transform（design ⑨）。默认 compress_messages
   （生产 ON，短历史 no-op）；传 None 关闭、传自定义 callable 注 2c 真 LLM 摘要。
+- budget_cfg：agent invoke 后的 should_stop_after_turn 熔断（design ⑫）。默认 BudgetConfig()
+  开启；None 关闭。
 
 HITL 无 interrupt()（design ④）：agent 无 tool_calls → END（自然 turn 停 + checkpoint 续）。
 """
@@ -17,6 +19,7 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph import END, START, StateGraph
 
 from ..memory import compress_messages
+from .budget import BudgetConfig
 from .nodes import make_agent_node, make_tools_node
 from .state import State
 
@@ -33,9 +36,10 @@ def build_graph(
     system_prompt_builder,
     checkpointer=None,
     compress: Optional[Callable[[List[BaseMessage]], List[BaseMessage]]] = compress_messages,
+    budget_cfg: Optional[BudgetConfig] = BudgetConfig(),
 ):
     graph = StateGraph(State)
-    graph.add_node("agent", make_agent_node(model, system_prompt_builder, compress))
+    graph.add_node("agent", make_agent_node(model, system_prompt_builder, compress, budget_cfg))
     graph.add_node("tools", make_tools_node(tools))
     graph.add_edge(START, "agent")
     graph.add_conditional_edges("agent", _route_after_agent, ["tools", END])

@@ -21,6 +21,9 @@ API_KEY = os.environ.get(
 )
 PRIMARY_MODEL = os.environ.get("SHIWUJIE_AI_MODEL", "qwen3.7-plus")
 VLM_MODEL = os.environ.get("SHIWUJIE_AI_VLM_MODEL", "qwen3-vl-flash")
+#: 短期记忆压缩摘要模型（design 3.9「便宜 LLM」；默认沿用主模型，可 env 切更便宜的 turbo 类）。
+#: 仅 REAL 模式下 service 注入（见 memory/summarizer.py）；FakeChatModel 走零 token 假摘要。
+SUMMARY_MODEL = os.environ.get("SHIWUJIE_AI_SUMMARY_MODEL", PRIMARY_MODEL)
 #: Java 单体 MCP server 端点（缝 C：spring-ai-starter-mcp-server-webmvc streamable HTTP，暴露 8 工具）。
 #: Spike-2 连本端点验 get_tools() round-trip + #466 teardown。
 JAVA_MCP_URL = os.environ.get("SHIWUJIE_JAVA_MCP_URL", "http://localhost:8100/mcp")

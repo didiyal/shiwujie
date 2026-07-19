@@ -9,7 +9,8 @@ chunk-2a 烟测（流式 ndjson 事件流，design ⑥）：
 模型：`SHIWUJIE_AI_REAL=1` 切真 `build_llm(PRIMARY_MODEL, parallel=False)`（qwen3.7-plus，chunk-2c 端到端验通 ✅，
 5 场景 + HTTP 流式全绿）；默认 FakeChatModel（零 token，保烟测 + 测试套件）。真 qwen 跑法：
     SHIWUJIE_AI_REAL=1 uv --directory shiwujie-ai run python -m shiwujie_ai
-真 token delta（stream_mode="messages"）推迟下一轮——现 delta 仍是 chunk_reply 模拟切块（CHUNK_SIZE=4）。
+delta 已接真 token 流：service 双流 `stream_mode=["messages","updates"]`，agent 节点 AIMessageChunk.content
+逐 token 作 delta（真模型 token-by-token；FakeChatModel 无 stream → LangGraph 吐整条作单 chunk）。
 
 绑定 host（chunk-2d Docker）：
 - 本机烟测默认 127.0.0.1（不暴露公网）。

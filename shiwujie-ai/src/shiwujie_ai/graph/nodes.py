@@ -19,6 +19,12 @@ from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 from langgraph.prebuilt import ToolNode
 
 from ..memory import compress_messages
+from .budget import (
+    BudgetConfig,
+    derive_turn_stats,
+    encode_stop_reply,
+    should_stop_after_turn,
+)
 
 #: design ⑫ encode-不抛：model.invoke 异常时的降级答复（无 tool_calls → END，不杀 graph）。
 ENCODE_ERROR_REPLY = "抱歉，系统暂时遇到问题，请稍后再试。"
@@ -37,14 +43,21 @@ def make_agent_node(
     model,
     system_prompt_builder,
     compress: Optional[Callable[[List[BaseMessage]], List[BaseMessage]]] = compress_messages,
+    budget_cfg: Optional[BudgetConfig] = BudgetConfig(),
 ):
-    """agent 节点工厂：注 system prompt（builder 按 state 拼装）→ 压缩 transform → 模型原生 FC。
+    """agent 节点工厂：注 system prompt（builder 按 state 拼装）→ 压缩 transform → 模型原生 FC
+    → budget 熔断检查（design ⑫）。
 
     返回 {"messages":[response]}——只把模型回复追加进 state（system prompt 不入 state，
     每轮由 builder 现拼，避免被压缩/污染历史）。
 
     compress：messages → 压缩后 view（默认 compress_messages 生产 ON，短历史 no-op）；
     None 关闭压缩。无论压不压，**只产 model 的 view，不动 state.messages**（checkpoint 存全量）。
+
+    budget_cfg：invoke 后跑 should_stop_after_turn（token/轮次/工具调用/循环迹象超限）→
+    encode_stop_reply（无 tool_calls → END 停当前 turn，防失控烧 token）。默认 BudgetConfig()
+    开启；None 关闭（测试关 budget 用）。统计从 state.messages 推本 turn 边界（design ⑤
+    session 可回放树，崩溃恢复后也正确切分）。
     """
 
     def agent(state):
@@ -57,6 +70,14 @@ def make_agent_node(
             # design ⑫ encode-不抛：模型异常（网络/超时/schema 违例/限流）→ encode 降级 AIMessage，
             # 不抛不杀 graph（Pi 金标准契约）。无 tool_calls → END，用户拿降级答复而非崩溃。
             response = AIMessage(content=ENCODE_ERROR_REPLY)
+            return {"messages": [response]}
+        # design ⑫ budget 熔断：invoke 后检查本 turn 累计统计（含本次 response），超限 encode
+        # 停止答复（无 tool_calls → END，不再进 tools 节点，防 agent 失控空转烧 token）。
+        if budget_cfg is not None:
+            stats = derive_turn_stats(list(state["messages"]) + [response])
+            stop, _reason = should_stop_after_turn(stats, budget_cfg)
+            if stop:
+                response = encode_stop_reply()
         return {"messages": [response]}
 
     return agent

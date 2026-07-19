@@ -14,6 +14,7 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
 
 from shiwujie_ai.graph import build_graph, build_system_prompt
+from shiwujie_ai.graph.budget import STOP_REPLY, BudgetConfig
 
 
 # ───────────────────────── FakeChatModel（脚本化 LLM）─────────────────────────
@@ -66,12 +67,13 @@ def get_weather(location: str = None) -> str:
 # ───────────────────────── 测试 ─────────────────────────
 
 
-def _build(model, tools, checkpointer=None):
+def _build(model, tools, checkpointer=None, budget_cfg=BudgetConfig()):
     return build_graph(
         model=model,
         tools=tools,
         system_prompt_builder=build_system_prompt,
         checkpointer=checkpointer,
+        budget_cfg=budget_cfg,
     )
 
 
@@ -117,3 +119,25 @@ def test_multiturn_checkpoint():
     assert len(model.invoke_calls[1]) == 4
     contents = [m.content for m in model.invoke_calls[1]]
     assert "记一下：我喜欢步行。" in contents  # checkpoint 把第 1 轮历史载回
+
+
+def test_budget_breaker_stops_turn_before_tools():
+    """design ⑫ budget 熔断 live-loop 接线验：max_tool_calls_per_turn=0 → agent 首条
+    tool_call 即超限 → encode STOP_REPLY（无 tool_calls → END），不进 tools 节点、不再循环。
+
+    验 wiring 真接上 live loop（nodes.make_agent_node 的 budget_cfg 检查 + graph.build_graph
+    传参）：FakeChatModel 吐 tool_call，agent 节点 invoke 后 derive_turn_stats 见
+    tool_call_count=1 > 0 → encode_stop_reply 替换 response → _route_after_agent 走 END。
+    """
+    model = FakeChatModel([_ai_tool_call("get_weather", {"location": "北京"}, id_="w1")])
+    graph = _build(model, [get_weather], budget_cfg=BudgetConfig(max_tool_calls_per_turn=0))
+    result = graph.invoke({"messages": [HumanMessage(content="北京天气？")], "blind_id": "u1"})
+
+    messages = result["messages"]
+    # 末答 = 熔断降级答复（原始 tool_call 被 encode_stop_reply 替换）
+    assert messages[-1].content == STOP_REPLY
+    assert messages[-1].tool_calls == []
+    # 未进 tools 节点：state 里无 tool 类型 message
+    assert [m for m in messages if m.type == "tool"] == []
+    # agent 只 invoke 一次（熔断后 END，未二次循环跑工具结果）
+    assert len(model.invoke_calls) == 1

@@ -185,7 +185,7 @@ KB = BM25 文本库（非向量 RAG）
 | **工具失败 = isError observation 回灌自愈** | 工具抛异常时 ToolNode 把它 encode 成一条 `is_error=True` 的 ToolMessage 回灌 `messages`，agent 下轮看到「工具失败了」可自愈（换工具 / 换参数 / 告诉用户）；**不**让异常冒泡杀 graph。实现注（chunk-2a）：LangGraph 默认 handler 只捕 `ToolInvocationError`、其余 re-raise 会崩 graph，本项目注入自定义 `_handle_tool_error` 兜所有异常（见 `graph/nodes.py`）。 |
 | **session 可回放树** | checkpoint 按 `thread_id=blind_id` 存全量 state（见 ⑤），任意时刻可取历史 state 续跑 / 分叉；崩溃恢复、中途截止续跑、未来分支探索都靠它。 |
 | **injection hook** | system prompt 拼装（角色 + 位置 + few-shot + 偏好）走统一 injection 点，便于迭代；新偏好 / 新位置说明只改 hook，不改 agent 逻辑。 |
-| **shouldStopAfterTurn 作成本轮次熔断** | 每个 turn 结束跑一次成本 / 轮次检查（token 超额 / 工具调用次数过多 / 循环迹象）→ 停当前 turn 并 encode 成「我先停一下」AIMessage；防 agent 失控空转烧 token。实现：`graph/budget.py`（纯逻辑 `should_stop_after_turn` + `derive_turn_stats`，18 测，chunk-2a 落地）；live-loop wiring（agent 每步后调熔断）留 chunk-2c——FakeChatModel 脚本模型不会失控，2a 接上也咬不到牙。 |
+| **shouldStopAfterTurn 作成本轮次熔断** | 每个 turn 结束跑一次成本 / 轮次检查（token 超额 / 工具调用次数过多 / 循环迹象）→ 停当前 turn 并 encode 成「我先停一下」AIMessage；防 agent 失控空转烧 token。实现：`graph/budget.py`（纯逻辑 `should_stop_after_turn` + `derive_turn_stats`，18 测，chunk-2a 落地）+ live-loop wiring（✅ chunk-2c补A：`make_agent_node` invoke 后调熔断，触发即 `encode_stop_reply`→END；`build_graph(budget_cfg=)` 传参，集成测试验）。 |
 
 ## ⑬ 硬修正（红队推动，非协商，必须体现）
 
