@@ -4662,9 +4662,10 @@ public class AiFragment extends Fragment {
         Log.d(TAG, "收到导航请求");
         
         try {
-            // 从volunteerPhone字段获取目的地信息
-            String destination = data.getVolunteerPhone();
-            
+            // chunk-2e-1：从结构化 destination 读目的地名称（替代旧 volunteerPhone hack，与后端三端对齐）
+            SocketDataV0.Destination dest = data.getDestination();
+            String destination = (dest != null) ? dest.getName() : null;
+
             if (destination == null || destination.trim().isEmpty()) {
                 Log.w(TAG, "目的地信息为空，无法执行导航");
                 return;

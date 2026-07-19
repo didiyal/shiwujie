@@ -119,7 +119,7 @@ class SignalMcpToolsTest {
     }
 
     @Test
-    @DisplayName("launch_navigation → 推 WS 5006，destination 塞 volunteerPhone")
+    @DisplayName("launch_navigation → 推 WS 5006，destination.name 携带目的地（chunk-2e-1 结构化）")
     void launchNavigation_pushes5006() {
         String r = tools.launchNavigation(null, "市第一医院", "walking");
         assertThat(r).contains("\"status\":\"ok\"").contains("市第一医院");
@@ -127,7 +127,9 @@ class SignalMcpToolsTest {
         ArgumentCaptor<SocketData> cap = ArgumentCaptor.forClass(SocketData.class);
         verify(innerSocket).noticeNavigation(cap.capture());
         assertThat(cap.getValue().getRequestType()).isEqualTo(5006);
-        assertThat(cap.getValue().getVolunteerPhone()).isEqualTo("市第一医院");
+        assertThat(cap.getValue().getDestination()).as("destination 应被结构化填充").isNotNull();
+        assertThat(cap.getValue().getDestination().getName()).isEqualTo("市第一医院");
+        assertThat(cap.getValue().getVolunteerPhone()).as("旧 volunteerPhone hack 应已清除").isNull();
     }
 
     // ───── open_app 白名单硬卡（design ⑬）─────

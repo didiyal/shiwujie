@@ -48,5 +48,12 @@ public class SocketData implements Serializable {
     private Position position;
 
 
+    /**
+     * WS 5006 下行：导航目的地（design chunk-2e-1，结构化 destination 替代旧 volunteerPhone hack；
+     * 仅 requestType=5006 携带，其余信令为 null）。
+     */
+    private Destination destination;
+
+
     private final static long serialVersionUID = 1L;
 }

@@ -1,5 +1,6 @@
 package com.swj.shiwujie.data.model;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -7,17 +8,21 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * SocketDataV0 协议序列化单测（chunk-2e-2）。
+ * SocketDataV0 协议序列化单测（chunk-2e-2 / 2e-1）。
  *
- * <p>守护上行帧 JSON 契约（最易错处）：
+ * <p>守护帧 JSON 契约（最易错处）：
  * <ul>
- *   <li>AI turn 帧（100）带 text + position（裸 socketData，后端 CoordinationSocketHandler.onMessage
- *       直接 {@code JSONUtil.toBean(message, SocketData.class)}）。</li>
- *   <li>position=null 降级为 {@code "position":null}（后端宽松接收）。</li>
- *   <li>既有信令帧（login=0 / heartbeat=-1）JSON 只有原 4 字段，不含 text/position（向后兼容，不污染老协议）。</li>
+ *   <li>上行 AI turn 帧（100）带 text + position（裸 socketData，后端 CoordinationSocketHandler.onMessage
+ *       直接 {@code JSONUtil.toBean(message, SocketData.class)}）；position=null 时 Gson 默认不序列化 null
+ *       → 字段缺省（后端 toBean 得 null，宽松接收）。</li>
+ *   <li>下行 5006 帧带结构化 destination{name,lat,lng,address}（chunk-2e-1，替代旧 volunteerPhone hack），
+ *       经 Gson 反序列化（WebSocketManager handleMessage 路径）。</li>
+ *   <li>既有信令帧（login=0 / heartbeat=-1）JSON 只有原 4 字段，不含 text/position/destination（向后兼容）。</li>
  * </ul>
  */
 public class SocketDataV0Test {
@@ -105,5 +110,38 @@ public class SocketDataV0Test {
         assertEquals(-1, obj.get("requestType").getAsInt());
         assertFalse(obj.has("text"));
         assertFalse(obj.has("position"));
+    }
+
+    // ===== chunk-2e-1：下行 5006 destination 反序列化（WebSocketManager handleMessage Gson 路径）=====
+
+    @Test
+    public void fromJson_5006WithDestination_deserializesDestination() {
+        // 下行 5006 帧：结构化 destination 经 Gson 反序列化（替代旧 volunteerPhone hack）
+        String json = "{"
+                + "\"requestType\":5006,"
+                + "\"blindPhone\":\"13800000000\","
+                + "\"destination\":{\"name\":\"市第一医院\",\"lat\":39.9,\"lng\":116.4,\"address\":\"解放路1号\"}"
+                + "}";
+
+        SocketDataV0 data = new Gson().fromJson(json, SocketDataV0.class);
+
+        assertEquals(5006, data.getRequestType());
+        assertEquals("13800000000", data.getBlindPhone());
+        assertNotNull("destination 应被反序列化", data.getDestination());
+        assertEquals("市第一医院", data.getDestination().getName());
+        assertEquals(39.9, data.getDestination().getLat(), 0.0001);
+        assertEquals(116.4, data.getDestination().getLng(), 0.0001);
+        assertEquals("解放路1号", data.getDestination().getAddress());
+    }
+
+    @Test
+    public void fromJson_destinationOmitted_yieldsNullDestination() {
+        // destination 缺省（老帧 / 非 5006）→ getDestination()=null，handleNavigationRequest 不 NPE
+        String json = "{\"requestType\":0,\"blindPhone\":\"13800000000\"}";
+
+        SocketDataV0 data = new Gson().fromJson(json, SocketDataV0.class);
+
+        assertEquals(0, data.getRequestType());
+        assertNull(data.getDestination());
     }
 }

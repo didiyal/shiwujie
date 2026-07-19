@@ -57,6 +57,10 @@ public class SocketDataV0 {
 
     @SerializedName("position")
     private Position position; // AI turn 入站位置（{lat,lng,address}，仅 requestType=100）
+
+    // chunk-2e-1: WS 5006 下行导航目的地（结构化 destination 替代旧 volunteerPhone hack，与后端 SocketData.destination 对齐）
+    @SerializedName("destination")
+    private Destination destination; // 导航目的地（{name,lat,lng,address}，仅 requestType=5006 下行）
     
     // 构造函数
     public SocketDataV0() {}
@@ -236,6 +240,14 @@ public class SocketDataV0 {
         this.position = position;
     }
 
+    public Destination getDestination() {
+        return destination;
+    }
+
+    public void setDestination(Destination destination) {
+        this.destination = destination;
+    }
+
     /**
      * 获取消息内容（兼容性方法，与message字段相同）
      */
@@ -312,6 +324,35 @@ public class SocketDataV0 {
 
         public double getLat() { return lat; }
         public double getLng() { return lng; }
+        public String getAddress() { return address; }
+    }
+
+    /**
+     * WS 5006 下行导航目的地（chunk-2e-1，与后端 com.swj.shiwujie.model.request.call.Destination 对齐）。
+     *
+     * <p>v1 仅 name 必填（高德 URI 按 name 地理编码即起导航）；lat/lng 用 Double 装箱可空，address 同——
+     * 预留高德 SDK 精确定位（能力补全批次）+ Python 导航技能传坐标时由后端填值。</p>
+     */
+    public static class Destination {
+        @SerializedName("name")
+        private String name;
+        @SerializedName("lat")
+        private Double lat;
+        @SerializedName("lng")
+        private Double lng;
+        @SerializedName("address")
+        private String address;
+
+        public Destination() {}
+
+        public Destination(String name) {
+            this.name = name;
+        }
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public Double getLat() { return lat; }
+        public Double getLng() { return lng; }
         public String getAddress() { return address; }
     }
 } 

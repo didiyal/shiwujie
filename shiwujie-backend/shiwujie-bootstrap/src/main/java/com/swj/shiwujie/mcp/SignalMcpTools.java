@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swj.shiwujie.model.domain.user.Blind;
+import com.swj.shiwujie.model.request.call.Destination;
 import com.swj.shiwujie.model.request.call.SocketData;
 import com.swj.shiwujie.service.BlindService;
 import com.swj.shiwujie.service.call.InnerSocket;
@@ -27,9 +28,8 @@ import java.util.function.Consumer;
  * <ul>
  *   <li>{@code request_video_help} → noticeVideoHelp（WS 5002）</li>
  *   <li>{@code open_app} → noticeJumpSoftware（WS 5004），⚠️ 白名单硬卡（design ⑬）</li>
- *   <li>{@code launch_navigation} → noticeNavigation（WS 5006），destination 塞 volunteerPhone
- *       （旧 hack 兼容 Android 5006 读 volunteerPhone 当终点；结构化 {@code destination{name,lat,lng}}
- *       + 三端对齐留 2e）</li>
+ *   <li>{@code launch_navigation} → noticeNavigation（WS 5006），结构化 destination{name,lat,lng,address}
+ *       （chunk-2e-1 三端对齐：替代旧 volunteerPhone hack，Android 5006 读 destination.name 起高德导航）</li>
  * </ul>
  * {@code request_emergency_help}（5003）拆 {@code request_emergency_help_prepare}（签 turn-bound token，
  * 不推 WS）+ {@code request_emergency_help_confirm}（校验 token 跨轮通过才推 WS 5003，design ⑬ 红队 Q18
@@ -113,9 +113,11 @@ public class SignalMcpTools {
         }
         return pushSignal(toolContext, "导航", phone -> {
             SocketData d = newSocketData(phone, 5006);
-            // 旧 hack：destination 塞 volunteerPhone（Android 5006 读它当终点）
-            // 结构化 destination{name,lat,lng} + 三端对齐留 2b-4b/2e
-            d.setVolunteerPhone(destination_name);
+            // chunk-2e-1：结构化 destination（替代旧 volunteerPhone hack，与 Android 三端对齐）
+            // v1 仅 name（高德 URI 按 name 地理编码即起导航）；lat/lng/address 预留高德 SDK 精确定位
+            Destination dest = new Destination();
+            dest.setName(destination_name);
+            d.setDestination(dest);
             innerSocket.noticeNavigation(d);
         }, "已发起导航至 " + destination_name, "发起导航失败");
     }
