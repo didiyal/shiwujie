@@ -44,6 +44,7 @@ from ..memory import compress_messages, get_store
 from ..safety import emergency
 from ..streaming import progress_event_for, sse_line
 from ..tools.registry import build_toolset
+from ..tools.vlm import set_image_context
 
 
 class TurnRequest(BaseModel):
@@ -162,6 +163,9 @@ def create_app(model=None, checkpointer=None) -> FastAPI:
         issuing_turn = _count_human_messages(graph.get_state(cfg)) + 1
         # service 边界灌 emergency 轮上下文（contextvar，同 task 内 generator 迭代可见）。
         emergency.set_turn_context(req.thread_id, issuing_turn)
+        # chunk-2e-3：灌当前轮图片到 vlm contextvar（仿 emergency set_turn_context）——recognize_photo
+        # 工具体取不到 state（ToolNode 只传 args），走 contextvar 读图。None = 无图（mock/纯文本 turn）。
+        set_image_context(req.image)
         input_state = {
             "messages": [HumanMessage(content=req.text)],
             "blind_id": req.thread_id,

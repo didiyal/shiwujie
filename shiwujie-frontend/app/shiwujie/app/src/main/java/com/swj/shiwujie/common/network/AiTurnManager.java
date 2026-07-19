@@ -100,16 +100,45 @@ public class AiTurnManager {
             Log.w(TAG, "sendTurn: text 空，忽略");
             return;
         }
-        accumulator.setLength(0);
-        turnActive = false; // 收到首个 delta 时置 true 并触发 onTurnStart
-        ws.setMatchingStatus(true);
+        beginTurn();
         String phone = SharedPrefsUtil.getPhone();
         boolean isBlind = SharedPrefsUtil.isBlind();
         SocketDataV0 req = SocketDataV0.createAiTurnRequest(phone, isBlind, text, position);
         ws.sendMessage(req);
+        Log.d(TAG, "sendTurn: 发送 100 帧 textLen=" + text.length() + " hasPos=" + (position != null));
+    }
+
+    /**
+     * chunk-2e-3：图片 turn 前奏。图片经 HTTP multipart 上传（{@code AiImageTurnController}），<b>不走 WS 100 帧</b>；
+     * 但响应仍骑 WS 推回（110/111/112/113），由现有 {@link #onWsMessage} 路由。故此处复用 sendTurn 的状态
+     * 初始化——清 accumulator + 锁重连 + 挂 watchdog——<b>仅不发 WS 帧</b>。调用方上传成功后等 WS 帧即可；
+     * 上传失败调 {@link #abortTurn} 立即收尾（不等 45s watchdog）。
+     */
+    public void beginImageTurn() {
+        beginTurn();
+        Log.d(TAG, "beginImageTurn: 图片 turn 前奏就绪（状态初始化，等 HTTP 上传 → WS 响应路由）");
+    }
+
+    /**
+     * chunk-2e-3：图片上传失败等需立即收尾的场景——主动走 {@link AiTurnListener#onError} + resetTurnState
+     * （复用 listener 错误清理路径：AiFragment.onError → handleAiResponseError + isAiTurnInProgress=false +
+     * enableInput(true)），不等 watchdog 超时。
+     */
+    public void abortTurn(String errorMsg) {
+        Log.w(TAG, "abortTurn: 主动收尾 - " + errorMsg);
+        if (listener != null) {
+            listener.onError(errorMsg);
+        }
+        resetTurnState();
+    }
+
+    /** turn 前奏（sendTurn / beginImageTurn 共用）：清累积 + 锁重连 + 挂 watchdog。 */
+    private void beginTurn() {
+        accumulator.setLength(0);
+        turnActive = false; // 收到首个 delta 时置 true 并触发 onTurnStart
+        ws.setMatchingStatus(true);
         mainHandler.removeCallbacks(watchdog);
         mainHandler.postDelayed(watchdog, TURN_TIMEOUT_MS);
-        Log.d(TAG, "sendTurn: 发送 100 帧 textLen=" + text.length() + " hasPos=" + (position != null));
     }
 
     /**

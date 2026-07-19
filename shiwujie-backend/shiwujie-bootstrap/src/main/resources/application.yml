@@ -15,6 +15,12 @@ spring:
     active: dev
   main:
     allow-circular-references: true   # 阶段2.2 Dubbo→本地后，模块间双向耦合（社区↔志愿者↔社区管理员级联删除）显化为 Spring bean 环；Dubbo 远程代理天然解耦，单体以早期引用放开等价还原。登记 known-issues，后续可 @Lazy 精细化
+  servlet:
+    multipart:
+      # chunk-2e-3：图片 AI-turn（POST /api/call/ai/image-turn）收 multipart 图片。SB 默认 1MB 装不下手机
+      # 拍照 JPEG（2-5MB），放大到 10MB；max-request-size 略高兜 base64+multipart 开销。
+      max-file-size: 10MB
+      max-request-size: 11MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: shiwujie

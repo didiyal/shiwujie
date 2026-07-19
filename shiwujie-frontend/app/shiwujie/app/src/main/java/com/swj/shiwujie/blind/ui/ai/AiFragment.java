@@ -2305,19 +2305,51 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 发送图片识别请求
+     * 发送图片识别请求（chunk-2e-3：图片走 HTTP multipart 上传，响应骑 WS 经 AiTurnManager 路由）。
+     * <p>与文本 turn {@link #sendAiRequest} 共用同一套 WS 响应 UI+TTS（onDelta/onProgress/onTurnEnd）——
+     * 仅上行车辆不同（HTTP multipart vs WS 100 帧）。流程：锁输入 + "正在思考"卡片 +
+     * {@code aiTurnManager.beginImageTurn()}（锁重连 + 挂 watchdog）→ HTTP 上传图+默认提示 → 成功等 WS 帧、
+     * 失败 {@code aiTurnManager.abortTurn} 走 onError 同款清理。</p>
+     *
      * @param imageFile 图片文件
      */
     private void sendImageRecognitionRequest(File imageFile) {
-        if (imageRecognitionManager != null) {
-            // 显示图片识别状态
-            showImageRecognitionStatus();
-            
-            // 发送图片到AI接口（使用预先设置的监听器）
-            imageRecognitionManager.sendImage(imageFile);
-        } else {
+        if (imageRecognitionManager == null) {
             Log.e(TAG, "ImageRecognitionManager未初始化");
-               }
+            return;
+        }
+        if (aiTurnManager == null) {
+            Log.e(TAG, "AiTurnManager未初始化");
+            return;
+        }
+        if (isAiTurnInProgress) {
+            Log.w(TAG, "AI 正在回复中，忽略图片请求");
+            Toast.makeText(requireContext(), "AI 正在回复，请稍候", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 与 sendAiRequest 对称的 turn 前奏（锁输入 + 思考卡片 + TTS buffer 重置）。
+        isAiTurnInProgress = true;
+        enableInput(false);
+        ttsFirstFlushDone = false;
+        ttsSentenceBuffer.setLength(0);
+        showAiThinkingStatus();
+        aiTurnManager.beginImageTurn(); // 锁 WS 重连 + 挂 45s watchdog；不发 WS 帧（图片走 HTTP）
+
+        // HTTP multipart 上传；ack 成功则等 WS 帧（AiTurnManager 路由），失败 abortTurn 立即解锁。
+        imageRecognitionManager.sendImageTurn(imageFile, "请描述这张图片的主要内容",
+                new ImageRecognitionManager.ImageTurnCallback() {
+                    @Override
+                    public void onUploaded() {
+                        // 中继已提交；静候 WS 110/111/112/113 帧（现有 listener 路由 → UI + TTS）。
+                    }
+
+                    @Override
+                    public void onError(String reason) {
+                        // 走 listener.onError 同款清理（卡片错误 + isAiTurnInProgress=false + 解锁麦克风）。
+                        aiTurnManager.abortTurn("图片上传失败：" + reason);
+                    }
+                });
     }
     
     /**

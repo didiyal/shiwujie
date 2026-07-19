@@ -11,11 +11,17 @@ FakeChatModel / scripted 零 token。证明 HTTP→graph.astream→ndjson 通路
 """
 
 import json
+import sys
 
 from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessage
 
 from shiwujie_ai.service.app import create_app
+
+# service/__init__.py 把 app FastAPI 实例重导出为包属性，遮蔽了同名子模块——`from ...service import app`
+# 与 `import ...service.app as x` 都拿到 FastAPI 对象（后者 CPython 走属性查找链）。monkeypatch 子模块
+# 命名空间只能经 sys.modules 取真模块对象。
+_APP_MODULE = sys.modules["shiwujie_ai.service.app"]
 
 
 def _events(r) -> list:
@@ -144,3 +150,28 @@ def test_progress_before_deltas():
     first_delta_idx = next(i for i, e in enumerate(evs) if e["type"] == "delta")
     assert prog_idx < first_delta_idx
     assert evs[prog_idx]["event"] == "searching"  # get_weather → searching
+
+
+# ───────────────────────── chunk-2e-3：image 字段接线（recognize_photo 工具读图）─────────────────────────
+
+
+def test_ai_turn_wires_image_to_contextvar(monkeypatch):
+    """/ai/turn 收到 image 字段 → 调 set_image_context 灌 contextvar（recognize_photo 工具体经此读图，
+    ToolNode 只传 args 不传 state）。验 wire-in 本身——contextvar→recognize 链路见 test_vlm。"""
+    captured = {}
+    monkeypatch.setattr(_APP_MODULE, "set_image_context",
+                        lambda img: captured.__setitem__("image", img))
+    r = client.post("/ai/turn", json={
+        "thread_id": "img-1", "text": "看看", "image": "data:image/jpeg;base64,ABCD",
+    })
+    assert r.status_code == 200
+    assert captured.get("image") == "data:image/jpeg;base64,ABCD"
+
+
+def test_ai_turn_no_image_passes_none(monkeypatch):
+    """无 image 字段（纯文本 turn）→ set_image_context(None)，工具体取 contextvar 得 None → mock。"""
+    captured = {}
+    monkeypatch.setattr(_APP_MODULE, "set_image_context",
+                        lambda img: captured.__setitem__("image", img))
+    client.post("/ai/turn", json={"thread_id": "img-2", "text": "你好"})
+    assert captured.get("image") is None

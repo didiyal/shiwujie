@@ -697,11 +697,31 @@ public interface ApiService {
     );
 
     /**
-     * AI图片识别接口
-     * @param token JWT令牌
-     * @param imageFile 图片文件
-     * @return AI图片识别响应（流式）
+     * chunk-2e-3：图片 AI-turn（multipart 上传 → Java 中继 Python /ai/turn {image}，流式响应骑 WS 推回）。
+     * <p>命中后端 {@code POST /api/call/ai/image-turn}：图片转 base64 data URL → {@code submitImageRelay}
+     * → ndjson 经 WS 110/111/112/113 帧推回，{@code AiTurnManager} 现成路由消费（onDelta→文本+TTS /
+     * onProgress→"正在识别照片"）。本调用仅返回 ack（code=1 即已提交中继，非流式 body）。</p>
+     *
+     * @param token JWT 令牌
+     * @param image 图片 part（field 名 "image"）
+     * @param text  口述追问；空则后端用默认提示诱导 agent 调 recognize_photo 读图
      */
+    @Multipart
+    @POST("/api/call/ai/image-turn")
+    Call<BaseResponse<Void>> sendAiImageTurn(
+            @Header("Authorization") String token,
+            @Part okhttp3.MultipartBody.Part image,
+            @Part("text") okhttp3.RequestBody text
+    );
+
+    /**
+     * @deprecated 老 SSE 图片识别通道（{@code /api/ai/ai/doChatByImage} 后端 2b-5 已删，调用必 404）。
+     * chunk-2e-3 起图片走 {@link #sendAiImageTurn}（HTTP 上传 + 响应骑 WS）。本声明仅为让
+     * {@code ImageRecognitionManager} 老 SSE 路径（{@code sendImage}/{@code handleStreamingResponse} +
+     * AiFragment 老图片 listener + 智能播报系统）继续编译——它们已无调用方（dormant），整体清理
+     * （删老 SSE 图片死代码 + 智能播报系统）留独立重构切片。
+     */
+    @Deprecated
     @Multipart
     @POST("/api/ai/ai/doChatByImage")
     Call<okhttp3.ResponseBody> sendAiImageMessage(

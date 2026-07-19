@@ -87,9 +87,27 @@ public class AiWsRelayService {
      * session 中途断开 → 静默中止拉流，不发 error 帧（用户已不在）。
      */
     public void submitRelay(Session session, long blindId, String text, Position position) {
+        submitInternal(session, blindId, text, position, null);
+    }
+
+    /**
+     * 图片 AI-turn 中继（chunk-2e-3，task 3.8 图片走 HTTP multipart）。
+     * <p>App 经 HTTP multipart 上传图片到 {@code /api/call/ai/image-turn}，控制器查到该盲人 WS session 后调本方法——
+     * <b>复用文本 turn 的 ndjson→WS 帧中继通路</b>：POST Python {@code /ai/turn} 携带 {@code image}（base64 data URL），
+     * 把流式响应（agent 调 recognize_photo → VLM 描述 → 末答）经同一 session 推回 110/111/112/113 帧，App 端
+     * {@code AiTurnManager} 现成路由（onDelta→文本+TTS / onProgress→"正在识别照片"）零改动复用。</p>
+     *
+     * <p>text 通常为默认提示（"请描述这张图片"）或盲人口述追问；image 为 {@code data:image/jpeg;base64,...}，
+     * Python {@code set_image_context} 灌入 vlm contextvar 供 recognize_photo 工具体读取。</p>
+     */
+    public void submitImageRelay(Session session, long blindId, String text, String imageDataUrl) {
+        submitInternal(session, blindId, text, null, imageDataUrl);
+    }
+
+    private void submitInternal(Session session, long blindId, String text, Position position, String imageDataUrl) {
         executor.submit(() -> {
             try {
-                runRelay(session, blindId, text, position);
+                runRelay(session, blindId, text, position, imageDataUrl);
             } catch (StreamAborted e) {
                 log.info("AI-turn 中继：session 已断开，停止拉流 blindId={}", blindId);
             } catch (Exception e) {
@@ -100,7 +118,7 @@ public class AiWsRelayService {
     }
 
 
-    private void runRelay(Session session, long blindId, String text, Position position)
+    private void runRelay(Session session, long blindId, String text, Position position, String imageDataUrl)
             throws IOException, InterruptedException {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + turnPath))
@@ -108,7 +126,7 @@ public class AiWsRelayService {
                 .header("Content-Type", "application/json")
                 .header("X-Internal-Secret", internalSecret)
                 .header("X-Blind-Id", String.valueOf(blindId))
-                .POST(HttpRequest.BodyPublishers.ofString(buildBody(blindId, text, position)))
+                .POST(HttpRequest.BodyPublishers.ofString(buildBody(blindId, text, position, imageDataUrl)))
                 .build();
 
         HttpResponse<Stream<String>> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofLines());
@@ -137,7 +155,7 @@ public class AiWsRelayService {
     }
 
 
-    private String buildBody(long blindId, String text, Position position) {
+    private String buildBody(long blindId, String text, Position position, String imageDataUrl) {
         Map<String, Object> body = new HashMap<>();
         body.put("thread_id", String.valueOf(blindId)); // Python TurnRequest.thread_id:str = blind_id
         body.put("text", text == null ? "" : text);
@@ -147,6 +165,11 @@ public class AiWsRelayService {
             pos.put("lng", position.getLng());
             pos.put("address", position.getAddress());
             body.put("position", pos);
+        }
+        // chunk-2e-3：图片 turn（imageDataUrl 非空）→ Python set_image_context 灌 vlm contextvar，
+        // recognize_photo 工具体读取（data URL 直喂 qwen3-vl-flash）。文本 turn 不带 image 字段（Python 默认 None）。
+        if (imageDataUrl != null) {
+            body.put("image", imageDataUrl);
         }
         return JSONUtil.toJsonStr(body);
     }
