@@ -71,3 +71,12 @@ search-api:
 app:
   download:
     apk-path: ${APK_PATH:/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk}
+# AI Python 服务（design 缝 A：Java→Python 内部 HTTP，逐 turn 流式中继 ndjson）。
+# 内网/localhost 直连，不经公网；internal-secret 容器内网互信（2b-3 起 Python 侧校验 X-Internal-Secret 头）。
+shiwujie:
+  ai:
+    python:
+      base-url: ${PYTHON_BASE_URL:http://127.0.0.1:8500}     # uvicorn 默认 :8500（容器内服务名 http://python:8500）
+      internal-secret: ${AI_INTERNAL_SECRET:dev-internal-secret}
+      turn-path: /ai/turn
+      timeout-seconds: 60                                     # 单 turn 整流式上限（2c 真 qwen 长导航可调）

@@ -6,8 +6,13 @@ import cn.hutool.json.JSONUtil;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.model.VO.call.SocketVO;
+import com.swj.shiwujie.ai.relay.AiWsRelayService;
+import com.swj.shiwujie.ai.relay.AiWsTypes;
+import com.swj.shiwujie.model.domain.user.Blind;
 import com.swj.shiwujie.model.domain.user.Volunteer;
 import com.swj.shiwujie.model.request.call.SocketData;
+import com.swj.shiwujie.service.user.InnerBlindService;
+import com.swj.shiwujie.utils.ApplicationContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +20,7 @@ import jakarta.websocket.*;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,12 +36,17 @@ public class CoordinationSocketHandler {
     /**
      * 保存所有在线连接
      */
-    public static Map<String, Session> sessionMap = new HashMap<>();
+    public static Map<String, Session> sessionMap = new ConcurrentHashMap<>();
 
     /**
      * 保存会话与手机号的映射
      */
-    public static Map<Session, String> sessionPhoneMap = new HashMap<>();
+    public static Map<Session, String> sessionPhoneMap = new ConcurrentHashMap<>();
+
+    // @ServerEndpoint 实例由 WS 容器按 session new、不经 Spring DI（见 ApplicationContextHolder）。
+    // 首个 AI-turn 到达时懒取 bean，按 session 缓存。2b-6 ticket 鉴权后 blindId 改由 ticket 解出。
+    private AiWsRelayService aiWsRelayService;
+    private InnerBlindService innerBlindService;
 
     /**
      * 连接建立成功调用的方法
@@ -83,10 +93,60 @@ public class CoordinationSocketHandler {
             case 2: // 志愿者初始化成功
                 toBlindJoin(socketData);
                 break;
+            case 100: // AI-turn 入站（design 缝 A，AiWsTypes.IN_TURN）：text+position → 流式中继 Python /ai/turn
+                handleAiTurn(socketData, session);
+                break;
+            default:
+                // design 4.2 WS 改造：协议消息（ping/login/join/AI-turn）均已有专门处理，不再回显旧逻辑
+                // 对所有消息无条件发送的「收到客户端的数据」噪声；未知类型仅记录。
+                log.info("收到未知 socket 消息类型：{}", type);
         }
-        // 回复客户端
-        sendMessage(session, "收到客户端的数据");
     }
+
+    // region AI-turn 流式中继（design 缝 A）
+
+    /**
+     * AI-turn 入站（{@link AiWsTypes#IN_TURN}=100）：App 经 WS 发 text+position → 解 blindId（phone→Blind；
+     * 2b-6 ticket 鉴权后改由 ticket 解出）→ 提交 {@link AiWsRelayService#submitRelay} 后台流式中继
+     * （Python /ai/turn ndjson → 逐帧推回 session）。未登录/找不到 blind/text 空 → 仅记录、不发。
+     */
+    private void handleAiTurn(SocketData socketData, Session session) {
+        String phone = sessionPhoneMap.get(session);
+        if (StrUtil.isBlank(phone)) {
+            log.warn("AI-turn 收到但 session 未登录（无 phone），忽略");
+            return;
+        }
+        Blind blind = blindService().getByPhone(phone);
+        if (blind == null || blind.getBlindId() == null) {
+            log.warn("AI-turn：phone={} 找不到 blind，忽略", phone);
+            return;
+        }
+        String text = socketData.getText();
+        if (StrUtil.isBlank(text)) {
+            log.warn("AI-turn：text 为空，忽略（phone={}）", phone);
+            return;
+        }
+        log.info("AI-turn 提交中继 blindId={} textLen={}", blind.getBlindId(), text.length());
+        relay().submitRelay(session, blind.getBlindId(), text, socketData.getPosition());
+    }
+
+    /** 懒取 {@link AiWsRelayService}（@ServerEndpoint 不走 Spring DI，见 ApplicationContextHolder），按 session 缓存。 */
+    private AiWsRelayService relay() {
+        if (aiWsRelayService == null) {
+            aiWsRelayService = ApplicationContextHolder.getBean(AiWsRelayService.class);
+        }
+        return aiWsRelayService;
+    }
+
+    /** 懒取 {@link InnerBlindService}，按 session 缓存。 */
+    private InnerBlindService blindService() {
+        if (innerBlindService == null) {
+            innerBlindService = ApplicationContextHolder.getBean(InnerBlindService.class);
+        }
+        return innerBlindService;
+    }
+
+    // endregion
 
     /**
      * 发生错误时调用
@@ -238,7 +298,9 @@ public class CoordinationSocketHandler {
             log.info("通知前端拍照识别 - 5001");
         } else {
             log.info("拍照识别找不到用户socket连接：{}", socketData.getBlindPhone());
-            this.getResponse(1, "系统错误", socketData);
+            // 盲人不在线（无 session）：旧代码 this.getResponse(1,"系统错误",socketData) 构造错误响应却
+            // 丢弃未发送（死代码 bug）。design ⑫ encode-不抛——调用方（2b-3/2b-4 MCP 工具）应据信令是否
+            // 送达决定如何告知 agent（换路 / 告用户），而非在此发 WS。
         }
     }
 
@@ -253,7 +315,9 @@ public class CoordinationSocketHandler {
             log.info("通知前端视频求助 - 5002");
         } else {
             log.info("视频求助找不到用户{}socket连接：", socketData.getBlindPhone());
-            this.getResponse(1, "系统错误", socketData);
+            // 盲人不在线（无 session）：旧代码 this.getResponse(1,"系统错误",socketData) 构造错误响应却
+            // 丢弃未发送（死代码 bug）。design ⑫ encode-不抛——调用方（2b-3/2b-4 MCP 工具）应据信令是否
+            // 送达决定如何告知 agent（换路 / 告用户），而非在此发 WS。
         }
     }
 
@@ -268,7 +332,9 @@ public class CoordinationSocketHandler {
             log.info("通知前端紧急求助 - 5003");
         } else {
             log.info("紧急求助找不到用户{}socket连接：", socketData.getBlindPhone());
-            this.getResponse(1, "系统错误", socketData);
+            // 盲人不在线（无 session）：旧代码 this.getResponse(1,"系统错误",socketData) 构造错误响应却
+            // 丢弃未发送（死代码 bug）。design ⑫ encode-不抛——调用方（2b-3/2b-4 MCP 工具）应据信令是否
+            // 送达决定如何告知 agent（换路 / 告用户），而非在此发 WS。
         }
     }
 
@@ -283,7 +349,9 @@ public class CoordinationSocketHandler {
             log.info("通知前端跳转软件 - 5004");
         } else {
             log.info("跳转软件找不到用户{}socket连接：", socketData.getBlindPhone());
-            this.getResponse(1, "系统错误", socketData);
+            // 盲人不在线（无 session）：旧代码 this.getResponse(1,"系统错误",socketData) 构造错误响应却
+            // 丢弃未发送（死代码 bug）。design ⑫ encode-不抛——调用方（2b-3/2b-4 MCP 工具）应据信令是否
+            // 送达决定如何告知 agent（换路 / 告用户），而非在此发 WS。
         }
     }
 
@@ -298,7 +366,9 @@ public class CoordinationSocketHandler {
             log.info("通知前端跳转到用户修改页面 - 5005");
         } else {
             log.info("跳转到用户修改页面找不到用户{}socket连接：", socketData.getBlindPhone());
-            this.getResponse(1, "系统错误", socketData);
+            // 盲人不在线（无 session）：旧代码 this.getResponse(1,"系统错误",socketData) 构造错误响应却
+            // 丢弃未发送（死代码 bug）。design ⑫ encode-不抛——调用方（2b-3/2b-4 MCP 工具）应据信令是否
+            // 送达决定如何告知 agent（换路 / 告用户），而非在此发 WS。
         }
     }
 
@@ -313,7 +383,9 @@ public class CoordinationSocketHandler {
             log.info("通知前端开启导航 - 5006");
         } else {
             log.info("导航找不到用户{}socket连接：", socketData.getBlindPhone());
-            this.getResponse(1, "系统错误", socketData);
+            // 盲人不在线（无 session）：旧代码 this.getResponse(1,"系统错误",socketData) 构造错误响应却
+            // 丢弃未发送（死代码 bug）。design ⑫ encode-不抛——调用方（2b-3/2b-4 MCP 工具）应据信令是否
+            // 送达决定如何告知 agent（换路 / 告用户），而非在此发 WS。
         }
     }
 

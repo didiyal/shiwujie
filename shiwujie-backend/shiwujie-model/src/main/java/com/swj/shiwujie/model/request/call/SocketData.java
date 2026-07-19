@@ -36,6 +36,17 @@ public class SocketData implements Serializable {
     private Long channelId;
 
 
+    /**
+     * AI-turn 入站：用户输入文本（design 缝 A，仅 requestType=100 携带；其余信令为 null）。
+     */
+    private String text;
+
+
+    /**
+     * AI-turn 入站：当前定位（design ② 每轮附位置，仅 requestType=100 携带）。
+     */
+    private Position position;
+
 
     private final static long serialVersionUID = 1L;
 }

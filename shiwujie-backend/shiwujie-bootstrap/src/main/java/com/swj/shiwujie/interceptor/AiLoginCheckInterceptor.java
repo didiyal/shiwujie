@@ -89,8 +89,8 @@ public class AiLoginCheckInterceptor implements HandlerInterceptor {
         String tokenFromRedis = (String) fromRedisObj;
         ThrowUtils.throwIf(!token.equals(tokenFromRedis),ErrorCode.NOT_LOGIN, "未登录");
 
-        // 续期 Redis 中的用户信息
-        redisTemplate.expire(REDIS_SECRETKEY+"-"+ blindId, 1L, TimeUnit.DAYS);
+        // 续期 Redis 中的用户信息（key 须与上方 get 一致，含 -blind-；原写漏 -blind- 段 → expire 命中不存在的 key、token 永不续期）
+        redisTemplate.expire(REDIS_SECRETKEY + "-blind-" + blindId, 1L, TimeUnit.DAYS);
 
         Blind blind = innerBlindService.getById(blindId);
 
