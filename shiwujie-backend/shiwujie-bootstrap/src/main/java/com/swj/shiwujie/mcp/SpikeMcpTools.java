@@ -1,83 +1,52 @@
 package com.swj.shiwujie.mcp;
 
-import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
 /**
- * Phase 5 chunk-1 Spike-2：Java MCP server 暴露的 8 工具桩（缝 C）。
+ * Phase 5 chunk-2b：信令 MCP 工具桩（缝 C Java 侧，4 个信令 stub）。
  *
- * 仅验证 polyglot MCP 缝（spring-ai-starter-mcp-server-webmvc streamable-HTTP +
- * Python langchain-mcp-adapters MultiServerMCPClient.get_tools() round-trip）——
- * 方法体返固定 JSON，不调真实业务/WS。生产实现（→ InnerFamilyService / BlindService /
- * InnerSocket.noticeXxx）见 shiwujie-ai/docs/design.md §3.7。
+ * <p>原 8 工具桩已拆分：业务 4（join_family / leave_family / family_info / update_profile）
+ * 已落地真身 → {@link BusinessMcpTools}（2b-3b）；spike 验证用的 whoami（2b-3a header 透传机制）
+ * 已端到端验通并移除——生产 LLM 不应见此调试工具。
  *
- * 工具名/description/参数对齐生产意图并内嵌护栏（update_profile 仅基本字段、open_app 白名单、
- * emergency 须确认），便于 Python 侧 get_tools() 看到真实形态（spike 不验护栏语义，只验管道）。
+ * <p>本类剩 4 个**信令桩**——方法体仍返固定 JSON，不推真实 WS 信令。真身（→进程内
+ * {@code InnerSocket.noticeXxx} 推 WS 5002/5003/5004/5006）见 chunk-2b / 2b-4：届时加
+ * {@code ToolContext} 参数 + {@link BlindMcpContext} 取 blind_id 解析 phone→session，
+ * emergency 拆 {@code request_emergency_help_prepare} / {@code _confirm} 双工具（design ⑬ 硬修正 1）。
  *
- * 注：用 @Tool + ToolCallbackProvider（见 SpikeMcpConfig），避 @McpTool 触 #4392。
+ * <p><b>工具名用 snake_case</b>（@Tool name）：对齐 Python 侧 {@code tools/java_mcp.py} spike schema +
+ * design + FC 测试基线，让 chunk-2c 接真时 Python {@code get_tools()} 拿到的工具名与 spike 零漂移。
+ * 信令参数（destination / mode / appName）是临时桩，2b-4 信令真身时按 design 定稿
+ * （destination_name / lat / lng / mode / app）。
+ *
+ * <p>description 内嵌护栏（open_app 白名单 / emergency 须确认），便于 Python 侧 get_tools() 看到真实形态。
+ * 用 @Tool + ToolCallbackProvider（见 {@link SpikeMcpConfig}），避 @McpTool 触 #4392。
  */
 @Component
 public class SpikeMcpTools {
 
-    /**
-     * [spike 2b-3] 验证 X-Blind-Id header 经 McpTransportContextExtractor → reactor context →
-     * Spring AI ToolContext 桥的透传链路。返回 transportContext 里看到的 blind_id；Python 端带 header
-     * 调本工具应回显该值。机制验过（2b-3 收尾）后随业务工具真身落地移除——生产 LLM 不应见此工具。
-     */
-    @Tool(description = "[spike] 返回当前 blind_id（仅验证 header 透传，生产忽略）。")
-    public String whoami(ToolContext toolContext) {
-        Long blindId = BlindMcpContext.blindId(toolContext).orElse(null);
-        return "{\"blind_id\":" + blindId + ",\"source\":\"transport_context\"}";
-    }
-
-    @Tool(description = "申请加入家庭（盲人加入志愿者所在家庭）。需提供家庭邀请码或家属手机号。")
-    public String joinFamily(
-            @ToolParam(description = "家庭邀请码或家属手机号") String invite) {
-        return "{\"status\":\"ok\",\"message\":\"已申请加入家庭\"}";
-    }
-
-    @Tool(description = "退出当前家庭。")
-    public String leaveFamily() {
-        return "{\"status\":\"ok\",\"message\":\"已退出家庭\"}";
-    }
-
-    @Tool(description = "查询当前盲人所在家庭信息（家庭成员、关系）。")
-    public String familyInfo() {
-        return "{\"family\":\"示例家庭\",\"members\":[{\"name\":\"张三\",\"role\":\"家属\"}]}";
-    }
-
-    @Tool(description = "更新盲人个人基本资料。"
-            + "⚠️ 仅可更新 nickname/phone/gender 三个基本字段；"
-            + "password/身份证号/残疾证号等敏感字段严禁通过本工具，须引导用户走专门入口。")
-    public String updateProfile(
-            @ToolParam(description = "昵称（可空=不更新）", required = false) String nickname,
-            @ToolParam(description = "手机号（可空=不更新）", required = false) String phone,
-            @ToolParam(description = "性别（可空=不更新）", required = false) String gender) {
-        return "{\"status\":\"ok\",\"message\":\"资料已更新\"}";
-    }
-
-    @Tool(description = "在手机端启动高德导航到指定目的地（推送 WS 5006 信令）。mode 为交通方式。")
+    @Tool(name = "launch_navigation", description = "在手机端启动高德导航到指定目的地（推送 WS 5006 信令）。mode 为交通方式。")
     public String launchNavigation(
             @ToolParam(description = "目的地名称") String destination,
             @ToolParam(description = "交通方式：walking 步行 / transit 公交 / driving 驾车") String mode) {
         return "{\"status\":\"ok\",\"message\":\"导航已开始\"}";
     }
 
-    @Tool(description = "请求志愿者视频协助（推送 WS 5002 信令），用于非紧急的视觉帮助需求。")
+    @Tool(name = "request_video_help", description = "请求志愿者视频协助（推送 WS 5002 信令），用于非紧急的视觉帮助需求。")
     public String requestVideoHelp() {
         return "{\"status\":\"ok\",\"message\":\"正在为您匹配志愿者\"}";
     }
 
-    @Tool(description = "请求紧急求助（推送 WS 5003 信令，通知所有家属）。"
+    @Tool(name = "request_emergency_help", description = "请求紧急求助（推送 WS 5003 信令，通知所有家属）。"
             + "⚠️ 仅限真实紧急情况；调用前必须先向用户确认「确认发起紧急求助？」；"
-            + "非紧急需求改用 requestVideoHelp。")
+            + "非紧急需求改用 request_video_help。")
     public String requestEmergencyHelp() {
         return "{\"status\":\"ok\",\"message\":\"已通知所有家属\"}";
     }
 
-    @Tool(description = "打开手机应用（推送 WS 5004 信令）。"
+    @Tool(name = "open_app", description = "打开手机应用（推送 WS 5004 信令）。"
             + "⚠️ 仅限白名单应用（通讯/生活类，如电话/短信/微信/高德地图）；非白名单应用拒绝打开。")
     public String openApp(
             @ToolParam(description = "应用名称（须在白名单内）") String appName) {
