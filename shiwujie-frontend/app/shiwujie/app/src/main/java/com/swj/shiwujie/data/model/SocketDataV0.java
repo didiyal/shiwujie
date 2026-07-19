@@ -50,6 +50,13 @@ public class SocketDataV0 {
     
     @SerializedName("message")
     private String message; // 消息内容
+
+    // chunk-2e-2: AI turn 协议字段（仅 requestType=100 上行携带；与后端 SocketData.text/position 对齐）
+    @SerializedName("text")
+    private String text; // AI turn 文本（上行=用户发言；下行 110=token 片段、111=进度事件名、113=错误文案）
+
+    @SerializedName("position")
+    private Position position; // AI turn 入站位置（{lat,lng,address}，仅 requestType=100）
     
     // 构造函数
     public SocketDataV0() {}
@@ -90,7 +97,24 @@ public class SocketDataV0 {
         data.setChannelId(0);
         return data;
     }
-    
+
+    // 创建 AI turn 请求帧（requestType=100，客户端发送；chunk-2e-2 缝 A）
+    public static SocketDataV0 createAiTurnRequest(String phone, boolean isBlind, String text, Position position) {
+        SocketDataV0 data = new SocketDataV0();
+        data.setRequestType(REQUEST_TYPE_AI_TURN_REQUEST);
+        data.setText(text);
+        data.setPosition(position);
+        if (isBlind) {
+            data.setBlindPhone(phone);
+            data.setVolunteerPhone("");
+        } else {
+            data.setVolunteerPhone(phone);
+            data.setBlindPhone("");
+        }
+        data.setChannelId(0);
+        return data;
+    }
+
     // ===== 核心信令码常量（requestType 真值，命名按实际语义；见类头真值表）=====
     public static final int REQUEST_TYPE_HEARTBEAT = -1;          // 心跳（收/发）
     public static final int REQUEST_TYPE_LOGIN = 0;               // Socket 登录（收/发）
@@ -107,6 +131,13 @@ public class SocketDataV0 {
     public static final int REQUEST_TYPE_APP_JUMP = 5004;             // APP跳转
     public static final int REQUEST_TYPE_EDIT_PROFILE = 5005;         // 跳转到用户信息修改页面
     public static final int REQUEST_TYPE_NAVIGATION_REQUEST = 5006;   // 导航请求
+
+    // chunk-2e-2: AI turn WS 协议帧（与后端 AiWsTypes 对齐；既有 5001-5006 信令不变，二者不冲突）
+    public static final int REQUEST_TYPE_AI_TURN_REQUEST = 100; // 入站：用户发言+位置 → 流式中继 Python /ai/turn
+    public static final int REQUEST_TYPE_AI_DELTA    = 110;     // 出站：末答 token 片段
+    public static final int REQUEST_TYPE_AI_PROGRESS = 111;     // 出站：工具进度（searching/thinking/recognizing_photo/routing）
+    public static final int REQUEST_TYPE_AI_TURN_END = 112;     // 出站：turn 结束（App 收尾 TTS + 解锁输入）
+    public static final int REQUEST_TYPE_AI_ERROR    = 113;     // 出站：中继/Python 异常（固定友好文案）
     
     // Getter和Setter方法
     public int getRequestType() {
@@ -188,7 +219,23 @@ public class SocketDataV0 {
     public void setMessage(String message) {
         this.message = message;
     }
-    
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public Position getPosition() {
+        return position;
+    }
+
+    public void setPosition(Position position) {
+        this.position = position;
+    }
+
     /**
      * 获取消息内容（兼容性方法，与message字段相同）
      */
@@ -226,6 +273,14 @@ public class SocketDataV0 {
         sendData.put("blindPhone", blindPhone != null ? blindPhone : "");
         sendData.put("volunteerPhone", volunteerPhone != null ? volunteerPhone : "");
         sendData.put("channelId", channelId);
+        // chunk-2e-2: AI turn 上行帧（requestType=100）补 text + position。发裸 socketData（无 envelope）——
+        // 后端 CoordinationSocketHandler.onMessage 直接 JSONUtil.toBean(message, SocketData.class)。
+        // 其余老帧保持原 4 字段不变（向后兼容）；position=null 时 Gson 默认不序列化 null → 字段缺省，
+        // 后端 toBean 得 null、buildBody if(position!=null) 跳过（等价不带 position，不阻塞 turn）。
+        if (requestType == REQUEST_TYPE_AI_TURN_REQUEST) {
+            sendData.put("text", text != null ? text : "");
+            sendData.put("position", position);
+        }
         return new com.google.gson.Gson().toJson(sendData);
     }
     
@@ -236,5 +291,27 @@ public class SocketDataV0 {
         // 这里可以根据需要返回额外的数据
         // 目前返回null，可以根据实际需求修改
         return null;
+    }
+
+    /**
+     * AI turn 入站位置（chunk-2e-2，与后端 com.swj.shiwujie.model.request.call.Position {lat,lng,address} 对齐）。
+     */
+    public static class Position {
+        @SerializedName("lat")
+        private double lat;
+        @SerializedName("lng")
+        private double lng;
+        @SerializedName("address")
+        private String address;
+
+        public Position(double lat, double lng, String address) {
+            this.lat = lat;
+            this.lng = lng;
+            this.address = address;
+        }
+
+        public double getLat() { return lat; }
+        public double getLng() { return lng; }
+        public String getAddress() { return address; }
     }
 } 

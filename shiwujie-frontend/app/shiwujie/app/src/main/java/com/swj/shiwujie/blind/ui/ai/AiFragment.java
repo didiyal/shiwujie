@@ -38,6 +38,7 @@ import com.google.gson.reflect.TypeToken;
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.common.utils.SpeechRecognitionManager;
 import com.swj.shiwujie.common.network.AiChatManager;
+import com.swj.shiwujie.common.network.AiTurnManager;
 import com.swj.shiwujie.common.network.ImageRecognitionManager;
 import com.swj.shiwujie.common.utils.TTSManager;
 import com.swj.shiwujie.common.utils.CameraPreviewManager;
@@ -46,6 +47,7 @@ import com.swj.shiwujie.common.network.ObstacleDetectionRetrofitClient;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.ObstacleDetectionTTSManager;
 import com.swj.shiwujie.common.utils.AppListManager;
+import com.swj.shiwujie.common.utils.LocationHelper;
 import com.swj.shiwujie.common.utils.NavigationManager;
 import com.swj.shiwujie.common.service.AIFloatingBallService;
 import com.swj.shiwujie.data.model.ObstacleDetectionData;
@@ -93,6 +95,12 @@ public class AiFragment extends Fragment {
     private AiChatManager aiChatManager;
     private ImageRecognitionManager imageRecognitionManager;
     private TTSManager ttsManager;
+    // chunk-2e-2: AI turn WS 客户端（替代 AiChatManager 的 SSE 通道；AiChatManager 保留作降级）
+    private AiTurnManager aiTurnManager;
+    private boolean isAiTurnInProgress = false;
+    // chunk-2e-2: 句切 TTS 累积（讯飞 startSpeaking 每次打断前次，须按句喂，避免逐 token 打断）
+    private final StringBuilder ttsSentenceBuffer = new StringBuilder();
+    private boolean ttsFirstFlushDone = false;
     private CameraPreviewManager cameraManager;
     private Vibrator vibrator;
     private MaterialButton btnVoice;
@@ -266,6 +274,7 @@ public class AiFragment extends Fragment {
             initAiChatManager();
             initImageRecognitionManager();
             initTTSManager();
+            initAiTurnManager(); // chunk-2e-2: 注册 WS turn 路由（依赖 ttsManager 已初始化）
             // 延迟初始化摄像头，避免在onCreateView中过早调用
             
             return view;
@@ -1223,6 +1232,71 @@ public class AiFragment extends Fragment {
             }
         });
     }
+
+    /**
+     * 初始化 AI turn WS 客户端（chunk-2e-2 缝 A）。
+     *
+     * <p>注册 {@link AiTurnManager} 回调，把 4 类 WS 帧（110/111/112/113）路由到既有流式 UI 方法
+     * （{@link #showAiThinkingStatus}/{@link #updateAiResponseStreaming}/{@link #completeAiResponse}/
+     * {@link #handleAiResponseError}）+ 句切 TTS（讯飞每次打断前次，须按句喂，见 {@link #feedTtsIncremental}）。</p>
+     *
+     * <p>回调已在主线程（{@code WebSocketManager} mainHandler.post + {@code AiTurnManager} 不切线程），
+     * 仍用 runOnUiThread 双保险。</p>
+     */
+    private void initAiTurnManager() {
+        aiTurnManager = new AiTurnManager();
+        aiTurnManager.setListener(new AiTurnManager.AiTurnListener() {
+            @Override
+            public void onTurnStart() {
+                // showAiThinkingStatus 已在 sendAiRequest 预置（首帧前先显示"正在思考"），此处无需重复。
+            }
+
+            @Override
+            public void onDelta(String token, StringBuilder accumulated) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() -> {
+                    updateAiResponseStreaming(accumulated.toString()); // 传完整累积文本（方法直接 setText）
+                    feedTtsIncremental(token); // 句切喂 TTS
+                });
+            }
+
+            @Override
+            public void onProgress(AiTurnManager.ProgressType type) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() -> {
+                    String hint = mapProgressToChinese(type);
+                    // 首句正文出现前允许 progress 打断式播报（"正在搜索…"）；首句后正文优先，不再打断。
+                    if (hint != null && ttsManager != null && !ttsFirstFlushDone) {
+                        ttsManager.startSpeaking(hint);
+                    }
+                });
+            }
+
+            @Override
+            public void onTurnEnd(String fullResponse) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() -> {
+                    completeAiResponse(fullResponse); // 复用：更新最终文本 + 存对话历史
+                    flushRemainingTts(); // 句切 buffer 尾巴送 TTS
+                    isAiTurnInProgress = false;
+                    enableInput(true); // 解锁麦克风
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() -> {
+                    handleAiResponseError(message); // 复用：卡片显示错误
+                    isAiTurnInProgress = false;
+                    enableInput(true);
+                    if (ttsManager != null) {
+                        ttsManager.stopSpeaking();
+                    }
+                });
+            }
+        });
+    }
     
     /**
      * 初始化图片识别管理器
@@ -2071,17 +2145,98 @@ public class AiFragment extends Fragment {
      * @param userMessage 用户消息
      */
     private void sendAiRequest(String userMessage) {
-        if (aiChatManager != null) {
-            Log.d(TAG, "开始发送AI请求，用户消息: " + userMessage);
-            
-            // 显示AI正在思考的状态
-            showAiThinkingStatus();
-            
-            // 发送消息到AI接口（使用预先设置的监听器）
-            aiChatManager.sendMessage(userMessage);
-        } else {
-            Log.e(TAG, "AiChatManager未初始化");
+        // chunk-2e-2: 走 WS AI-turn 通道（AiTurnManager），替代 AiChatManager 的 HTTP+SSE。
+        if (aiTurnManager == null) {
+            Log.e(TAG, "AiTurnManager未初始化");
+            return;
+        }
+        if (isAiTurnInProgress) {
+            Log.w(TAG, "AI 正在回复中，忽略新请求");
+            Toast.makeText(requireContext(), "AI 正在回复，请稍候", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (userMessage == null || userMessage.trim().isEmpty()) {
+            Log.w(TAG, "用户消息为空，忽略");
+            return;
+        }
+
+        Log.d(TAG, "开始发送AI请求（WS），用户消息: " + userMessage);
+        isAiTurnInProgress = true;
+        enableInput(false); // 锁麦克风（turn_end / error 时解锁）
+        ttsFirstFlushDone = false;
+        ttsSentenceBuffer.setLength(0);
+        showAiThinkingStatus(); // 复用：创建"正在思考..."卡片 + isAiResponseStreaming=true
+
+        // 异步取位置（Geocoder 阻塞，跑后台线程）；定位失败 callback=null → 照发 100 帧（position 降级）。
+        LocationHelper.getCurrent(requireContext(), position -> {
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> aiTurnManager.sendTurn(userMessage, position));
+        });
+    }
+
+    /**
+     * chunk-2e-2: 启用/禁用语音输入按钮（AI turn 进行中锁住，防用户重复发起）。
+     */
+    private void enableInput(boolean enabled) {
+        if (btnVoice != null) {
+            btnVoice.setEnabled(enabled);
+            btnVoice.setAlpha(enabled ? 1.0f : 0.4f);
+        }
+    }
+
+    /**
+     * chunk-2e-2: 增量喂 TTS——按句末标点（。？！\n）切句，凑够一句播一句。
+     *
+     * <p>讯飞 {@code startSpeaking} 每次打断前一次合成，逐 token 喂会一字一打断、体验灾难。
+     * 句切既保证响应性（出一句即播），又避免打断风暴。首句出现前 {@code ttsFirstFlushDone=false}，
+     * 允许 progress 进度词（"正在搜索…"）打断；首句后正文优先，progress 不再打断。</p>
+     */
+    private void feedTtsIncremental(String token) {
+        if (token == null || token.isEmpty() || ttsManager == null) {
+            return;
+        }
+        ttsSentenceBuffer.append(token);
+        int cut = lastSentenceEnd(ttsSentenceBuffer);
+        if (cut > 0) {
+            String sentence = ttsSentenceBuffer.substring(0, cut + 1);
+            ttsSentenceBuffer.delete(0, cut + 1);
+            if (!ttsFirstFlushDone) {
+                ttsManager.stopSpeaking(); // 清掉 progress 残留（"正在搜索…"）
+                ttsFirstFlushDone = true;
             }
+            ttsManager.startSpeaking(sentence);
+        }
+    }
+
+    /** turn_end 时把句切 buffer 剩余尾巴送 TTS，防丢字。 */
+    private void flushRemainingTts() {
+        if (ttsManager != null && ttsSentenceBuffer.length() > 0) {
+            ttsManager.startSpeaking(ttsSentenceBuffer.toString());
+            ttsSentenceBuffer.setLength(0);
+        }
+        ttsFirstFlushDone = false;
+    }
+
+    private int lastSentenceEnd(StringBuilder sb) {
+        for (int i = sb.length() - 1; i >= 0; i--) {
+            char c = sb.charAt(i);
+            if (c == '。' || c == '？' || c == '！' || c == '?' || c == '!' || c == '\n') {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** progress 事件 → 中文短句（无障碍播报）。UNKNOWN → null（不播报）。 */
+    private String mapProgressToChinese(AiTurnManager.ProgressType type) {
+        if (type == null) return null;
+        switch (type) {
+            case SEARCHING:         return "正在搜索。";
+            case THINKING:          return "正在思考。";
+            case RECOGNIZING_PHOTO: return "正在识别照片。";
+            case ROUTING:           return "正在规划路线。";
+            default:                return null;
+        }
     }
     
     /**
@@ -2956,7 +3111,13 @@ public class AiFragment extends Fragment {
         if (aiChatManager != null) {
             aiChatManager.destroy();
         }
-        
+
+        // chunk-2e-2: 释放 AI turn WS 客户端（摘 listener + 取消 watchdog + 释放业务锁，不动 WS 连接）
+        if (aiTurnManager != null) {
+            aiTurnManager.destroy();
+            aiTurnManager = null;
+        }
+
         // 释放图片识别管理器资源
         if (imageRecognitionManager != null) {
             imageRecognitionManager.destroy();
