@@ -11,7 +11,8 @@ chunk-2a **流式版**（design ⑥）：
     {"type":"turn_end","issuing_turn":N}
 
 关键抉择：
-- 模型 = FakeChatModel（零 token，烟测通路）；chunk-2c 换 llm.build_llm() 真 qwen。
+- 模型 = SHIWUJIE_AI_REAL=1 → llm.build_llm(PRIMARY_MODEL, parallel=False) 真 qwen3.7-plus；
+  默认 FakeChatModel（零 token，保 chunk-2a 烟测 + 测试套件）。chunk-2c 起 REAL 端到端验通。
 - checkpointer = MemorySaver（进程内）；C2a-6 换 Redis db=2 `ai:ckpt:{blind_id}`。
 - **进度事件从 stream_mode="updates" 派生**（看 agent 节点 tool_calls 决策即发），不注 writer 进
   工具体（见 streaming.py 注）；2b 消费面无感。
@@ -22,6 +23,7 @@ chunk-2a **流式版**（design ⑥）：
 - thread_id == blind_id（design ⑤ 会话/checkpoint/emergency 键统一）。
 """
 
+import os
 from typing import Optional
 
 from fastapi import FastAPI
@@ -50,11 +52,25 @@ def _count_human_messages(snapshot) -> int:
     return sum(1 for m in msgs if getattr(m, "type", None) == "human")
 
 
+def _resolve_model():
+    """模型解析：SHIWUJIE_AI_REAL=1 → 真 qwen build_llm(PRIMARY_MODEL, parallel=False)
+    （parallel=False 满足 emergency 闸 ① 红队 Q18 硬修正——qwen 单 AIMessage 不并行 tool_calls，
+    无法同轮伪造 prepare+confirm；DashScope FC 默认亦 False）；默认 FakeChatModel（零 token，
+    保 chunk-2a 烟测 + 测试套件绿）。build_llm 懒导入——REAL 运行时才加载，配合 safety/__init__
+    whitelist 懒加载彻底规避 llm→tools 循环 import。"""
+    if os.environ.get("SHIWUJIE_AI_REAL", "") == "1":
+        from .. import config
+        from ..llm import build_llm
+
+        return build_llm(config.PRIMARY_MODEL, parallel=False)
+    return FakeChatModel()
+
+
 def create_app(model=None, checkpointer=None) -> FastAPI:
-    """建 FastAPI app。model/checkpointer 可注入（测试用）；默认 FakeChatModel + MemorySaver。"""
+    """建 FastAPI app。model/checkpointer 可注入（测试用）；默认 _resolve_model（REAL 开关）。"""
     app = FastAPI(title="shiwujie-ai", version="0.1.0")
     graph = build_graph(
-        model or FakeChatModel(),
+        model or _resolve_model(),
         build_toolset(),
         build_system_prompt,
         checkpointer=checkpointer or MemorySaver(),

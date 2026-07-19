@@ -6,8 +6,10 @@ chunk-2a 烟测（流式 ndjson 事件流，design ⑥）：
          -d '{"thread_id":"smoke","text":"你好"}'
     # 逐行 ndjson：turn_start → [progress →] delta×N → turn_end
 
-模型 = FakeChatModel（零 token，末答切块模拟 delta）。chunk-2c 换真 qwen + stream_mode="messages"
-真 token delta 时改 service.app 注入 llm.build_llm()。
+模型：`SHIWUJIE_AI_REAL=1` 切真 `build_llm(PRIMARY_MODEL, parallel=False)`（qwen3.7-plus，chunk-2c 端到端验通 ✅，
+5 场景 + HTTP 流式全绿）；默认 FakeChatModel（零 token，保烟测 + 测试套件）。真 qwen 跑法：
+    SHIWUJIE_AI_REAL=1 uv --directory shiwujie-ai run python -m shiwujie_ai
+真 token delta（stream_mode="messages"）推迟下一轮——现 delta 仍是 chunk_reply 模拟切块（CHUNK_SIZE=4）。
 
 绑定 host（chunk-2d Docker）：
 - 本机烟测默认 127.0.0.1（不暴露公网）。

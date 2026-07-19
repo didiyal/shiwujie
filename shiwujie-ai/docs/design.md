@@ -197,6 +197,8 @@ KB = BM25 文本库（非向量 RAG）
 
 > **Spike-1 实测落锤（2026-07-18，720 调用）**：对抗集 `emergency_single_turn_confirm`（诱导「单轮 prepare + confirm 一气呵成」）pass-rate **83.3%**——2-phase 拆分在 FC 层面拦住约 5/6，仍有 ~1/6 被诱导单轮 confirm。**这正证明「拆工具 alone 不够」**：必须 `parallel_tool_calls=False` + turn-bound token + App 确认面三道结构闸全上（prompt / 拆工具挡不住所有诱导）。
 
+> **chunk-2c e2e 实测落锤（2026-07-20，真 qwen graph 内）**：三道闸在真模型 + 真 graph 全栈下端到端实证——T1「我摔倒了」`request_emergency_help_prepare` 签 token 绑 turn=1 → 问确认自然 END（**真模型未同轮连调 confirm**，`parallel=False` + prompt 双保险）；T2「是」`request_emergency_help_confirm` 跨轮 turn=2 放行 → status=ok。闸 ①（`parallel=False`）+ 闸 ②（turn-bound token 拒同轮）在真 qwen 下协同生效；同轮拒由 store 结构保证 + 单测覆盖。闸 ③（App 显式确认面）留 chunk-2e。
+
 **2. update_profile 字段门**（防约定腐烂，schema 硬卡非提示词约束）
 
 MCP 工具 `inputSchema` **只暴露 nickname / phone / gender**（password / idCard / disabilityCard **结构上不在 schema**）；Java 侧绑**窄 DTO**（非泛 `Blind` 实体）；加**单测断言 DTO 无敏感字段 setter**——防约定腐烂（哪天有人图省事放宽 schema / 换回泛实体，单测红）。**明示是 schema 校验硬卡，非提示词约束**（提示词可被注入绕过，schema 不能）。
