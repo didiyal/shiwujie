@@ -1,0 +1,18 @@
+# Python 字节码 / 缓存
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 虚拟环境（根 .gitignore 已忽略，此处显式）
+.venv/
+
+# 本地 .env 开发便利（prod 凭据仍走 config.py env 内联默认，按项目约定不 gitignore prod）
+.env
+.env.*
+
+# Spike 运行产物（机读全量 + 报告；如需归档手动 git add -f）
+reports/
+
+# 临时探针 / 调试
+.tmp/

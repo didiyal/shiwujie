@@ -28,6 +28,12 @@ public interface InnerSocket {
 
 
     /**
+     * 通知前端紧急求助确认 token（design ⑬ gate ③，114；socketData.text = token）
+     */
+    void noticeEmergencyToken(SocketData socketData);
+
+
+    /**
      * 通知前端跳转软件
      */
     void noticeJumpSoftware(SocketData socketData);

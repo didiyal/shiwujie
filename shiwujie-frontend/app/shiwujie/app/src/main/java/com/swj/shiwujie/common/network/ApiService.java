@@ -414,6 +414,27 @@ public interface ApiService {
             @Query("blindPhone") String blindPhone
     );
 
+    /**
+     * chunk-2e-4 gate ③：盲人 App 显式确认紧急求助（消费 AI prepare() 签发的 token）。
+     * <p>命中后端 {@code POST /api/call/urgenthelp/blind/confirm}：{@code consumeByApp} 一次性消费 token
+     * + 推 WS 5003（既有的 blindhome 跳转 + 开启紧急求助 UI 由 5003 触发）。</p>
+     *
+     * @param token         JWT 令牌
+     * @param emergencyToken AI request_emergency_help_prepare 经 114 帧下发的确认码
+     */
+    @POST("/api/call/urgenthelp/blind/confirm")
+    Call<BaseResponse<Boolean>> blindConfirmUrgenthelp(
+            @Header("Authorization") String token,
+            @Query("token") String emergencyToken
+    );
+
+    /**
+     * chunk-2e-5：换取 WS ticket（连 WS 前调，复用 JWT 鉴权；服务端绑 phone+role 一次性消费）。
+     * <p>客户端取 ticket 塞进 type=0 登录消息，堵 known-issues #7 phone 冒充。</p>
+     */
+    @POST("/api/call/ws/ticket")
+    Call<BaseResponse<String>> fetchWsTicket(@Header("Authorization") String token);
+
     // ==================== 社区相关接口 ====================
 
     /**
@@ -664,28 +685,21 @@ public interface ApiService {
     );
 
     /**
-     * AI文本对话接口
-     * @param token JWT令牌
-     * @param text 用户输入的文本
-     * @return AI对话响应（流式）
-     */
-    @POST("/api/ai/ai/doChatByText")
-    Call<okhttp3.ResponseBody> sendAiTextMessage(
-            @Header("Authorization") String token,
-            @Query("text") String text
-    );
-
-    /**
-     * AI图片识别接口
-     * @param token JWT令牌
-     * @param imageFile 图片文件
-     * @return AI图片识别响应（流式）
+     * chunk-2e-3：图片 AI-turn（multipart 上传 → Java 中继 Python /ai/turn {image}，流式响应骑 WS 推回）。
+     * <p>命中后端 {@code POST /api/call/ai/image-turn}：图片转 base64 data URL → {@code submitImageRelay}
+     * → ndjson 经 WS 110/111/112/113 帧推回，{@code AiTurnManager} 现成路由消费（onDelta→文本+TTS /
+     * onProgress→"正在识别照片"）。本调用仅返回 ack（code=1 即已提交中继，非流式 body）。</p>
+     *
+     * @param token JWT 令牌
+     * @param image 图片 part（field 名 "image"）
+     * @param text  口述追问；空则后端用默认提示诱导 agent 调 recognize_photo 读图
      */
     @Multipart
-    @POST("/api/ai/ai/doChatByImage")
-    Call<okhttp3.ResponseBody> sendAiImageMessage(
+    @POST("/api/call/ai/image-turn")
+    Call<BaseResponse<Void>> sendAiImageTurn(
             @Header("Authorization") String token,
-            @Part okhttp3.MultipartBody.Part imageFile
+            @Part okhttp3.MultipartBody.Part image,
+            @Part("text") okhttp3.RequestBody text
     );
 
     // ===== 障碍物检测接口 - 严格按照backend_service.py的API接口实现 =====

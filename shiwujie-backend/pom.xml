@@ -31,9 +31,11 @@
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <hutool.version>5.8.25</hutool.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <!-- Spring AI（原 ai 模块独立 DM，合并后集中到父 pom；v3.0.0 两模块） -->
-        <spring-ai.version>1.0.0</spring-ai.version>
-        <spring-ai-alibaba.version>1.0.0.2</spring-ai-alibaba.version>
+        <!-- Spring AI（仅留 spring-ai-bom 托管 MCP server starter；v3.0.0 阶段删旧 AI 模块后
+             dashscope/openai 依赖 + alibaba-bom 已一并清，2026-07-20）。
+             Phase5 chunk-1 Spike-2：1.0.0→1.1.0（Boot 维持 3.4.5），为缝 C 的 streamable-HTTP MCP
+            （1.0.x 仅有 SSE+STDIO）。 -->
+        <spring-ai.version>1.1.0</spring-ai.version>
     </properties>
 
     <modules>
@@ -52,36 +54,14 @@
                 <artifactId>shiwujieModel</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!-- Spring AI（原 ai 模块独立 DM，合并后集中到父 pom；ai 已并入 bootstrap） -->
+            <!-- Spring AI（仅 spring-ai-bom 托管 bootstrap 的 MCP server starter；
+                 dashscope/openai/kryo/jsoup/paho 随旧 AI 模块删除一并清，2026-07-20） -->
             <dependency>
                 <groupId>org.springframework.ai</groupId>
                 <artifactId>spring-ai-bom</artifactId>
                 <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba.cloud.ai</groupId>
-                <artifactId>spring-ai-alibaba-bom</artifactId>
-                <version>${spring-ai-alibaba.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <!-- ai 特殊依赖版本集中（paho 单消费者，不值当抽属性，硬编） -->
-            <dependency>
-                <groupId>org.eclipse.paho</groupId>
-                <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-                <version>1.2.5</version>
-            </dependency>
-            <dependency>
-                <groupId>com.esotericsoftware</groupId>
-                <artifactId>kryo</artifactId>
-                <version>5.6.2</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jsoup</groupId>
-                <artifactId>jsoup</artifactId>
-                <version>1.19.1</version>
             </dependency>
 
             <!-- v3.0.0 单体化阶段2.3：删 Dubbo(dubbo/dubbo-nacos) + Nacos(spring-cloud-starter-alibaba-nacos-discovery) DM -->

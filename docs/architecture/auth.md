@@ -77,3 +77,37 @@ FR-AUTH / AC-AUTH（含「续期不生效」当前不满足项）见 [../product
 2. **原密码**（仅已设密码用户）：`StrUtil.isBlank(blind.getPassword())` 为真（当前确实无密码，如快注册首登）→ 免原密码、仅校验新密码格式后写入；否则 originPassword 必填，先 `PasswordUtils.matches(originPassword, 存量哈希)`，不匹配即 `PARAMS_ERROR`「原密码输入错误」，通过后写新 BCrypt 哈希。
 
 此前 controller 不校验归属、service 原密码校验整段包在 `if(isNotBlank(originPassword))` 内 → originPassword 留空即跳过 → 任意登录用户可改任意账号密码（账户接管）。修复明细见 [known-issues](../../shiwujie-backend/docs/known-issues.md) 安全漏洞 #9。
+
+## WebSocket ticket 鉴权（设计敲定·待 Phase 5）
+
+> AI 重写必修项之一，堵 WS 现状零鉴权（type=0 登录消息自报 phone 即可冒充）。状态：设计敲定，未落地。
+
+现状 WS 登录消息（type=0）由客户端**自报 phone**，Java 不校验该 phone 与已鉴权身份的绑定关系——任何人可冒充任意手机号建立 WS 会话。AI 重写后引入 ticket 机制：
+
+```mermaid
+flowchart LR
+    LOGIN["盲人经已鉴权 HTTP<br/>(复用现 JWT 拦截)"] --> TICKET["换短时 WS ticket<br/>Redis db=2 绑 blindId->phone<br/>(短 TTL, 一次性)"]
+    TICKET --> WS["type=0 登录消息<br/>带 ticket (非自报 phone)"]
+    WS --> VERIFY["Java 校验 ticket<br/>-> 取绑定的 blindId/phone<br/>-> 绑 session -> 绑 blindId"]
+```
+
+1. 盲人先经**已鉴权 HTTP**（复用现 JWT 拦截链路）换一张短时 WS ticket（Redis db=2，绑 `blindId -> phone`，短 TTL）。
+2. WS type=0 登录消息**带 ticket 而非自报 phone**。
+3. Java 校验 ticket → 取出绑定的 blindId / phone → 绑 WS session → 绑 blindId。
+
+> 效果：堵 phone 冒充（无 ticket 或 ticket 不匹配即拒），WS 会话身份由 HTTP 鉴权链背书，而非客户端自报。Redis 续期错 key bug（漏 `-blind-` 前缀，known-issues #1）顺手在重写中修复。
+
+## Java -> Python blind_id 内部传递（设计敲定·待 Phase 5）
+
+> AI 重写 polyglot 缝的鉴权边界约定。详见 [`ai-rewrite.md`](ai-rewrite.md)。
+
+Python LangGraph 进程**不持用户 JWT**——它是无状态计算大脑，不面向公网。Java 鉴权后把 blind_id 内部传给 Python：
+
+- **缝 A（对话流）**：Java → Python 逐 turn 内部 HTTP 调用，blind_id 作调用参数。
+- **缝 C（Java 能力 MCP）**：Python → Java MCP streamable HTTP，blind_id 经 MCP header `X-Blind-Id` + 内部密钥传递。
+
+> Java 单体是唯一鉴权边界，Python 信任 Java 内部传入的 blind_id；Python 不读用户 JWT、不暴露公网端口（compose 内仅内网可达）。
+
+## AI 拦截器 dev 后门（✅ 已删 chunk-2b / 2b-6a，2026-07-20）
+
+> 泛指「AI 拦截器 dev 后门」（原类 `AiLoginCheckInterceptor`，见 [backend known-issues](../../shiwujie-backend/docs/known-issues.md) #1、本篇风险 #6）：无 Authorization 时注入 blindId=1 / phone 固定值，生产未关闭则任何人可白嫖 AI。**已删除**（chunk-2b / 2b-6a，2026-07-20）：`AiLoginCheckInterceptor` + `AiWebConfig` 整体删——`/api/ai/**` 在 2b-5 删 `ChatController` 后已成空集，拦截器拦空集，删除零功能影响；`common/ErrorCode` **保留**（53 个其它引用者）。WS phone 冒充（known-issues #7）的 ticket 鉴权留 chunk-2e 与 Android WS 改造同批。两套编号各属局部、互相交叉引用，不发明第三个编号。

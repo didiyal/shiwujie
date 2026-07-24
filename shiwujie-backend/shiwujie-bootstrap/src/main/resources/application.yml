@@ -15,11 +15,17 @@ spring:
     active: dev
   main:
     allow-circular-references: true   # 阶段2.2 Dubbo→本地后，模块间双向耦合（社区↔志愿者↔社区管理员级联删除）显化为 Spring bean 环；Dubbo 远程代理天然解耦，单体以早期引用放开等价还原。登记 known-issues，后续可 @Lazy 精细化
+  servlet:
+    multipart:
+      # chunk-2e-3：图片 AI-turn（POST /api/call/ai/image-turn）收 multipart 图片。SB 默认 1MB 装不下手机
+      # 拍照 JPEG（2-5MB），放大到 10MB；max-request-size 略高兜 base64+multipart 开销。
+      max-file-size: 10MB
+      max-request-size: 11MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: shiwujie
     password: ${MYSQL_PASSWORD:SGaxER3XisXFfRKw}
-    url: jdbc:mysql://47.112.114.139:3306/shiwujie   # 单库（v3.0.0 合库目标，旧 4 库 mysqldump 结构+数据导入；阶段2.6）
+    url: jdbc:mysql://${MYSQL_HOST:47.112.114.139}:3306/shiwujie   # 单库（v3.0.0 合库目标，旧 4 库 mysqldump 结构+数据导入；阶段2.6）。host 可 env 覆盖：默认公网 IP 硬编码（本地 dev 不变）；Docker 设 MYSQL_HOST=host.docker.internal 连宿主（chunk-2d）
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20       # 4 库合一，池大小沿用单库上限
@@ -29,7 +35,7 @@ spring:
       connection-timeout: 30000
   data:
     redis:
-      host: 47.112.114.139
+      host: ${REDIS_HOST:47.112.114.139}    # 默认公网 IP 硬编码（本地 dev 不变）；Docker 设 REDIS_HOST=host.docker.internal 连宿主（chunk-2d）
       port: 6379
       database: 2
       password: ${REDIS_PASSWORD:123456}
@@ -37,15 +43,15 @@ spring:
         shutdown-timeout: 0ms     # 关闭时不等待 Lettuce 优雅退出，避免阻塞
       timeout: 2s
   ai:
-    dashscope:
-      api-key: ${DASHSCOPE_API_KEY:sk-6374b4a1ebd64f56ae8d0799e74b7927}
-      base-url: https://dashscope.aliyuncs.com/compatible-mode   # 不带 /v1：OpenAiChatModel 默认拼 /v1/chat/completions
-      chat:
-        options:
-          model: qwen3-vl-flash
-    chat:
-      client:
-        enabled: true
+    mcp:
+      server:
+        # Phase5 chunk-1 Spike-2 缝 C：MCP server 暴露 8 工具（SpikeMcpTools via ToolCallbackProvider）。
+        # streamable-HTTP 传输（1.1.0 新增）；端点默认 /mcp（WebMVC streamable transport 自动注册），
+        # Python 侧连 http://localhost:8100/mcp（langchain-mcp-adapters 0.3.0 transport:http）。
+        type: SYNC                   # 同步 server：同步 @Tool 方法转 sync 规格（ASYNC 会忽略同步方法）
+        protocol: STREAMABLE         # streamable-HTTP（非 SSE/STDIO/STATELESS）
+        name: shiwujie-mcp
+        version: 1.0.0
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true   # 全局开（阶段2.6 统一 call 实体 snake→camel；DB 列名保持 snake_case）
@@ -56,9 +62,16 @@ mybatis-plus:
       logic-not-delete-value: 0
 logging:
   config: classpath:logback-spring.xml
-search-api:
-  api-key: ${SEARCH_API_KEY:4qkQ96eSGHAbAQKS5wbs8WyT}
 # APK 下载配置
 app:
   download:
     apk-path: ${APK_PATH:/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk}
+# AI Python 服务（design 缝 A：Java→Python 内部 HTTP，逐 turn 流式中继 ndjson）。
+# 内网/localhost 直连，不经公网；internal-secret 容器内网互信（2b-3 起 Python 侧校验 X-Internal-Secret 头）。
+shiwujie:
+  ai:
+    python:
+      base-url: ${PYTHON_BASE_URL:http://127.0.0.1:8500}     # uvicorn 默认 :8500（容器内服务名 http://python:8500）
+      internal-secret: ${AI_INTERNAL_SECRET:dev-internal-secret}
+      turn-path: /ai/turn
+      timeout-seconds: 60                                     # 单 turn 整流式上限（2c 真 qwen 长导航可调）

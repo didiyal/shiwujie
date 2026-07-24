@@ -1,0 +1,169 @@
+# Python AI 服务缺陷与风险登记
+
+> Python LangGraph 服务的缺陷 / 技术债 / 依赖风险登记。development 层（允许源码符号 / 依赖名 / open bug 编号）。**状态：设计敲定（Phase 1–4）· 实现待 Phase 5**——下列风险项是已识别的设计期风险，实现时须逐项验证 / 化解；非已运行系统的线上缺陷。用户契约在根 [product/current.md](../../docs/product/current.md)；Java 侧缺陷在 backend [known-issues.md](../../shiwujie-backend/docs/known-issues.md)；鉴权风险总览在根 [architecture/auth.md](../../docs/architecture/auth.md)。
+
+> 本文件用自己的局部编号（AI-1, AI-2 …），与 backend `known-issues.md` 的安全漏洞编号（1–9）/ auth.md 的「风险 #N」**互相独立**，交叉引用即可——不发明跨文件统一编号。
+
+---
+
+## AI-1. 依赖风险：spring-ai MCP server BOM 托管与冲突
+
+**背景**：缝 C 由 Java 侧作 MCP server（暴露 8 工具），Python 经 `langchain-mcp-adapters` 的 `MultiServerMCPClient` 消费。Java 侧需 `spring-ai-starter-mcp-server-webmvc`（streamable HTTP transport）。
+
+**风险**：
+- `spring-ai-starter-mcp-server-webmvc` 须由 **spring-ai-bom 1.0.0** 托管版本，且**不得**与 `spring-ai-alibaba-starter`（本项目止血期已引入，见 backend [known-issues](../../shiwujie-backend/docs/known-issues.md) ai #11）冲突——两个 alibaba / spring-ai 体系混用易触发版本错位 / 自动配置互斥。
+- Phase 5 须 **spike 验证**：① MCP server starter 在 bootstrap 单体内能起 streamable HTTP 端点；② 与 alibaba-starter 共存（同 BOM 托管或显式锁版本）；③ Python `MultiServerMCPClient.get_tools()` 能拿到 8 工具的 schema。
+
+**降级**：若不可共存 → 触发 [fallback.md](fallback.md)（缝 C 改 Python 8 个薄 REST wrapper）。MCP 仍为首选（Python→Java 唯一缝、零胶水）。
+
+> **Spike-2 实测落锤（2026-07-18）**：✅ **全部化解，REST-wrap 未触发**——
+> - spring-ai **1.0.0→1.1.0** + alibaba **1.0.0.2→1.1.0.0**（Boot 维持 3.4.5；1.0.0 的 MCP starter **无 streamable HTTP**，必升 1.1.0，见 [[memory] version-target]）；
+> - `spring-ai-starter-mcp-server-webmvc` 由 1.1.0 BOM 托管；⚠️ **#4204 命中**：1.1.x BOM **不托管** `spring-ai-alibaba-starter-dashscope` → bootstrap pom 显式锁 `<version>1.1.0.0</version>`（其余走 BOM），已落地；
+> - MCP server starter 与 dashscope/openai starter **共存 OK**（#3041 build/test 期不咬），app 启动正常、`McpServerAutoConfiguration` 加载（仅 `@McpTool` scanner 几条噪声告警，用 `ToolCallbackProvider` 不走它）；
+> - Python `MultiServerMCPClient.get_tools()` **拿到 8 工具**、round-trip 通。
+> **→ 缝 C MCP 确认为基线**（[fallback.md](fallback.md) 4 触发条件均未命中）。
+
+## AI-2. 依赖风险：langchain-mcp-adapters open bug
+
+**背景**：Python 侧 MCP 客户端用 `langchain-mcp-adapters`。
+
+**已知 open bug**：
+- **关停 RuntimeError #466**：客户端关停时抛 RuntimeError。
+- **通知进度丢失 #244**：MCP server → client 的进度通知丢失。
+
+**对本项目影响**：本项目缝 C 是**无状态逐 turn 用法**（Python 每个 turn 拉一次工具列表 / 调一次工具，不长连）——两个 bug 主要影响长连 / 持久会话场景，**对本项目影响小**。但 Phase 5 仍需验证：① client 正常析构不拖垮 agent loop；② 若依赖 MCP 进度通知（v1 不依赖，进度走 stream custom 见 design.md ⑥），需规避 #244。
+
+> **Spike-2 实测落锤（2026-07-18）**：langchain-mcp-adapters **0.3.0** 直接式 `client.get_tools()`（**非** `async with`——0.3.0 禁了 `__aexit__`，抛 NotImplementedError）+ 单连接，**#466 teardown RuntimeError 未复现**（loop 关停噪声交 `__main__` 外层捕，不计失败）。生产多 turn 复用 / 并发连接时仍可能冒，按逐 turn 用法不受非阻塞 teardown 影响；若成 nuisance 再处理。#244（进度通知丢失）v1 不依赖（进度走 stream custom），不受影响。
+
+## AI-3. 紧急求助确认门：qwen 单轮并行调用洞（🔴 高危，硬修正 1）
+
+**问题**：qwen 单个 AIMessage **可发并行 `tool_calls`**。若紧急求助的 `prepare()` / `confirm()` 在同一轮被并行调用，模型可在一次返回里 `prepare + 伪造 confirm` 一气呵成，绕过用户确认——紧急求助直接发出，盲人未确认。
+
+**根因**：LLM function-calling 的并行能力是默认开启的，对「敏感动作 + 确认」类工具组合是结构性漏洞。
+
+**修复（设计敲定，四道闸）**：
+1. `request_emergency_help` 拆 `prepare()` / `confirm()` 双工具。
+2. qwen 请求对**可达紧急工具**强制 `parallel_tool_calls=False`（堵单轮并行）。
+3. Redis token 绑三元组 **(blind_id, thread_id, issuing_turn)**；`confirm()` **拒绝同轮 token**（issuing_turn 比对，prepare 和 confirm 不可能同轮）。
+4. v1 即做 **App 侧显式确认面**（按钮 / 长按）经**非-MCP HTTP 端点**消费 token——盲人单声道无视觉冗余，第三道门。
+
+详见 design.md ⑬ 硬修正 1。
+
+## AI-4. qwen function-calling 可靠性待 spike（硬修正 3）
+
+**问题**：Decision A（原生 FC 杀旧 2-call 税）**依赖 qwen FC 稳**。qwen FC 历史上有 schema 违例 / 幻觉工具名 / 漏调工具等问题。公开基准：typia strict-schema 基准从 6.75% → 100%（强 schema 约束下），说明**工具定义的 schema 严格程度直接决定 FC 可靠性**。
+
+**spike（前置，Phase 5 第一件事）**：用**本工具集（14 + read_skill）+ 本 prompt**测 FC 通过率，建议阈值 **≥90%**。测：① 工具选择正确率；② 入参 schema 遵守率；③ 幻觉工具名出现率。
+
+**两护栏（无论 spike 结果都上）**：
+- MCP 服务端 **strict JSON-schema 校验**（拒违例入参，typia 式强约束）。
+- **tool-name 白名单**（拒未注册名，堵幻觉名冒充 confirm——如模型编出 `confirm_emergency` 伪名绕过 AI-3 的拆工具）。
+
+spike 不达标 → 退回 2-call 路由（Decision A 备选），但护栏仍留。详见 design.md ⑬ 硬修正 3。
+
+> **Spike-1 实测落锤（2026-07-18，720 调用）**：✅ **gate 通过**——qwen3.7-plus `parallel_tool_calls=True` 干净集 pass-rate **95.2%** ≥ 90% → **Decision A 成立**（溶进 loop）。写工具误调用率 **0%**、args-invalid / halluc / errored **全 0**、对抗集 **94.4%**（> 50% 降级线，不触发 B 兜底）。失败聚类：`multi_turn` 83.3%（漏调 `gaode_poi_search` / `get_weather`，recall 不足）、`multi_tool` 94.4%（偶漏 `web_search`）——均「漏调」型非「误调」型，靠 navigation skill + checkpoint 缓解。两护栏仍全上。
+>
+> ⚠️ **模型名核验缺口**：`qwen3.7-plus` 在 provisioned MaaS 端点下 720 调用零错、行为正常，但**是否为公开 `qwen-plus` 别名 / 私有路由未核**（provisioned 部署可能静默降级到更便宜模型）——不影响「溶进 loop 可行」结论（FC 行为是裁 Decision A 的真值），但**生产前建议 `/v1/models` 核确切 model id**。
+
+> **chunk-2c e2e 实测落锤（2026-07-20，~15 LLM + 1 VLM 发，graph 内真 qwen 端到端，6/6 ✅）**：Spike-1 是「裸 FC 单步脱 graph」测；chunk-2c 进 graph 全栈（真 qwen3.7-plus + `parallel=False` + 14 工具 + safety 三道闸 + navigation skill + checkpoint + VLM）跑通 5 场景——① 纯问答零工具；② 单工具 FC `get_weather` round-trip；③ navigation 多轮（T1 `read_skill` 载真 SKILL.md + poi → 问交通自然 END = HITL；T2 checkpoint 续 route + launch）；④ emergency turn-bound（T1 prepare 绑 turn=1 → 问确认 END；T2 confirm 跨轮 turn=2 放行，design ⑬ 硬修正 1 实证）；⑤ VLM 真 qwen3-vl-flash。HTTP 流式 ndjson（turn_start/progress/delta/turn_end）经 HTTP 通路验通。**结论：真 qwen 在本工具集 + 本 prompt 下 graph 内端到端核心验通 GO**（真压缩 / 真偏好 / 真 token delta 推迟下一轮）。详见 [reports/e2e_real_go_nogo.md](../reports/e2e_real_go_nogo.md)。
+
+## AI-5. AiLogs 图片 offload 去 Phase 5
+
+**问题**：AiLogs 表降级为追加只写审计 / 可观测日志（design.md ⑩）。但旧用法把图片存进 AiLogs、用 logId 主键当 KV 查（backend [known-issues](../../shiwujie-backend/docs/known-issues.md) ai #8「图片占位符用 logId 查 AiLogs = 把日志表当 KV」）。重写后图片走 HTTP multipart（缝 A 文本 turn 走 WS、图片仍 HTTP），offload 去向（对象存储 / 本地 / 留 AiLogs）**待 Phase 5 决策**。
+
+**当前态**：登记为待决策项，不阻塞设计落地；Phase 5 选型后补本条结论。
+
+## AI-6. Java-graph B-prime 前置 spike（备选反转 gate）
+
+**背景**：若缝 A 跨语言流式踩坑 / Python 进程负担过重 / 缝税超收益，回退单进程 spring-ai-alibaba-graph（Decision B-prime，见 design.md ⑪ / ⑬ 硬修正 5）。
+
+**前置 spike（Phase 5 早期，与 AI-4 并行）**：先验 **alibaba-graph HITL-resume 在本 qwen3.x 栈是否被 open bug 咬中**：
+- **#3297 / #3266**：alibaba-graph 的中断恢复（HITL-resume）open bug。本项目的紧急求助确认门恰需跨轮恢复（design.md ④）——若 bug 咬中，B-prime **暂不可行**（回退也没救），须等上游修。
+- spike 结论决定 B-prime 是否保留为可行备选。
+
+**MCP 工具设计语言无关**：无论 A 还是 B-prime，8 工具的 MCP schema 设计不变（缝 C 在 A 是 MCP、在 B-prime 退化为直接 Java 调用，工具定义存活）。
+
+## AI-7. MCP vs REST-wrap fallback
+
+缝 C 的 MCP 依赖（AI-1）若翻车，降级为 Python 8 个薄 REST wrapper。完整触发条件 / 降级方案 / 代价 / 回 MCP 时机见 [fallback.md](fallback.md)。
+
+## AI-8. chunk-2a 实现状态与 stub 边界（2026-07-19 落地）
+
+> Phase 5 第一块实现里程碑。下列「已完成」项 = chunk-2a 已落地 + FakeChatModel 全绿（122 测）；「Stub 边界」= 2a 用 mock 占位、后续 chunk 接真。
+
+**已完成**：graph 装配（State / agent encode-不抛 / ToolNode 自定义 `_handle_tool_error`）/ 14 工具 schema + 三道安全护栏（emergency 拆 prepare/confirm、update_profile `extra="forbid"`、open_app Literal 白名单）/ safety turn-bound token + tool-name 白名单 / navigation `SKILL.md` + read_skill / BM25 KB + 种子文档 / 两层记忆（Redis checkpoint + compress/preference 框架）/ FastAPI `/ai/turn` ndjson 流式 + `/health` / budget 熔断纯逻辑（`graph/budget.py`，18 测）/ encode-不抛 + 工具 isError 自愈测试。
+
+**Stub 边界（2a mock → 后续 chunk 接真）**：
+- LLM = FakeChatModel（脚本）→ **chunk-2c** 真 qwen3.7-plus。
+- 6 native 外部 API（searchapi / 高德 / weather）= mock 返回 → **chunk-2c** 接真（外部 API 免费）。
+- recognize_photo VLM = fake 描述 → **chunk-2c** 真 qwen3-vl-flash。
+- 8 Java-MCP 工具 = stub 回退（MCP 可达则载真，Spike-2 已证通）→ **chunk-2b** Java 真实现 + strict schema。
+- 短期压缩 LLM 摘要 = fake → **chunk-2c**（✅ chunk-2c补C 落：`memory/summarizer.py` 真 LLM 摘要注入）；长期偏好后台抽取 = 不触发（异步不阻塞）→ **chunk-2c**（✅ chunk-2c补D 落：`memory/extractor.py` 信号闸 + structured_output 抽 + turn_end 后台 fire）。
+
+**留 chunk-2c wiring**：budget 熔断 `should_stop_after_turn` 已落地为纯逻辑模块 + 单测（2a），但 live-loop 接线（agent 每步后调 `derive_turn_stats` + `should_stop_after_turn`，触发即 `encode_stop_reply`）留 2c——FakeChatModel 脚本模型不会失控循环，2a 接上也咬不到牙；真 qwen 才可能烧 token / 失控，那时 wiring 才有意义。**✅ 已落（chunk-2c补A）**：`make_agent_node` invoke 后跑熔断检查，`build_graph(budget_cfg=...)` 传参；集成测试 `test_budget_breaker_stops_turn_before_tools` 验触发即 END 不进 tools。
+
+**设计文档不准确已更正（本回卷）**：design ⑫ / nodes.py docstring 原暗示 LangGraph prebuilt ToolNode「自带」isError 自愈——实测 LangGraph 1.2.9 默认 `_default_handle_tool_errors` **只捕 `ToolInvocationError`、其余 re-raise**，真实工具网络/API 异常会崩 graph。已注入自定义 `_handle_tool_error` 兜所有异常（见 `graph/nodes.py`）；本回卷更正 design ⑫ 与 nodes.py docstring 表述。
+
+**chunk-2c 核心验通 ✅（2026-07-20）**：`SHIWUJIE_AI_REAL=1` 开关切真 `build_llm(PRIMARY_MODEL, parallel=False)`（默认仍 FakeChatModel 保 122 测）；修循环 import 根因（`safety/__init__` whitelist 懒加载，`from shiwujie_ai.llm import build_llm` 直 import 不崩）；5 场景 graph 直调真 qwen3.7-plus + qwen3-vl-flash 端到端 6/6 ✅（纯问答 / 单工具 FC / navigation 多轮 checkpoint / emergency turn-bound / VLM）+ HTTP 流式通路。详见 [reports/e2e_real_go_nogo.md](../reports/e2e_real_go_nogo.md)。
+
+**chunk-2c补 wiring 全落 ✅（2026-07-20）**：核心验通留的 4 项生产化接线全部完成，140 测绿（+18 新：budget 集成 1 / summarizer 5 / extractor 12），逐项真 qwen 验过：
+- **补A live-loop budget 接线**：`make_agent_node` invoke 后 `derive_turn_stats` + `should_stop_after_turn`，触发即 `encode_stop_reply`（END，不进 tools 防烧 token）。`build_graph(budget_cfg=...)` 传参；集成测试验 `max_tool_calls_per_turn=0` 首条 tool_call 即熔断。
+- **补B 真 token delta**：service 双流 `stream_mode=["messages","updates"]`——messages 流取 agent 节点 `AIMessageChunk.content` 逐 token 作 delta（真 qwen 实测 7 chunk token-by-token；FakeChatModel 无 stream → LangGraph 吐整条作单 chunk，协议不变）；updates 流派生 progress。删 `chunk_reply`/`CHUNK_SIZE` 死代码。
+- **补C 真压缩**：`memory/summarizer.py` `make_llm_summarizer(build_llm_plain(SUMMARY_MODEL))` 注 `compress_messages(summarizer=...)`（不绑工具省 16 schema token）；异常/空答→`default_fake_summarizer` 兜底（encode-不抛同形）。真 qwen 实测产出语义连贯叙述（非假摘要角色列表）。
+- **补D 真偏好抽取**：`memory/extractor.py`——关键词信号闸（零 LLM，多数 turn 跳过）+ `with_structured_output(UserPreferences)` LLM 抽 → service `turn_end` 后台 `asyncio.create_task` fire（不阻塞流、失败无害下轮重试）。端到端实测：偏好 turn → 后台 fire → store 入库 `{communication_style:concise, nav_mode:transit}`。
+- **新增 config 旋钮**：`SUMMARY_MODEL`（默认 PRIMARY_MODEL，design 3.9「便宜 LLM」留口，compress + pref extract 复用）。`__main__.py` docstring 同步刷新。
+
+## AI-9. chunk-2b Java 实现进度（2026-07-19，2b-1/2b-2 已落地）
+
+> 缝 A Java 侧（网关 WS + Java→Python 内部 HTTP 流式中继）+ 缝 C Java MCP 真实现 + 删旧 Java AI 模块，按 6 片推进。
+> 本块是「实现进度登记」非「线上缺陷」——与 [[AI-8]]（chunk-2a Python 侧）正交，跟踪 Java 侧切片落地与残留风险。
+
+**2b-1（WS handler 改造，已落地）**：`sessionMap`/`sessionPhoneMap` 换 `ConcurrentHashMap`（线程安全）；
+删 `onMessage` 对所有消息无条件回显「收到客户端的数据」噪声（ping/login/join 已有专门应答，加 default 记录未知类型）；
+删 6 处 `notice*` 死代码（构造错误响应却丢弃未发）；修 `AiLoginCheckInterceptor` Redis 续期 key 漏 `-blind-` 段（token 永不续期）。
+
+**2b-2（AI-turn 流式中继，缝 A 核心，已落地）**：
+- `Position` DTO（lat/lng/address，model 契约层）+ `SocketData` 加 `text`/`position` 两可选字段（加不改名，仅 requestType=100 携带）。
+- **WS requestType 契约**（`AiWsTypes`）：入站 `100`=AI-turn（text+position）；出站 `110`=delta / `111`=progress / `112`=turn_end / `113`=error。既有 5001-5006 信令码不变。
+- `ApplicationContextHolder`（`ApplicationContextAware` 静态持有器）：`@ServerEndpoint` 实例由 WS 容器按 session new、不经 Spring DI，需取 bean 时（`AiWsRelayService`/`InnerBlindService`）用它兜底。
+- `AiWsRelayService`：`HttpClient`（JDK 自带，免新依赖）POST Python `/ai/turn`，`BodyHandlers.ofLines()` 逐行解析 ndjson → `AiTurnEvent` → `toFrame` 映射 `SocketVO` → `session.getAsyncRemote()` 非阻塞推回 App；后台线程池（不阻塞 WS 容器线程）；**断连省 token**（每行前查 `session.isOpen()`，断开即抛内部信号中止拉流 + try-with-resources 关流取消上游订阅 → Python 停发，是 2c 真 qwen 的成本闸门）。
+- `application.yml` 加 `shiwujie.ai.python.{base-url,internal-secret,turn-path,timeout-seconds}`（凭据 `${ENV:default}` 内联）。
+- phone→blindId 临时经 `InnerBlindService.getByPhone`（WS 会话键是 phone，Python 要 blind_id）；**2b-6 ticket 鉴权后改由 ticket 解出**。
+- 测试：`AiWsRelayServiceTest`（13 测，ndjson 解析 + 帧映射纯逻辑）；bootstrap 全测 **303 绿**（290 旧 + 13 新）。HTTP/WS 胶水端到端留 chunk-2c 真 qwen / 手工 curl（FakeChatModel 零 token）验。
+
+**2b-3a（blind_id header 透传机制，已落地 + 端到端验通 2026-07-19）**：缝 C 的 blocker——8 个 Java MCP 工具每个都要知道「当前盲人」，blind_id 由 Python 当 HTTP header 带入。机制（调研落锤，MCP Java SDK 0.16.0 官方 API + Spring AI 1.1.0 桥，非 hack）：`McpTransportContextExtractor`（`McpTransportConfig`）在 transport 层抓 `X-Blind-Id`/`X-Internal-Secret` → `McpTransportContext` → reactor context 透传 → Spring AI 桥进 `ToolContext`（`McpToolUtils.getMcpExchange`）→ `BlindMcpContext.blindId(toolContext)` 取出。`RequestContextHolder` **不可用**（streamable-HTTP 走 SSE 异步回调，不在 DispatcherServlet 线程）——这是相对 ThreadLocal 的根本优势（reactor context 不依赖线程模型，多 blind_id 并发不串读）。关键：Spring AI autoconfigure 默认 transport bean 的 contextExtractor 返回 EMPTY，须自注册 `WebMvcStreamableServerTransportProvider` bean（`@ConditionalOnMissingBean` 按类型顶掉）注入 extractor；`MethodToolCallbackProvider` 走 spring-ai MCP bridge，exchange 自动注入 ToolContext。端到端验通：`SpikeMcpTools.whoami(ToolContext)` + Python `spikes/mcp_client/whoami.py`（带 header 连 `/mcp`）→ 回显 `{"blind_id":123,"source":"transport_context"}`；`Registered tools: 9`（8 stub + whoami）。调研标的两条未验风险（自注册 bean 是否顶掉 autoconfigure / `MethodToolCallbackProvider` 是否走 bridge 注入 exchange）均实测通过。备选 `_meta` 透传更规范但 Spring AI 1.1.0 GA 是否合并 #4773 修复未查证，header 方案风险更低（留 2.0 再议）。
+
+**2b-3b（业务工具真身，已落地 + 单测绿 2026-07-19）**：
+- 新增 `BusinessMcpTools`（`com/swj/shiwujie/mcp/`，@Component）4 业务工具真身：`join_family`/`leave_family`/`family_info` → `InnerFamilyService`（joinFamily/userLeaveFromFamily/getFamilyVOById）；`update_profile` → `BlindService`。每个工具 bind `BlindMcpContext.blindId(toolContext)` 取身份（与旧 `UserTools` 的 `LoginUtils.getLoginBlind()` 等价但线程模型无关）。
+- **update_profile 字段门（design ⑬ 硬修正 2）**：**不走** `BlindService.updateBlind`（它收 idCard/disabilityCard 会 MD5 入库，违反字段门；且不收 phone），改 `getById` + 仅 set 白名单（name/phone/gender）+ `updateById`——idCard/disabilityCard/password 查出是原值、不 set 即不变。加反射单测 `BusinessMcpToolsTest.updateProfile_paramWhitelist_excludesSensitiveFields` 断言参数恰好 nickname/phone/gender 三枚、无敏感字段变体（防约定腐烂）。
+- **encode-不抛（design ⑫）**：无身份 / 参数错 / 业务异常都返 `status:error` JSON（`ok`/`err`/`noIdentity`/`safeMsg` helpers），绝不杀 graph。
+- **工具名 snake_case 漂移发现（2b-3b 核心洞）**：`@Tool` 方法**默认暴露 camelCase 方法名**（familyInfo/joinFamily/…）→ 与 Python 侧 `tools/java_mcp.py` spike schema + design + FC 测试基线（snake_case）漂移。单测层**抓不到**（工具名暴露只在运行期 MCP 协议层可见），端到端 spike（`business_check.py`）抓到（tools/list 返 camelCase、`family_info` 未暴露）。修复：`@Tool(name="snake_case")` 显式注解全部 8 工具 + joinFamily 参数 `familyPhone`→`family_phone`。验证：snake_case 修复后 rebuild + app 启动 `Registered tools: 8`（`McpServerAutoConfiguration`，16:49:15 Started 9.7s）。
+- whoami spike 工具随业务真身落地**已移除**（`SpikeMcpTools` 删 whoami + 4 业务 stub，剩 4 信令桩加 `@Tool(name=snake_case)`）；`SpikeMcpConfig` 注册两 bean（signalTools + businessTools）共 8 工具。
+- **gender 类型对齐**：Python spike `gender: Optional[str]`、Blind.gender 是 Integer → 工具收 String，内部 `parseGender` 宽松解析「男/女/male/female/0/1」→ GenderEnum content。
+- 测试：`BusinessMcpToolsTest` 8 测（反射白名单 + noIdentity encode-不抛 + updateProfile 参数校验嵌套 + joinFamily 空号）；bootstrap 全测 **311 绿**（含新 8；snake_case 修复后重跑确认，11.8s）。端到端 `get_tools()` + service 接线（family_info 真调 BlindService.getById）独立 spike 重跑被中断未跑——blind_id 透传链 2b-3a whoami 已端到端验过同套，family_info 只多一层 getById（MyBatis-Plus IService 标准方法，编译保证），留 chunk-2c 真启动覆盖。
+
+**2b-4a（3 信令工具真身，已落地 + 单测绿 2026-07-19）**：
+- 新建 `SignalMcpTools`（替换 `SpikeMcpTools`——spike 验证使命完成已删）3 信令真身 + emergency 桩：`request_video_help`→`noticeVideoHelp`（5002）、`open_app`→`noticeJumpSoftware`（5004）、`launch_navigation`→`noticeNavigation`（5006）；emergency（5003）维持桩。
+- **blind_id→phone→推 WS**：`resolveBlindId`（protected，单测 subclass override 不引 mockito-inline）→ `BlindService.getById(blindId).getPhone()` → 组 `SocketData`（setBlindPhone + setRequestType，destination/appName 塞 `volunteerPhone` 旧 hack 兼容 Android 5004/5006 读 volunteerPhone 当 appName/终点）→ `innerSocket.noticeXxx`。`SpikeMcpConfig` 改注册 `SignalMcpTools` + bean 名清 spike 前缀（`mcpToolCallbacks`）；`McpTransportConfig` javadoc 顺手修过时 `SpikeMcpTools#whoami` 引用（whoami 2b-3b 已删）。
+- **盲人在线性推理**：信令工具执行时盲人 WS 必然在线（AI turn 本身走 WS，缝 A；WS 断则 turn 不触发、信令工具不被调）。`CoordinationSocketHandler.noticeXxx` 返 void 不报送达状态——「执行即在线」假设成立，盲人不在线分支是 turn 中途断连的防御性 log。
+- **open_app 白名单硬卡**（design ⑬ + Phase 1）：通讯/生活类（电话/短信/微信/高德地图/通讯录），normalize 后 contains 关键词匹配；非白名单返 `status:error` 不推 WS。Java 侧硬卡不靠 prompt。
+- **encode-不抛**（design ⑫）：无身份/盲人不存在/无 phone/异常都返 `status:error` JSON（`pushSignal` 骨架 + helpers）。
+- **destination 结构化留后**：现 destination 塞 volunteerPhone（字符串兼容 Android）；结构化 `destination{name,lat,lng}` + 三端对齐（Java model + Android SocketDataV0/AiFragment 5006 handler）留 **2b-4b/2e**——加 Java 字段而 Android 不读 = 导航断，必须三端同改。
+- 测试：`SignalMcpToolsTest` 13 测（3 信令推 WS + requestType/载荷 ArgumentCaptor 断言 + 白名单内/外/空白 + 无身份/盲人不存在/异常 encode-不抛 + emergency 桩不推 5003）；bootstrap 全测 **324 绿**（311 + 13 新）。
+
+**2b-4b/5/6（待）**：emergency 拆 `request_emergency_help_prepare`/`_confirm` 双工具 + turn-bound token（AI-3 高危，盲人安全，2b-4b）；strict schema（⑬ 硬修正 3 两护栏 Java 侧收口，2b-4b）；`SocketData` 加结构化 `destination{name,lat,lng}` + Android 三端对齐（2b-4b/2e）；删旧 Java AI 模块（`tools/app/*`、`tools/mytools/*`，MyManus 冻结保留，2b-5）；WS ticket 鉴权堵 phone 冒充 + 删 `AiLoginCheckInterceptor` dev 后门（2b-6）。
+
+**残留风险（2b 未解，登记追踪）**：① WS 零鉴权（phone 可冒充）→ 2b-6 ticket 修（见根 [architecture/auth.md](../../docs/architecture/auth.md)）；② `AiLoginCheckInterceptor` dev 后门（无 token 静默登录 blind id=1）→ 2b-6 删；③ `getAsyncRemote()`（流式）与既有 `getBasicRemote()`（信令）同 session 混用——jakarta 规范行为未定义，单盲人低并发可接受，并发增高需统一 async 或加 per-session 发送锁。
+
+---
+
+## 与其它文件的交叉引用
+
+| 本文件项 | 相关处 |
+|---|---|
+| AI-1（MCP server BOM） | design.md ⑦（MCP 工具来源）；fallback.md（降级） |
+| AI-3（紧急门并行洞） | design.md ⑬ 硬修正 1；product（紧急求助契约）；app docs（App 确认面） |
+| AI-4（qwen FC spike） | design.md ⑬ 硬修正 3（Decision A 命门） |
+| AI-6（Java-graph B-prime） | design.md ⑪（反转 gate）/ ⑬ 硬修正 5；自研 ReAct 见 backend [known-issues](../../shiwujie-backend/docs/known-issues.md) ai #1 |
+| AI-5（AiLogs 图片） | backend [known-issues](../../shiwujie-backend/docs/known-issues.md) ai #8 |
+| AI-9（chunk-2b Java 进度） | design.md 3.7 / 4.2-4.3（缝 A 中继）；plan chunk-2b 6 片；WS 零鉴权见 [architecture/auth.md](../../docs/architecture/auth.md) |

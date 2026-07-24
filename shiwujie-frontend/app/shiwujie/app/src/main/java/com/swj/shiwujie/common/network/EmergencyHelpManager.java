@@ -49,6 +49,15 @@ public class EmergencyHelpManager {
         /** 家属在超时窗口内未响应，状态已自动复位（用户可再次发起求助） */
         default void onHelpTimeout() {}
     }
+
+    /**
+     * chunk-2e-4 gate ③：紧急确认 token 消费回调（独立于通话生命周期回调）。
+     * 盲人 App 屏幕显式确认 → 命中后端 /blind/confirm → 后端消费 token + 推 5003。
+     */
+    public interface EmergencyTokenConfirmCallback {
+        void onConfirmSuccess();
+        void onConfirmFailed(String reason);
+    }
     
     private EmergencyHelpCallback callback;
     
@@ -86,6 +95,58 @@ public class EmergencyHelpManager {
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
             });
         }
+    }
+
+    /**
+     * chunk-2e-4 gate ③：消费 AI {@code request_emergency_help_prepare} 签发的紧急确认 token（非-MCP HTTP 端点）。
+     *
+     * <p>盲人 App 屏幕显式确认 → 命中后端 {@code POST /api/call/urgenthelp/blind/confirm} → 后端
+     * {@code consumeByApp} 一次性消费 token + 推 WS 5003（既有的 blindhome 跳转 + 开启紧急求助 UI
+     * 由 5003 触发，不在本方法内）。人工确认超越轮次闸（gate ②），后端不查 same-turn。</p>
+     *
+     * <p>与 {@link #requestEmergencyHelp} 的通话生命周期正交：本方法不建 Urgenthelp 记录、不动
+     * {@code isInEmergencyHelp} 状态——仅消费 token 触发 5003，后续接听/挂断仍走既有 create/leave/hangup。</p>
+     *
+     * @param emergencyToken AI prepare() 经 114 帧下发、App 回传的确认码
+     * @param cb             成功/失败回调（主线程回调：Callback.onResponse 在 Retrofit 内部已切主线程，无需 mainHandler）
+     */
+    public void confirmEmergencyToken(String emergencyToken, EmergencyTokenConfirmCallback cb) {
+        if (emergencyToken == null || emergencyToken.trim().isEmpty()) {
+            Log.w(TAG, "gate ③ 紧急确认：token 为空，忽略");
+            if (cb != null) cb.onConfirmFailed("确认码为空");
+            return;
+        }
+        String jwt = SharedPrefsUtil.getToken();
+        if (jwt == null || jwt.isEmpty()) {
+            Log.e(TAG, "gate ③ 紧急确认：JWT 为空");
+            if (cb != null) cb.onConfirmFailed("登录状态异常，请重新登录");
+            return;
+        }
+        Log.d(TAG, "=== gate ③ 紧急确认 token 消费 ===");
+        RetrofitClient.getInstance().createService(ApiService.class)
+                .blindConfirmUrgenthelp("Bearer " + jwt, emergencyToken)
+                .enqueue(new Callback<BaseResponse<Boolean>>() {
+                    @Override
+                    public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
+                        Log.d(TAG, "紧急确认响应: " + response.code());
+                        BaseResponse<Boolean> body = response.body();
+                        if (response.isSuccessful() && body != null
+                                && body.getCode() == 1 && Boolean.TRUE.equals(body.getData())) {
+                            Log.d(TAG, "gate ③ 紧急确认成功，后端已推 5003");
+                            if (cb != null) cb.onConfirmSuccess();
+                        } else {
+                            String msg = body != null ? body.getMessage() : "确认失败";
+                            Log.w(TAG, "gate ③ 紧急确认失败: " + msg);
+                            if (cb != null) cb.onConfirmFailed(msg);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
+                        Log.e(TAG, "gate ③ 紧急确认网络异常", t);
+                        if (cb != null) cb.onConfirmFailed("网络异常，请重试");
+                    }
+                });
     }
     
     /**

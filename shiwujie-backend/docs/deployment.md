@@ -25,6 +25,49 @@ java -jar shiwujie-backend/shiwujie-bootstrap/target/shiwujieBootstrap-0.0.1-SNA
 
 ---
 
+## v3.0.0 AI 重写后部署：两进程（Docker 物料 chunk-2d 已落地）
+
+> **Docker 编排已落地（chunk-2d，2026-07-20）**：`docker-compose.yml` + 两 `Dockerfile` + 根级 `scripts/` + `config/.env` 全部就绪，`./scripts/start.sh --build` 即可起双进程。**端到端可生产部署尚待**：chunk-2c 真 qwen（当前 Python 走 FakeChatModel，AI 回复是脚本化的）+ chunk-2e APK（App 侧 WS AI-turn 消息消费 + destination 字段 + 4-button，未完成前 App 不发 AI-turn）。设计全貌见 [architecture/ai-rewrite.md](../../docs/architecture/ai-rewrite.md)，Python 服务实现细节见 [shiwujie-ai/docs/](../../shiwujie-ai/docs/)。
+
+**两进程拓扑**：
+
+| 进程 | 角色 | 端口发布 | 职责 |
+|---|---|---|---|
+| Java（`shiwujie-bootstrap`，SB 3.4.5/Java21 fat jar） | 网关 + 业务真相源 + MCP server | **公网 8100:8100** | WS 终结点（`/api/ws/call`）+ JWT/Redis 鉴权 + user/call/community 业务 + 对 Python 暴露 MCP server（8 工具：业务 4 + 信令 4） |
+| Python（`shiwujie-ai`，LangGraph + FastAPI） | 计算大脑（agent loop + 工具 + 记忆 + KB） | **不发布端口（仅内网）** | Java 经服务名 `http://python:8500` 调；不持用户 JWT（Java 鉴权后内部传 `blind_id`） |
+
+> 灰度 = 硬切换：后端镜像 + APK 同批发，旧 SSE 通道与新 WS AI-turn 消息不兼容，须版本配对。
+
+**共享状态**（两进程共用，仍 v3.0.0 单体那两套基础设施，只是多一个消费者）：
+
+- MySQL `47.112.114.139:3306` 库 `shiwujie`：Java 读业务表 + 写 `AiLogs` 审计；Python 仅写 `AiLogs` 审计（降级为追加只写日志）。
+- Redis `47.112.114.139:6379` db=2：Java 用 `spring-session`/JWT token key；Python 用 LangGraph checkpoint（`ai:ckpt:` 前缀，按 `blind_id`/`thread_id`）+ 长期偏好 hash。前缀隔离避撞。
+
+**Docker 编排**（chunk-2d 已落地，根级新增，对齐参考仓 ctgu-agents）：
+
+- 根级 `scripts/`：`start.sh`（`--build` 强制重建）/ `stop.sh` / `logs.sh [java|python]` / `export.sh`（离线打包 `docker/shiwujie-images.tar`）/ `import.sh`（离线灌入）/ `clear.sh`（彻底清理，需 `yes` 确认）。
+- 根级 `docker/docker-compose.yml`：project name `shiwujie`；两 service（`java` 发布 8100:8100、`python` 仅 `expose 8500` 不映射宿主）；`extra_hosts: host.docker.internal:host-gateway` 让两容器经宿主连 `47.112.114.139` 的 MySQL/Redis（IP 字面量不能经 /etc/hosts 重定向，故走 env 覆盖：yml 默认仍硬编码公网 IP，compose `environment` 覆盖 `MYSQL_HOST`/`REDIS_HOST=host.docker.internal`）；`restart: always` + `init: true`；`python` 带 `/health` healthcheck；`java` 不 `depends_on python`（业务 WS 独立，Python 挂时 AI turn 优雅降级）。
+- 根级 `config/.env`（gitignore，`start.sh` 首跑自动 touch 空文件）+ `config/.env.example`（凭据/模型 key 全注释——走 yml/config.py committed 默认；prod 取消注释覆盖）。
+- 两 `Dockerfile`（多阶段）：`shiwujie-backend/Dockerfile`（`maven:3.9-eclipse-temurin-21` 跑 `install -DskipTests` → `eclipse-temurin:21-jre` 拷 `shiwujieBootstrap-0.0.1-SNAPSHOT.jar`，EXPOSE 8100）；`shiwujie-ai/Dockerfile`（`python:3.12-slim` + `uv sync --frozen --no-dev` → `python:3.12-slim` 拷 `.venv`+`src`，`PYTHONPATH=/app/src`，EXPOSE 8500）。
+- 网络：`java → python` 经服务名 `http://python:8500`（`PYTHON_BASE_URL`）；`python → java` MCP 经服务名 `http://java:8100/mcp`（`SHIWUJIE_JAVA_MCP_URL`）；`python` 必须绑 `0.0.0.0`（`SHIWUJIE_AI_HOST`，否则 java 容器连不上）。
+
+**启动 / 停止 / 日志**：
+
+```bash
+./scripts/start.sh --build     # 首次或改源码后：构建镜像 + up -d（java 公网 / python 内网）
+./scripts/start.sh             # 镜像已就位：直接 up -d
+./scripts/logs.sh              # 跟全部日志（Ctrl+C 退出，只读）
+./scripts/logs.sh python       # 只跟 python
+./scripts/stop.sh              # 停止（保留镜像/卷）
+./scripts/clear.sh             # 彻底清理（容器/网络/镜像，需确认）
+```
+
+**离线交付**（无 Docker 构建环境的目标机）：构建机 `./scripts/export.sh` → 拷 `docker/shiwujie-images.tar` + 仓库 → 目标机 `./scripts/import.sh` → `./scripts/start.sh`。
+
+**非 docker 本地模式仍可**：`shiwujie-backend/scripts/start.sh`（前置 `mvn -f shiwujie-backend/pom.xml install -DskipTests`，`exec java -jar shiwujieBootstrap-0.0.1-SNAPSHOT.jar`）+ `shiwujie-ai/scripts/start.sh`（前置 `uv sync`，`exec uv run python -m shiwujie_ai`），手动对齐两进程；此模式下 MySQL/Redis 走 yml 默认公网 IP、Python 绑 127.0.0.1。
+
+---
+
 > ⬇️ 以下为 **v2.1.0 多服务部署历史**（每服务一 jar + Nacos 注册 + Dubbo 注册 IP 坑），随 v3.0.0 单体化废弃，仅作 tag `v2.1.0` 参考。
 
 ## 端口与基础设施

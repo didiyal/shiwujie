@@ -49,6 +49,8 @@
 
 > 当前单体态：2 模块——`shiwujie-model`（契约层）+ `shiwujie-bootstrap`（唯一 app：原 common-web 公共层 + user/call/community/ai 全部业务代码，port 8100 复用原 gateway，单 datasource 指向 `shiwujie` 库，统一 SB3.4.5/Java21）。**部署即单 jar**——`spring-boot-maven-plugin` repackage 把 bootstrap（含 model）+ 全部第三方依赖打成 **1 个自包含 fat jar**，拷一个 jar `java -jar` 即可，无 Nacos/Dubbo。两阶段交付（先升版本后合并）见 [`development/v3.0.0/task-breakdown.md`](../development/v3.0.0/task-breakdown.md)。契约（HTTP 路径 / WS 信令 / 状态码）启动级回归零变更，功能级待 App/Web 联调。
 
+> **AI 重写后部署态（设计敲定·待 Phase 5）**：单体 jar 之上新增 Python LangGraph 进程，演进为 **polyglot 两进程 + Docker**——java 发布 8100:8100（公网），python 不发布端口（仅内网，java 经服务名调）；非 docker 本地模式仍可（mvn install + java -jar / uvicorn 直跑）。两进程缝、MCP 接线、Docker compose 详见 [`ai-rewrite.md`](ai-rewrite.md)；Java 业务单体（user/call/community 契约）零变更。
+
 ## 前端技术栈
 
 ### Android 原生 App
@@ -81,20 +83,42 @@
 
 ## AI 能力栈
 
-| 能力 | 实现 |
-|---|---|
-| 文本模型 | DashScope **qwen3.6-flash**，经官方 `OpenAiChatModel`（`spring-ai-openai`）走 OpenAI 兼容端点 `compatible-mode` 直连 |
-| 图像模型 | DashScope **qwen3-vl-flash**，`DashScopeChatModel`（spring-ai-alibaba，多模态 `withMultiModel`） |
-| 框架 | Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2 + spring-ai-openai（版本随 spring-ai-bom 1.0.0） |
-| 记忆 | **自研 ChatMemory**（Redis 精简 + MySQL 全量，kryo 序列化），非 Spring AI 默认 |
-| 工具路由 | 工作流式 `ToolChoiceApp`（约定 JSON 解析，非原生 function-calling） |
-| 检索增强 | RAG **已移除**（半残留 Bean，未启用） |
-| 网页搜索 | searchapi.io（engine=baidu）+ jsoup 摘要 |
-| 推送通道 | 本地调用 call 模块 `InnerSocket`（v2.1.0 为 Dubbo RPC，v3.0.0 起同进程注入）→ WebSocket 推前端 |
+> **重写进行中（设计敲定 Phase 1-4 · 实现待 Phase 5）**：下表「现状」列为旧 Java AI 模块（v2.1.0 产物，**chunk-2b/2b-5/2b-6b 已整体删除**），保留作「被替换对象」对比；重写后整体替换为 Python LangGraph（目标态见下文「重写目标态」+ [`ai-rewrite.md`](ai-rewrite.md)）。
 
-> 文本/图像用不同客户端：spring-ai-alibaba 的 `DashScopeChatModel` 调 qwen3.x 文本模型返 `url error`，故文本路径改用官方 `OpenAiChatModel`（OpenAI 兼容直连）；图像多模态仍用 `DashScopeChatModel`（正常）。详见 [known-issues](../../shiwujie-backend/docs/known-issues.md) #11、[CHANGELOG](../CHANGELOG.md)「AI 文本路径止血」。
+| 能力 | 现状（Java，待重写·弃用对象） | 重写目标态（Python LangGraph） |
+|---|---|---|
+| 文本模型 | DashScope **qwen3.6-flash**，经官方 `OpenAiChatModel`（`spring-ai-openai`）走 OpenAI 兼容端点 `compatible-mode` 直连 | 同 qwen，经 OpenAI 兼容端点解耦模型绑定 |
+| 图像模型 | DashScope **qwen3-vl-flash**，`DashScopeChatModel`（spring-ai-alibaba，多模态 `withMultiModel`） | 同 qwen-vl，统一经兼容端点 |
+| 框架 | Spring AI 1.0.0 + spring-ai-alibaba 1.0.0.2 + spring-ai-openai（版本随 spring-ai-bom 1.0.0） | LangGraph（agent loop + checkpoint） |
+| 记忆 | **自研 ChatMemory**（Redis 精简 + MySQL 全量，kryo 序列化），非 Spring AI 默认 | 两层：短期 checkpoint（Redis db=2，`ai:ckpt:{blind_id}`）+ 长期偏好（Redis hash + MySQL，异步抽取） |
+| 工具路由 | 工作流式（约定 JSON 解析，非原生 function-calling）——2-call 税；具体实现类见 backend [known-issues](../../shiwujie-backend/docs/known-issues.md)「AI 模块（弃用）」 | 主 LLM 原生 function-calling 一步（= 意图识别 + 工具选择） |
+| 检索增强 | RAG **已移除**（半残留 Bean，未启用） | BM25 文本知识库（~10-40 篇 markdown，启动载入内存，`search_kb` 返回整篇）；>100 篇或非结构化语料才升向量 RAG |
+| 工具集 | 工作流内嵌 | 6 Python-native（recognize_photo/web_search/get_weather/gaode_poi_search/gaode_route/search_kb）+ 1 元工具（read_skill）+ 8 Java-MCP 工具（业务 + 信令）；1 技能（navigation） |
+| 推送通道 | 本地调用 call 模块 `InnerSocket`（v2.1.0 为 Dubbo RPC，v3.0.0 起同进程注入）→ WebSocket 推前端 | Java 单体保留为 WS 网关 + MCP server；Python 经 MCP 调 Java 8 工具发起信令 |
 
-> 详见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)。
+> 文本/图像用不同客户端：spring-ai-alibaba 的 `DashScopeChatModel` 调 qwen3.x 文本模型返 `url error`，故文本路径改用官方 `OpenAiChatModel`（OpenAI 兼容直连）；图像多模态仍用 `DashScopeChatModel`（正常）。详见 [known-issues](../../shiwujie-backend/docs/known-issues.md) #11、[CHANGELOG](../CHANGELOG.md)「AI 文本路径止血」。**这条踩坑史正是重写经 OpenAI 兼容端点解耦模型绑定的动机之一**（见下文选型论证第 2 点）。
+
+> **Spike-2 落锤（2026-07-18）**：为缝 C MCP server，pom 已把 spring-ai **1.0.0→1.1.0**、alibaba **1.0.0.2→1.1.0.0**（Boot **维持 3.4.5**——1.1.0 对齐 Boot 3.4.x，不触发大版本迁移；**不升 2.0**，其硬绑 Boot 4.0 / Framework 7，SB3.4.5 加载不了）。实测 1.1.0 BOM 托管 `spring-ai-starter-mcp-server-webmvc`，但**不托管** `spring-ai-alibaba-starter-dashscope`（#4204）→ bootstrap pom 显式锁 `<version>1.1.0.0</version>`。MCP streamable HTTP 通路打通（Java 8 工具桩 + Python `get_tools()` round-trip），缝 C MCP 成基线。上表「现状」列版本号保留为旧 AI 模块**诞生版本**（1.0.0），整体 pom 实已升 1.1.0；详见 [`../../shiwujie-ai/docs/known-issues.md`](../../shiwujie-ai/docs/known-issues.md) AI-1。
+
+> 现状 Java AI 模块实现详见 [`../../shiwujie-backend/docs/modules/ai.md`](../../shiwujie-backend/docs/modules/ai.md)；重写总图与 polyglot 缝、agent 环详见 [`ai-rewrite.md`](ai-rewrite.md)。
+
+### AI 重写选型论证
+
+**为什么 LangGraph（诚实三点，非「Java 做不到」）：**
+
+1. **成熟参考实现**——LangGraph 是原版、生态成熟；`spring-ai-alibaba-graph`（1.0 GA，在本项目已用的 alibaba-bom 1.0.0.2 内，确有 graph/checkpoint/interrupt 原语）是其 1.0 移植，HITL-resume（中断恢复）路径有 open bug，而紧急求助确认门恰需跨轮恢复。
+2. **解耦已反复踩坑的 Alibaba 模型绑定**——项目已踩坑（`DashScopeChatModel` 调 qwen3.x 文本报 `url error`，止血改 `OpenAiChatModel`）；LangGraph 经 OpenAI 兼容端点解耦模型绑定，降低再被坑风险。
+3. **学可迁移的设计层**——AI 时代语言渐非约束，真正可迁移的是容错 / 并发 / 架构设计（语言无关）；成熟 Python 实现是更好的老师；alibaba-graph 本是 LangGraph 移植、设计相通，Java 知识不丢。
+
+**反转 gate（Decision B-prime，备选）**：`spring-ai-alibaba-graph` 生产稳定约满 1 年后，重新考虑回 Java-graph（单进程，缝 A 变方法调用、缝 C 变直接 Java 调用，MCP 工具设计语言无关故存活）。前置 spike：先验 alibaba-graph HITL-resume 在本项目 qwen3.x 栈是否被 open bug（#3297 / #3266）咬中。
+
+**为什么不 LangChain-legacy**：不能自然表达循环（agent loop 是其弱项）、社区已弃用转向 LangGraph、过抽象。
+
+**为什么不把 Pi（coding-agent 参考实现）当依赖，但偷其哲学**：语言不同（TS ≠ Python）、形状不同（它是 coding-agent，本项目是对话助手）、单维护者 bus factor、MCP 缝弱。但其工程契约（EventStream 一等 / 失败 encode 不抛 / isError observation 回灌 / session 可回放树 / injection hook / shouldStop 成本熔断）语言无关，agent loop 朝此造——见 [`ai-rewrite.md`](ai-rewrite.md) 第九节。
+
+**高德：自建 REST wrapper vs 官方 MCP**：决策类（poi/route/weather）= 后端 Python 自建 3 个 REST wrapper tool（直调高德 web API，出参剪裁，盲人朗读友好）；执行类（起导航 UI）= App 高德 SDK。**不接高德官方 MCP**（出参不可控 / 进程不经济）。反转条件：高德能力涨到 8-10+ 工具再引官方 MCP。
+
+> 概念级提一句：现有 Java AI 模块曾有「自研 ReAct 雏形（已弃用）」342 行骨架，原计划**冻结保留**作 Java-graph B-prime 回退起跑线；**2026-07-20（chunk-2b-6b）撤销该决策、彻底删**——理由：零活路径引用、B-prime 用 alibaba-graph 非自建 ReAct、红队 Q2 揭「已弃用」真相（细节见 backend known-issues「保留集」①）。
 
 ## 基础设施地址
 

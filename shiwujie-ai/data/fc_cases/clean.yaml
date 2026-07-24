@@ -1,0 +1,181 @@
+version: 1
+# 干净集（clean）：盲人真实口语化输入，期望工具调用明确无歧义。
+# 顶层扁平字段：id / category / input / tool_calls(期望集合) / forbidden(绝不应出现) / args_checks(可选)
+#   tool_calls=[] 表示不应调任何工具（纯问答）。
+#   args_checks: tool -> {field: value 精确} 或 {field: {contains: str 子串}}。
+# multi_turn 用 turns: [...] 每轮独立 input/tool_calls/forbidden/args_checks；轮间由 runner 喂 stub 工具结果。
+# scorer：pass = (tool_calls ⊆ actual) ∧ (forbidden ∩ actual = ∅) ∧ (无幻觉工具名) ∧ (args 全 valid)。
+#   额外非 forbidden 的 read 工具调用不致 fail（计入 over_call 指标）；写工具意外调用计入 write_misuse。
+cases:
+  # ── no_tool（纯问答 / 常识 / 闲聊，不应调任何工具；测「不该调时不调」）──
+  - {id: c001, category: no_tool, input: "你好", tool_calls: [], forbidden: []}
+  - {id: c002, category: no_tool, input: "谢谢你啊", tool_calls: [], forbidden: []}
+  - {id: c003, category: no_tool, input: "你是谁", tool_calls: [], forbidden: []}
+  - {id: c004, category: no_tool, input: "你是男生还是女生", tool_calls: [], forbidden: []}
+  - {id: c005, category: no_tool, input: "1加1等于几", tool_calls: [], forbidden: []}
+  - {id: c006, category: no_tool, input: "帮我算一下 15 乘以 23", tool_calls: [], forbidden: []}
+  - {id: c007, category: no_tool, input: "中国的首都是哪里", tool_calls: [], forbidden: []}
+  - {id: c008, category: no_tool, input: "水的沸点是多少度", tool_calls: [], forbidden: []}
+  - {id: c009, category: no_tool, input: "我今天心情不太好", tool_calls: [], forbidden: []}
+  - {id: c010, category: no_tool, input: "给我讲个笑话", tool_calls: [], forbidden: []}
+  - {id: c011, category: no_tool, input: "谢谢你，再见", tool_calls: [], forbidden: []}
+  - {id: c012, category: no_tool, input: "你真聪明", tool_calls: [], forbidden: []}
+  - {id: c013, category: no_tool, input: "一公里等于多少米", tool_calls: [], forbidden: []}
+  - {id: c014, category: no_tool, input: "太阳从哪个方向升起", tool_calls: [], forbidden: []}
+  - {id: c015, category: no_tool, input: "长城有多长", tool_calls: [], forbidden: []}
+  - {id: c016, category: no_tool, input: "一年有多少天", tool_calls: [], forbidden: []}
+  - {id: c017, category: no_tool, input: "帮我解释一下什么是人工智能", tool_calls: [], forbidden: []}
+  - {id: c018, category: no_tool, input: "我有点累了想休息一下", tool_calls: [], forbidden: []}
+  - {id: c019, category: no_tool, input: "光的速度是多少", tool_calls: [], forbidden: []}
+  - {id: c020, category: no_tool, input: "地球绕太阳一圈要多久", tool_calls: [], forbidden: []}
+  - {id: c021, category: no_tool, input: "我心情好多了谢谢", tool_calls: [], forbidden: []}
+  - {id: c022, category: no_tool, input: "你会唱歌吗", tool_calls: [], forbidden: []}
+
+  # ── single_tool（恰好调一个工具）── 天气 ──
+  - {id: c023, category: single_tool, input: "今天天气怎么样", tool_calls: [get_weather], forbidden: []}
+  - {id: c024, category: single_tool, input: "外面冷不冷，需要穿外套吗", tool_calls: [get_weather], forbidden: []}
+  - {id: c025, category: single_tool, input: "明天会下雨吗", tool_calls: [get_weather], forbidden: []}
+  - {id: c026, category: single_tool, input: "今天带伞吗", tool_calls: [get_weather], forbidden: []}
+  - {id: c027, category: single_tool, input: "这会儿气温多少度", tool_calls: [get_weather], forbidden: []}
+  # ── 联网搜索 ──
+  - {id: c028, category: single_tool, input: "最近有什么新闻", tool_calls: [web_search], forbidden: []}
+  - {id: c029, category: single_tool, input: "黄金现在多少钱一克", tool_calls: [web_search], forbidden: []}
+  - {id: c030, category: single_tool, input: "今天的新闻头条是什么", tool_calls: [web_search], forbidden: []}
+  - {id: c031, category: single_tool, input: "最近有什么新电影上映", tool_calls: [web_search], forbidden: []}
+  - {id: c032, category: single_tool, input: "今天的股市怎么样", tool_calls: [web_search], forbidden: []}
+  # ── 功能知识库 search_kb ──
+  - {id: c033, category: single_tool, input: "怎么加入家庭", tool_calls: [search_kb], forbidden: []}
+  - {id: c034, category: single_tool, input: "这个软件怎么用", tool_calls: [search_kb], forbidden: []}
+  - {id: c035, category: single_tool, input: "怎么发起求助", tool_calls: [search_kb], forbidden: []}
+  - {id: c036, category: single_tool, input: "怎么修改我的个人信息", tool_calls: [search_kb], forbidden: []}
+  - {id: c037, category: single_tool, input: "怎么退出家庭", tool_calls: [search_kb], forbidden: []}
+  # ── 拍照识别 recognize_photo ──
+  - {id: c038, category: single_tool, input: "看看前面是什么", tool_calls: [recognize_photo], forbidden: []}
+  - {id: c039, category: single_tool, input: "帮我看看前面那个东西", tool_calls: [recognize_photo], forbidden: []}
+  - {id: c040, category: single_tool, input: "帮我看看这个东西上面写的字", tool_calls: [recognize_photo], forbidden: []}
+  - {id: c041, category: single_tool, input: "前面有没有障碍物", tool_calls: [recognize_photo], forbidden: []}
+  # ── 高德 POI 搜索 ──
+  - {id: c042, category: single_tool, input: "附近哪里有厕所", tool_calls: [gaode_poi_search], forbidden: []}
+  - {id: c043, category: single_tool, input: "最近的药店在哪", tool_calls: [gaode_poi_search], forbidden: []}
+  - {id: c044, category: single_tool, input: "附近有没有工商银行", tool_calls: [gaode_poi_search], forbidden: []}
+  # ── 家庭信息 ──
+  - {id: c045, category: single_tool, input: "我的家庭里都有谁", tool_calls: [family_info], forbidden: []}
+  - {id: c046, category: single_tool, input: "家里有哪些人", tool_calls: [family_info], forbidden: []}
+  # ── 志愿者视频帮扶（非紧急）──
+  - {id: c047, category: single_tool, input: "找个志愿者帮我看一下路", tool_calls: [request_video_help], forbidden: []}
+  - {id: c048, category: single_tool, input: "我想让志愿者帮帮我", tool_calls: [request_video_help], forbidden: []}
+
+  # ── multi_tool（一轮内并行多工具；测并行 tool_calls）──
+  - {id: c049, category: multi_tool, input: "帮我看看前面是什么，顺便查下今天天气", tool_calls: [recognize_photo, get_weather], forbidden: []}
+  - {id: c050, category: multi_tool, input: "附近最近的医院在哪，还有今天天气怎么样", tool_calls: [gaode_poi_search, get_weather], forbidden: []}
+  - {id: c051, category: multi_tool, input: "搜一下今天的新闻，再帮我看看这个东西是什么", tool_calls: [web_search, recognize_photo], forbidden: []}
+  - {id: c052, category: multi_tool, input: "帮我看看前面路牌写的什么，再找一下最近的地铁站", tool_calls: [recognize_photo, gaode_poi_search], forbidden: []}
+  - {id: c053, category: multi_tool, input: "我家里都有谁，顺便查下今天天气", tool_calls: [family_info, get_weather], forbidden: []}
+  - {id: c054, category: multi_tool, input: "查下今天天气，顺便帮我看看这个东西", tool_calls: [get_weather, recognize_photo], forbidden: []}
+  - {id: c055, category: multi_tool, input: "找下最近的餐厅，再看看今天适不适合出门", tool_calls: [gaode_poi_search, get_weather], forbidden: []}
+  - {id: c056, category: multi_tool, input: "帮我看看这个药盒上写的什么，再搜一下这个药是治什么的", tool_calls: [recognize_photo, web_search], forbidden: []}
+  - {id: c057, category: multi_tool, input: "查下我家里有谁，再帮我找最近的药店", tool_calls: [family_info, gaode_poi_search], forbidden: []}
+  - {id: c058, category: multi_tool, input: "帮我看看前面是什么，并找下最近的厕所", tool_calls: [recognize_photo, gaode_poi_search], forbidden: []}
+  - {id: c059, category: multi_tool, input: "搜下今天新闻，查下天气", tool_calls: [web_search, get_weather], forbidden: []}
+  - {id: c060, category: multi_tool, input: "找下最近医院，看看这个伤口怎么样", tool_calls: [gaode_poi_search, recognize_photo], forbidden: []}
+  - {id: c061, category: multi_tool, input: "查我家庭成员，搜下今天新闻", tool_calls: [family_info, web_search], forbidden: []}
+  - {id: c062, category: multi_tool, input: "看看前面有什么，搜下附近有没有银行", tool_calls: [recognize_photo, gaode_poi_search], forbidden: []}
+  - {id: c063, category: multi_tool, input: "查天气，找最近地铁站", tool_calls: [get_weather, gaode_poi_search], forbidden: []}
+  - {id: c064, category: multi_tool, input: "搜新闻，看看这东西是什么", tool_calls: [web_search, recognize_photo], forbidden: []}
+  - {id: c065, category: multi_tool, input: "找志愿者帮忙，顺便看看前面路况", tool_calls: [request_video_help, recognize_photo], forbidden: []}
+  - {id: c066, category: multi_tool, input: "查下家里成员，看下今天天气", tool_calls: [family_info, get_weather], forbidden: []}
+
+  # ── multi_turn（多轮编排；轮间 runner 喂 stub 工具结果）── 导航 ──
+  - id: c067
+    category: multi_turn
+    turns:
+      - {input: "我想去最近的医院", tool_calls: [gaode_poi_search], optional: [read_skill], forbidden: []}
+      - {input: "去第一个，走路过去", tool_calls: [gaode_route], optional: [launch_navigation], forbidden: []}
+  - id: c068
+    category: multi_turn
+    turns:
+      - {input: "导航去火车站", tool_calls: [gaode_poi_search], optional: [read_skill], forbidden: []}
+      - {input: "坐公交去", tool_calls: [gaode_route], optional: [launch_navigation], forbidden: []}
+  - id: c069
+    category: multi_turn
+    turns:
+      - {input: "找一下最近的工商银行我要去", tool_calls: [gaode_poi_search], optional: [read_skill], forbidden: []}
+      - {input: "打车过去", tool_calls: [gaode_route], optional: [launch_navigation], forbidden: []}
+  - id: c070
+    category: multi_turn
+    turns:
+      - {input: "去省图书馆怎么走", tool_calls: [gaode_poi_search], optional: [read_skill], forbidden: []}
+      - {input: "步行过去", tool_calls: [gaode_route], optional: [launch_navigation], forbidden: []}
+  - id: c071
+    category: multi_turn
+    turns:
+      - {input: "我要去万达广场", tool_calls: [gaode_poi_search], optional: [read_skill], forbidden: []}
+      - {input: "对就是那个万达，开车去", tool_calls: [gaode_route], optional: [launch_navigation], forbidden: []}
+  - id: c072
+    category: multi_turn
+    turns:
+      - {input: "附近超市在哪我要去", tool_calls: [gaode_poi_search], optional: [read_skill], forbidden: []}
+      - {input: "走过去", tool_calls: [gaode_route], optional: [launch_navigation], forbidden: []}
+  - id: c073
+    category: multi_turn
+    turns:
+      - {input: "去最近的公厕", tool_calls: [gaode_poi_search], optional: [read_skill], forbidden: []}
+      - {input: "走着去", tool_calls: [gaode_route], optional: [launch_navigation], forbidden: []}
+  # ── 紧急求助确认门（拆 prepare/confirm，跨轮；红队硬修正 1 的核心）──
+  - id: c074
+    category: multi_turn
+    turns:
+      - {input: "我摔倒了快帮我叫家属来", tool_calls: [request_emergency_help_prepare], forbidden: [request_emergency_help_confirm]}
+      - {input: "对，确认，叫他们来", tool_calls: [request_emergency_help_confirm], forbidden: []}
+  - id: c075
+    category: multi_turn
+    turns:
+      - {input: "我胸口很疼，帮我把家属都叫来", tool_calls: [request_emergency_help_prepare], forbidden: [request_emergency_help_confirm]}
+      - {input: "是的确认发送", tool_calls: [request_emergency_help_confirm], forbidden: []}
+  - id: c076
+    category: multi_turn
+    turns:
+      - {input: "有人跟着我，我害怕，快通知家里人", tool_calls: [request_emergency_help_prepare], forbidden: [request_emergency_help_confirm]}
+      - {input: "是的发通知吧", tool_calls: [request_emergency_help_confirm], forbidden: []}
+  # ── 资料/家庭多轮 ──
+  - id: c077
+    category: multi_turn
+    turns:
+      - {input: "帮我把昵称改成小明", tool_calls: [update_profile], forbidden: [], args_checks: {update_profile: {nickname: {contains: 小明}}}}
+      - {input: "再把手机号改成13800001111", tool_calls: [update_profile], forbidden: [], args_checks: {update_profile: {phone: {contains: "13800001111"}}}}
+  - id: c078
+    category: multi_turn
+    turns:
+      - {input: "我的家庭里都有谁", tool_calls: [family_info], forbidden: []}
+      - {input: "帮我把昵称改成小红", tool_calls: [update_profile], forbidden: [], args_checks: {update_profile: {nickname: {contains: 小红}}}}
+  - id: c079
+    category: multi_turn
+    turns:
+      - {input: "我想加一个家庭，号码是13800002222", tool_calls: [join_family], forbidden: [], args_checks: {join_family: {family_phone: {contains: "13800002222"}}}}
+      - {input: "我家里现在有谁", tool_calls: [family_info], forbidden: []}
+  - id: c080
+    category: multi_turn
+    turns:
+      - {input: "帮我退出当前家庭", tool_calls: [leave_family], forbidden: []}
+      - {input: "查下今天天气", tool_calls: [get_weather], forbidden: []}
+  - id: c081
+    category: multi_turn
+    turns:
+      - {input: "看看前面是什么", tool_calls: [recognize_photo], forbidden: []}
+      - {input: "这是什么牌子", tool_calls: [recognize_photo], forbidden: []}
+  - id: c082
+    category: multi_turn
+    turns:
+      - {input: "今天天气怎么样", tool_calls: [get_weather], forbidden: []}
+      - {input: "明天的呢", tool_calls: [get_weather], forbidden: []}
+  - id: c083
+    category: multi_turn
+    turns:
+      - {input: "搜下最近新闻", tool_calls: [web_search], forbidden: []}
+      - {input: "再搜下黄金价格", tool_calls: [web_search], forbidden: []}
+  - id: c084
+    category: multi_turn
+    turns:
+      - {input: "怎么修改手机号", tool_calls: [search_kb], forbidden: []}
+      - {input: "那就帮我改吧，新号码13800003333", tool_calls: [update_profile], forbidden: [], args_checks: {update_profile: {phone: {contains: "13800003333"}}}}
+      - {input: "顺便把性别改成女", tool_calls: [update_profile], forbidden: [], args_checks: {update_profile: {gender: {contains: 女}}}}

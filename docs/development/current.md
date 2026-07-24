@@ -4,7 +4,7 @@
 
 ## 三件套入口
 
-- [任务拆解](v3.0.0/task-breakdown.md)（单体化交付范围 + 任务）
+- [任务拆解](v3.0.0/task-breakdown.md)（单体化交付范围 + 任务；**+ AI 重写子任务（Agent 驱动，设计敲定·待 Phase 5）**）
 - [测试策略](v3.0.0/testing-strategy.md)（测试现状 + 验证点 + 环境表 + 缺口）
 - [发布检查清单](v3.0.0/release-checklist.md)（逐项核对）
 

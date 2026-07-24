@@ -1,0 +1,63 @@
+# chunk-2d：视无界双进程 Docker 部署（Java 单体 + Python AI 服务）。
+# 参考布局：根级 scripts/ 编排壳 + 本文件仅 compose + 各子项目自带 Dockerfile（多阶段）。
+#
+# 网络：
+# - java 发布 8100:8100（公网：HTTP /api/** + WS /api/ws/call + MCP /mcp）。
+# - python **不发布端口**（仅 compose 内网，java 经服务名 http://python:8500 调 /ai/turn；缝 A 安全边界）。
+# - python → java MCP：经服务名 http://java:8100/mcp（缝 C）。
+# - 两服务 extra_hosts host.docker.internal:host-gateway → 容器内连宿主 MySQL/Redis（47.112.114.139=宿主本身）。
+#
+# 鉴权边界（design 缝 A/C）：Python 不持用户 JWT、不暴露公网；Java 是唯一鉴权边界。
+# 详见 docs/architecture/auth.md / ai-rewrite.md。
+
+name: shiwujie
+
+services:
+  java:
+    build:
+      context: ../shiwujie-backend
+      dockerfile: Dockerfile
+    image: shiwujie-java:latest
+    container_name: shiwujie-java
+    restart: always
+    init: true
+    env_file:
+      - ../config/.env
+    environment:
+      # 容器内连宿主 MySQL/Redis（host-gateway 别名）；yml 默认仍是公网 IP（本地 dev 不变）。
+      MYSQL_HOST: host.docker.internal
+      REDIS_HOST: host.docker.internal
+      # 缝 A：Java→Python 经服务名（非 127.0.0.1）。
+      PYTHON_BASE_URL: http://python:8500
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8100:8100"
+    # 不 hard depends_on python：业务 WS 独立，python 挂时 AI turn 优雅降级（非致命）。
+
+  python:
+    build:
+      context: ../shiwujie-ai
+      dockerfile: Dockerfile
+    image: shiwujie-python:latest
+    container_name: shiwujie-python
+    restart: always
+    init: true
+    env_file:
+      - ../config/.env
+    environment:
+      # 缝 C：Python→Java MCP 经服务名（非 localhost）；必须绑 0.0.0.0 否则 java 容器连不上。
+      SHIWUJIE_JAVA_MCP_URL: http://java:8100/mcp
+      SHIWUJIE_AI_HOST: "0.0.0.0"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      # /health 由 FastAPI service/app.py 暴露（chunk-2a）。
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8500/health', timeout=3).status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # 不发布端口（expose 仅声明，不映射宿主）。
+    expose:
+      - "8500"

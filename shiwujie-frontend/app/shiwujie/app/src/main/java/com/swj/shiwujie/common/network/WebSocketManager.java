@@ -7,11 +7,16 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.swj.shiwujie.data.model.BaseResponse;
 import com.swj.shiwujie.data.model.SocketDataV0;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import java.net.URI;
 import java.util.concurrent.Executors;
@@ -129,14 +134,37 @@ public class WebSocketManager {
         Log.e(TAG, "手机号: " + phone + ", 用户类型: " + (isVolunteer ? "志愿者" : "视障人士"));
         Log.e(TAG, "当前连接状态: isConnecting=" + isConnecting + ", isConnected=" + isConnected);
         Log.e(TAG, "WebSocket URL: " + WS_URL);
-        
+
         if (isConnecting || isConnected) {
             Log.e(TAG, "WebSocket already connecting or connected");
             return;
         }
-        
+        isConnecting = true;
+        // chunk-2e-5：连 WS 前先经已鉴权 HTTP 换 ticket（堵 phone 冒充）。取到 ticket 再 doConnect 建 WS。
+        // 失败（网络/登录态）→ 不建 WS，触发重连自愈（重连会再取 ticket）。
+        fetchWsTicket(new TicketCallback() {
+            @Override
+            public void onTicket(String ticket) {
+                doConnect(phone, isVolunteer, ticket);
+            }
+
+            @Override
+            public void onError(String reason) {
+                Log.e(TAG, "WS ticket 获取失败：" + reason + "，触发重连自愈");
+                isConnecting = false;
+                socketData.updateConnectionStatus(false);
+                if (canReconnect()) {
+                    scheduleReconnect();
+                }
+            }
+        });
+    }
+
+    /**
+     * chunk-2e-5：拿到 ticket 后真正建 WS（原 connect 主体）。
+     */
+    private void doConnect(String phone, boolean isVolunteer, String ticket) {
         try {
-            isConnecting = true;
             Log.e(TAG, "Connecting to WebSocket: " + WS_URL);
             
             webSocketClient = new WebSocketClient(new URI(WS_URL)) {
@@ -153,7 +181,7 @@ public class WebSocketManager {
                     socketData.updateConnectionStatus(true);
                     
                     // 发送登录消息
-                    sendLoginMessage(phone, isVolunteer);
+                    sendLoginMessage(phone, isVolunteer, ticket);
                     
                     // 显示连接成功提示
                    /* showToast("WebSocket连接成功");*/
@@ -245,12 +273,55 @@ public class WebSocketManager {
     }
     
     /**
-     * 发送登录消息
+     * 发送登录消息（chunk-2e-5：带 ticket，服务端校验后绑 session）
      */
-    private void sendLoginMessage(String phone, boolean isVolunteer) {
-        SocketDataV0 loginData = SocketDataV0.createLoginMessage(phone, isVolunteer);
+    private void sendLoginMessage(String phone, boolean isVolunteer, String ticket) {
+        SocketDataV0 loginData = SocketDataV0.createLoginMessage(phone, isVolunteer, ticket);
         sendMessage(loginData);
     }
+
+    // region chunk-2e-5 WS ticket 鉴权
+
+    /** ticket 获取回调。 */
+    private interface TicketCallback {
+        void onTicket(String ticket);
+        void onError(String reason);
+    }
+
+    /**
+     * 经已鉴权 HTTP（复用 JWT）换 WS ticket。异步（Retrofit enqueue），回调在主线程由调用方自行处理。
+     * <p>登录态缺失 → 直接 onError（不建 WS，触发重连自愈重试）。</p>
+     */
+    private void fetchWsTicket(TicketCallback cb) {
+        String token = SharedPrefsUtil.getToken();
+        if (token == null || token.isEmpty()) {
+            cb.onError("登录态异常（token 为空）");
+            return;
+        }
+        RetrofitClient.getInstance().createService(ApiService.class)
+                .fetchWsTicket("Bearer " + token)
+                .enqueue(new Callback<BaseResponse<String>>() {
+                    @Override
+                    public void onResponse(Call<BaseResponse<String>> call, Response<BaseResponse<String>> response) {
+                        BaseResponse<String> body = response.body();
+                        if (response.isSuccessful() && body != null
+                                && body.getCode() == 1 && body.getData() != null && !body.getData().isEmpty()) {
+                            Log.d(TAG, "WS ticket 获取成功");
+                            cb.onTicket(body.getData());
+                        } else {
+                            String msg = body != null ? body.getMessage() : ("HTTP " + response.code());
+                            cb.onError(msg);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<BaseResponse<String>> call, Throwable t) {
+                        cb.onError(t.getMessage() == null ? "网络异常" : t.getMessage());
+                    }
+                });
+    }
+
+    // endregion
     
     /**
      * 发送消息

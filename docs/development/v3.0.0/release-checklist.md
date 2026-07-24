@@ -28,6 +28,32 @@
 - [ ] App 高德 SDK 集成 ——独立项
 - [ ] Docker 化 + 压测 + AiLogs 索引调优 ——独立项
 
+## AI 重写交付项（设计敲定·待 Phase 5，全 `[ ]`）
+
+> **状态：设计敲定（Phase 1–4）· 实现待 Phase 5。** 把现有 Java AI 模块整体替换为 Python LangGraph 智能体（Agent）驱动，Java 业务单体保留。下列全 `[ ]` 尚未落地；打 v3.0.0 tag 前 AI 重写未完成则视为本版本不收 AI 重写（状态诚实，绝不把设计写成「已落地」）。详见 [task-breakdown](task-breakdown.md)「AI 重写」3.1–3.10、[testing-strategy](testing-strategy.md)「AI 重写测试关系」、[architecture/tech-stack](../../architecture/tech-stack.md) AI 重写段、[product/v3.0.0/](../../product/v3.0.0/) 契约变更。
+
+- [ ] **前置 spike**：qwen function-calling 可靠性（本工具集 + 本 prompt 通过率，建议 >=90%，决定 Decision A）/ `spring-ai-starter-mcp-server-webmvc` 与 `spring-ai-bom 1.0.0` + `alibaba-starter` 共存 / alibaba-graph HITL-resume 是否被 open bug（#3297 / #3266）咬中（B-prime 评估）
+- [ ] **3.1 Python graph**：State + 节点 + 标准环 + Redis checkpointer（`ai:ckpt:` 前缀 / `thread_id=blind_id`）+ HITL 两处（导航 / 紧急）+ stream custom 反馈
+- [ ] **3.2 工具 / 技能 / KB**：14 tool（6 native + 8 MCP）+ `read_skill` + `navigation` skill + BM25 功能 KB
+- [ ] **3.3 两层记忆**：短期 checkpoint + 压缩（~8–16k，recent-tail~10 不压）/ 长期偏好后台异步抽取
+- [ ] **3.4 Java WS 改造**：ticket 鉴权 / `getBasicRemote`→`getAsyncRemote` / `HashMap`→`ConcurrentHashMap` / 拦回显 / 删 AI 拦截器 dev 后门（[known-issues](../../../shiwujie-backend/docs/known-issues.md) #1 / [auth](../../architecture/auth.md) 风险#6）/ 修 AI 拦截器 Redis 续期错 key
+- [ ] **3.5 Java MCP server 8 工具**：业务 4 + 信令 4；`update_profile` inputSchema 硬卡 `{nickname, phone, gender}` + 窄 DTO + 单测断言无敏感字段 setter
+- [ ] **3.6 删 Java AI 模块**：`app/agent/tools/advisor/chatmemory` + `AiConfig`/`AiConstants`/`ChatServiceImpl`/`ChatController` + 依赖；`MyManus` 原计划冻结保留，2026-07-20（chunk-2b-6b）撤销删除（零活引用 + B-prime 用 alibaba-graph 非自建 ReAct）
+- [ ] **3.7 两进程配置 + Docker**：`scripts/` + `docker-compose.yml` + 两 Dockerfile + `config/.env`；java 公网 `8100:8100` + python 内网（`http://python:8500`）+ `host-gateway`
+- [ ] **3.8 APK 改**：SSE client→WS turn client + `SocketDataV0` 加 `destination` + `AiFragment` 5006 读 `destination` + 4-button 重写 + WS ticket
+- [ ] **3.9 测试**：删 `AiSmokeTest` + Java WS 契约测试（mock Python）+ Python tool 单测 + graph 集成 + 安全门测试
+- [ ] **3.10 灰度**：硬切换（后端镜像 + APK 同批发，SSE↔WS 不兼容须版本配对）
+- [ ] **安全门**（红队硬修正，非协商）：紧急确认 token 绑 `(blind_id, thread_id, issuing_turn)` + 同轮拒绝 + App 非-MCP 确认面（第三道门）+ `parallel_tool_calls=False`；`update_profile` 窄 DTO 无敏感字段断言；tool-name 白名单拒幻觉名 + strict JSON-schema 校验（两条护栏无论 spike 结果都上）
+- [ ] **qwen FC spike 结果记录**：通过率实测值 + Decision A go/no-go + Decision B-prime 评估结论归档
+
+### AI 重写文档自检（随交付滚动核对）
+
+- [ ] **product grep 零命中**：`grep -rniE 'src/main|com/swj|\.java:|@DubboService|@DubboReference|java -jar|DUBBO_IP_TO_REGISTRY|mvn |\.yml|LangGraph|Python|checkpoint|function-calling|Agent|SSE' docs/product/` 期望零命中（product 层只写用户面措辞：AI 助手 / 智能体驱动 / 对话通道 / 求助信令 / 记住偏好 / 导航分步确认）
+- [ ] **FR/AC 去重**：FR/AC 只在 [product/v3.0.0/](../../product/v3.0.0/) 出现一次；architecture/development 引用写「见 product/...」不重复
+- [ ] **三处版本号一致**：`product/current.md` + `development/current.md` + `docs/README.md` 均 `v3.0.0`
+- [ ] **全仓相对链接可达**：AI 重写新增/引用的 architecture / development / product 交叉链接逐一可点
+- [ ] **ROADMAP 不勾**：AI 重写相关 ROADMAP `[ ]` 项在实现未落地前绝不勾选（进行中版本的诚实要求）
+
 ## 合库执行步骤（旧 4 库导出 → 单库 `shiwujie`）✅ 已完成
 
 > 远程 `47.112.114.139` 的 `shiwujie` 库已按本节导入并校验 16 表（2026-07-11）。下述命令留作回滚/复现参考。
