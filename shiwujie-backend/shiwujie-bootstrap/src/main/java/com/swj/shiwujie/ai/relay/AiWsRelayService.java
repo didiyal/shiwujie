@@ -64,6 +64,10 @@ public class AiWsRelayService {
     @PostConstruct
     void init() {
         this.httpClient = HttpClient.newBuilder()
+                // 锁 HTTP/1.1：uvicorn 仅 HTTP/1.1。Java HttpClient 默认 HTTP_2 会先发 h2c upgrade（日志
+                // "Unsupported upgrade request"），被 uvicorn 拒绝后 fallback 时 POST body 未正确重发 →
+                // Python /ai/turn 收到空 body → 422（图片 turn 770KB base64 必中，文本 turn 偶发）。
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
         this.executor = Executors.newCachedThreadPool(r -> {
