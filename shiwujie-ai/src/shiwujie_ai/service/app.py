@@ -29,6 +29,7 @@ chunk-2a **流式版**（design ⑥）：
 """
 
 import asyncio
+import logging
 import os
 from typing import List, Optional
 
@@ -45,6 +46,12 @@ from ..safety import emergency
 from ..streaming import progress_event_for, sse_line
 from ..tools.registry import build_toolset
 from ..tools.vlm import set_image_context
+
+# shiwujie_ai 树提级 INFO：uvicorn 默认 dictConfig root=WARNING，不显式提级则下面的 info 级开机总览
+# 与 vlm.py 的诊断 warning 都看不到（vlm logger 继承 shiwujie_ai）。dictConfig 未提及本 logger
+# （disable_existing_loggers=False），setLevel 不被覆盖。
+logging.getLogger("shiwujie_ai").setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class TurnRequest(BaseModel):
@@ -141,6 +148,15 @@ def create_app(model=None, checkpointer=None) -> FastAPI:
     （关键词信号闸 + structured_output LLM 抽，fire-and-forget 不阻塞流）。FakeChatModel 均走零 token 路径。
     """
     real = os.environ.get("SHIWUJIE_AI_REAL", "") == "1"
+    # 开机一次开关总览：docker logs 一眼看到 VLM/GAODE 等外部能力真/假——拍照、导航等易漏开
+    # 独立 FORCE_REAL 开关（与主对话 SHIWUJIE_AI_REAL 不是同一个），症状却是"结果不搭关系/全 mock"。
+    logger.info(
+        "shiwujie-ai switches: AI_REAL=%s VLM_FORCE_REAL=%s GAODE_FORCE_REAL=%s SEARCHAPI_FORCE_REAL=%s",
+        os.environ.get("SHIWUJIE_AI_REAL", ""),
+        os.environ.get("SHIWUJIE_VLM_FORCE_REAL", ""),
+        os.environ.get("SHIWUJIE_GAODE_FORCE_REAL", ""),
+        os.environ.get("SHIWUJIE_SEARCHAPI_FORCE_REAL", ""),
+    )
     app = FastAPI(title="shiwujie-ai", version="0.1.0")
     graph = build_graph(
         model or _resolve_model(),

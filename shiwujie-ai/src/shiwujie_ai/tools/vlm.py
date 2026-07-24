@@ -12,10 +12,13 @@ chunk-2a：mock 返确定性假描述（零 token、零 VLM 调用）。chunk-2c
 """
 
 import contextvars
+import logging
 import os
 from typing import Optional
 
 from ..config import API_KEY, BASE_URL, VLM_MODEL
+
+logger = logging.getLogger(__name__)
 
 # 当前轮图片（url 或 base64）；service 边界灌（2c），2a 默认 None → mock。
 _CURRENT_IMAGE: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
@@ -64,12 +67,17 @@ def recognize(question: Optional[str] = None, image: Optional[str] = None) -> st
     """VLM 识别 → 描述文本。
 
     image 显式传入优先；否则取 contextvar（service 边界灌）；都无 → mock（2a 默认）。
-    real 路径异常 → 回退 mock（design ⑫ encode-不抛）。
+    real 路径异常 → 回退 mock（design ⑫ encode-不抛），但**记 warning**（诊断可见性：
+    静默回退会让"真路径挂了"现象与"没开开关"无异，无法排查）。
     """
     img = image or _current_image()
-    if _use_real() and img:
-        try:
-            return _recognize_real(img, question)
-        except Exception:
-            return _mock_description(question)
-    return _mock_description(question)
+    if not _use_real():
+        return _mock_description(question)
+    if not img:
+        logger.warning("VLM 真模式但当前轮无图片（contextvar 未灌 / image 未传），回退 mock")
+        return _mock_description(question)
+    try:
+        return _recognize_real(img, question)
+    except Exception as e:
+        logger.warning("VLM 真识别失败，回退 mock：%s", e, exc_info=True)
+        return _mock_description(question)
