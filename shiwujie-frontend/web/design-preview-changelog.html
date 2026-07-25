@@ -368,113 +368,184 @@ body{
     <div class="version-dot"></div>
     <div class="version-header">
       <span class="version-tag">v3.0.0</span>
-      <span class="version-date">2026-07-08</span>
+      <span class="version-date">2026-07</span>
       <span class="version-badge new">Major</span>
     </div>
     <div class="version-body">
-      <h4>官网全新上线 🎉</h4>
-      <p>视无界正式推出品牌官网，提供产品介绍、下载入口与更新日志，管理端同步升级至全新 Apple 风格设计系统。</p>
+      <h4>官网全新上线 &amp; 架构升级 🎉</h4>
+      <p>视无界正式推出品牌官网；后端反思微服务过度设计，完成单体化改造（7 模块 → 2 模块），全面加固安全体系并补齐单元测试；App 修复多项稳定性与安全问题。</p>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🖥️ 官网 &amp; Web 管理端</h5>
       <ul class="cl-items">
-        <li class="cl-item">
-          <span class="tag feature">新增</span>
-          <span>全新品牌官网首页，科技概念视觉设计</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag feature">新增</span>
-          <span>官网导航栏：产品介绍、更新日志、GitHub、管理端入口</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag improve">优化</span>
-          <span>管理端整体 UI 升级，采用 Apple 设计语言，统一圆角/间距/字体体系</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag improve">优化</span>
-          <span>暗色侧栏 + 毛玻璃顶栏，提升视觉层次</span>
-        </li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>品牌官网首页上线，Apple 风格设计系统</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>官网导航：产品介绍、更新日志、GitHub、管理端入口</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>App 软件下载功能，支持 Android APK 直接下载</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>管理端整体 UI 升级：暗色侧栏 + 毛玻璃顶栏，统一圆角/间距/字体体系</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">⚙️ 后端：单体化改造</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag improve">优化</span><span>模块合并 7→2（model 契约层 + bootstrap 唯一应用），删除 gateway 模块</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>去 Spring Cloud / Nacos / Dubbo，统一 Spring Boot 3.4.5 / Java 21</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>4 分库合并为单库 shiwujie，跨库写操作升级为单事务保证一致性</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>合并 4 份重复 LoginCheckInterceptor / WebConfig 为公共各 1 份</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>对外 HTTP 路径 / WS 12 信令 / 状态码 / 返回字段零变更，前端无需改动</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🔒 安全加固</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag improve">优化</span><span>密码存储 MD5 → BCrypt（cost=10，盐内嵌），存量 MD5 首次登录时懒升级</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>恢复社区求助帖/活动/管理员增删改权限检查，此前任意登录用户可操作</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>改密接口补 ownership 校验 + 原密码必填校验，修复账户接管漏洞</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>修正 deleteCommunityManager 忽略请求体、恒删调用者自己的 bug</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🤖 AI 模块</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag improve">优化</span><span>文本模型 qwen3-max → qwen3.6-flash，路径改 OpenAI 兼容直连止血</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>AI 集成冒烟测试，文本/图像模型回归可用性自动验证</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">📱 App 修复（P0 + 批次 A/B）</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag fix">修复</span><span>WebSocket 心跳实际间隔 2h → 30s，长连接不再被 NAT 静默掐断</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>视频通话监听器泄漏：onDestroy 误调 remove(null) 致 Activity 销毁后仍收回调</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>紧急求助「无法再次求助」死锁：新增 60s 家属无响应超时自动复位</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>AI 页面 WebSocket 断线不重连：attemptReconnect 只打日志从不调 connect</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>紧急求助超时在通话进行中误触发——WebSocketManager 补发消息处理</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>WS 重连 5 次用尽后永久失活：改为快速窗口（3s）+ 慢速持续重试（60s）</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>VideoCallManager 回调跑在子线程，切回主线程防 UI 崩溃</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>统一 token 注入拦截器，补漏历史裸调；HTTP BODY 日志仅 DEBUG 打印</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>Release 加固：开启 R8 混淆 + 资源压缩，allowBackup=false</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>前台通知按角色跳首页：盲人不再被带到志愿者首页</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>信令码常量化 + 固话真值表，散落魔数统一替换</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🧹 App 清理（批次 B）</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag fix">移除</span><span>删除未用类 15 个（Compose 模板残留、空 POJO、避障 mock 脚手架）</span></li>
+        <li class="cl-item"><span class="tag fix">移除</span><span>删除死资源 57 文件 + strings 12 项 + 2 数组（旧布局/菜单/图标）</span></li>
+        <li class="cl-item"><span class="tag fix">移除</span><span>删除死依赖：lifecycle livedata/viewmodel ktx + 整组 CameraX（实用 Camera2）</span></li>
+        <li class="cl-item"><span class="tag fix">移除</span><span>删除无效权限 READ_PRIVILEGED_PHONE_STATE（第三方拿不到）</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🧪 后端测试 &amp; 审查</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag feature">新增</span><span>20 个单元测试类 / 286 例（纯 Mockito，mvn test 全绿），覆盖 user/community/call/utils</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>视频求助匹配队列序列化断裂：RedisUtils 双注入致 ClassCastException</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>匹配队列 TTL 单位错：硬编码 30 天 → 30 秒，僵尸志愿者不再滞留队头</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>NPE 簇加固：removeVolunteerFromVideohelp 对 null 调 contains 必崩，统一判空</span></li>
       </ul>
     </div>
   </div>
 
-  <!-- v2.5.0 -->
+  <!-- v2.1.0 -->
   <div class="version">
     <div class="version-dot"></div>
     <div class="version-header">
-      <span class="version-tag">v2.5.0</span>
-      <span class="version-date">2026-06-20</span>
-      <span class="version-badge improve">改进</span>
+      <span class="version-tag">v2.1.0</span>
+      <span class="version-date">2026-07-11</span>
+      <span class="version-badge improve">封版</span>
     </div>
     <div class="version-body">
-      <h4>社区与活动功能增强</h4>
-      <p>完善社区管理流程，新增活动签到管理功能。</p>
+      <h4>二期微服务封版 🏷️</h4>
+      <p>二期微服务架构（Spring Cloud + Nacos + Dubbo）能力整合封版（tag v2.1.0），修复关键 bug，四层文档体系规范化落地。阶段 0–9 累积现状为起点，未完成收尾项平移至 v3.0.0。</p>
       <ul class="cl-items">
-        <li class="cl-item">
-          <span class="tag feature">新增</span>
-          <span>活动签到管理：支持签到列表查看、签到详情追踪</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag improve">优化</span>
-          <span>社区编辑表单重构，提升数据录入效率</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag fix">修复</span>
-          <span>修复社区列表分页在移动端的显示问题</span>
-        </li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>Token 续期 key 漏身份前缀：续期/删用户拼的 Redis key 与登录/拦截器不一致，续期静默失效、活跃用户 90 天后被踢、删用户旧 token 残留。提取共享 redisKey 杜绝拼接分叉，对齐 90 天滑动会话</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>文档体系落地：product / architecture / development / ROADMAP+CHANGELOG 四层规范 + 版本分级模型（current 指针 + vX.Y.Z/ 目录）</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🔧 阶段 9 · 工程化收尾（约 2026-07）</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag feature">新增</span><span>dev/prod 多环境 profile 拆分，凭据占位符化（MYSQL/REDIS/NACOS/DASHSCOPE 等走 ${ENV:default}）</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>引入 shiwujie-backend 父 pom：7 模块聚合 + 版本统一管理</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>后端模块扁平化：六模块从 gateway 子目录移至 backend 同级</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>Dubbo provider 端口迁出 Hyper-V/WSL 保留段（50200→21200），解决 bind Address already in use</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>仓库卫生：.idea/、*.iml、logs/*.log 移出 git 跟踪</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🌐 阶段 8 · 分布式与生产化（约 2026-01）</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag improve">优化</span><span>Call 模块 WebSocket 从 Netty 改为 Spring WebSocket（@ServerEndpoint + javax.websocket）</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>Gateway 基于 Nacos 服务发现 + Spring Cloud LoadBalancer 轮询负载均衡</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>多服务器间 Nacos + Dubbo 通信配置，支持分布式部署</span></li>
       </ul>
     </div>
   </div>
 
-  <!-- v2.4.0 -->
+  <!-- v2.0.0 -->
   <div class="version">
     <div class="version-dot"></div>
     <div class="version-header">
-      <span class="version-tag">v2.4.0</span>
-      <span class="version-date">2026-05-15</span>
-      <span class="version-badge improve">改进</span>
+      <span class="version-tag">v2.0.0</span>
+      <span class="version-date">2025-11-12</span>
+      <span class="version-badge new">里程碑</span>
     </div>
     <div class="version-body">
-      <h4>数据统计模块上线</h4>
-      <p>新增社区与活动数据统计分析功能，支持多维度可视化。</p>
+      <h4>二期初步稳定版 🚀</h4>
+      <p>二期开发首个 semver 版本（tag v2.0.0），Spring AI Alibaba M6.1 时期的稳定里程碑。至此 AI 大脑、视频通话、社区治理三大核心能力体系建成。</p>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🤖 阶段 5–7 · AI 模块：从零到能用 → 能力跃升 → 引擎升级</h5>
       <ul class="cl-items">
-        <li class="cl-item">
-          <span class="tag feature">新增</span>
-          <span>社区统计看板：成员增长、活跃度、地域分布</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag feature">新增</span>
-          <span>活动统计看板：参与率、签到率、活动趋势</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag improve">优化</span>
-          <span>仪表板首页改版，关键指标卡片重新设计</span>
-        </li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>AI 模块初始化：Spring AI Alibaba 框架、Redis 存储 advisor、内存→阿里云向量数据库</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>多模型支持：deepseek + 千问（Qwen），文字与图像模型同时回答</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>Dubbo Inner 服务接入 AI，工具调用执行真实设备动作（社区查询等）</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>流式输出 + 讯飞 TTS 自动语音播报 + 拍照识别</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>Redis 持久化 + MySQL 异步存储（自研 ChatMemory 双写），调用速度提升约 50%</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>AI 避障功能 + 高德导航（自动开启步行导航）+ 跳转外部应用</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>独立图片处理 App，图片追问不占 Redis 空间</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>Spring AI Alibaba M6 → 1.0 引擎重构，动态配置双模型持久化策略，性能调优</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>提示词改用文档引入，图片追问功能，取消 Redis 图片上下文存储</span></li>
+        <li class="cl-item"><span class="tag fix">修复</span><span>AI 悬浮窗在志愿者端误出现、APP 崩溃、紧急求助重复点击等多处 bug</span></li>
+        <li class="cl-item"><span class="tag fix">移除</span><span>Mqtt 硬件 IoT 通道（硬件成本取消）、自研 ReAct Agent（改用代码工作流）、RAG 知识库（效果不及工作流）</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">👥 阶段 4 · 社区治理（约 2025-07 ~ 08）</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag feature">新增</span><span>社区 CRUD + 加入审核 + 管理员设置，省市街道三级社区体系</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>求助帖发布与管理 + 活动发布/报名/签到全流程</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>Web 端社区管理：审核、用户管理、活动管理完整后台</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">📹 阶段 3 · 视频通话与紧急求助（约 2025-07 ~ 08）</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag feature">新增</span><span>Call 模块诞生：视频通话 + 紧急求助，早期 Netty Socket 实现</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>FIFO 匹配队列：盲人发起求助 → 按序匹配在线志愿者</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>家庭紧急求助：家属一键呼叫，与视频通话共用信令通道</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>心跳包 + App 自启动，长连接保活</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">👤 阶段 2 · 用户与家庭模块（约 2025-07 ~ 08）</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag feature">新增</span><span>三类用户体系：视障人士 / 志愿者 / 员工，注册登录 + JWT + Redis token</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>家庭关系管理：家属绑定与审核，紧急求助通知链</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>抽取公共拦截器代码（common-web），统一鉴权逻辑</span></li>
+        <li class="cl-item"><span class="tag improve">优化</span><span>盲人端移动端适配优化</span></li>
+      </ul>
+
+      <h5 style="font-size:14px;font-weight:700;margin:16px 0 8px;color:var(--text);">🏗️ 阶段 0–1 · 一期封版 &amp; 二期脚手架</h5>
+      <ul class="cl-items">
+        <li class="cl-item"><span class="tag feature">新增</span><span>一期单体封版（uniapp + Spring Boot + 单库 4 表），git tag v1.0</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>二期微服务脚手架：多模块切分 + Nacos 注册中心 + Dubbo RPC + JWT/Redis 骨架</span></li>
       </ul>
     </div>
   </div>
 
-  <!-- v2.3.0 -->
+  <!-- v1.0 -->
   <div class="version">
     <div class="version-dot"></div>
     <div class="version-header">
-      <span class="version-tag">v2.3.0</span>
-      <span class="version-date">2026-04-10</span>
-      <span class="version-badge new">新增</span>
+      <span class="version-tag">v1.0</span>
+      <span class="version-date">2025-06-30</span>
+      <span class="version-badge fix">起点</span>
     </div>
     <div class="version-body">
-      <h4>用户管理与审核系统</h4>
-      <p>完善用户管理功能，新增社区加入审核流程。</p>
+      <h4>视无界诞生 🌱</h4>
+      <p>一期平台（git tag v1.0，独立根提交）正式封版，奠定面向视障人士的无障碍服务基石。作为二期微服务演进的对照基线保留在 git 历史，不再迭代。</p>
       <ul class="cl-items">
-        <li class="cl-item">
-          <span class="tag feature">新增</span>
-          <span>志愿者、员工、视障人士三类用户分页管理</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag feature">新增</span>
-          <span>社区加入审核：审批志愿者入群申请</span>
-        </li>
-        <li class="cl-item">
-          <span class="tag fix">修复</span>
-          <span>修复登录状态在页面刷新后丢失的问题</span>
-        </li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>视障人士与志愿者注册登录，基础身份管理体系</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>远程无障碍协助服务雏形</span></li>
+        <li class="cl-item"><span class="tag feature">新增</span><span>技术栈：uniapp 跨端客户端 + Spring Boot 单体后端 + 单库 4 表</span></li>
       </ul>
     </div>
   </div>

@@ -18,7 +18,22 @@
         <div class="version-body">
           <h4>{{ v.title }}</h4>
           <p>{{ v.desc }}</p>
-          <ul class="cl-items">
+
+          <!-- Sections mode (with h5 sub-headings) -->
+          <template v-if="v.sections">
+            <div v-for="(sec, si) in v.sections" :key="si">
+              <h5 class="version-section-title">{{ sec.heading }}</h5>
+              <ul class="cl-items">
+                <li class="cl-item" v-for="item in sec.items" :key="item.text">
+                  <span class="tag" :class="item.tagClass">{{ item.tag }}</span>
+                  <span>{{ item.text }}</span>
+                </li>
+              </ul>
+            </div>
+          </template>
+
+          <!-- Flat items mode (backward compatible) -->
+          <ul v-else class="cl-items">
             <li class="cl-item" v-for="item in v.items" :key="item.text">
               <span class="tag" :class="item.tagClass">{{ item.tag }}</span>
               <span>{{ item.text }}</span>
@@ -37,55 +52,188 @@ export default {
     const versions = [
       {
         version: 'v3.0.0',
-        date: '2026-07-08',
+        date: '2026-07',
         badge: 'Major',
         badgeClass: 'new',
-        title: '官网全新上线 🎉',
-        desc: '视无界正式推出品牌官网，提供产品介绍、下载入口与更新日志，管理端同步升级至全新 Apple 风格设计系统。',
-        items: [
-          { tag: '新增', tagClass: 'feature', text: '全新品牌官网首页，科技概念视觉设计' },
-          { tag: '新增', tagClass: 'feature', text: '官网导航栏：产品介绍、更新日志、GitHub、管理端入口' },
-          { tag: '优化', tagClass: 'improve', text: '管理端整体 UI 升级，采用 Apple 设计语言，统一圆角/间距/字体体系' },
-          { tag: '优化', tagClass: 'improve', text: '暗色侧栏 + 毛玻璃顶栏，提升视觉层次' }
+        title: '官网全新上线 & 架构升级 🎉',
+        desc: '视无界正式推出品牌官网；后端反思微服务过度设计，完成单体化改造（7 模块 → 2 模块），全面加固安全体系并补齐单元测试；App 修复多项稳定性与安全问题。',
+        sections: [
+          {
+            heading: '🖥️ 官网 & Web 管理端',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: '品牌官网首页上线，Apple 风格设计系统' },
+              { tag: '新增', tagClass: 'feature', text: '官网导航：产品介绍、更新日志、GitHub、管理端入口' },
+              { tag: '新增', tagClass: 'feature', text: 'App 软件下载功能，支持 Android APK 直接下载' },
+              { tag: '优化', tagClass: 'improve', text: '管理端整体 UI 升级：暗色侧栏 + 毛玻璃顶栏，统一圆角/间距/字体体系' }
+            ]
+          },
+          {
+            heading: '⚙️ 后端：单体化改造',
+            items: [
+              { tag: '优化', tagClass: 'improve', text: '模块合并 7→2（model 契约层 + bootstrap 唯一应用），删除 gateway 模块' },
+              { tag: '优化', tagClass: 'improve', text: '去 Spring Cloud / Nacos / Dubbo，统一 Spring Boot 3.4.5 / Java 21' },
+              { tag: '优化', tagClass: 'improve', text: '4 分库合并为单库 shiwujie，跨库写操作升级为单事务保证一致性' },
+              { tag: '优化', tagClass: 'improve', text: '合并 4 份重复 LoginCheckInterceptor / WebConfig 为公共各 1 份' },
+              { tag: '优化', tagClass: 'improve', text: '对外 HTTP 路径 / WS 12 信令 / 状态码 / 返回字段零变更，前端无需改动' }
+            ]
+          },
+          {
+            heading: '🔒 安全加固',
+            items: [
+              { tag: '优化', tagClass: 'improve', text: '密码存储 MD5 → BCrypt（cost=10，盐内嵌），存量 MD5 首次登录时懒升级' },
+              { tag: '修复', tagClass: 'fix', text: '恢复社区求助帖/活动/管理员增删改权限检查，此前任意登录用户可操作' },
+              { tag: '修复', tagClass: 'fix', text: '改密接口补 ownership 校验 + 原密码必填校验，修复账户接管漏洞' },
+              { tag: '修复', tagClass: 'fix', text: '修正 deleteCommunityManager 忽略请求体、恒删调用者自己的 bug' }
+            ]
+          },
+          {
+            heading: '🤖 AI 模块',
+            items: [
+              { tag: '优化', tagClass: 'improve', text: '文本模型 qwen3-max → qwen3.6-flash，路径改 OpenAI 兼容直连止血' },
+              { tag: '新增', tagClass: 'feature', text: 'AI 集成冒烟测试，文本/图像模型回归可用性自动验证' }
+            ]
+          },
+          {
+            heading: '📱 App 修复（P0 + 批次 A/B）',
+            items: [
+              { tag: '修复', tagClass: 'fix', text: 'WebSocket 心跳实际间隔 2h → 30s，长连接不再被 NAT 静默掐断' },
+              { tag: '修复', tagClass: 'fix', text: '视频通话监听器泄漏：onDestroy 误调 remove(null) 致 Activity 销毁后仍收回调' },
+              { tag: '修复', tagClass: 'fix', text: '紧急求助「无法再次求助」死锁：新增 60s 家属无响应超时自动复位' },
+              { tag: '修复', tagClass: 'fix', text: 'AI 页面 WebSocket 断线不重连：attemptReconnect 只打日志从不调 connect' },
+              { tag: '修复', tagClass: 'fix', text: '紧急求助超时在通话进行中误触发——WebSocketManager 补发消息处理' },
+              { tag: '修复', tagClass: 'fix', text: 'WS 重连 5 次用尽后永久失活：改为快速窗口（3s）+ 慢速持续重试（60s）' },
+              { tag: '修复', tagClass: 'fix', text: 'VideoCallManager 回调跑在子线程，切回主线程防 UI 崩溃' },
+              { tag: '优化', tagClass: 'improve', text: '统一 token 注入拦截器，补漏历史裸调；HTTP BODY 日志仅 DEBUG 打印' },
+              { tag: '优化', tagClass: 'improve', text: 'Release 加固：开启 R8 混淆 + 资源压缩，allowBackup=false' },
+              { tag: '优化', tagClass: 'improve', text: '前台通知按角色跳首页：盲人不再被带到志愿者首页' },
+              { tag: '优化', tagClass: 'improve', text: '信令码常量化 + 固话真值表，散落魔数统一替换' }
+            ]
+          },
+          {
+            heading: '🧹 App 清理（批次 B）',
+            items: [
+              { tag: '移除', tagClass: 'fix', text: '删除未用类 15 个（Compose 模板残留、空 POJO、避障 mock 脚手架）' },
+              { tag: '移除', tagClass: 'fix', text: '删除死资源 57 文件 + strings 12 项 + 2 数组（旧布局/菜单/图标）' },
+              { tag: '移除', tagClass: 'fix', text: '删除死依赖：lifecycle livedata/viewmodel ktx + 整组 CameraX（实用 Camera2）' },
+              { tag: '移除', tagClass: 'fix', text: '删除无效权限 READ_PRIVILEGED_PHONE_STATE（第三方拿不到）' }
+            ]
+          },
+          {
+            heading: '🧪 后端测试 & 审查',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: '20 个单元测试类 / 286 例（纯 Mockito，mvn test 全绿），覆盖 user/community/call/utils' },
+              { tag: '修复', tagClass: 'fix', text: '视频求助匹配队列序列化断裂：RedisUtils 双注入致 ClassCastException' },
+              { tag: '修复', tagClass: 'fix', text: '匹配队列 TTL 单位错：硬编码 30 天 → 30 秒，僵尸志愿者不再滞留队头' },
+              { tag: '修复', tagClass: 'fix', text: 'NPE 簇加固：removeVolunteerFromVideohelp 对 null 调 contains 必崩，统一判空' }
+            ]
+          }
         ]
       },
       {
-        version: 'v2.5.0',
-        date: '2026-06-20',
-        badge: '改进',
+        version: 'v2.1.0',
+        date: '2026-07-11',
+        badge: '封版',
         badgeClass: 'improve',
-        title: '社区与活动功能增强',
-        desc: '完善社区管理流程，新增活动签到管理功能。',
-        items: [
-          { tag: '新增', tagClass: 'feature', text: '活动签到管理：支持签到列表查看、签到详情追踪' },
-          { tag: '优化', tagClass: 'improve', text: '社区编辑表单重构，提升数据录入效率' },
-          { tag: '修复', tagClass: 'fix', text: '修复社区列表分页在移动端的显示问题' }
+        title: '二期微服务封版 🏷️',
+        desc: '二期微服务架构（Spring Cloud + Nacos + Dubbo）能力整合封版（tag v2.1.0），修复关键 bug，四层文档体系规范化落地。阶段 0–9 累积现状为起点，未完成收尾项平移至 v3.0.0。',
+        sections: [
+          {
+            heading: '🐛 关键修复 & 文档',
+            items: [
+              { tag: '修复', tagClass: 'fix', text: 'Token 续期 key 漏身份前缀：续期/删用户拼的 Redis key 与登录/拦截器不一致，续期静默失效、活跃用户 90 天后被踢、删用户旧 token 残留。提取共享 redisKey 杜绝拼接分叉，对齐 90 天滑动会话' },
+              { tag: '新增', tagClass: 'feature', text: '文档体系落地：product / architecture / development / ROADMAP+CHANGELOG 四层规范 + 版本分级模型（current 指针 + vX.Y.Z/ 目录）' }
+            ]
+          },
+          {
+            heading: '🔧 阶段 9 · 工程化收尾（约 2026-07）',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: 'dev/prod 多环境 profile 拆分，凭据占位符化（MYSQL/REDIS/NACOS/DASHSCOPE 等走 ${ENV:default}）' },
+              { tag: '新增', tagClass: 'feature', text: '引入 shiwujie-backend 父 pom：7 模块聚合 + 版本统一管理' },
+              { tag: '优化', tagClass: 'improve', text: '后端模块扁平化：六模块从 gateway 子目录移至 backend 同级' },
+              { tag: '修复', tagClass: 'fix', text: 'Dubbo provider 端口迁出 Hyper-V/WSL 保留段（50200→21200），解决 bind Address already in use' },
+              { tag: '修复', tagClass: 'fix', text: '仓库卫生：.idea/、*.iml、logs/*.log 移出 git 跟踪' }
+            ]
+          },
+          {
+            heading: '🌐 阶段 8 · 分布式与生产化（约 2026-01）',
+            items: [
+              { tag: '优化', tagClass: 'improve', text: 'Call 模块 WebSocket 从 Netty 改为 Spring WebSocket（@ServerEndpoint + javax.websocket）' },
+              { tag: '新增', tagClass: 'feature', text: 'Gateway 基于 Nacos 服务发现 + Spring Cloud LoadBalancer 轮询负载均衡' },
+              { tag: '新增', tagClass: 'feature', text: '多服务器间 Nacos + Dubbo 通信配置，支持分布式部署' }
+            ]
+          }
         ]
       },
       {
-        version: 'v2.4.0',
-        date: '2026-05-15',
-        badge: '改进',
-        badgeClass: 'improve',
-        title: '数据统计模块上线',
-        desc: '新增社区与活动数据统计分析功能，支持多维度可视化。',
-        items: [
-          { tag: '新增', tagClass: 'feature', text: '社区统计看板：成员增长、活跃度、地域分布' },
-          { tag: '新增', tagClass: 'feature', text: '活动统计看板：参与率、签到率、活动趋势' },
-          { tag: '优化', tagClass: 'improve', text: '仪表板首页改版，关键指标卡片重新设计' }
-        ]
-      },
-      {
-        version: 'v2.3.0',
-        date: '2026-04-10',
-        badge: '新增',
+        version: 'v2.0.0',
+        date: '2025-11-12',
+        badge: '里程碑',
         badgeClass: 'new',
-        title: '用户管理与审核系统',
-        desc: '完善用户管理功能，新增社区加入审核流程。',
+        title: '二期初步稳定版 🚀',
+        desc: '二期开发首个 semver 版本（tag v2.0.0），Spring AI Alibaba M6.1 时期的稳定里程碑。至此 AI 大脑、视频通话、社区治理三大核心能力体系建成。',
+        sections: [
+          {
+            heading: '🤖 阶段 5–7 · AI 模块：从零到能用 → 能力跃升 → 引擎升级',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: 'AI 模块初始化：Spring AI Alibaba 框架、Redis 存储 advisor、内存→阿里云向量数据库' },
+              { tag: '新增', tagClass: 'feature', text: '多模型支持：deepseek + 千问（Qwen），文字与图像模型同时回答' },
+              { tag: '新增', tagClass: 'feature', text: 'Dubbo Inner 服务接入 AI，工具调用执行真实设备动作（社区查询等）' },
+              { tag: '新增', tagClass: 'feature', text: '流式输出 + 讯飞 TTS 自动语音播报 + 拍照识别' },
+              { tag: '新增', tagClass: 'feature', text: 'Redis 持久化 + MySQL 异步存储（自研 ChatMemory 双写），调用速度提升约 50%' },
+              { tag: '新增', tagClass: 'feature', text: 'AI 避障功能 + 高德导航（自动开启步行导航）+ 跳转外部应用' },
+              { tag: '新增', tagClass: 'feature', text: '独立图片处理 App，图片追问不占 Redis 空间' },
+              { tag: '优化', tagClass: 'improve', text: 'Spring AI Alibaba M6 → 1.0 引擎重构，动态配置双模型持久化策略，性能调优' },
+              { tag: '优化', tagClass: 'improve', text: '提示词改用文档引入，图片追问功能，取消 Redis 图片上下文存储' },
+              { tag: '修复', tagClass: 'fix', text: 'AI 悬浮窗在志愿者端误出现、APP 崩溃、紧急求助重复点击等多处 bug' },
+              { tag: '移除', tagClass: 'fix', text: 'Mqtt 硬件 IoT 通道（硬件成本取消）、自研 ReAct Agent（改用代码工作流）、RAG 知识库（效果不及工作流）' }
+            ]
+          },
+          {
+            heading: '👥 阶段 4 · 社区治理（约 2025-07 ~ 08）',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: '社区 CRUD + 加入审核 + 管理员设置，省市街道三级社区体系' },
+              { tag: '新增', tagClass: 'feature', text: '求助帖发布与管理 + 活动发布/报名/签到全流程' },
+              { tag: '新增', tagClass: 'feature', text: 'Web 端社区管理：审核、用户管理、活动管理完整后台' }
+            ]
+          },
+          {
+            heading: '📹 阶段 3 · 视频通话与紧急求助（约 2025-07 ~ 08）',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: 'Call 模块诞生：视频通话 + 紧急求助，早期 Netty Socket 实现' },
+              { tag: '新增', tagClass: 'feature', text: 'FIFO 匹配队列：盲人发起求助 → 按序匹配在线志愿者' },
+              { tag: '新增', tagClass: 'feature', text: '家庭紧急求助：家属一键呼叫，与视频通话共用信令通道' },
+              { tag: '新增', tagClass: 'feature', text: '心跳包 + App 自启动，长连接保活' }
+            ]
+          },
+          {
+            heading: '👤 阶段 2 · 用户与家庭模块（约 2025-07 ~ 08）',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: '三类用户体系：视障人士 / 志愿者 / 员工，注册登录 + JWT + Redis token' },
+              { tag: '新增', tagClass: 'feature', text: '家庭关系管理：家属绑定与审核，紧急求助通知链' },
+              { tag: '优化', tagClass: 'improve', text: '抽取公共拦截器代码（common-web），统一鉴权逻辑' },
+              { tag: '优化', tagClass: 'improve', text: '盲人端移动端适配优化' }
+            ]
+          },
+          {
+            heading: '🏗️ 阶段 0–1 · 一期封版 & 二期脚手架',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: '一期单体封版（uniapp + Spring Boot + 单库 4 表），git tag v1.0' },
+              { tag: '新增', tagClass: 'feature', text: '二期微服务脚手架：多模块切分 + Nacos 注册中心 + Dubbo RPC + JWT/Redis 骨架' }
+            ]
+          }
+        ]
+      },
+      {
+        version: 'v1.0',
+        date: '2025-06-30',
+        badge: '起点',
+        badgeClass: 'fix',
+        title: '视无界诞生 🌱',
+        desc: '一期平台（git tag v1.0，独立根提交）正式封版，奠定面向视障人士的无障碍服务基石。作为二期微服务演进的对照基线保留在 git 历史，不再迭代。',
         items: [
-          { tag: '新增', tagClass: 'feature', text: '志愿者、员工、视障人士三类用户分页管理' },
-          { tag: '新增', tagClass: 'feature', text: '社区加入审核：审批志愿者入群申请' },
-          { tag: '修复', tagClass: 'fix', text: '修复登录状态在页面刷新后丢失的问题' }
+          { tag: '新增', tagClass: 'feature', text: '视障人士与志愿者注册登录，基础身份管理体系' },
+          { tag: '新增', tagClass: 'feature', text: '远程无障碍协助服务雏形' },
+          { tag: '新增', tagClass: 'feature', text: '技术栈：uniapp 跨端客户端 + Spring Boot 单体后端 + 单库 4 表' }
         ]
       }
     ]
@@ -242,6 +390,14 @@ export default {
   color: var(--text-2);
   margin-bottom: 16px;
   line-height: 1.6;
+}
+
+/* Section sub-headings */
+.version-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 16px 0 8px;
+  color: var(--text);
 }
 
 /* Changelog items */
