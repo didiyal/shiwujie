@@ -40,12 +40,6 @@ public class InnerSocketImpl implements InnerSocket {
     }
 
     @Override
-    public void noticeEmergencyToken(SocketData socketData) {
-        log.info("内部socket - 紧急求助确认 token（gate ③ 114）");
-        coordinationSocketHandler.noticeEmergencyToken(socketData);
-    }
-
-    @Override
     public void noticeJumpSoftware(SocketData socketData) {
         log.info("内部socket - 跳转软件");
         coordinationSocketHandler.noticeJumpSoftware(socketData);

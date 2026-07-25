@@ -47,18 +47,13 @@ bootstrap 吸收的五模块按原职责落在以下子包（**包名即原模�
 - `Inner{Community,Communityjoinreview,Communitymanager}Service`：跨模块本地调用契约（原 3 个无消费者冗余 Inner 已删，阶段2.2）。
 - mapper XML：`ActivityMapper` / `ActivitysignMapper` / `CommunityMapper` / `CommunityjoinreviewMapper` / `CommunitymanagerMapper` / `HelppostMapper`（6 个）。
 
-### ai（旧 Java AI 实现）`agent/ + 依赖` —— **已彻底删除（chunk-2b / 2b-5 / 2b-6b）**
+### ai（AI 对话 / SSE / 工具路由 / 记忆）`advisor/ agent/ app/ chatmemory/ controller/ service/ mapper/ tools/ utils/ constants/ config/`
 
-> 旧 Java AI 实现**已大部删除**：`app/`、`controller/ChatController`、`service/ChatServiceImpl`、`tools/`（ToolChoiceCenter + `app/*` + `mytools/*`）、`chatmemory/*`、`advisor/MyRagAdvisor`、AI 专用 common DTO（`AiToolRequest`/`ToolCallRequest`）、`AiSmokeTest`、`resources/prompttemplate/*`，替换为独立 Python LangGraph 服务（polyglot 双进程）。设计全貌见 [architecture/ai-rewrite.md](../../../docs/architecture/ai-rewrite.md)，Python 服务实现见 [shiwujie-ai/docs/](../../../shiwujie-ai/docs/)。重写后 bootstrap 角色：**从「自带 AI 实现」变为「网关 + MCP server」** —— Java 保留 WS 终结点 / JWT 鉴权 / user/call/community 业务真相源，并**新增 MCP server**（`mcp/*`，streamable HTTP，业务 4 工具 `join_family`/`leave_family`/`family_info`/`update_profile` + 信令 4 工具 `launch_navigation`(5006)/`request_video_help`(5002)/`request_emergency_help_prepare`+`_confirm`(5003，turn-bound token 拆分，2b-4b)/`open_app`(5004)）+ **缝 A WS 中继**（`ai/relay/*`）供 Python 调用。
->
-> **保留**（冻结 / 待删）：
-> - ~~`agent/*`（MyManus 自研 ReAct 雏形）冻结保留~~ **已彻底删（chunk-2b-6b，2026-07-20，撤销原冻结保留决策）** —— 原作 Java-graph 备选 B-prime 回退起跑线冻结保留，撤销理由：零活路径引用、B-prime 用 alibaba-graph 非自建 ReAct、红队 Q2 揭「已弃用」真相；连带删依赖 `advisor/MyLoggerAdvisor`/`config/AiConfig`/`constants/AiConstants`/`utils/MessageSerializer`（kryo 孤儿）= 9 文件 + bootstrap pom 5 依赖（`spring-ai-alibaba-starter-dashscope`/`spring-ai-openai`/`jsoup`/`kryo`/`paho`）+ 父 pom 4 DM + `application.yml` 3 块。
-> - `interceptor/AiLoginCheckInterceptor` + `config/AiWebConfig` **已删（2b-6a，2026-07-20）**——dev 后门死代码清理（无 Authorization 静默登录 blind id=1）；`/api/ai/**` 在 2b-5 删 `ChatController` 后已成空集，拦截器拦空集，删除零功能影响；`common/ErrorCode` **保留**（53 个其它引用者）。WS phone 冒充（known-issues #7）的 ticket 鉴权留 chunk-2e 与 Android WS 改造同批。
->
-> 历史快照（已删类，作「被替换对象」参考）：DashScope qwen3 对话（SSE 流）/ 工作流式工具路由（`app/ToolChoiceApp`）/ 自研 ChatMemory（Redis 精简 + MySQL 全量 kryo）/ 网页搜索（searchapi + jsoup）；3 个对外 SSE 端点 `/api/ai/ai/{doChatByText,doChatByImage,NewApp}` 随 ChatController 删除，AI 通道迁 WS `/api/ws/call` AI-turn 消息。缺陷明细见 [known-issues.md](../known-issues.md) ai 节。
-
-- mapper XML：`AiLogsMapper`（1 个，待 Phase 5 定去留）。资源：`logback-spring.xml`（`application.yml` 的 `logging.config` 指向）；`prompttemplate/*` 已删（2b-5）。
-- spring-ai BOM / spring-milestones 仓库随 ai 并入迁**父 pom**集中管理（阶段2.8）；chunk-2b-6b（2026-07-20）后仅留 `spring-ai-bom` 1.1.0（托管 MCP server starter），`spring-ai-alibaba-bom`/`dashscope`/`openai`/`jsoup`/`kryo`/`paho` 随旧 AI 模块 + MyManus 死代码闭环全删。
+- DashScope qwen3-max / qwen3-vl 对话（SSE 流）、工作流式工具路由（`app/ToolChoiceApp`）、自研 ChatMemory（Redis 精简 + MySQL 全量，kryo 序列化）、网页搜索（searchapi + jsoup）。
+- 对外路径：`/api/ai/ai/doChatByText`（SSE）、`/api/ai/ai/doChatByImage`（SSE）、`/api/ai/ai/NewApp`（SSE）。
+- `config/AiWebConfig`：注册 `AiLoginCheckInterceptor`（仅 `/api/ai/**`，ai 鉴权行为独立——dev 默认用户兜底属 🔴 安全加固待修项，见 [known-issues.md](../known-issues.md)）。
+- mapper XML：`AiLogsMapper`（1 个）。资源：`logback-spring.xml`（`application.yml` 的 `logging.config` 指向）、`prompttemplate/{image,text,toolChoice}-template.txt`。
+- spring-ai BOM / 版本属性 / spring-milestones 仓库随 ai 并入迁**父 pom**集中管理（阶段2.8）。
 
 ## 跨模块本地调用（原 Dubbo 接缝点）
 

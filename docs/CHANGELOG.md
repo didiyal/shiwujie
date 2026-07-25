@@ -64,6 +64,18 @@
 **新增**
 - `AiSmokeTest`：AI 集成冒烟测试（文本模型返回非空 / 裸 HTTP 对照隔离 / 图像模型识别三用例），`@EnabledIfSystemProperty(ai.smoke=true)` 守卫，默认跳过、不污染常规 `mvn test`（与现有 286 例纯 Mockito 单测性质不同）。临时验证用，AI 重构后丢弃。
 
+**AI 回退到重构前实现（2026-07-25）**
+
+> AI 重构（WS+LangGraph 双进程，见下「AI 模块重写」）已落地 30 commits（chunk-1/2，`345d6e5..5c5461a`）但**未完成**：缝 C（Python↔Java MCP）未接通、9/16 工具为桩、导航/拍照/紧急求助系统性退步。工期紧无法收尾，**整体回退到重构前基线 `58184dc`**（老 SSE 两阶段单轮：`ToolChoiceApp` 选工具 → `ToolChoiceCenter` 执行 → `TextApp` 流式回复），恢复"对话舒服"体验。重构成果完整保留于 git 历史，后续重启可直接复用设计文档（下节）+ cherry-pick。`docker/` 与 `shiwujie-ai/`（Python）保留不动（python 容器空转无害，老后端不调）。本地已端到端验通（启动 8s、SSE 流式回复正常、provisioned key 生效）。
+
+**变更**
+- **后端 + App 整体回退 `58184dc`**（`git checkout 58184dc -- shiwujie-backend shiwujie-frontend/app` + 删 23 个重构新增类）：恢复老 `ChatController`（`/api/ai/ai/{doChatByText,doChatByImage,NewApp}` SSE）+ `AiConfig`/`AiConstants`/`app/*`/`tools/*`/`chatmemory/*` + `AiWebConfig` dev 后门 + 老 pom 依赖（dashscope/spring-ai-openai/kryo/paho/jsoup）；App 恢复老 SSE 客户端栈（`AiChatManager` + Retrofit 手写 SSE 解析）。删除重构的 WS relay（`AiWsRelayService`/`AiTurnEvent`/`AiWsTypes`）、MCP（`mcp/*`）、WS ticket 鉴权（`WsTicketController`/`WsTicketStore`）、App WS AI 客户端（`AiTurnManager`）等。App AGP 随回退退到 8.6，本机构建通过（`assembleDebug` BUILD SUCCESSFUL）。
+- **LLM key 换百炼 provisioned MaaS**：`application.yml` 的 `spring.ai.dashscope.api-key`/`base-url` 换同实例 provisioned 端点（`llm-8oompsig0r5hox8l.cn-beijing.maas.aliyuncs.com/compatible-mode`，OpenAI 兼容，不带 `/v1`——`OpenAiChatModel` 自动拼 `/v1/chat/completions`）；`AiConstants.TEXT_MODEL` `qwen3.6-flash`→`qwen3.7-plus`。`AiConfig.qwenText` 走 `OpenAiChatModel` 直连 provisioned compatible-mode。
+
+**已知退步（回退即接受，见 [known-issues](../shiwujie-backend/docs/known-issues.md) ai #12）**
+- 图片识别 `qwenImage`（`DashScopeChatModel` 原生端点）+ provisioned key 预期不通（provisioned 只认 MaaS compatible-mode），文本对话不受影响。
+- AI 重构成果丢失：多轮记忆/偏好抽取/紧急求助 gate②③/WS ticket 鉴权（堵 phone 冒充，known-issues #7）/信令诚实化等待后续重做。
+
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 
 > 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。
