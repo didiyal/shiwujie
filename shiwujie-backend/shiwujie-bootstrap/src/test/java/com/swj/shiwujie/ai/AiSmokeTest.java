@@ -53,9 +53,9 @@ class AiSmokeTest {
 
     // 与 application.yml 默认值一致（项目约定：凭据留 yml 用 ${ENV:默认} 占位符）
     private static final String API_KEY =
-            System.getenv().getOrDefault("DASHSCOPE_API_KEY", "sk-6374b4a1ebd64f56ae8d0799e74b7927");
+            System.getenv().getOrDefault("DASHSCOPE_API_KEY", "sk-ws-H.PDEREDR.JVZi.MEYCIQDggeVjIFDEFbWB_LyHj9q_2j578sv8KCASX972sdkSUgIhAMdvMugNp54cvhnkK_JgI4HI_Dq1gM3POyTY8kZVXrdX");
     private static final String BASE_URL =
-            System.getenv().getOrDefault("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode");
+            System.getenv().getOrDefault("DASHSCOPE_BASE_URL", "https://llm-8oompsig0r5hox8l.cn-beijing.maas.aliyuncs.com/compatible-mode");
 
     private static DashScopeApi dashScopeApi() {
         return DashScopeApi.builder().apiKey(API_KEY).build();

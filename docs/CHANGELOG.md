@@ -73,8 +73,22 @@
 - **LLM key 换百炼 provisioned MaaS**：`application.yml` 的 `spring.ai.dashscope.api-key`/`base-url` 换同实例 provisioned 端点（`llm-8oompsig0r5hox8l.cn-beijing.maas.aliyuncs.com/compatible-mode`，OpenAI 兼容，不带 `/v1`——`OpenAiChatModel` 自动拼 `/v1/chat/completions`）；`AiConstants.TEXT_MODEL` `qwen3.6-flash`→`qwen3.7-plus`。`AiConfig.qwenText` 走 `OpenAiChatModel` 直连 provisioned compatible-mode。
 
 **已知退步（回退即接受，见 [known-issues](../shiwujie-backend/docs/known-issues.md) ai #12）**
-- 图片识别 `qwenImage`（`DashScopeChatModel` 原生端点）+ provisioned key 预期不通（provisioned 只认 MaaS compatible-mode），文本对话不受影响。
+- 图片识别 `qwenImage`（`DashScopeChatModel` 原生端点）+ provisioned key 预期不通（provisioned 只认 MaaS compatible-mode），文本对话不受影响。（2026-09-10 实测推翻，见下节）
 - AI 重构成果丢失：多轮记忆/偏好抽取/紧急求助 gate②③/WS ticket 鉴权（堵 phone 冒充，known-issues #7）/信令诚实化等待后续重做。
+
+**LLM key 失效与恢复（2026-09-10）**
+
+> 运维事件 + 小修复：AI 全链路（文本/图像）一度不可用，根因是**账户欠费**而非代码/模型问题。修复后 `AiSmokeTest` 3/3 绿。
+
+**诊断**
+- 旧 key（application.yml 内联默认值）对 provisioned MaaS 与公开百炼端点均 401 invalid_api_key——key 已被删除/轮换。
+- 新 key 认证有效（两端点 `/models` 均 200）但 chat 调用全拒：公开端点报 `Arrearage`（欠费）、provisioned 实例报 `AccessDenied.Unpurchased`（所有 chat 模型含第三方均拒；embedding 类可通）→ 根因：**账户欠费**。`Unpurchased` 是欠费在 provisioned 侧的表象，易误诊为「模型未部署」。
+- 充值后全恢复：公开端点 + provisioned 端点、`qwen3.7-plus` 文本 + `qwen3-vl-flash` 图像（含 `DashScopeChatModel` 原生端点路径）全部 200。
+
+**变更**
+- **key 轮换**：`application.yml` 的 `spring.ai.dashscope.api-key` 内联默认值换新 key（旧 key 已失效）。base-url/模型名不动（`qwen3.7-plus` / `qwen3-vl-flash` 仍有效，provisioned 实例恢复可用）。
+- **`AiSmokeTest` 默认值同步**：测试类硬编码默认 key/base-url 残留 2026-07-12 止血期的普通 key + 公开端点，与 application.yml 脱节（环境变量未设时用旧值 → 401）；已改为与 yml 一致（provisioned key + 端点）。
+- **推翻 known-issues ai #12 预测**：「图片识别 + provisioned key 不通」不成立——该 key 为百炼平台级 key，`DashScopeChatModel` 原生端点实测可调（当时不通就是欠费）。#12 已改标 ✅ 并补运维教训。
 
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 

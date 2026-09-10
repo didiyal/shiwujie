@@ -38,7 +38,7 @@ spring:
       timeout: 2s
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY:sk-ws-H.EIMHHRH.vZTb.MEUCIQCpcSwFuiTi2VUnZheml1zRepm8TO1H5avr3MEJomu1AAIgVZPAXMm2VrzqhwlzssHAGezWH6KGO7fF3ClHrZMoMEw}
+      api-key: ${DASHSCOPE_API_KEY:sk-ws-H.PDEREDR.JVZi.MEYCIQDggeVjIFDEFbWB_LyHj9q_2j578sv8KCASX972sdkSUgIhAMdvMugNp54cvhnkK_JgI4HI_Dq1gM3POyTY8kZVXrdX}
       base-url: https://llm-8oompsig0r5hox8l.cn-beijing.maas.aliyuncs.com/compatible-mode   # 百炼 provisioned MaaS（OpenAI 兼容）；不带 /v1：OpenAiChatModel 默认拼 /v1/chat/completions
       chat:
         options:
