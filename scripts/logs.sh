@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# chunk-2d：实时跟踪双进程日志。
+# 跟随运行中容器日志（AI 回退后默认仅 java；--with-ai 启动后才含 python）。
 # 用法：./scripts/logs.sh [java|python]   （可选只跟一个服务）
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"

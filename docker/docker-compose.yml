@@ -1,10 +1,15 @@
-# chunk-2d：视无界双进程 Docker 部署（Java 单体 + Python AI 服务）。
+# 视无界 Docker 编排（原 chunk-2d 双进程设计：Java 单体 + Python AI 服务）。
 # 参考布局：根级 scripts/ 编排壳 + 本文件仅 compose + 各子项目自带 Dockerfile（多阶段）。
 #
+# ⚠️ 2026-07-25 AI 回退（ed65967）后：后端回到老 SSE AI 实现，Python AI 服务（shiwujie-ai）
+# 休眠保留、不再默认启动。python 服务挂 profiles: ["ai"]（opt-in）——
+#   默认：./scripts/start.sh            → 仅 java
+#   带AI：./scripts/start.sh --with-ai  → docker compose --profile ai up（AI 重写重启时用）
+#
 # 网络：
-# - java 发布 8100:8100（公网：HTTP /api/** + WS /api/ws/call + MCP /mcp）。
+# - java 发布 8100:8100（公网：HTTP /api/** + WS /api/ws/call；回退后无 MCP /mcp）。
 # - python **不发布端口**（仅 compose 内网，java 经服务名 http://python:8500 调 /ai/turn；缝 A 安全边界）。
-# - python → java MCP：经服务名 http://java:8100/mcp（缝 C）。
+# - python → java MCP：经服务名 http://java:8100/mcp（缝 C；仅 --profile ai 时有意义）。
 # - 两服务 extra_hosts host.docker.internal:host-gateway → 容器内连宿主 MySQL/Redis（47.112.114.139=宿主本身）。
 #
 # 鉴权边界（design 缝 A/C）：Python 不持用户 JWT、不暴露公网；Java 是唯一鉴权边界。
@@ -27,7 +32,7 @@ services:
       # 容器内连宿主 MySQL/Redis（host-gateway 别名）；yml 默认仍是公网 IP（本地 dev 不变）。
       MYSQL_HOST: host.docker.internal
       REDIS_HOST: host.docker.internal
-      # 缝 A：Java→Python 经服务名（非 127.0.0.1）。
+      # 缝 A：Java→Python 经服务名（非 127.0.0.1）。回退后老后端不读此变量，保留供 AI 重启复用。
       PYTHON_BASE_URL: http://python:8500
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -35,6 +40,7 @@ services:
       - "8100:8100"
     # 不 hard depends_on python：业务 WS 独立，python 挂时 AI turn 优雅降级（非致命）。
 
+  # AI 回退（2026-07-25）后默认不启动：仅 --profile ai 时纳入（见文件头说明）。
   python:
     build:
       context: ../shiwujie-ai
@@ -43,6 +49,7 @@ services:
     container_name: shiwujie-python
     restart: always
     init: true
+    profiles: ["ai"]
     env_file:
       - ../config/.env
     environment:

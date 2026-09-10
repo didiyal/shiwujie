@@ -62,10 +62,10 @@
 Phase2/
 ├── docs/                  ← 文档中心（规则 + 产品契约 + 跨切面概览 + 方向/明细）
 ├── shiwujie-backend/      ← 单体后端（v3.0.0：model 契约层 + bootstrap 唯一 app，含原 user/call/community/ai/common-web）
-├── shiwujie-ai/           ← Python AI 服务（LangGraph 智能体，AI 重写·设计敲定待实现）
-├── scripts/               ← 双进程启停脚本（start/stop/logs/export/import/clear.sh，AI 重写·设计敲定待实现）
-├── docker/                ← 两进程编排（docker-compose.yml：Java + Python，AI 重写·设计敲定待实现）
-├── config/                ← 环境配置（.env / .env.example，AI 重写·设计敲定待实现）
+├── shiwujie-ai/           ← Python AI 服务（LangGraph 智能体，AI 回退后休眠保留、不默认启动）
+├── scripts/               ← 启停脚本（start/stop/logs/export/import/clear.sh；默认仅 Java，--with-ai 启用 Python）
+├── docker/                ← Docker 编排（docker-compose.yml：java 默认 + python 挂 profiles:["ai"] 按需启用）
+├── config/                ← 环境配置（.env / .env.example）
 └── shiwujie-frontend/
     ├── app/shiwujie/      ← 原生 Android 客户端（视障者 + 志愿者双端）
     └── web/               ← Vue3 社区管理后台

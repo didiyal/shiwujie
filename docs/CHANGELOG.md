@@ -90,6 +90,20 @@
 - **`AiSmokeTest` 默认值同步**：测试类硬编码默认 key/base-url 残留 2026-07-12 止血期的普通 key + 公开端点，与 application.yml 脱节（环境变量未设时用旧值 → 401）；已改为与 yml 一致（provisioned key + 端点）。
 - **推翻 known-issues ai #12 预测**：「图片识别 + provisioned key 不通」不成立——该 key 为百炼平台级 key，`DashScopeChatModel` 原生端点实测可调（当时不通就是欠费）。#12 已改标 ✅ 并补运维教训。
 
+**Docker 编排默认仅启动 Java（2026-09-10）**
+
+> AI 回退后 Python 服务本就休眠，且 `shiwujie-ai` 当前无法启动；编排改为**默认单进程**，Python AI 降为 opt-in，AI 重写重启时一条命令复活。
+
+**变更**
+- **`docker/docker-compose.yml`**：`python` 服务挂 `profiles: ["ai"]`——`docker compose up -d` 默认只启动 `java`（8100 公网）；`--profile ai` 显式启用时才构建/启动 Python。java 侧 `PYTHON_BASE_URL` 保留（回退后老后端本就不读，供 AI 重启复用）。
+- **`scripts/start.sh`**：参数解析改 for 循环，新增 `--with-ai`（透传 `--profile ai`）；默认启动打印「仅 java」提示；未知参数报错。
+- **`scripts/export.sh`**：离线打包改为 java 镜像必选、`shiwujie-python` 镜像**存在才打包**（默认不构建时不再 inspect 失败中断）。
+- **`scripts/logs.sh`**：头注同步（跟随运行中容器，默认仅 java）。
+- `stop.sh`/`clear.sh` 不动：compose `down` 按 project label 清理全部运行容器/镜像，与 profile 无关，行为不变。
+
+**使用**
+- 默认：`./scripts/start.sh`（仅 Java）／ `--build` 重建镜像 ／ `--with-ai` 附带 Python AI（AI 重写重启时用）。
+
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 
 > 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。
