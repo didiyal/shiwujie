@@ -53,6 +53,7 @@ public class MyApplication extends Application {
                     // 1 → 0：应用退到后台（退出软件）
                     Log.d(TAG, "应用退到后台，显示AI悬浮球");
                     sendBallVisibilityBroadcast(true);
+                    speakBackgroundHint();
                 }
             }
 
@@ -111,5 +112,38 @@ public class MyApplication extends Application {
         } catch (Exception e) {
             Log.e(TAG, "发送悬浮球显隐广播失败", e);
         }
+    }
+
+    /** 应用级 TTS（独立于 AiFragment 的实例；退后台时页面级 TTS 可能已随 Fragment 停止/销毁） */
+    private com.swj.shiwujie.common.utils.TTSManager backgroundTts;
+
+    /**
+     * 退到后台语音提示（2026-09-12）：告知视障用户软件已退出到后台、可点悬浮球回来。
+     * 应用级 TTS 实例：本应用有前台服务（悬浮球/WebSocket）保活进程，退后台后仍可正常发声。
+     */
+    private void speakBackgroundHint() {
+        try {
+            if (backgroundTts == null) {
+                backgroundTts = new com.swj.shiwujie.common.utils.TTSManager(this);
+                backgroundTts.setSpeed(75); // 与 AI 页播报一致的 1.5 倍速
+            }
+            backgroundTts.startSpeaking("视无界已退到后台，点击屏幕上的悬浮球可随时回来");
+        } catch (Exception e) {
+            Log.e(TAG, "退后台语音提示失败", e);
+        }
+    }
+
+    @Override
+    public void onTerminate() {
+        // 应用级 TTS 随进程终止清理（正常场景 onTerminate 仅在模拟器触发，防御性调用）
+        try {
+            if (backgroundTts != null) {
+                backgroundTts.destroy();
+                backgroundTts = null;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "清理应用级TTS失败", e);
+        }
+        super.onTerminate();
     }
 }
