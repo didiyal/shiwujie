@@ -1839,18 +1839,24 @@ public class AiFragment extends Fragment {
     private void takePhotoDirectly() {
         if (cameraManager == null) {
             Log.e(TAG, "CameraPreviewManager未初始化");
-            // Toast.makeText(requireContext(), "相机管理器未初始化", Toast.LENGTH_SHORT).show();
+            if (ttsManager != null && isAdded()) {
+                ttsManager.startSpeaking("相机未就绪，请稍后再试");
+            }
             return;
         }
-        
+
         if (!cameraManager.isPreviewActive()) {
             Log.e(TAG, "相机预览未激活");
-            // Toast.makeText(requireContext(), "相机预览未激活，请稍后再试", Toast.LENGTH_SHORT).show();
+            if (ttsManager != null && isAdded()) {
+                ttsManager.startSpeaking("相机预览未就绪，请稍后再试");
+            }
             return;
         }
-        
+
         if (cameraManager.isTakingPhoto()) {
-            // Toast.makeText(requireContext(), "正在拍照中，请稍候", Toast.LENGTH_SHORT).show();
+            if (ttsManager != null && isAdded()) {
+                ttsManager.startSpeaking("正在拍照中，请稍候");
+            }
             return;
         }
         
@@ -1870,10 +1876,12 @@ public class AiFragment extends Fragment {
             @Override
             public void onError(String error) {
                 Log.e(TAG, "拍照失败: " + error);
-                
-                // 在主线程中显示错误
+
+                // 在主线程中播报错误（盲人用户无视觉反馈）
                 requireActivity().runOnUiThread(() -> {
-                    // Toast.makeText(requireContext(), "拍照失败: " + error, Toast.LENGTH_SHORT).show();
+                    if (ttsManager != null && isAdded()) {
+                        ttsManager.startSpeaking("拍照失败，请重试");
+                    }
                 });
             }
         });
@@ -3891,8 +3899,30 @@ public class AiFragment extends Fragment {
                             Log.w(TAG, "震动反馈失败", e);
                         }
                     }
-                    
-                    // 可以在这里添加其他拍照识别相关的初始化逻辑
+
+                    // 2026-09-12：语音提示 + 自动拍照（Toast 是视觉提示，盲人用户不可感知；
+                    // 语音说"帮我识别前面"应闭环到识别结果播报，而不是停在等用户点按钮）
+                    if (ttsManager != null) {
+                        ttsManager.startSpeaking("正在为您拍照识别，请保持手机稳定");
+                    }
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        try {
+                            if (isAdded() && checkCameraPermission()) {
+                                takePhotoDirectly(); // 成功后 handlePhotoData → 图片识别 SSE → 句子级播报
+                            } else {
+                                Log.w(TAG, "自动拍照条件不满足（页面状态/权限）");
+                                if (ttsManager != null && isAdded()) {
+                                    ttsManager.startSpeaking("自动拍照未成功，请点击拍照按钮手动识别");
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "自动拍照失败", e);
+                            if (ttsManager != null && isAdded()) {
+                                ttsManager.startSpeaking("自动拍照失败，请点击拍照按钮手动识别");
+                            }
+                        }
+                    }, 2500); // 等 startPreview 会话建立稳定 + 语音提示播完
+
                     Log.d(TAG, "AI拍照识别功能启动完成");
                 } catch (Exception e) {
                     Log.e(TAG, "启动AI拍照识别功能失败", e);
