@@ -419,8 +419,14 @@ public class AIFloatingBallService extends Service {
             IntentFilter filter = new IntentFilter();
             filter.addAction(ACTION_SHOW_BALL);
             filter.addAction(ACTION_HIDE_BALL);
-            registerReceiver(floatingBallReceiver, filter);
-            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // Android 13+/targetSdk 34+ 强制：注册非系统广播接收器须声明导出性，否则 SecurityException
+                // （此异常曾致接收器注册失败、悬浮球显隐广播全部失灵，被"启动即常显"掩盖）
+                registerReceiver(floatingBallReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                registerReceiver(floatingBallReceiver, filter);
+            }
+
             Log.d(TAG, "广播接收器注册成功");
         } catch (Exception e) {
             Log.e(TAG, "注册广播接收器失败", e);

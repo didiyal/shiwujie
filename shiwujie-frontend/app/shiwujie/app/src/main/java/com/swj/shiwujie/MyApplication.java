@@ -105,6 +105,8 @@ public class MyApplication extends Application {
         try {
             Intent intent = new Intent(show ? AIFloatingBallService.ACTION_SHOW_BALL
                                             : AIFloatingBallService.ACTION_HIDE_BALL);
+            // 显式限定本包：NOT_EXPORTED 接收器 + 隐式广播在部分 ROM 上不投递，带包名确保送达自身接收器
+            intent.setPackage(getPackageName());
             sendBroadcast(intent);
         } catch (Exception e) {
             Log.e(TAG, "发送悬浮球显隐广播失败", e);

@@ -129,6 +129,11 @@
 - **新增按钮复用 AI 信令既有流程**：紧急求助 → `handleEmergencyHelpRequest()`（同 WS 5003）、志愿者求助 → `handleJumpToBlindhomeRequest()`（同 WS 5002）——均切主页 Fragment 并经既有 `from_ai_*` 参数自动触发对应流程，零新后端交互。
 - **悬浮球显隐改全局前后台驱动**（`MyApplication` + `AIFloatingBallService` + `AiFragment`）：`MyApplication` 注册 `ActivityLifecycleCallbacks` 按 started 计数判前后台——**退到后台（退出软件）广播 `ACTION_SHOW_BALL` 显示悬浮球、回前台 `ACTION_HIDE_BALL` 隐藏**；服务启动不再自动显示悬浮球（原 `initFloatingBall` 末尾 `showFloatingBall()` 移除）；删除 `AiFragment.onPause/onResume` 的页面级 show/hide（原「离开 AI 页即显示」导致软件内全部页面都挂球）。广播动作字符串提为 `AIFloatingBallService` 公共常量，两端共用。
 
+**修复（悬浮球不上屏，真机 adb 实测定位）**
+- **动态注册接收器缺导出标志**：Android 13+/targetSdk 34+ 强制 `registerReceiver` 对非系统广播声明 `RECEIVER_EXPORTED/NOT_EXPORTED`，否则 `SecurityException`——该异常被 catch 吞掉致接收器从未注册成功；旧实现「服务启动即常显悬浮球」掩盖了此 bug（显隐广播从来就没工作过）。修复：API 33+ 走 `Context.RECEIVER_NOT_EXPORTED` 三参注册（App 内部广播不外泄），低版本维持两参。
+- **显隐广播改显式带包名**：`MyApplication` 发送时 `intent.setPackage(getPackageName())`——隐式广播 + `RECEIVER_NOT_EXPORTED` 组合在 vivo OriginOS（Android 14+）上不投递（注册成功、广播已发、接收器不触发的静默丢包），显式包名后端到端实测 `HOME → SHOW → showFloatingBall` 全链路打通（~0.5s 内上屏）。
+- 附带发现：release 构建（R8）下 `Log.d` 全部不可见（仅 `Log.e` 落 logcat），排障时以 `Log.e` 为准。
+
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 
 > 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。
