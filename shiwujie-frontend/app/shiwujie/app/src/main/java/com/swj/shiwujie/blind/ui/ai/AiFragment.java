@@ -1051,7 +1051,8 @@ public class AiFragment extends Fragment {
                 messagePanel.setLayoutParams(params);
                 
                 messagePanel.setVisibility(View.GONE);
-                btnExpandMessage.setVisibility(View.VISIBLE);
+                // 2026-09-12：「打开对话内容」按钮按需求隐藏，保持 GONE 不再展示
+                btnExpandMessage.setVisibility(View.GONE);
             }
         } catch (Exception e) {
             Log.e(TAG, "设置消息面板初始状态失败", e);
@@ -2822,7 +2823,8 @@ public class AiFragment extends Fragment {
             @Override
             public void onAnimationEnd(android.view.animation.Animation animation) {
                 messagePanel.setVisibility(View.GONE);
-                btnExpandMessage.setVisibility(View.VISIBLE);
+                // 2026-09-12：「打开对话内容」按钮按需求隐藏，保持 GONE 不再展示
+                btnExpandMessage.setVisibility(View.GONE);
                 isMessagePanelExpanded = false;
                 
                 // 重置宽度为0

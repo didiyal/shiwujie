@@ -142,6 +142,7 @@
 - **求助流程迁移**（`AiFragment` 自 `HomeFragment` 原样迁入）：`startVideoHelpMatching`（token 校验 → `checkLogin` → `blindJoinVideohelp` 匹配请求）、`startEmergencyHelp`（EmergencyHelpManager 单例 + `EmergencyHelpFloatingWindow` 匹配中悬浮窗）、`EmergencyHelpManager.EmergencyHelpCallback` 全套回调、WS **type=2**（匹配成功 → 进 `VideoCallActivity`）/**type=5**（通话结束 → 复位）处理器——AiFragment 的 WS 分发入口前置这两个信令。AI 页新增 `isMatching/isVideoCallStarted/isEmergencyHelpMatching` 状态与悬浮窗生命周期管理（onDestroy 销毁）。
 - **触发源收敛**：AI 页两个按钮、WS 5002/5003 信令全部改为原地调用 `startVideoHelpMatching()/startEmergencyHelp()`，**不再 `navigate(navigation_home)`**；`VideoCallActivity` 本身只 `finish()` 不导航，通话退出自然回到 AI 页（发起时所在页）。
 - `HomeFragment` 及 `navigation_home` 目的地暂保留为不可达死代码（原 `from_ai_*` 参数分支休眠），下批整体删除。
+- **隐藏 AI 页「打开对话内容」按钮**（`btn_expand_message`）：`setupMessagePanelInitialState` 收起分支与 `collapseMessagePanel` 动画结束两处由 `VISIBLE` 改保持 `GONE`（XML 初始 gone 会被这两处覆盖，故在代码层收口）；消息面板本体与折叠按钮保留。
 
 **App 结构调整：底栏移除主页 tab，进入软件默认 AI 页（2026-09-12，v1.2 / versionCode 3）**
 
