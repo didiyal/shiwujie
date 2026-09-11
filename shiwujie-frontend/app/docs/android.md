@@ -95,6 +95,7 @@ ChooseIdentityActivity 选身份 → blind/volunteer LoginActivity
 - anyRTC appId、讯飞 appid、高德 key 全部**硬编码**。
 - 申请了系统级权限（悬浮窗等）。
 - token 无统一拦截器（手动加 Header）。
+- **release 签名**（2026-09-12 起）：`app/build.gradle.kts` 配 `signingConfigs.release`，keystore `apk/release.jks`（alias `shiwujie`，密码随仓库提交——测试期约定，正式上线前如需轮换：换 keystore + 改 gradle 即可；注意换签名身份后所有已装用户须卸载重装）。此前 release 构建无签名配置（产物 `-unsigned`，分发靠手动签）。旧 `apk/apk.jks` 密码失传，仅作历史保留。
 
 ---
 

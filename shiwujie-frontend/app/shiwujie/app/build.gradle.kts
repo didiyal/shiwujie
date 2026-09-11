@@ -11,10 +11,21 @@ android {
         applicationId = "com.swj.shiwujie"
         minSdk = 30
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"   // 1.1：AI 跳转后悬浮球回跳闪退修复（相机抢占竞态）
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // 签名：项目专属 release.jks（2026-09-12 新建，测试期统一签名身份；密码随仓库提交——
+    // 正式上线前如需轮换，换 keystore + 改此处即可，见 docs/android.md）
+    signingConfigs {
+        create("release") {
+            storeFile = file("../apk/release.jks")
+            storePassword = "shiwujie2026"
+            keyAlias = "shiwujie"
+            keyPassword = "shiwujie2026"
+        }
     }
 
     buildTypes {
@@ -25,6 +36,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

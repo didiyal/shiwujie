@@ -111,6 +111,15 @@
 **修复**
 - `CameraPreviewManager`（`shiwujie-frontend/app`）：相机被目标应用抢占后回跳，错误/会话回调与重开预览竞争——`onDisconnected`/`onError` 改用回调参数关相机（原用字段，null 时 NPE）；`onConfigured` 补设备/构建器判空 + `setRepeatingRequest` 补 catch `IllegalStateException|IllegalArgumentException`（原仅 `CameraAccessException`）；`SurfaceTexture` 判空；`closeCamera` 补清 `captureRequestBuilder`。AI 页相机预览在跳转后可安全恢复，不再闪退。
 
+**App 构建工程：release 签名配置 + 版本 1.1（2026-09-12）**
+
+> 此前 `assembleRelease` 无签名配置（产物 `app-release-unsigned.apk`，不可安装，分发靠手动签且旧 keystore `apk/apk.jks` 密码失传）。尚处测试期，重定签名身份。
+
+**变更**
+- 新建项目专属 keystore `apk/release.jks`（alias `shiwujie`，有效期 10000 天），`signingConfigs.release` 写入 `app/build.gradle.kts` 并挂到 release buildType——`assembleRelease` 从此直接产出可安装的签名包。密码随仓库提交（测试期约定，与既有凭据内联风格一致；正式上线前可换 keystore 轮换，注意换签须全量卸载重装）。
+- 版本 `versionName 1.0→1.1` / `versionCode 1→2`（对齐相机闪退修复；旧 `apk.jks` 签名的存量安装与本包签名不同，升级需卸载重装——测试期无存量用户，影响可接受）。签名 release 包已真机装机验证（R8 混淆运行正常）。
+- 下载页分发链路不变：官网 `HomePage.vue` → `/api/download/app` → 服务器固定文件 `/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk`，更新 = 服务器替换该文件（本次应替换为新签名 release 包）。
+
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 
 > 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。
