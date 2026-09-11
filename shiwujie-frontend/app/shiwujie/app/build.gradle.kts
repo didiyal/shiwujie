@@ -11,8 +11,8 @@ android {
         applicationId = "com.swj.shiwujie"
         minSdk = 30
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2"   // 1.2：AI 页按钮重排（对话/拍照/紧急/志愿者/返回）+ 悬浮球改为退出软件后显示
+        versionCode = 4
+        versionName = "1.3"   // 1.3：新增 AI 页功能介绍弹窗（关闭 / 不再显示，本地持久化）
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

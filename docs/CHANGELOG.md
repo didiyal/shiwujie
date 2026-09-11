@@ -144,6 +144,14 @@
 - `HomeFragment` 及 `navigation_home` 目的地暂保留为不可达死代码（原 `from_ai_*` 参数分支休眠），下批整体删除。
 - **隐藏 AI 页「打开对话内容」按钮**（`btn_expand_message`）：`setupMessagePanelInitialState` 收起分支与 `collapseMessagePanel` 动画结束两处由 `VISIBLE` 改保持 `GONE`（XML 初始 gone 会被这两处覆盖，故在代码层收口）；消息面板本体与折叠按钮保留。
 
+**新增：AI 页功能介绍弹窗 + 版本升至 v1.3（2026-09-12，versionCode 4）**
+
+> 视障用户进入 AI 页时弹软件功能介绍（纯文字，TalkBack 聚焦即读，不加 TTS）。
+
+**新增**
+- `AiFragment.maybeShowIntroDialog()`：每次进软件首次进入 AI 页时弹介绍弹窗——四键用法（对话/拍照识别/紧急求助/志愿者求助）+ 底部导航 + 悬浮球回软件提示；底部两按钮——**「关闭」**本次会话不再弹（静态会话标记）、**「不再显示」**写 SharedPreferences（`ai_conversation_history` 文件 `ai_intro_never_show` 键）永不再弹；弹窗可点返回键关闭（等同「关闭」）。
+- **版本 1.2 → 1.3（versionCode 3 → 4）**；后端 `application.yml` 版本默认值同步升 `code=4 / name=1.3`，update-log 更新——供强制更新链路发版测试。
+
 **新增：App 强制更新（2026-09-12）**
 
 > App 启动检查线上版本，服务端 versionCode 更高即弹**不可取消**更新弹窗（无取消按钮、禁返回/点外部），应用内下载 APK 完成后自动拉起安装。

@@ -91,6 +91,10 @@ public class AiFragment extends Fragment {
     private static final int PERMISSION_REQUEST_CODE = 200;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 201;
     private static final String PREF_NAME = "ai_conversation_history";
+    /** 功能介绍弹窗「不再显示」本地持久化键 */
+    private static final String KEY_AI_INTRO_NEVER_SHOW = "ai_intro_never_show";
+    /** 功能介绍弹窗每次进程会话只弹一次（「关闭」后本次软件内不再打扰，下次进软件再弹） */
+    private static boolean sIntroShownThisSession = false;
     private static final String KEY_CONVERSATIONS = "conversations";
     private static final String KEY_CURRENT_CONVERSATION = "current_conversation";
     
@@ -346,7 +350,9 @@ public class AiFragment extends Fragment {
         if (isListening) {
             startStatusCheck();
         }
-        
+
+        // 功能介绍弹窗：每次进软件首次进入 AI 页时弹出（「不再显示」本地持久化）
+        maybeShowIntroDialog();
     }
     
 
@@ -498,6 +504,51 @@ public class AiFragment extends Fragment {
 
     }
     
+    /**
+     * AI 页功能介绍弹窗（视障用户进入 AI 页时展示）。
+     * 「关闭」：本次软件会话内不再弹，下次进软件再弹；「不再显示」：本地持久化，永不再弹。
+     * 纯文字展示，无 TTS——TalkBack 聚焦标题/正文/按钮即可朗读。
+     */
+    private void maybeShowIntroDialog() {
+        try {
+            if (sIntroShownThisSession || !isAdded() || getContext() == null) {
+                return;
+            }
+            SharedPreferences prefs = requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            if (prefs.getBoolean(KEY_AI_INTRO_NEVER_SHOW, false)) {
+                sIntroShownThisSession = true;
+                return;
+            }
+            sIntroShownThisSession = true;
+
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("欢迎使用视无界 AI 助手")
+                    .setMessage("我是您的 AI 助手，这样使用我：\n\n"
+                            + "1. 对话：点击麦克风按钮，说出您的问题，我语音回答；\n"
+                            + "2. 拍照识别：点击相机按钮拍下眼前的事物，我告诉您它是什么；\n"
+                            + "3. 紧急求助：红色按钮，一键通知您的家属；\n"
+                            + "4. 志愿者求助：电话按钮，视频连线志愿者帮您“看”；\n\n"
+                            + "屏幕最下方可以切换家庭、社区和我的页面。\n"
+                            + "退出软件后，屏幕上会出现 AI 悬浮球，点击它随时回到本页面。")
+.setCancelable(true)
+                    .setNegativeButton("关闭", (d, w) -> d.dismiss())
+                    .setPositiveButton("不再显示", (d, w) -> {
+                        try {
+                            requireContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                                    .edit()
+                                    .putBoolean(KEY_AI_INTRO_NEVER_SHOW, true)
+                                    .apply();
+                        } catch (Exception ex) {
+                            Log.e(TAG, "保存不再显示标记失败", ex);
+                        }
+                        d.dismiss();
+                    })
+                    .show();
+        } catch (Exception e) {
+            Log.e(TAG, "功能介绍弹窗展示失败", e);
+        }
+    }
+
     /**
      * 初始化数据
      */
