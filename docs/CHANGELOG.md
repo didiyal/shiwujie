@@ -104,6 +104,13 @@
 **使用**
 - 默认：`./scripts/start.sh`（仅 Java）／ `--build` 重建镜像 ／ `--with-ai` 附带 Python AI（AI 重写重启时用）。
 
+**App 修复：AI 跳转后悬浮球回跳闪退（2026-09-12）**
+
+> 现象：AI「跳转软件」（5004）跳到目标应用后再点 AI 悬浮球回本 App 必闪退（`FATAL EXCEPTION: CameraBackground`）；普通后台回跳无恙。`adb logcat -b crash` 实抓两形态 NPE/IllegalStateException，根因与修复见 [App known-issues](../shiwujie-frontend/app/docs/known-issues.md)「已修复（AI 跳转后回跳闪退）」。
+
+**修复**
+- `CameraPreviewManager`（`shiwujie-frontend/app`）：相机被目标应用抢占后回跳，错误/会话回调与重开预览竞争——`onDisconnected`/`onError` 改用回调参数关相机（原用字段，null 时 NPE）；`onConfigured` 补设备/构建器判空 + `setRepeatingRequest` 补 catch `IllegalStateException|IllegalArgumentException`（原仅 `CameraAccessException`）；`SurfaceTexture` 判空；`closeCamera` 补清 `captureRequestBuilder`。AI 页相机预览在跳转后可安全恢复，不再闪退。
+
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 
 > 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。

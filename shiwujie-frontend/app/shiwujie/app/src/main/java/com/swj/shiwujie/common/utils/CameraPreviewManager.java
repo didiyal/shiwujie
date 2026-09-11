@@ -154,16 +154,26 @@ public class CameraPreviewManager {
                         cameraDevice = camera;
                         createCameraPreview();
                     }
-                    
+
                     @Override
                     public void onDisconnected(@NonNull CameraDevice camera) {
-                        cameraDevice.close();
+                        // 用回调参数关闭（字段可能已被并发 closeCamera() 置空）；AI 跳转后被目标应用抢占相机时走这里
+                        camera.close();
+                        if (cameraDevice == camera) {
+                            cameraDevice = null;
+                        }
+                        isPreviewActive = false;
+                        Log.w(TAG, "摄像头连接断开（可能被其他应用占用）");
                     }
-                    
+
                     @Override
                     public void onError(@NonNull CameraDevice camera, int error) {
-                        cameraDevice.close();
-                        cameraDevice = null;
+                        // 用回调参数关闭：field 此时可能为 null，直接 cameraDevice.close() 会 NPE 闪退
+                        camera.close();
+                        if (cameraDevice == camera) {
+                            cameraDevice = null;
+                        }
+                        isPreviewActive = false;
                         Log.e(TAG, "摄像头打开失败: " + error);
                     }
                 }, backgroundHandler);
@@ -180,39 +190,53 @@ public class CameraPreviewManager {
         try {
             // 初始化ImageReader
             initImageReader();
-            
+
             SurfaceTexture texture = textureView.getSurfaceTexture();
+            if (texture == null) {
+                // AI 跳转等场景下 Surface 可能已随页面销毁，等待下次 surfaceAvailable 再建预览
+                Log.w(TAG, "SurfaceTexture 尚未就绪，跳过本次预览创建");
+                return;
+            }
             texture.setDefaultBufferSize(480, 640);
-            
+
             Surface surface = new Surface(texture);
-            
+
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(surface);
-            
+
             // 准备预览和拍照的surface列表
             java.util.List<Surface> surfaces = new java.util.ArrayList<>();
             surfaces.add(surface); // 预览用surface
             if (imageReader != null) {
                 surfaces.add(imageReader.getSurface()); // 拍照用surface
             }
-            
+
             cameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     if (cameraDevice == null) {
+                        // 会话配置完成前相机已被关闭（AI 跳转被抢占场景），释放会话防泄漏
+                        session.close();
+                        Log.w(TAG, "onConfigured 时相机已关闭，跳过预览请求");
                         return;
                     }
-                    
+                    if (captureRequestBuilder == null) {
+                        session.close();
+                        Log.w(TAG, "onConfigured 时请求构建器为空，跳过预览请求");
+                        return;
+                    }
+
                     cameraCaptureSession = session;
                     try {
                         captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-                        
+
                         cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
                         isPreviewActive = true;
                         Log.d(TAG, "摄像头预览开始");
-                    } catch (CameraAccessException e) {
-                        Log.e(TAG, "设置预览请求失败", e);
+                    } catch (CameraAccessException | IllegalStateException | IllegalArgumentException e) {
+                        // IllegalStateException: setRepeatingRequest 时设备已被关闭（时序竞争），不可致闪退
+                        Log.e(TAG, "设置预览请求失败（相机可能已被关闭或占用）", e);
                     }
                 }
                 
@@ -239,7 +263,9 @@ public class CameraPreviewManager {
             cameraDevice.close();
             cameraDevice = null;
         }
-        
+
+        captureRequestBuilder = null;
+
         if (imageReader != null) {
             imageReader.close();
             imageReader = null;

@@ -26,6 +26,10 @@
 - ✅ **前台通知按角色跳首页（A5）**：`WebSocketService` 通知 Intent 原硬编码 `VolunteerHomeActivity`，盲人账号点通知进错页；改为按 `SharedPrefsUtil.isBlind()` 选盲人/志愿者首页。
 - ✅ **信令码常量化 + 固化真值表（A6，零行为变更）**：`SocketDataV0` 补 requestType -1~5 命名常量（按实际语义）+ 类头真值表；`VideoCallManager` switch、blind/volunteer `HomeFragment`、`EmergencyHelpManager` 的魔数比较改用常量；5 个零调用点工厂方法标 `@Deprecated`（命名误导，如 `createVolunteerAccept=4` 实为"取消"），不删（删属批次 D）。
 
+## 已修复（AI 跳转后回跳闪退：相机抢占竞态，2026-09-12）
+
+> 现象：AI「跳转软件」（信令 5004）跳到目标应用后，点 AI 悬浮球回跳本 App 必闪退；普通后台再回跳无恙。崩溃栈（`adb logcat -b crash`）：`FATAL EXCEPTION: CameraBackground`，两形态——①`NullPointerException: CameraDevice.close() on null` at `CameraPreviewManager$2.onError`; ②`IllegalStateException: CameraDevice was already closed` at `CameraPreviewManager$3.onConfigured`。根因：AI 页常驻后置相机预览，5004 处理在主线程 `Thread.sleep(1000)` 期间目标应用启动并抢占相机 → 相机被系统断开/报错，回跳时 `onResume`→`safeStartCamera` 与排队中的错误/会话回调竞争，两处回调用字段而非回调参数操作设备、`setRepeatingRequest` 仅 catch `CameraAccessException` → 未捕获异常杀死 CameraBackground 线程 → 进程闪退。修复 `CameraPreviewManager`：`onDisconnected`/`onError` 改用回调参数 `camera.close()` 并按同实例比较置空字段 + 复位 `isPreviewActive`；`onConfigured` 对设备/构建器为空时关闭会话并跳过、`setRepeatingRequest` 补 catch `IllegalStateException|IllegalArgumentException`；`createCameraPreview` 补 `SurfaceTexture` 判空；`closeCamera` 补清 `captureRequestBuilder`。`compileDebugJavaWithJavac` + `assembleDebug` 通过，已装机待真机复验。
+
 ## 🔴 安全
 
 1. **明文 HTTP/WS（无 TLS）**：主后端 `http://47.112.114.139:8100`、WS `ws://.../api/ws/call` 均明文，token 与信令可被中间人窃取。（子项「`network_security_config` 误把 CIDR 当 domain」已于 2026-07-12 清理；明文本体待后端启用 TLS。）
