@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-09-12：主页 tab 移除（功能由 AI 页按钮触发，navigation_home 目的地保留在导航图供流程跳转）；进入软件默认 AI -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:id="@+id/navigation_home"
-        android:icon="@drawable/tabbarhome"
-        android:title="主页" />
-
-    <item
-        android:id="@+id/navigation_community"
-        android:icon="@drawable/community"
-        android:title="社区" />
-
     <item
         android:id="@+id/navigation_ai"
         android:icon="@drawable/ai"
@@ -19,6 +10,11 @@
         android:id="@+id/navigation_family"
         android:icon="@drawable/family1"
         android:title="家庭" />
+
+    <item
+        android:id="@+id/navigation_community"
+        android:icon="@drawable/community"
+        android:title="社区" />
 
     <item
         android:id="@+id/navigation_profile"

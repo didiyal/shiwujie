@@ -134,6 +134,17 @@
 - **显隐广播改显式带包名**：`MyApplication` 发送时 `intent.setPackage(getPackageName())`——隐式广播 + `RECEIVER_NOT_EXPORTED` 组合在 vivo OriginOS（Android 14+）上不投递（注册成功、广播已发、接收器不触发的静默丢包），显式包名后端到端实测 `HOME → SHOW → showFloatingBall` 全链路打通（~0.5s 内上屏）。
 - 附带发现：release 构建（R8）下 `Log.d` 全部不可见（仅 `Log.e` 落 logcat），排障时以 `Log.e` 为准。
 
+**App 结构调整：底栏移除主页 tab，进入软件默认 AI 页（2026-09-12，v1.2 / versionCode 3）**
+
+> 用户规划：最终只保留单一 AI 页，主页逐批下线——本批先摘 tab。`assembleRelease` 已装机并 adb 截屏验证（进软件即 AI 页，底栏 AI/家庭/社区/我的 四项，AI 高亮）。
+
+**变更**
+- `res/menu/bottom_nav_menu.xml`：底栏从 5 项收敛为 **AI → 家庭 → 社区 → 我的**（移除「主页」，原第 3 位 AI 提到首位）。
+- `res/navigation/mobile_navigation.xml`：`startDestination` `navigation_home` → `navigation_ai`——冷启动直落 AI 页（相机/AI 会话即开）。
+- **`navigation_home` 目的地保留在导航图**：AI 页「紧急求助/志愿者求助」按钮仍经 `navigate(navigation_home, from_ai_* args)` 触发既有流程，HomeFragment 的匹配成功进通话页（type=2）/通话结束（type=5）处理器随之被创建生效。
+- **WebSocket 建立不受影响**：建连在 `BlindHomeActivity.initializeAfterPermissions`（Activity 级），与主页 tab 无关，冷启动即连。
+- **已知残留（下批删主页时迁移）**：HomeFragment 的 WS 监听（type=2/5）仅在该 Fragment 创建后有效——用户不触求助流程时，志愿者侧主动发起的通话/紧急升级信号在 AI 页上暂无法接听；此缺口在现版本「用户切离主页 tab」时同样存在，非本次引入，随「单一 AI 页」改造一并收口。
+
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 
 > 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。
