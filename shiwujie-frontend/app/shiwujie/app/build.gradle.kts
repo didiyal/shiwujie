@@ -12,7 +12,7 @@ android {
         minSdk = 30
         targetSdk = 35
         versionCode = 4
-        versionName = "1.3"   // 1.3：新增 AI 页功能介绍弹窗（关闭 / 不再显示，本地持久化）
+        versionName = "3.0.0"   // 对齐仓库版本线 v3.0.0（versionCode 单调递增，与用户已装版本兼容）
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
