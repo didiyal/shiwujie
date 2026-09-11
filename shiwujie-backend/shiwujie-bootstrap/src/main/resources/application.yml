@@ -62,3 +62,8 @@ search-api:
 app:
   download:
     apk-path: ${APK_PATH:/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk}
+  # 线上最新版本信息（强制更新检查用）：发新 APK 时同步升 code/name，App 启动比对本地 versionCode 即弹强制更新
+  version:
+    code: ${APP_VERSION_CODE:3}
+    name: ${APP_VERSION_NAME:1.2}
+    update-log: ${APP_VERSION_LOG:修复AI跳转后回跳闪退；悬浮球改为退出软件后显示；AI页改版为对话/拍照/紧急求助/志愿者求助}

@@ -57,6 +57,11 @@ public class RetrofitClient {
                 .build();
     }
 
+    /** 获取后端 base url（UpdateManager 拼接 APK 下载地址用） */
+    public static String getBaseUrl() {
+        return BASE_URL;
+    }
+
     public static synchronized RetrofitClient getInstance() {
         if (instance == null) {
             instance = new RetrofitClient();

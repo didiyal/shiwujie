@@ -26,6 +26,8 @@
     
     <!-- 存储权限 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- 应用内下载 APK 并拉起安装（强制更新） -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     
     <!-- 悬浮窗权限 -->
@@ -114,6 +116,17 @@
         
 
         
+        <!-- 强制更新：FileProvider 供安装器读取下载的 APK -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.swj.shiwujie.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

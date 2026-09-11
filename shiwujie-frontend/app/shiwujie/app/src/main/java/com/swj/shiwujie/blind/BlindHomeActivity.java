@@ -56,6 +56,9 @@ public class BlindHomeActivity extends AppCompatActivity {
         binding = ActivityBlindHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // 强制更新检查：服务端 versionCode 高于本地即弹不可取消更新弹窗
+        com.swj.shiwujie.common.utils.UpdateManager.checkUpdate(this);
+
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupWithNavController(binding.navView, navController);
         

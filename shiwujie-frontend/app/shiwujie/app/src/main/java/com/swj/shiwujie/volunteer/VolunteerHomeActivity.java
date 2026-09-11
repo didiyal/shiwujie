@@ -47,6 +47,9 @@ public class VolunteerHomeActivity extends AppCompatActivity {
         binding = ActivityVolunteerHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // 强制更新检查：服务端 versionCode 高于本地即弹不可取消更新弹窗
+        com.swj.shiwujie.common.utils.UpdateManager.checkUpdate(this);
+
         // 志愿者端主页兜底：进入即停止AI悬浮球服务，避免盲人端残留
         try {
             stopService(new Intent(this, com.swj.shiwujie.common.service.AIFloatingBallService.class));

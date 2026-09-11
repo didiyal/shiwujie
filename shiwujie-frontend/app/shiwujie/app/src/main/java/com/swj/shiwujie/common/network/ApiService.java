@@ -12,6 +12,7 @@ import com.swj.shiwujie.data.model.HelppostAddRequest;
 import com.swj.shiwujie.data.model.HelppostVO;
 import com.swj.shiwujie.data.model.ActivityVO;
 import com.swj.shiwujie.data.model.ActivitysignVO;
+import com.swj.shiwujie.data.model.VersionVO;
 import com.swj.shiwujie.data.model.ActivitySignAddRequest;
 import com.swj.shiwujie.data.model.Page;
 import com.swj.shiwujie.data.model.HelppostUpdateRequest;
@@ -40,6 +41,10 @@ public interface ApiService {
      * @param phone 手机号码
      * @return 登录成功后的用户信息，包含token等数据
      */
+    /** 查询线上最新版本（不鉴权，启动时强制更新检查用） */
+    @GET("/api/download/version")
+    Call<BaseResponse<VersionVO>> checkVersion();
+
     @POST("/api/user/blind/login/loginAndRegisterQuickly")
     Call<BaseResponse<BlindVO>> blindQuickLogin(@Query("phone") String phone);
 

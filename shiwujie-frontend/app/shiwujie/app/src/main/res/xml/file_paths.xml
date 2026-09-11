@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 强制更新：DownloadManager 下载的 APK 对外共享路径 -->
+<paths>
+    <external-path
+        name="external_download"
+        path="Download/" />
+</paths>

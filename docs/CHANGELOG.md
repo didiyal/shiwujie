@@ -144,6 +144,21 @@
 - `HomeFragment` 及 `navigation_home` 目的地暂保留为不可达死代码（原 `from_ai_*` 参数分支休眠），下批整体删除。
 - **隐藏 AI 页「打开对话内容」按钮**（`btn_expand_message`）：`setupMessagePanelInitialState` 收起分支与 `collapseMessagePanel` 动画结束两处由 `VISIBLE` 改保持 `GONE`（XML 初始 gone 会被这两处覆盖，故在代码层收口）；消息面板本体与折叠按钮保留。
 
+**新增：App 强制更新（2026-09-12）**
+
+> App 启动检查线上版本，服务端 versionCode 更高即弹**不可取消**更新弹窗（无取消按钮、禁返回/点外部），应用内下载 APK 完成后自动拉起安装。
+
+**新增**
+- **后端 `GET /api/download/version`**（不鉴权——更新检查须在登录前后均可发起）：返回 `VersionVO{versionCode, versionName, downloadUrl, updateLog}`；值来自 `application.yml` `app.version.{code,name,update-log}`（env `APP_VERSION_CODE/APP_VERSION_NAME/APP_VERSION_LOG` 可覆盖）。`VersionVO` 落 model 契约层 `model/VO/download/`。
+- **App `UpdateManager`**（common/utils）：启动检查（比对 `longVersionCode`，仅服务端更高才弹；任何失败静默忽略——兼容未部署新接口的旧后端）→ 不可取消 AlertDialog（TTS 播报提醒）→ 系统 DownloadManager 下载（通知栏可见，存公共 Download/shiwujie_update.apk）→ 下载完成自动拉起安装；未授权「安装未知应用」时跳系统设置引导授权。`RetrofitClient` 补 `getBaseUrl()` 供拼下载地址；`ApiService` 加 `checkVersion()`。
+- **接入点**：`BlindHomeActivity` / `VolunteerHomeActivity` onCreate。Manifest 新增 `REQUEST_INSTALL_PACKAGES` 权限 + FileProvider（`res/xml/file_paths.xml`）。
+- **已验证**：本地起后端（`APP_VERSION_CODE=9`）+ adb reverse，真机走通检查→弹窗→下载→安装授权链路；线上接口实测返回正常 JSON，versionCode 相等时静默不弹。
+
+**部署约定（发版流程）**
+1. 发新 APK：升 App `versionCode/versionName`（build.gradle.kts）→ 上传服务器 `app-download.apk`；
+2. 后端同步升版本配置：`config/.env` 设 `APP_VERSION_CODE=<新code>`（或改 yml 内联默认）→ 重启后端；
+3. 老版本 App 下次启动即弹强制更新，下载即装。
+
 **后端安全：AI 链路鉴权并入业务拦截器（2026-09-12）**
 
 > 落地 known-issues 🔴 #1（ai 默认用户兜底后门）与 #3 的 AI 侧残留：`/api/ai/**` 不再使用行为独立的 `AiLoginCheckInterceptor`，鉴权行为与 user/call/community 完全一致。微服务时代两套拦截器并存的原因是 SB2/SB3 双栈无法共用代码，非性能考量；单体化后合并零成本。287 单测全绿（290 run / 3 skipped 为 AiSmokeTest 守卫）。
