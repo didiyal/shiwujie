@@ -3,7 +3,7 @@
     <!-- ==================== NAVBAR ==================== -->
     <header class="navbar" :class="{ scrolled: isScrolled }">
       <router-link to="/" class="navbar-brand">
-        <div class="brand-icon">视</div>
+        <img class="brand-icon" src="/logo.png" alt="视无界" />
         <div class="brand-text">视<span>无</span>界</div>
       </router-link>
 
@@ -65,7 +65,7 @@
     <!-- ==================== FOOTER ==================== -->
     <footer class="footer">
       <div class="footer-left">
-        <div class="footer-brand-icon">视</div>
+        <img class="footer-brand-icon" src="/logo.png" alt="视无界" />
         <span>&copy; {{ year }} 视无界. All rights reserved.</span>
       </div>
       <div class="footer-links">
@@ -154,11 +154,7 @@ export default {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #0071e3 0%, #40a9ff 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
+  object-fit: cover;
   font-size: 16px;
   font-weight: 700;
 }
@@ -362,13 +358,7 @@ export default {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  background: linear-gradient(135deg, #0071e3 0%, #40a9ff 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
+  object-fit: cover;
 }
 .footer-links {
   display: flex;

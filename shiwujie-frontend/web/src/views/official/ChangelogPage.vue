@@ -51,6 +51,48 @@ export default {
   setup() {
     const versions = [
       {
+        version: 'v1.3',
+        date: '2026-09-12',
+        badge: 'Latest',
+        badgeClass: 'new',
+        title: 'AI 全面升级：说话即操作，拍照即识别 🎙️',
+        desc: 'App 核心体验重做：界面收敛为 AI 优先，语音能力全面加强——句子级流式播报不再久等，语音即可操控应用、拍照识别、一键求助；新增强制更新与新手引导。',
+        sections: [
+          {
+            heading: '🤖 AI 助手',
+            items: [
+              { tag: '新增', tagClass: 'feature', text: 'AI 语音对话：说出需求即可联网搜索、打开应用（如"帮我打开微信"）、规划导航、操控软件内部功能' },
+              { tag: '新增', tagClass: 'feature', text: 'AI 拍照识别闭环：说"帮我识别前面"自动拍照，识别结果可继续追问' },
+              { tag: '优化', tagClass: 'improve', text: '句子级流式语音播报：AI 边生成边朗读，长回答不再久等，也不从头重读' },
+              { tag: '新增', tagClass: 'feature', text: 'AI 页功能介绍弹窗：首次进入引导使用，可选"不再显示"' }
+            ]
+          },
+          {
+            heading: '📱 界面与交互',
+            items: [
+              { tag: '优化', tagClass: 'improve', text: '首页改版：进入软件直达 AI 页，底栏为 AI / 家庭 / 社区 / 我的' },
+              { tag: '优化', tagClass: 'improve', text: 'AI 页功能键重排：对话、拍照识别、紧急求助（红）、志愿者求助，语音直达' },
+              { tag: '新增', tagClass: 'feature', text: 'AI 悬浮球：退出应用后常驻屏幕，点击随时回到 AI；退到后台有语音提示' }
+            ]
+          },
+          {
+            heading: '🚨 求助与安全',
+            items: [
+              { tag: '优化', tagClass: 'improve', text: '紧急求助一键向家属发起视频通话求助，志愿者求助视频连线帮扶，均可在 AI 页语音触发' },
+              { tag: '优化', tagClass: 'improve', text: '视频通话结束后回到 AI 页，流程闭环' }
+            ]
+          },
+          {
+            heading: '⚙️ 稳定性与安全',
+            items: [
+              { tag: '修复', tagClass: 'fix', text: '修复 AI 跳转其它应用后点悬浮球返回必闪退的问题（相机被抢占竞态）' },
+              { tag: '新增', tagClass: 'feature', text: '应用内强制更新：新版本发布后自动弹窗引导下载安装' },
+              { tag: '优化', tagClass: 'improve', text: '后端 AI 接口纳入统一登录鉴权，与业务接口同一套安全标准' }
+            ]
+          }
+        ]
+      },
+      {
         version: 'v3.0.0',
         date: '2026-07',
         badge: 'Major',

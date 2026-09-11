@@ -30,11 +30,11 @@
           <span class="badge-dot"></span> v3.0 全新升级
         </div>
         <h1 class="hero-title">
-          连接视障群体<br>用科技<span>看见</span>世界
+          开口即所得<br>用 AI <span>看见</span>世界
         </h1>
         <p class="hero-desc">
-          视无界是一个专为视障群体打造的社区服务平台，通过智能匹配连接志愿者与视障人士，
-          让每一次帮助都精准、温暖、高效。
+          视无界是专为视障人士打造的 AI 智能助手：开口就能用——拍照识物、联网搜索、
+          打开应用、规划路线、一键求助，全部语音完成；退出应用还有 AI 悬浮球，一点即回。
         </p>
         <a href="/api/download/app" class="btn-download">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -55,30 +55,47 @@
     <section class="section" id="features">
       <div class="section-header">
         <div class="section-label">产品功能</div>
-        <h2 class="section-title">为视障群体打造的<br>全场景服务平台</h2>
-        <p class="section-desc">从社区互动到活动组织，从求助响应到数据洞察，视无界提供完整的服务闭环。</p>
+        <h2 class="section-title">一句话，<br>让 AI 成为你<span v-pre>的</span>眼睛</h2>
+        <p class="section-desc">不用学习复杂操作，说出需求即可：识别、搜索、导航、求助，AI 全程语音响应。</p>
       </div>
 
-      <!-- 场景一：社区网络 -->
+      <!-- 场景一：AI 语音对话 -->
       <div class="feature-row">
         <div class="feature-visual">
           <div class="demo-frame">
             <div class="demo-frame-header">
               <div class="dot-row"><span></span><span></span><span></span></div>
-              <div class="demo-frame-title">社区网络</div>
+              <div class="demo-frame-title">AI 对话</div>
             </div>
             <div class="demo-frame-body">
-              <div class="conn-lines">
-                <div class="conn-line"></div><div class="conn-line"></div><div class="conn-line"></div>
-              </div>
-              <div class="scenario-community">
-                <div class="community-card" v-for="(c, i) in communityCards" :key="i">
-                  <div class="comm-avatar" :class="c.avatarClass">{{ c.initial }}</div>
-                  <div class="comm-info">
-                    <div class="comm-name">{{ c.name }}</div>
-                    <div class="comm-role">{{ c.role }}</div>
+              <div class="chat-list">
+                <div class="chat-item">
+                  <div class="chat-avatar normal">我</div>
+                  <div class="chat-content">
+                    <div class="chat-name">我</div>
+                    <div class="chat-text">帮我打开微信</div>
                   </div>
-                  <div class="comm-dot"></div>
+                </div>
+                <div class="chat-item">
+                  <div class="chat-avatar ai">AI</div>
+                  <div class="chat-content">
+                    <div class="chat-name">AI 助手</div>
+                    <div class="chat-text">好的，正在为您打开微信…</div>
+                  </div>
+                </div>
+                <div class="chat-item">
+                  <div class="chat-avatar normal">我</div>
+                  <div class="chat-content">
+                    <div class="chat-name">我</div>
+                    <div class="chat-text">附近有哪些盲人按摩店？</div>
+                  </div>
+                </div>
+                <div class="chat-item">
+                  <div class="chat-avatar ai">AI</div>
+                  <div class="chat-content">
+                    <div class="chat-name">AI 助手</div>
+                    <div class="chat-text">为您找到 3 家，最近的一家在…</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -86,49 +103,37 @@
         </div>
         <div class="feature-text">
           <div class="feature-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
           </div>
-          <h3>社区网络</h3>
-          <p>创建和加入多元化的兴趣社区，让视障人士与志愿者在同一个平台上相遇、互动、互助。</p>
+          <h3>AI 语音对话</h3>
+          <p>像和朋友聊天一样说出需求，AI 语音回答。能联网搜索最新信息，也能操控手机——打开应用、规划路线，说一声就办到。</p>
           <ul class="feature-points">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 支持按兴趣、地域精准匹配社区</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 志愿者与视障人士双向选择加入</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 实时在线状态，快速发起互动</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 语音提问、语音回答，全程免打字</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 联网搜索：最新资讯、周边信息即时可查</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 语音操控：说“帮我打开微信”即可打开应用，说“我要去哪里”快捷规划导航</li>
           </ul>
         </div>
       </div>
 
-      <!-- 场景二：活动组织 -->
+      <!-- 场景二：AI 拍照识别 -->
       <div class="feature-row reverse">
         <div class="feature-visual">
           <div class="demo-frame">
             <div class="demo-frame-header">
               <div class="dot-row"><span></span><span></span><span></span></div>
-              <div class="demo-frame-title">活动管理</div>
+              <div class="demo-frame-title">拍照识别</div>
             </div>
             <div class="demo-frame-body">
-              <div class="scenario-activity">
-                <div class="cal-header">
-                  <div class="cal-month">2026年 7月</div>
-                  <div class="cal-nav"><div class="cal-nav-btn">&lt;</div><div class="cal-nav-btn">&gt;</div></div>
+              <div class="photo-demo">
+                <div class="photo-frame">
+                  <div class="photo-corner tl"></div><div class="photo-corner tr"></div>
+                  <div class="photo-corner bl"></div><div class="photo-corner br"></div>
+                  <div class="photo-mid"></div>
                 </div>
-                <div class="cal-grid">
-                  <div class="cal-day-name">日</div><div class="cal-day-name">一</div><div class="cal-day-name">二</div><div class="cal-day-name">三</div><div class="cal-day-name">四</div><div class="cal-day-name">五</div><div class="cal-day-name">六</div>
-                  <div class="cal-day other">29</div><div class="cal-day other">30</div><div class="cal-day">1</div><div class="cal-day">2</div><div class="cal-day">3</div><div class="cal-day">4</div><div class="cal-day has-event">5</div>
-                  <div class="cal-day">6</div><div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div><div class="cal-day">10</div><div class="cal-day">11</div><div class="cal-day today has-event">12</div>
-                  <div class="cal-day has-event">13</div><div class="cal-day">14</div><div class="cal-day">15</div><div class="cal-day">16</div><div class="cal-day">17</div><div class="cal-day">18</div><div class="cal-day">19</div>
-                </div>
-                <div class="event-list">
-                  <div class="event-item">
-                    <div class="event-time">14:00</div>
-                    <div class="event-title">视障人士智能手机培训班</div>
-                    <div class="event-badge upcoming">即将开始</div>
-                  </div>
-                  <div class="event-item">
-                    <div class="event-time">16:30</div>
-                    <div class="event-title">社区读书分享会</div>
-                    <div class="event-badge ongoing">进行中</div>
-                  </div>
+                <div class="photo-result">
+                  <div class="photo-result-line"><span class="photo-key">识别</span>这是一盒感冒灵冲剂</div>
+                  <div class="photo-result-line"><span class="photo-key">追问</span>一次喝多少？</div>
+                  <div class="photo-result-line"><span class="photo-key">回答</span>开水冲服，一次 1 袋…</div>
                 </div>
               </div>
             </div>
@@ -136,60 +141,39 @@
         </div>
         <div class="feature-text">
           <div class="feature-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </div>
-          <h3>活动组织</h3>
-          <p>线上线下一体化的活动管理，从创建发布到报名签到，全流程数字化追踪。</p>
+          <h3>AI 拍照识别</h3>
+          <p>对 AI 说“帮我识别前面”，自动拍照并告诉你眼前是什么。看不完的信息可以继续追问，让它读药品说明、辨物品、识场景。</p>
           <ul class="feature-points">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 活动创建、发布、报名、签到一站式管理</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 日历视图直观展示活动排期</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 活动数据自动统计，参与率一目了然</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 一句“帮我识别前面”，自动拍照语音播报</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 识别后可追问细节，像有个随身讲解员</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 结合联网搜索，识别之外还能补充背景信息</li>
           </ul>
         </div>
       </div>
 
-      <!-- 场景三：求助响应 -->
+      <!-- 场景三：紧急与志愿者求助 -->
       <div class="feature-row">
         <div class="feature-visual">
           <div class="demo-frame">
             <div class="demo-frame-header">
               <div class="dot-row"><span></span><span></span><span></span></div>
-              <div class="demo-frame-title">求助响应</div>
+              <div class="demo-frame-title">一键求助</div>
             </div>
             <div class="demo-frame-body">
-              <div class="scenario-help">
-                <div class="help-badge-row">
-                  <div class="help-tag active">全部</div>
-                  <div class="help-tag">出行</div>
-                  <div class="help-tag">阅读</div>
-                  <div class="help-tag">购物</div>
+              <div class="sos-demo">
+                <div class="sos-btn">
+                  <div class="sos-icon">SOS</div>
+                  <div class="sos-label">紧急求助</div>
                 </div>
-                <div class="chat-list">
-                  <div class="chat-item">
-                    <div class="chat-avatar urgent">急</div>
-                    <div class="chat-content">
-                      <div class="chat-name">视障人士 张先生</div>
-                      <div class="chat-text">需要帮忙阅读药品说明书…</div>
-                      <div class="chat-meta"><span class="chat-time">2分钟前</span><span class="chat-status waiting">等待匹配</span></div>
-                    </div>
-                    <div class="chat-badge">1</div>
-                  </div>
-                  <div class="chat-item">
-                    <div class="chat-avatar normal">助</div>
-                    <div class="chat-content">
-                      <div class="chat-name">视障人士 李阿姨</div>
-                      <div class="chat-text">下午去社区医院需要陪同…</div>
-                      <div class="chat-meta"><span class="chat-time">15分钟前</span><span class="chat-status matched">已匹配</span></div>
-                    </div>
-                  </div>
-                  <div class="chat-item">
-                    <div class="chat-avatar normal">帮</div>
-                    <div class="chat-content">
-                      <div class="chat-name">视障人士 王大爷</div>
-                      <div class="chat-text">想找人一起去公园散步…</div>
-                      <div class="chat-meta"><span class="chat-time">1小时前</span><span class="chat-status matched">已匹配</span></div>
-                    </div>
-                  </div>
+                <div class="volunteer-btn">
+                  <div class="volunteer-icon">志愿者</div>
+                  <div class="volunteer-label">视频帮扶</div>
+                </div>
+                <div class="sos-status">
+                  <div class="sos-dot"></div>
+                  <span>已通知家属 · 志愿者接入中…</span>
                 </div>
               </div>
             </div>
@@ -199,12 +183,194 @@
           <div class="feature-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           </div>
-          <h3>求助响应</h3>
-          <p>即时求助发布与智能志愿者匹配系统，确保每一次求助都能得到快速、精准的响应。</p>
+          <h3>紧急与志愿者求助</h3>
+          <p>说“帮我紧急求助”，AI 立即向家属发起视频通话求助；需要人帮您“看”时，一键视频连线志愿者——AI 也能自动触发求助。</p>
           <ul class="feature-points">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 一键发布求助，按类别精准分类</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 智能匹配附近志愿者，缩短响应时间</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 实时状态追踪，从求助到完成全程可见</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 紧急求助一键通知家属，视频通话即时接通</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 志愿者视频帮扶，远程“成为您的眼睛”</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> AI 识别到紧急场景可主动协助发起求助</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 场景四：AI 悬浮球 -->
+      <div class="feature-row reverse">
+        <div class="feature-visual">
+          <div class="demo-frame">
+            <div class="demo-frame-header">
+              <div class="dot-row"><span></span><span></span><span></span></div>
+              <div class="demo-frame-title">AI 悬浮球</div>
+            </div>
+            <div class="demo-frame-body">
+              <div class="ball-demo">
+                <div class="phone-mock">
+                  <div class="phone-screen">
+                    <div class="phone-app-row"><div class="phone-app"></div><div class="phone-app"></div><div class="phone-app"></div></div>
+                    <div class="phone-app-row"><div class="phone-app"></div><div class="phone-app"></div><div class="phone-app"></div></div>
+                    <div class="floating-ball">
+                      <div class="ball-core">AI</div>
+                      <div class="ball-ring"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="ball-caption">退出应用后悬浮球常驻<br>点击即回到 AI 助手</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-text">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+          </div>
+          <h3>AI 悬浮球，一点即回</h3>
+          <p>退出视无界去做别的事时，屏幕上会保留一枚 AI 悬浮球；无论当时在用什么应用，点一下悬浮球立刻回到 AI 助手，AI 不离左右。</p>
+          <ul class="feature-points">
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 退出应用后悬浮球常驻屏幕</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 任何界面点击悬浮球，直达 AI 对话</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 退到后台有语音提示，不担心“回不来”</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== FEATURES ==================== -->
+    <section class="section" id="features">
+      <div class="section-header">
+        <div class="section-label">产品功能</div>
+        <h2 class="section-title">一句话，<br>让 AI 成为你<span v-pre>的</span>眼睛</h2>
+        <p class="section-desc">不用学习复杂操作，说出需求即可：识别、搜索、导航、求助，AI 全程语音响应。</p>
+      </div>
+
+      <!-- 场景一：AI 语音对话 -->
+      <div class="feature-row">
+        <div class="feature-visual">
+          <div class="demo-frame">
+            <div class="demo-frame-header">
+              <div class="dot-row"><span></span><span></span><span></span></div>
+              <div class="demo-frame-title">AI 对话</div>
+            </div>
+            <div class="demo-frame-body">
+              <div class="chat-list">
+                <div class="chat-item">
+                  <div class="chat-avatar normal">我</div>
+                  <div class="chat-content">
+                    <div class="chat-name">我</div>
+                    <div class="chat-text">帮我打开微信</div>
+                  </div>
+                </div>
+                <div class="chat-item">
+                  <div class="chat-avatar ai">AI</div>
+                  <div class="chat-content">
+                    <div class="chat-name">AI 助手</div>
+                    <div class="chat-text">好的，正在为您打开微信…</div>
+                  </div>
+                </div>
+                <div class="chat-item">
+                  <div class="chat-avatar normal">我</div>
+                  <div class="chat-content">
+                    <div class="chat-name">我</div>
+                    <div class="chat-text">附近有哪些盲人按摩店？</div>
+                  </div>
+                </div>
+                <div class="chat-item">
+                  <div class="chat-avatar ai">AI</div>
+                  <div class="chat-content">
+                    <div class="chat-name">AI 助手</div>
+                    <div class="chat-text">为您找到 3 家，最近的一家在…</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-text">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </div>
+          <h3>AI 语音对话</h3>
+          <p>像和朋友聊天一样说出需求，AI 语音回答。能联网搜索最新信息，也能操控手机——打开应用、规划路线，说一声就办到。</p>
+          <ul class="feature-points">
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 语音提问、语音回答，全程免打字</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 联网搜索：最新资讯、周边信息即时可查</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 语音操控：说“帮我打开微信”即可打开应用，说“我要去哪里”快捷规划导航</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 场景二：AI 拍照识别 -->
+      <div class="feature-row reverse">
+        <div class="feature-visual">
+          <div class="demo-frame">
+            <div class="demo-frame-header">
+              <div class="dot-row"><span></span><span></span><span></span></div>
+              <div class="demo-frame-title">拍照识别</div>
+            </div>
+            <div class="demo-frame-body">
+              <div class="photo-demo">
+                <div class="photo-frame">
+                  <div class="photo-corner tl"></div><div class="photo-corner tr"></div>
+                  <div class="photo-corner bl"></div><div class="photo-corner br"></div>
+                  <div class="photo-mid"></div>
+                </div>
+                <div class="photo-result">
+                  <div class="photo-result-line"><span class="photo-key">识别</span>这是一盒感冒灵冲剂</div>
+                  <div class="photo-result-line"><span class="photo-key">追问</span>一次喝多少？</div>
+                  <div class="photo-result-line"><span class="photo-key">回答</span>开水冲服，一次 1 袋…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-text">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <h3>AI 拍照识别</h3>
+          <p>对 AI 说“帮我识别前面”，自动拍照并告诉你眼前是什么。看不完的信息可以继续追问，让它读药品说明、辨物品、识场景。</p>
+          <ul class="feature-points">
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 一句“帮我识别前面”，自动拍照语音播报</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 识别后可追问细节，像有个随身讲解员</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 结合联网搜索，识别之外还能补充背景信息</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 场景三：紧急与志愿者求助 -->
+      <div class="feature-row">
+        <div class="feature-visual">
+          <div class="demo-frame">
+            <div class="demo-frame-header">
+              <div class="dot-row"><span></span><span></span><span></span></div>
+              <div class="demo-frame-title">一键求助</div>
+            </div>
+            <div class="demo-frame-body">
+              <div class="sos-demo">
+                <div class="sos-btn">
+                  <div class="sos-icon">SOS</div>
+                  <div class="sos-label">紧急求助</div>
+                </div>
+                <div class="volunteer-btn">
+                  <div class="volunteer-icon">志愿者</div>
+                  <div class="volunteer-label">视频帮扶</div>
+                </div>
+                <div class="sos-status">
+                  <div class="sos-dot"></div>
+                  <span>已通知家属 · 志愿者接入中…</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-text">
+          <div class="feature-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </div>
+          <h3>紧急与志愿者求助</h3>
+          <p>说“帮我紧急求助”，AI 立即向家属发起视频通话求助；需要人帮您“看”时，一键视频连线志愿者——AI 也能自动触发求助。</p>
+          <ul class="feature-points">
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 紧急求助一键通知家属，视频通话即时接通</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 志愿者视频帮扶，远程“成为您的眼睛”</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> AI 识别到紧急场景可主动协助发起求助</li>
           </ul>
         </div>
       </div>
@@ -271,16 +437,7 @@
 
 <script>
 export default {
-  name: 'HomePage',
-  setup() {
-    const communityCards = [
-      { initial: '李', avatarClass: 'a1', name: '李家社区', role: '志愿者团队 · 12人' },
-      { initial: '张', avatarClass: 'a3', name: '张江读书会', role: '兴趣社区 · 28人' },
-      { initial: '王', avatarClass: 'a4', name: '王港助盲团', role: '公益组织 · 45人' },
-      { initial: '陈', avatarClass: 'a6', name: '陈行服务队', role: '社区服务 · 19人' }
-    ]
-    return { communityCards }
-  }
+  name: 'HomePage'
 }
 </script>
 
@@ -523,20 +680,6 @@ export default {
 }
 
 /* --- Scenario: 社区网络 --- */
-.scenario-community { display:flex; flex-direction:column; gap:10px; }
-.community-card {
-  display:flex; align-items:center; gap:10px;
-  padding:10px 12px; background:var(--bg); border-radius:12px;
-  animation:cardSlideIn .6s ease-out both;
-}
-.community-card:nth-child(1){ animation-delay:0s; }
-.community-card:nth-child(2){ animation-delay:.15s; }
-.community-card:nth-child(3){ animation-delay:.3s; }
-.community-card:nth-child(4){ animation-delay:.45s; }
-@keyframes cardSlideIn {
-  from { opacity:0; transform:translateX(-20px); }
-  to { opacity:1; transform:translateX(0); }
-}
 .comm-avatar {
   width:36px; height:36px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
@@ -557,19 +700,6 @@ export default {
 .comm-dot {
   width:8px; height:8px; border-radius:50%; background:#34c759; flex-shrink:0;
   animation:corePulse 2s ease-in-out infinite;
-}
-.conn-lines { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
-.conn-line {
-  position:absolute; height:1px;
-  background:linear-gradient(90deg, rgba(0,113,227,.2), rgba(0,113,227,.05));
-  animation:lineReveal 4s ease-in-out infinite;
-}
-.conn-line:nth-child(1){ top:28%; left:8%; width:30%; animation-delay:0s; }
-.conn-line:nth-child(2){ top:48%; right:8%; width:25%; animation-delay:1s; }
-.conn-line:nth-child(3){ top:68%; left:12%; width:28%; animation-delay:2s; }
-@keyframes lineReveal {
-  0%,100% { opacity:0; transform:scaleX(0); }
-  20%,80% { opacity:1; transform:scaleX(1); }
 }
 
 /* --- Scenario: 活动管理 --- */
@@ -719,6 +849,91 @@ export default {
 .bar-wrap:nth-child(7) .bar { height:55px; animation-delay:.6s; }
 .bar-label { font-size:9px; color:var(--text-3); }
 
+/* --- Scenario: AI 对话（复用 chat-item，补 AI 头像） --- */
+.chat-avatar.ai { background:linear-gradient(135deg,#1e8a9e,#30b4c8); }
+
+/* --- Scenario: 拍照识别 --- */
+.photo-demo { display:flex; flex-direction:column; gap:14px; }
+.photo-frame {
+  position:relative; height:110px; border-radius:12px;
+  background:linear-gradient(135deg, rgba(0,113,227,.08), rgba(30,138,158,.12));
+}
+.photo-corner { position:absolute; width:20px; height:20px; border:2px solid var(--primary); }
+.photo-corner.tl { top:10px; left:10px; border-right:none; border-bottom:none; border-radius:6px 0 0 0; }
+.photo-corner.tr { top:10px; right:10px; border-left:none; border-bottom:none; border-radius:0 6px 0 0; }
+.photo-corner.bl { bottom:10px; left:10px; border-right:none; border-top:none; border-radius:0 0 0 6px; }
+.photo-corner.br { bottom:10px; right:10px; border-left:none; border-top:none; border-radius:0 0 6px 0; }
+.photo-mid {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:36px; height:36px; border-radius:50%;
+  background:rgba(0,113,227,.15); animation:corePulse 2s ease-in-out infinite;
+}
+.photo-result { display:flex; flex-direction:column; gap:6px; }
+.photo-result-line { font-size:11px; color:var(--text-2); display:flex; align-items:center; gap:6px; }
+.photo-key {
+  font-size:9px; font-weight:700; padding:1px 6px; border-radius:4px;
+  background:rgba(0,113,227,.1); color:var(--primary); flex-shrink:0;
+}
+
+/* --- Scenario: 一键求助 --- */
+.sos-demo { display:flex; flex-direction:column; gap:12px; align-items:center; }
+.sos-btn, .volunteer-btn {
+  width:100%; display:flex; align-items:center; gap:10px;
+  padding:12px 14px; border-radius:12px; animation:cardSlideIn .6s ease-out both;
+}
+.sos-btn { background:linear-gradient(135deg,#ff3b30,#ff453a); animation-delay:0s; }
+.volunteer-btn { background:linear-gradient(135deg,#0071e3,#40a9ff); animation-delay:.15s; }
+.sos-icon {
+  width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.25);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:800; color:#fff; flex-shrink:0;
+}
+.volunteer-icon {
+  width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.25);
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; color:#fff; flex-shrink:0;
+}
+.sos-label, .volunteer-label { font-size:14px; font-weight:700; color:#fff; }
+.sos-status {
+  display:flex; align-items:center; gap:8px;
+  font-size:10px; color:var(--text-3);
+}
+.sos-dot {
+  width:7px; height:7px; border-radius:50%; background:#34c759;
+  animation:corePulse 2s ease-in-out infinite;
+}
+
+/* --- Scenario: AI 悬浮球 --- */
+.ball-demo { display:flex; flex-direction:column; align-items:center; gap:12px; }
+.phone-mock {
+  width:130px; height:190px; border-radius:18px;
+  border:2px solid var(--border-l); background:var(--bg);
+  padding:12px 10px;
+}
+.phone-screen { position:relative; height:100%; }
+.phone-app-row { display:flex; gap:8px; margin-bottom:10px; }
+.phone-app {
+  width:26px; height:26px; border-radius:7px;
+  background:linear-gradient(135deg, rgba(0,113,227,.15), rgba(30,138,158,.15));
+}
+.floating-ball {
+  position:absolute; bottom:14px; right:6px;
+  width:40px; height:40px;
+}
+.ball-core {
+  position:absolute; inset:6px; border-radius:50%;
+  background:linear-gradient(135deg,#0071e3,#40a9ff);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800; color:#fff;
+  animation:corePulse 2s ease-in-out infinite;
+}
+.ball-ring {
+  position:absolute; inset:0; border-radius:50%;
+  border:1.5px dashed rgba(0,113,227,.4);
+  animation:spin1 10s linear infinite;
+}
+.ball-caption { font-size:10px; color:var(--text-3); text-align:center; line-height:1.6; }
+
 /* Feature text */
 .feature-text { flex:1; min-width:280px; }
 .feature-text .feature-icon {
@@ -809,13 +1024,6 @@ export default {
   .feature-points li { font-size: 12px; }
 
   /* --- 社区卡片内部 --- */
-  .scenario-community { gap: 6px; }
-  .comm-avatar { width: 26px; height: 26px; font-size: 11px; }
-  .community-card { padding: 6px 8px; gap: 6px; }
-  .comm-name { font-size: 10px; }
-  .comm-role { font-size: 9px; }
-  .comm-dot { width: 6px; height: 6px; }
-
   /* --- 日历内部 --- */
   .cal-header { margin-bottom: 8px; }
   .cal-month { font-size: 11px; }
