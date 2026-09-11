@@ -11,8 +11,8 @@ android {
         applicationId = "com.swj.shiwujie"
         minSdk = 30
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"   // 1.1：AI 跳转后悬浮球回跳闪退修复（相机抢占竞态）
+        versionCode = 3
+        versionName = "1.2"   // 1.2：AI 页按钮重排（对话/拍照/紧急/志愿者/返回）+ 悬浮球改为退出软件后显示
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

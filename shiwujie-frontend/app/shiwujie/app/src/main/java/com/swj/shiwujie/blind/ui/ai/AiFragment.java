@@ -315,9 +315,6 @@ public class AiFragment extends Fragment {
         
         // 安全停止摄像头预览
         safeStopCamera();
-        
-        // 在AI页面暂停时显示悬浮球
-        showAIFloatingBall();
     }
     
     @Override
@@ -338,11 +335,6 @@ public class AiFragment extends Fragment {
             startStatusCheck();
         }
         
-        // 更新AI协助按钮状态
-        updateAIAssistButtonState();
-        
-        // 在AI页面时隐藏悬浮球
-        hideAIFloatingBall();
     }
     
 
@@ -461,62 +453,33 @@ public class AiFragment extends Fragment {
         });
         btnCollapseMessage.setOnClickListener(v -> collapseMessagePanel());
         btnExpandMessage.setOnClickListener(v -> expandMessagePanel());
-        
-        // 返回主页按钮点击事件
-        MaterialButton btnBack = view.findViewById(R.id.btn_back);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> {
-                // 设置返回主页TTS优先级标志
-                isReturningToHome = true;
-                
-                // TTS播报：正在返回主页
+
+        // 2026-09-12：返回按钮已按需求移除，回主页走底部导航栏（isReturningToHome 字段保留供 TTS 抑制守卫）
+
+        // 紧急求助按钮（2026-09-12 重排新增，第3位）：复用 AI 5003 信令同款流程——切主页并自动发起紧急求助
+        MaterialButton btnEmergency = view.findViewById(R.id.btn_emergency);
+        if (btnEmergency != null) {
+            btnEmergency.setOnClickListener(v -> {
+                // TTS播报 + 震动：正在发起紧急求助
                 if (ttsManager != null) {
-                    ttsManager.startSpeaking("正在返回主页");
+                    ttsManager.startSpeaking("正在为您发起紧急求助，通知家属");
                 }
-                
-                // 使用Navigation导航到主页
-                try {
-                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                    navController.navigate(R.id.navigation_home);
-                    
-                    // 延迟播报：已返回主页
-                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                        if (ttsManager != null) {
-                            ttsManager.startSpeaking("已返回主页");
-                        }
-                        // 清除优先级标志
-                        isReturningToHome = false;
-                    }, 500); // 延迟500ms，确保导航完成
-                    
-                } catch (Exception e) {
-                    Log.e(TAG, "导航到主页失败", e);
-                    // 如果导航失败，显示提示
-                    Toast.makeText(requireContext(), "返回主页失败，请重试", Toast.LENGTH_SHORT).show();
-                    // 清除优先级标志
-                    isReturningToHome = false;
+                if (vibrator != null && vibrator.hasVibrator()) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
                 }
+                handleEmergencyHelpRequest();
             });
         }
-        
-        // AI协助按钮 - 控制AI避障功能
-        MaterialButton btnAiAssist = view.findViewById(R.id.btn_ai_assist);
-        if (btnAiAssist != null) {
-            btnAiAssist.setOnClickListener(v -> {
-                if (!isAIAvoidRunning) {
-                    // 立即播报启动提示
-                    if (ttsManager != null) {
-                        ttsManager.startSpeaking("正在启用AI避障功能，检测过程中请保持机身平稳");
-                    }
-                    // 启动AI避障功能
-                    startAIAvoidance();
-                } else {
-                    // 立即播报关闭提示
-                    if (ttsManager != null) {
-                        ttsManager.startSpeaking("关闭AI避障功能");
-                    }
-                    // 停止AI避障功能
-                    stopAIAvoidance();
+
+        // 志愿者求助按钮（2026-09-12 重排新增，第4位）：复用 AI 5002 信令同款流程——切主页并自动连线志愿者
+        MaterialButton btnVolunteer = view.findViewById(R.id.btn_volunteer);
+        if (btnVolunteer != null) {
+            btnVolunteer.setOnClickListener(v -> {
+                // TTS播报：正在连线志愿者
+                if (ttsManager != null) {
+                    ttsManager.startSpeaking("正在为您连线志愿者视频帮扶");
                 }
+                handleJumpToBlindhomeRequest();
             });
         }
 
@@ -809,8 +772,6 @@ public class AiFragment extends Fragment {
             resetWebSocketReconnectCount();
         }
         
-        // 更新按钮状态
-        updateAIAssistButtonState();
         
         // 启动检测会话
         startDetectionSession();
@@ -828,8 +789,6 @@ public class AiFragment extends Fragment {
 
         isAIAvoidRunning = false;
         
-        // 更新按钮状态
-        updateAIAssistButtonState();
         
         // 立即停止定时任务
         stopAIFrameProcessing();
@@ -871,8 +830,6 @@ public class AiFragment extends Fragment {
         
         isAIAvoidRunning = false;
         
-        // 更新按钮状态
-        updateAIAssistButtonState();
         
         // 立即停止定时任务
         stopAIFrameProcessing();
@@ -1051,28 +1008,6 @@ public class AiFragment extends Fragment {
             Log.d(TAG, "所有检测已强制停止");
         } catch (Exception e) {
             Log.e(TAG, "强制停止检测失败", e);
-        }
-    }
-    
-    /**
-     * 更新AI协助按钮状态
-     */
-    private void updateAIAssistButtonState() {
-        try {
-            if (getView() != null) {
-                MaterialButton btnAiAssist = getView().findViewById(R.id.btn_ai_assist);
-                if (btnAiAssist != null) {
-                    if (isAIAvoidRunning) {
-                        // AI避障运行中，按钮显示停止状态（仅更新图标，不改动无障碍标签，避免与TTS冲突）
-                        btnAiAssist.setIcon(ContextCompat.getDrawable(requireContext(), R.drawable.ic_stop_24));
-                    } else {
-                        // AI避障未运行，按钮显示启动状态（仅更新图标，不改动无障碍标签，避免与TTS冲突）
-                        btnAiAssist.setIcon(ContextCompat.getDrawable(requireContext(), R.drawable.ai));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "更新AI协助按钮状态失败", e);
         }
     }
     
@@ -4410,34 +4345,6 @@ public class AiFragment extends Fragment {
             // 移除Fragment内的服务启动，交由首页统一管理，避免重复与跨身份
       } catch (Exception e) {
             Log.e(TAG, "启动AI悬浮球服务失败", e);
-        }
-    }
-    
-    /**
-     * 显示AI悬浮球
-     */
-    private void showAIFloatingBall() {
-        try {
-            Log.d(TAG, "显示AI悬浮球");
-            // 通过广播通知悬浮球服务显示悬浮球
-            Intent intent = new Intent("com.swj.shiwujie.SHOW_AI_FLOATING_BALL");
-            requireContext().sendBroadcast(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "显示AI悬浮球失败", e);
-        }
-    }
-    
-    /**
-     * 隐藏AI悬浮球
-     */
-    private void hideAIFloatingBall() {
-        try {
-            Log.d(TAG, "隐藏AI悬浮球");
-            // 通过广播通知悬浮球服务隐藏悬浮球
-            Intent intent = new Intent("com.swj.shiwujie.HIDE_AI_FLOATING_BALL");
-            requireContext().sendBroadcast(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "隐藏AI悬浮球失败", e);
         }
     }
     

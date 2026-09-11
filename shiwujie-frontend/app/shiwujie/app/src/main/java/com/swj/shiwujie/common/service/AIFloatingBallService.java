@@ -33,6 +33,10 @@ public class AIFloatingBallService extends Service {
     private static final String TAG = "AIFloatingBallService";
     private static final String CHANNEL_ID = "ai_floating_ball_channel";
     private static final int NOTIFICATION_ID = 1001;
+
+    /** 显示/隐藏悬浮球广播动作（MyApplication 按 App 前后台状态发送） */
+    public static final String ACTION_SHOW_BALL = "com.swj.shiwujie.SHOW_AI_FLOATING_BALL";
+    public static final String ACTION_HIDE_BALL = "com.swj.shiwujie.HIDE_AI_FLOATING_BALL";
     
     private WindowManager windowManager;
     private View floatingView;
@@ -287,11 +291,10 @@ public class AIFloatingBallService extends Service {
             floatingView.setFocusableInTouchMode(true);
             floatingView.setContentDescription("AI助手悬浮球，点击进入AI功能页面");
             
-            // 显示悬浮球
-            showFloatingBall();
-            
-            Log.d(TAG, "AI悬浮球初始化完成");
-            
+            // 2026-09-12 起启动时不自动显示悬浮球：应用在前台期间隐藏，
+            // 仅当应用退到后台（MyApplication 生命周期监听广播 ACTION_SHOW_BALL）后出现，点球回软件。
+            Log.d(TAG, "AI悬浮球初始化完成（启动时不显示，待应用退到后台后出现）");
+
         } catch (Exception e) {
             Log.e(TAG, "初始化AI悬浮球失败", e);
         }
@@ -402,20 +405,20 @@ public class AIFloatingBallService extends Service {
                     String action = intent.getAction();
                     if (action != null) {
                         switch (action) {
-                            case "com.swj.shiwujie.SHOW_AI_FLOATING_BALL":
+                            case ACTION_SHOW_BALL:
                                 showFloatingBall();
                                 break;
-                            case "com.swj.shiwujie.HIDE_AI_FLOATING_BALL":
+                            case ACTION_HIDE_BALL:
                                 hideFloatingBall();
                                 break;
                         }
                     }
                 }
             };
-            
+
             IntentFilter filter = new IntentFilter();
-            filter.addAction("com.swj.shiwujie.SHOW_AI_FLOATING_BALL");
-            filter.addAction("com.swj.shiwujie.HIDE_AI_FLOATING_BALL");
+            filter.addAction(ACTION_SHOW_BALL);
+            filter.addAction(ACTION_HIDE_BALL);
             registerReceiver(floatingBallReceiver, filter);
             
             Log.d(TAG, "广播接收器注册成功");

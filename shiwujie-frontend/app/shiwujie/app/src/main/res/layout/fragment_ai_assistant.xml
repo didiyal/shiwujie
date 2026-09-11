@@ -6,7 +6,7 @@
     android:id="@+id/ai_assistant_root"
     android:focusable="true"
     android:focusableInTouchMode="true"
-    android:nextFocusDown="@+id/btn_back"
+    android:nextFocusDown="@+id/btn_voice"
     android:contentDescription="AI助手主页面，包含摄像头预览、消息面板和功能按钮"
     android:accessibilityHeading="true"
     android:layout_width="match_parent"
@@ -403,7 +403,8 @@
         tools:visibility="visible" />
 
 
-    <!-- 底部功能按钮区域 - 悬浮按钮，去掉卡片样式 -->
+    <!-- 底部功能按钮区域 - 悬浮按钮，去掉卡片样式。
+         2026-09-12 重排：1对话 2拍照识别 3紧急求助 4志愿者求助 5返回（AI避障按钮下架，逻辑保留） -->
     <LinearLayout
         android:id="@+id/action_bar"
         android:layout_width="wrap_content"
@@ -415,24 +416,24 @@
         android:gravity="center"
         android:elevation="12dp"
         android:alpha="0.95"
-        android:contentDescription="底部功能按钮区域，包含返回、拍照、语音和AI协助功能"
+        android:contentDescription="底部功能按钮区域，包含对话、拍照识别、紧急求助和志愿者求助功能"
         android:accessibilityHeading="true">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_back"
+            android:id="@+id/btn_voice"
             style="@style/Widget.Material3.Button.Icon"
             android:layout_width="64dp"
             android:layout_height="64dp"
             android:layout_marginEnd="12dp"
-            android:contentDescription="返回主页按钮"
+            android:contentDescription="对话按钮，点击开始语音对话"
             app:backgroundTint="@color/primary_blue"
             app:cornerRadius="20dp"
-            app:icon="@drawable/ic_back"
+            app:icon="@drawable/ic_mic_24"
             app:iconGravity="textTop"
             app:iconPadding="0dp"
             app:iconSize="28dp"
             app:iconTint="@color/white"
-            app:rippleColor="@color/primary_blue"
+            app:rippleColor="@color/blue_700"
             app:strokeWidth="2dp"
             app:strokeColor="@color/white"
             tools:ignore="PrivateResource" />
@@ -457,15 +458,15 @@
             tools:ignore="PrivateResource" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_voice"
+            android:id="@+id/btn_emergency"
             style="@style/Widget.Material3.Button.Icon"
             android:layout_width="64dp"
             android:layout_height="64dp"
             android:layout_marginEnd="12dp"
-            android:contentDescription="语音输入按钮，点击开始语音输入"
-            app:backgroundTint="@color/primary_blue"
+            android:contentDescription="紧急求助按钮，点击通知家属"
+            app:backgroundTint="@color/red"
             app:cornerRadius="20dp"
-            app:icon="@drawable/ic_mic_24"
+            app:icon="@drawable/ic_help"
             app:iconGravity="textTop"
             app:iconPadding="0dp"
             app:iconSize="28dp"
@@ -476,14 +477,14 @@
             tools:ignore="PrivateResource" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_ai_assist"
+            android:id="@+id/btn_volunteer"
             style="@style/Widget.Material3.Button.Icon"
             android:layout_width="64dp"
             android:layout_height="64dp"
-            android:contentDescription="AI协助按钮，点击获取AI帮助"
+            android:contentDescription="志愿者求助按钮，点击连线志愿者视频帮扶"
             app:backgroundTint="@color/primary_blue"
             app:cornerRadius="20dp"
-            app:icon="@drawable/ai"
+            app:icon="@drawable/icon_call_incoming"
             app:iconGravity="textTop"
             app:iconPadding="0dp"
             app:iconSize="28dp"

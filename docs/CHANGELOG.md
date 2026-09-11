@@ -120,6 +120,15 @@
 - 版本 `versionName 1.0→1.1` / `versionCode 1→2`（对齐相机闪退修复；旧 `apk.jks` 签名的存量安装与本包签名不同，升级需卸载重装——测试期无存量用户，影响可接受）。签名 release 包已真机装机验证（R8 混淆运行正常）。
 - 下载页分发链路不变：官网 `HomePage.vue` → `/api/download/app` → 服务器固定文件 `/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk`，更新 = 服务器替换该文件（本次应替换为新签名 release 包）。
 
+**App 功能调整：AI 页按钮重排 + 悬浮球改为退出软件后显示（2026-09-12，v1.2 / versionCode 3）**
+
+> 用户验收需求两批：①AI 页四键重排；②悬浮球退出软件后才出现。`assembleRelease`（签名 v1.2）已装机。
+
+**变更**
+- **AI 页底部按钮栏重排**（`fragment_ai_assistant.xml` + `AiFragment`）：新顺序 **1 对话（原语音 `btn_voice`）→ 2 拍照识别（`btn_camera`）→ 3 紧急求助（新增 `btn_emergency`，红底 `ic_help`）→ 4 志愿者求助（新增 `btn_volunteer`，`icon_call_incoming`）**；**返回按钮整体移除**（回主页走底部导航栏），AI 避障按钮（`btn_ai_assist`）从按钮栏下架（`startAIAvoidance` 等逻辑与 `isReturningToHome` TTS 抑制守卫保留，守卫暂无置真路径）。无障碍焦点链与 contentDescription 同步更新。
+- **新增按钮复用 AI 信令既有流程**：紧急求助 → `handleEmergencyHelpRequest()`（同 WS 5003）、志愿者求助 → `handleJumpToBlindhomeRequest()`（同 WS 5002）——均切主页 Fragment 并经既有 `from_ai_*` 参数自动触发对应流程，零新后端交互。
+- **悬浮球显隐改全局前后台驱动**（`MyApplication` + `AIFloatingBallService` + `AiFragment`）：`MyApplication` 注册 `ActivityLifecycleCallbacks` 按 started 计数判前后台——**退到后台（退出软件）广播 `ACTION_SHOW_BALL` 显示悬浮球、回前台 `ACTION_HIDE_BALL` 隐藏**；服务启动不再自动显示悬浮球（原 `initFloatingBall` 末尾 `showFloatingBall()` 移除）；删除 `AiFragment.onPause/onResume` 的页面级 show/hide（原「离开 AI 页即显示」导致软件内全部页面都挂球）。广播动作字符串提为 `AIFloatingBallService` 公共常量，两端共用。
+
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 
 > 本节是**设计阶段记录，非已落地变更**。与上文「单体化（已落地）/ 安全加固（已落地）/ 单测层（已落地）」明确区分：以下全部设计决策与行为变更预告均为**尚未实现**，落地方在 Phase 5，落地后才会回卷进各对应层级。设计敲定 = Phase 1-4 梳理（功能分析 / 技术分析 / 技术方案 / 系统整合）完成；总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)，大方向见 [ROADMAP.md](ROADMAP.md) 待实现段「AI 重写-*」7 条（全 `[ ]` 未勾）。
