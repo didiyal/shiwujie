@@ -2,9 +2,9 @@
 
 > 平台层文档（Tier1）：**规范 + 用户可见契约 + 跨切面概览 + 路线/历史**。技术实现（development 细化）随代码就近，分别在 [shiwujie-backend/docs/](../shiwujie-backend/docs/) 与 [shiwujie-frontend/app/docs/](../shiwujie-frontend/app/docs/)、[shiwujie-frontend/web/docs/](../shiwujie-frontend/web/docs/)。规范真值在 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-## 当前工作版本（v3.0.0 · 进行中）
+## 当前版本（v3.0.0 · 2026-09-12 已封版）
 
-当前工作版本 `v3.0.0`（单体化改造·进行中；反思 v2.1.0 微服务过度设计，去微服务精简为单体）。前一版本 `v2.1.0`（二期微服务封版，tag `v2.1.0`，2026-07-11）；再前 `v2.0.0`（二期初步稳定，2025-11-12）。版本分级模型：`current.md` 指针 + 每版本一个 `vX.Y.Z/` 目录（工作直接写在进行中版本目录里，发布即冻结、目录保留不删）。打 tag 时冻结当前版本目录、`current.md` 改指下一版。
+当前版本 `v3.0.0`（单体化，**2026-09-12 封版**，tag `v3.0.0`；反思 v2.1.0 微服务过度设计，去微服务精简为单体）。前一版本 `v2.1.0`（二期微服务封版，tag `v2.1.0`，2026-07-11）；再前 `v2.0.0`（二期初步稳定，2025-11-12）。下一版本线（v3.1+）主方向：AI 重写重启（设计成果已保留）。版本分级模型：`current.md` 指针 + 每版本一个 `vX.Y.Z/` 目录（工作直接写在进行中版本目录里，发布即冻结、目录保留不删）。打 tag 时冻结当前版本目录、`current.md` 改指下一版。
 
 > **v3.0.0 双线**：① **单体化已落地**（业务模块合并为 model 契约层 + bootstrap 唯一 app 两模块，去微服务，统一 SB 3.4.5/Java21，待 tag 封版）；② **AI 重写设计敲定·待实现**（polyglot：Java 单体 + Python LangGraph 双进程，Phase 1-4 梳理完成、实现待 Phase 5，总图见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)）。两条线状态独立——单体化是已落地的工程事实，AI 重写是已敲定但尚未实现的设计。
 

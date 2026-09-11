@@ -6,18 +6,22 @@
 
 ### v3.0.0（单体化改造）
 
-> 反思 v2.1.0 微服务对当前体量过度设计，去微服务、精简为单体（**已落地**，待 tag 封版）；并规划安全加固、能力补全与 AI 模块重写（polyglot：Java 业务单体 + Python LangGraph 智能体）。单体化 + 安全加固 + 能力补全**已落地**；AI 重写**设计已敲定（Phase 1-4 梳理完成，见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)），实现待 Phase 5**——本段全部 `[ ]` 均未勾，诚实反映尚未落地。
+> **v3.0.0 已于 2026-09-12 封版（tag `v3.0.0`）**：单体化 + 安全加固 + 能力补全 + App/Web 体验改版落地；AI 重写（Python LangGraph）实现于 2026-07-25 回退（`ed65967`）、设计成果休眠保留，全部延续至下一版本线（见下方「延续到 v3.1+」）。
 
 ```text
-[x] 单体重写：去 Spring Cloud / Dubbo，合并 user / call / community / ai 为单体应用（保留模块化分包，统一 Spring Boot 版本）——工程已落地，启动级 + WS/事务功能级验证通过，待 tag 仪式封版
+[x] 单体重写：去 Spring Cloud / Dubbo，合并 user / call / community / ai 为单体应用（保留模块化分包，统一 Spring Boot 版本）——启动级 + WS/事务功能级验证通过，2026-09-12 随 v3.0.0 封版
 [x] 安全加固：恢复 Helppost/Community 删改权限检查、密码加盐（MD5→BCrypt；`fix/v3.0.0-security-hardening`，2026-07-12）
 [x] 能力补全：软件介绍主页；软件下载功能；社区页面集成到主页，Web页面美化（官网首页 + 全端响应式 + Android 下载 + 整体 UI redesign + APK 下载接口，分头开发合入，2026-07-12~14）
 [ ] 高德适配：App 集成高德 SDK
+
+### 延续到 v3.1+（AI 重写：2026-07-25 回退休眠，设计成果保留可复用）
+
+> AI 重写曾落地 30 commits（chunk-1/2，含 Python LangGraph graph/16 工具/两层记忆、Docker 编排、App WS 客户端），因缝 C 未接通、9/16 工具为桩、导航/拍照/紧急求助系统性退步，2026-07-25 整体回退到老 SSE 基线（`ed65967`）。`shiwujie-ai/`（142 测绿）与 `docker/` 休眠保留，重启时可直接复用设计文档 + cherry-pick。注：回退带出的 WS ticket 鉴权、App 确认门 gate ③ 等已随 v3.0.0 封版前的 2026-09 批次另行修复/替代。
+
 [ ] AI 重写-设计：Phase 1-4 梳理（功能/技术/方案/整合）已敲定，见 [architecture/ai-rewrite.md](architecture/ai-rewrite.md)（polyglot Java 业务单体 + Python LangGraph 智能体两进程）
-[ ] AI 重写-Python：LangGraph graph + 14 tool（6 Python-native + 8 Java-MCP）+ read_skill 元工具 + navigation skill + BM25 功能 KB + 两层记忆（短期 checkpoint / 长期偏好）
-[ ] AI 重写-Java：WS 改造（ticket 鉴权 / 流式中继 / 并发安全）+ MCP server 8 工具（业务 4 + 信令 4）
-[ ] AI 重写-删旧：删 Java AI 模块（工作流式 prompt-as-router / 自研 ChatMemory / 半残留 RAG / qwen 止血）；MyManus 自研 ReAct 骨架原计划冻结保留，2026-07-20（chunk-2b-6b）撤销该决策、彻底删（零活引用 + B-prime 用 alibaba-graph 非自建 ReAct + 红队 Q2 揭已弃用）
-[ ] AI 重写-部署：两进程 Docker（Java 单体 + Python AI，根级 scripts/ + docker/ + config/ 编排）
+[ ] AI 重写-Python：LangGraph graph + 16 tool（6 Python-native + 9 Java-MCP + read_skill 元工具）+ navigation skill + BM25 功能 KB + 两层记忆（短期 checkpoint / 长期偏好）——代码已实现（休眠），待缝 C 接通
+[ ] AI 重写-Java：WS 改造（流式中继已在 2026-09 回退前落地过一版）+ MCP server 8 工具（业务 4 + 信令 4）
+[ ] AI 重写-部署：两进程 Docker（Java 单体 + Python AI，根级 scripts/ + docker/ + config/ 编排）——物料已落地（休眠），`start.sh --with-ai` 可复活
 [ ] AI 重写-前端：APK SSE→WS 全合一对话 + SocketData destination 载荷 + 4-button 重写
 [ ] AI 重写-安全门：紧急求助确认门（prepare/confirm 双工具 + 同轮 token 拒绝 + App 显式确认面）+ update_profile 字段门（schema 硬卡 + 窄 DTO 单测）+ qwen FC spike 前置（≥90% 通过率 + MCP strict 校验 + tool-name 白名单两护栏）
 ```
