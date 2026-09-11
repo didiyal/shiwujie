@@ -78,8 +78,8 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public Flux<String> imageHandle(MultipartFile imageFile) {
         try {
-            Blind loginBlind = LoginUtils.getLoginBlind();
-            Long blindId = loginBlind.getBlindId();
+            Long blindId = LoginUtils.getLoginBlindId();
+            ThrowUtils.throwIf(blindId == null, ErrorCode.NO_AUTH, "志愿者身份无法使用AI助手");
             // 判断参数是否合法
             ThrowUtils.throwIf(ObjUtil.isNull(imageFile), ErrorCode.PARAMS_ERROR, "参数不合法");
 

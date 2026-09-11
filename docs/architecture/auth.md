@@ -108,6 +108,6 @@ Python LangGraph 进程**不持用户 JWT**——它是无状态计算大脑，�
 
 > Java 单体是唯一鉴权边界，Python 信任 Java 内部传入的 blind_id；Python 不读用户 JWT、不暴露公网端口（compose 内仅内网可达）。
 
-## AI 拦截器 dev 后门（✅ 已删 chunk-2b / 2b-6a，2026-07-20）
+## AI 拦截器 dev 后门（✅ 已彻底删除：AI 链路鉴权并入业务拦截器，2026-09-12）
 
-> 泛指「AI 拦截器 dev 后门」（原类 `AiLoginCheckInterceptor`，见 [backend known-issues](../../shiwujie-backend/docs/known-issues.md) #1、本篇风险 #6）：无 Authorization 时注入 blindId=1 / phone 固定值，生产未关闭则任何人可白嫖 AI。**已删除**（chunk-2b / 2b-6a，2026-07-20）：`AiLoginCheckInterceptor` + `AiWebConfig` 整体删——`/api/ai/**` 在 2b-5 删 `ChatController` 后已成空集，拦截器拦空集，删除零功能影响；`common/ErrorCode` **保留**（53 个其它引用者）。WS phone 冒充（known-issues #7）的 ticket 鉴权留 chunk-2e 与 Android WS 改造同批。两套编号各属局部、互相交叉引用，不发明第三个编号。
+> 泛指「AI 拦截器 dev 后门」（原类 `AiLoginCheckInterceptor`，见 [backend known-issues](../../shiwujie-backend/docs/known-issues.md) #1、本篇风险 #6）：无 Authorization 时注入 blindId=1 / phone 固定值，生产未关闭则任何人可白嫖 AI。沿革：chunk-2b/2b-6a（2026-07-20）曾删 → **AI 重写回退（`ed65967`，2026-07-25）连类带洞带回** → **2026-09-12 永久收口**：`AiLoginCheckInterceptor` + `AiWebConfig` 再次删除，`/api/ai/**` 并入业务 `LoginCheckInterceptor`（`WebConfig` 四路径组，无 token 即 `NOT_LOGIN`，与业务域行为一致）；AI 控制器/工具链身份取值从 `loginBlind` 实体属性切到 `loginBlindId`（新增 `LoginUtils.getLoginBlindId()` 无参版），志愿者 token 访问 AI 返 `NO_AUTH`（`UserTools.joinFamily` 需实体处经 `innerBlindService.getById` 补载）。WS phone 冒充（known-issues #7）的 ticket 鉴权随 AI 重写回退一同失效，重新挂账。

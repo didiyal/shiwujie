@@ -7,6 +7,7 @@ import com.swj.shiwujie.model.VO.user.blind.BlindVO;
 import com.swj.shiwujie.model.VO.user.family.FamilyVO;
 import com.swj.shiwujie.model.VO.user.volunteer.VolunteerVO;
 import com.swj.shiwujie.model.domain.user.Blind;
+import com.swj.shiwujie.service.user.InnerBlindService;
 import com.swj.shiwujie.service.user.InnerFamilyService;
 import com.swj.shiwujie.utils.LoginUtils;
 import com.swj.shiwujie.exception.ThrowUtils;
@@ -29,6 +30,9 @@ public class UserTools {
     @Resource
     private InnerFamilyService innerFamilyService;
 
+    @Resource
+    private InnerBlindService innerBlindService;
+
 
     /**
      * 申请加入家庭
@@ -40,7 +44,9 @@ public class UserTools {
     public String joinFamily(@ToolParam(description = "Family creator's phone number, used to apply to join the family") String familyVolunteerPhone) {
         try {
             log.info("用户申请加入家庭");
-            Blind loginBlind = LoginUtils.getLoginBlind();
+            Long blindId = LoginUtils.getLoginBlindId();
+            ThrowUtils.throwIf(blindId == null, ErrorCode.NO_AUTH, "志愿者身份无法使用AI助手");
+            Blind loginBlind = innerBlindService.getById(blindId);
             Long familyId = loginBlind.getFamilyId();
             if(ObjUtil.isNotNull(familyId)){
                 return "您已加入家庭了,无需重复加入家庭";
@@ -65,8 +71,9 @@ public class UserTools {
     public String leaveFromFamily() {
         try {
             log.info("用户退出家庭");
-            Blind loginBlind = LoginUtils.getLoginBlind();
-            boolean b = innerFamilyService.userLeaveFromFamily(loginBlind.getBlindId(), null, LoginUtils.getLoginUserPhone());
+            Long blindId = LoginUtils.getLoginBlindId();
+            ThrowUtils.throwIf(blindId == null, ErrorCode.NO_AUTH, "志愿者身份无法使用AI助手");
+            boolean b = innerFamilyService.userLeaveFromFamily(blindId, null, LoginUtils.getLoginUserPhone());
             if (b) return "退出家庭成功";
             else return "退出家庭失败";
         } catch (Exception e) {
@@ -85,8 +92,9 @@ public class UserTools {
     public String getFamilyInfo() {
         try {
             log.info("获取用户的家庭信息");
-            Blind loginBlind = LoginUtils.getLoginBlind();
-            FamilyVO familyVO = innerFamilyService.getFamilyVOById(loginBlind.getFamilyId(), LoginUtils.getLoginUserPhone());
+            Long blindId = LoginUtils.getLoginBlindId();
+            ThrowUtils.throwIf(blindId == null, ErrorCode.NO_AUTH, "志愿者身份无法使用AI助手");
+            FamilyVO familyVO = innerFamilyService.getFamilyVOById(innerBlindService.getById(blindId).getFamilyId(), LoginUtils.getLoginUserPhone());
             VolunteerVO creatorVolunteer = familyVO.getCreatorVolunteer();
             List<BlindVO> blindVOList = familyVO.getBlindVOList();
             List<VolunteerVO> volunteerVOList = familyVO.getVolunteerVOList();
@@ -99,7 +107,7 @@ public class UserTools {
                     .append("家庭创建人：").append(creatorVolunteer.getName()).append("\n")
                     .append("家庭成员列表：").append("\n");
             for (BlindVO blindVO : blindVOList) {
-                if (blindVO.getBlindId().equals(loginBlind.getBlindId())) {
+                if (blindVO.getBlindId().equals(blindId)) {
                     sb.append("（本人）").append("姓名：").append(blindVO.getName()).append("\n");
                 } else {
                     sb.append("姓名：").append(blindVO.getName()).append("\n");

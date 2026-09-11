@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * v3.0.0 单体化阶段2.5：收敛 user/call/community 三份 WebConfig 为 common-web 一份。
  * 业务拦截器仅作用于 /api/{user,call,community}/**；ai 路径（/api/ai/**）由 ai 模块自带
- * 的 WebConfig 注册其独立的 AiLoginCheckInterceptor（ai 行为不同：dev 默认用户兜底，属安全加固出范围，保留）。
+ * 2026-09-12：/api/ai/** 并入同一拦截器（AI 专用 AiLoginCheckInterceptor 及其 dev 默认用户后门删除），鉴权行为与业务域完全一致。
  * 全局 CORS 收归此处统一配置。
  */
 @Configuration //配置类
@@ -22,7 +22,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(loginCheckInterceptor)
-                .addPathPatterns("/api/user/**", "/api/call/**", "/api/community/**")
+                .addPathPatterns("/api/user/**", "/api/call/**", "/api/community/**", "/api/ai/**")
                 .excludePathPatterns(
                         "/doc.html", "/swagger-ui.html", "/swagger-ui/**",
                         "/swagger-resources/**",

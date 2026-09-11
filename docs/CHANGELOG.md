@@ -144,6 +144,20 @@
 - `HomeFragment` 及 `navigation_home` 目的地暂保留为不可达死代码（原 `from_ai_*` 参数分支休眠），下批整体删除。
 - **隐藏 AI 页「打开对话内容」按钮**（`btn_expand_message`）：`setupMessagePanelInitialState` 收起分支与 `collapseMessagePanel` 动画结束两处由 `VISIBLE` 改保持 `GONE`（XML 初始 gone 会被这两处覆盖，故在代码层收口）；消息面板本体与折叠按钮保留。
 
+**后端安全：AI 链路鉴权并入业务拦截器（2026-09-12）**
+
+> 落地 known-issues 🔴 #1（ai 默认用户兜底后门）与 #3 的 AI 侧残留：`/api/ai/**` 不再使用行为独立的 `AiLoginCheckInterceptor`，鉴权行为与 user/call/community 完全一致。微服务时代两套拦截器并存的原因是 SB2/SB3 双栈无法共用代码，非性能考量；单体化后合并零成本。287 单测全绿（290 run / 3 skipped 为 AiSmokeTest 守卫）。
+
+**变更**
+- **`WebConfig`**：`LoginCheckInterceptor` 挂载路径追加 `/api/ai/**`——无 token 即 `NOT_LOGIN` 拒绝、JWT 签名 + Redis 对账、正确 key 的 90 天滑动续期，四域同一份代码同一套行为。
+- **删除 `AiLoginCheckInterceptor` + `AiWebConfig`**（dev 默认用户兜底、续期 key 拼错、`ignoreExp` 三项差异随类消失）。
+- **身份取值切换**：AI 控制器/工具链从读取 `loginBlind` 实体属性改为 `loginBlindId`（新增 `LoginUtils.getLoginBlindId()` 无参版，`getLoginBlind()` 删除）——`ChatController` 文本两入口、`ChatServiceImpl.imageHandle`、`AiModelTools.TakePhoto`、`UserTools` 三工具；`UserTools.joinFamily/getFamilyInfo` 需实体字段处经 `innerBlindService.getById` 补载。
+- **志愿者 token 访问 AI 返 `NO_AUTH`（40030）**：原 AI 拦截器解析 volunteer token 会在 claim 取值时意外 NPE 落入 NOT_LOGIN，新实现显式校验。
+- **对话上下文用户隔离不受影响**：记忆 key 本就是 `blindId`（`chat:memory:{blindId}`），身份源从 `loginBlind` 换 `loginBlindId` 后取值一致；匿名共享 `chat:memory:1` 的污染面随后门删除消失。
+
+**文档**
+- known-issues 🔴 #1 改 ✅、#3 补 AI 侧闭环、#4 注明 `ignoreExp=true` 为滑动会话统一设计非 AI 特有；[auth.md](docs/architecture/auth.md) 「AI 拦截器 dev 后门」章节重写沿革（chunk-2b 曾删 → 回退带回 → 本次永久收口）。
+
 **App 结构调整：底栏移除主页 tab，进入软件默认 AI 页（2026-09-12，v1.2 / versionCode 3）**
 
 > 用户规划：最终只保留单一 AI 页，主页逐批下线——本批先摘 tab。`assembleRelease` 已装机并 adb 截屏验证（进软件即 AI 页，底栏 AI/家庭/社区/我的 四项，AI 高亮）。

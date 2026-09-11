@@ -1,7 +1,5 @@
 package com.swj.shiwujie.utils;
 
-import cn.hutool.core.convert.Convert;
-import cn.hutool.core.lang.TypeReference;
 import com.swj.shiwujie.model.domain.user.Blind;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -66,14 +64,14 @@ public class LoginUtils {
 
 
     /**
-     * 获取当前登录盲人实体（ai 链路专用：ai 拦截器向 request 注入完整 Blind）
+     * 获取当前登录盲人id（无参版：经 RequestContextHolder，供 AI 等 SSE 控制器直用）。
+     * <p>2026-09-12：AI 链路鉴权并入业务 {@code LoginCheckInterceptor}（注入 {@code loginBlindId}）
+     * 后，取代原读取 {@code loginBlind} 实体属性的 {@code getLoginBlind()}（该属性随 AI 专用
+     * 拦截器删除不再存在）；志愿者 token 访问 AI 接口时返回 {@code null}，由调用方拒绝。</p>
      */
-    public static Blind getLoginBlind() {
+    public static Long getLoginBlindId() {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        Blind loginBlind = Convert.convert(new TypeReference<Blind>() {
-        }, request.getAttribute("loginBlind"));
-
-        return loginBlind;
+        return (Long) request.getAttribute("loginBlindId");
     }
 
 

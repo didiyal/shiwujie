@@ -25,7 +25,7 @@ public class AiModelTools {
             description = "Call the image model to analyze the content of the inquiry. Check if there is image information (image: ***) in the context before calling.")
     public String TakePhoto(@ToolParam (description = "Content of user's inquiry") String  message) {
         log.info("图片信息追问{}", message);
-        return imageApp.doChatCall(message, LoginUtils.getLoginBlind().getBlindId());
+        return imageApp.doChatCall(message, LoginUtils.getLoginBlindId());
     }
 
 

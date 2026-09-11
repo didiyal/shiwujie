@@ -1,6 +1,8 @@
 package com.swj.shiwujie.controller;
 
 
+import com.swj.shiwujie.common.ErrorCode;
+import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.service.ChatService;
 import com.swj.shiwujie.utils.LoginUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,7 +40,9 @@ public class ChatController {
     @Operation(summary = "图片识别(流式)")
     public Flux<String> doChatByTextStream(@RequestParam(name = "text", defaultValue = "你是谁") String text) {
         long currented = System.currentTimeMillis();
-        Flux<String> stringFlux = chatService.doChatWithTextSSE(text, LoginUtils.getLoginBlind().getBlindId());
+        Long blindId = LoginUtils.getLoginBlindId();
+        ThrowUtils.throwIf(blindId == null, ErrorCode.NO_AUTH, "志愿者身份无法使用AI助手");
+        Flux<String> stringFlux = chatService.doChatWithTextSSE(text, blindId);
         log.debug("文字消息AI处理完成，耗时:{}ms", System.currentTimeMillis() - currented);
         return stringFlux;
     }
@@ -70,7 +74,9 @@ public class ChatController {
     @SecurityRequirement(name = "Authorization")
     public Flux<String> NewAppWithText(String text) {
         long currented = System.currentTimeMillis();
-        Flux<String> stringFlux = chatService.doChatWithTextSSE(text, LoginUtils.getLoginBlind().getBlindId());
+        Long blindId = LoginUtils.getLoginBlindId();
+        ThrowUtils.throwIf(blindId == null, ErrorCode.NO_AUTH, "志愿者身份无法使用AI助手");
+        Flux<String> stringFlux = chatService.doChatWithTextSSE(text, blindId);
         log.debug("文字消息AI处理完成，耗时:{}ms", System.currentTimeMillis() - currented);
         return stringFlux;
     }

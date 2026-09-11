@@ -118,36 +118,21 @@ class LoginUtilsTest {
     }
 
     @Test
-    @DisplayName("getLoginBlind()：桩住 RequestContextHolder + Convert 转换注入 Blind")
-    void getLoginBlind_returnsFromHolder() {
+    @DisplayName("getLoginBlindId() 无参版：桩住 RequestContextHolder 取回 blindId")
+    void getLoginBlindId_noArg_returnsFromHolder() {
         HttpServletRequest req = mock(HttpServletRequest.class);
-        Blind injected = new Blind();
-        injected.setBlindId(9001L);
-        injected.setName("测试盲人");
-        when(req.getAttribute("loginBlind")).thenReturn(injected);
+        when(req.getAttribute("loginBlindId")).thenReturn(9001L);
 
-        try (
-                MockedStatic<org.springframework.web.context.request.RequestContextHolder> holderMock =
-                        org.mockito.Mockito.mockStatic(
-                                org.springframework.web.context.request.RequestContextHolder.class);
-                MockedStatic<cn.hutool.core.convert.Convert> convertMock =
-                        org.mockito.Mockito.mockStatic(cn.hutool.core.convert.Convert.class)
-        ) {
+        try (MockedStatic<org.springframework.web.context.request.RequestContextHolder> holderMock =
+                     org.mockito.Mockito.mockStatic(
+                             org.springframework.web.context.request.RequestContextHolder.class)) {
+
             org.springframework.web.context.request.ServletRequestAttributes attrs =
                     mock(org.springframework.web.context.request.ServletRequestAttributes.class);
             when(attrs.getRequest()).thenReturn(req);
             holderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(attrs);
 
-            // Convert.convert(TypeReference, Object) 直接回返注入实体
-            convertMock.when(() -> cn.hutool.core.convert.Convert.convert(
-                    org.mockito.ArgumentMatchers.<cn.hutool.core.lang.TypeReference<Blind>>any(),
-                    org.mockito.ArgumentMatchers.eq(injected)))
-                    .thenReturn(injected);
-
-            Blind result = LoginUtils.getLoginBlind();
-            assertThat(result).isNotNull();
-            assertThat(result.getBlindId()).isEqualTo(9001L);
-            assertThat(result.getName()).isEqualTo("测试盲人");
+            assertThat(LoginUtils.getLoginBlindId()).isEqualTo(9001L);
         }
     }
 }
