@@ -152,3 +152,202 @@ export default {
   }
 }
 </script>
+<style scoped>
+/* ============================================================
+   PAGE HEADER
+   ============================================================ */
+.page-header {
+  padding: 120px 40px 60px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,113,227,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-header h1 {
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  position: relative;
+}
+.page-header h1 span {
+  background: linear-gradient(135deg, #0071e3 0%, #40a9ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.page-header p {
+  font-size: 16px;
+  color: var(--text-2);
+  margin-top: 12px;
+  position: relative;
+}
+
+/* ============================================================
+   TIMELINE
+   ============================================================ */
+.changelog {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px 100px;
+  position: relative;
+}
+.changelog::before {
+  content: '';
+  position: absolute;
+  left: calc(40px + 19px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-l);
+}
+
+.version {
+  position: relative;
+  padding-left: 64px;
+  margin-bottom: 48px;
+}
+.version:last-child { margin-bottom: 0; }
+
+/* Timeline dot */
+.version-dot {
+  position: absolute;
+  left: calc(40px + 12px);
+  top: 4px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 3px rgba(0,113,227,.15);
+  z-index: 1;
+}
+.version.first .version-dot {
+  width: 19px;
+  height: 19px;
+  left: calc(40px + 10px);
+  top: 2px;
+  box-shadow: 0 0 0 6px rgba(0,113,227,.1);
+}
+
+/* Version header */
+.version-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.version-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: .02em;
+}
+.version-date {
+  font-size: 13px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.version-badge.new { background: #34c759; color: #fff; }
+.version-badge.improve { background: rgba(0,113,227,.1); color: var(--primary); }
+.version-badge.fix { background: rgba(255,149,0,.12); color: #ff9500; }
+
+/* Version body */
+.version-body {
+  background: var(--surface);
+  border: 1px solid var(--border-l);
+  border-radius: 14px;
+  padding: 24px;
+}
+.version-body h4 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  margin-bottom: 6px;
+}
+.version-body > p {
+  font-size: 14px;
+  color: var(--text-2);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+/* Section sub-headings */
+.version-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 16px 0 8px;
+  color: var(--text);
+}
+
+/* Changelog items */
+.cl-items {
+  list-style: none;
+}
+.cl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.cl-item + .cl-item { border-top: 1px solid var(--border-l); }
+.cl-item .tag {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  margin-top: 1px;
+}
+.tag.feature { background: rgba(52,199,89,.12); color: #34c759; }
+.tag.improve { background: rgba(0,113,227,.1); color: var(--primary); }
+.tag.fix { background: rgba(255,149,0,.1); color: #ff9500; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .page-header { padding: 100px 20px 40px; }
+  .changelog { padding: 0 20px 60px; }
+  .changelog::before { left: 19px; }
+  .version { padding-left: 48px; }
+  .version-dot { left: 12px; }
+  .version.first .version-dot { left: 10px; }
+}
+</style>
