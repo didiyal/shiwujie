@@ -147,6 +147,8 @@ export default {
         ]
       }
     ]
+
+    return { versions }
   }
 }
 </script>
