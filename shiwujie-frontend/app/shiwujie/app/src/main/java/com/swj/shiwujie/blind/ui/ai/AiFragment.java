@@ -168,6 +168,14 @@ public class AiFragment extends Fragment {
     private static final long SHORT_WAIT = 200;    // 短等待：0.5秒
     private static final long MAX_WAIT = 500;      // 最大等待：1.5秒
     private static final long IDLE_THRESHOLD = 500; // 空闲阈值：500ms
+
+    // ===== 句子级流式 TTS（2026-09-12 重写：首句齐即播、按句排队，不再整段等待/从头重读） =====
+    private final StringBuilder pendingSpeakBuffer = new StringBuilder(); // 未成句的待播文本
+    private final java.util.ArrayDeque<String> speakQueue = new java.util.ArrayDeque<>(); // 待播句队列
+    private boolean ttsQueueBusy = false;  // 当前是否有一句正在合成播放
+    private int processedSpeakLength = 0;  // 累积响应中已送入 TTS 队列的字符数
+    private boolean streamEnded = false;   // 本轮流式响应是否已结束
+    private boolean jsonEnvelopeResponse = false; // 响应为 JSON 壳时回退整段播报（兼容旧语义）
     private static final long STREAMING_UPDATE_INTERVAL = 3000; // 流式播报更新间隔：3秒（减少更新频率）
     
     // 优化后的AI回复管理
@@ -1181,7 +1189,7 @@ public class AiFragment extends Fragment {
         aiChatManager = new AiChatManager(requireContext());
         
         // 配置打字机效果速度（可选）
-        aiChatManager.setTypingSpeed(50); // 50ms延迟，可以根据需要调整
+        aiChatManager.setTypingSpeed(10); // 10ms：句子级流式 TTS 依赖取词速度，盲人用户听重于看
         
         aiChatManager.setOnStreamingListener(new AiChatManager.OnStreamingListener() {
             @Override
@@ -1279,196 +1287,101 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 启动智能播报系统
+     * 启动智能播报系统（句子级流式 TTS）：复位队列与游标，随流式文本按句入队播报。
      */
     private void startSmartPlaybackSystem() {
         currentStreamingState = StreamingState.STREAMING;
+        streamEnded = false;
+        ttsQueueBusy = false;
+        processedSpeakLength = 0;
+        speakQueue.clear();
+        pendingSpeakBuffer.setLength(0);
         streamingContentBuffer.setLength(0);
-        lastTextTime = System.currentTimeMillis();
-        
-        // 启动智能计时器
-        startSmartTimer();
+        jsonEnvelopeResponse = false;
     }
     
     /**
-     * 处理智能播报逻辑
+     * 处理流式文本（text 为累积全文）：取增量入缓冲，按句切分入队播报。
+     * 2026-09-12 修复：旧实现把累积全文反复 append（内容重复）且要等 80 字块/空闲阈值才开口。
      */
     private void handleSmartPlayback(String text) {
-        if (currentStreamingState != StreamingState.STREAMING) return;
-        
-        // 更新最后收到文本的时间
-        lastTextTime = System.currentTimeMillis();
-        
-        // 累积内容到缓冲区
-        streamingContentBuffer.append(text);
-        
-
-        
-        // 如果正在播报，动态更新播报内容
-        if (currentStreamingState == StreamingState.PLAYING) {
-            updatePlaybackContent();
-        }
+        if (currentStreamingState != StreamingState.STREAMING || text == null) return;
+        if (text.length() <= processedSpeakLength) return;
+        String delta = text.substring(processedSpeakLength);
+        processedSpeakLength = text.length();
+        if (jsonEnvelopeResponse) return; // JSON 壳响应：收尾时整段播报
+        if (delta.startsWith("{")) { jsonEnvelopeResponse = true; return; } // 兼容旧 JSON 壳语义
+        pendingSpeakBuffer.append(delta);
+        drainPendingIntoSentences();
+        pumpSpeakQueue();
     }
     
     /**
-     * 处理流式数据块，实现真正的流式播报
+     * 旧 80 字符触发阈值已由句子切分取代（监听器接口保留，此方法不再承担播报调度）。
      */
     private void handleStreamingChunk(String chunk, int totalLength) {
-        if (currentStreamingState != StreamingState.STREAMING) return;
-        
-        // 如果还没开始播报，且内容足够长，立即开始播报
-        if (currentStreamingState == StreamingState.STREAMING && chunk.length() >= 80) { // 增加触发阈值
-            startSmartPlayback();
-        }
     }
     
     /**
-     * 启动智能计时器
+     * 把缓冲中已成句的部分切出入队：遇到 。！？!?；; 换行即成句（句长≥2）；
+     * 超过 80 字仍无标点的长句按 80 字硬切，避免极长句迟迟不播。
      */
-    private void startSmartTimer() {
-        // 取消之前的计时器
-        if (smartTimerRunnable != null) {
-            smartTimerHandler.removeCallbacks(smartTimerRunnable);
-        }
-        
-        smartTimerRunnable = () -> {
-            // 检查是否应该开始播报
-            long currentTime = System.currentTimeMillis();
-            long timeSinceLastText = currentTime - lastTextTime;
-            
-            if (timeSinceLastText >= IDLE_THRESHOLD) {
-                // 超过空闲阈值，开始播报
-                startSmartPlayback();
-            } else {
-                // 继续等待，重新启动计时器
-                startSmartTimer();
+    private void drainPendingIntoSentences() {
+        while (true) {
+            String pending = pendingSpeakBuffer.toString();
+            if (pending.length() == 0) return;
+            int cut = -1;
+            for (int i = 1; i < pending.length(); i++) {
+                char c = pending.charAt(i);
+                if ("。！？!?；;\n".indexOf(c) >= 0) { cut = i + 1; break; }
             }
-        };
-        
-        // 启动计时器，等待时间根据当前状态动态调整
-        long waitTime = streamingContentBuffer.length() < 50 ? SHORT_WAIT : MAX_WAIT;
-        smartTimerHandler.postDelayed(smartTimerRunnable, waitTime);
-    }
-    
-    /**
-     * 动态更新播报内容
-     */
-    private void updatePlaybackContent() {
-        // 检查Fragment状态
-        if (!isAdded() || getContext() == null) {
-            Log.w(TAG, "Fragment状态异常，跳过播报内容更新");
-            return;
-        }
-        
-        if (currentStreamingState != StreamingState.PLAYING || ttsManager == null) return;
-        
-        // 获取当前缓冲区的最新内容
-        String currentContent = streamingContentBuffer.toString();
-        
-        // 优化内容长度判断逻辑
-        int contentIncrease = currentContent.length() - lastPlayedContentLength;
-        
-        // 只有当内容增加超过50个字符，且当前播报进度超过70%时才重新播报
-        if (contentIncrease > 50 && getCurrentPlaybackProgress() > 70) {
-            // 停止当前播报，重新开始播报完整内容
-            String contentToSpeak = parseResponseForTTS(currentContent);
-            try {
-                // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
-                if (isReturningToHome) {
-                    Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
-                    return;
+            if (cut == -1) {
+                if (pending.length() >= 80) {
+                    cut = 80;
+                } else {
+                    return; // 等待更多文本凑成完整句
                 }
-                
-                ttsManager.stopSpeaking();
-                ttsManager.startSpeaking(contentToSpeak);
-                lastPlayedContentLength = currentContent.length();
-            } catch (Exception e) {
-                Log.e(TAG, "更新播报内容失败", e);
             }
-        } else if (contentIncrease > 100) {
-            // 如果内容增加超过100个字符，强制重新播报
-            String contentToSpeak = parseResponseForTTS(currentContent);
-            try {
-                // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
-                if (isReturningToHome) {
-                    Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
-                    return;
-                }
-                
-                ttsManager.stopSpeaking();
-                ttsManager.startSpeaking(contentToSpeak);
-                lastPlayedContentLength = currentContent.length();
-            } catch (Exception e) {
-                Log.e(TAG, "强制更新播报内容失败", e);
+            String sentence = pending.substring(0, cut).trim();
+            pendingSpeakBuffer.delete(0, cut);
+            if (!sentence.isEmpty()) {
+                speakQueue.addLast(sentence);
             }
         }
     }
     
     /**
-     * 获取当前播报进度（估算值）
+     * 队列泵：当前句播完（onTTSComplete）后取下一句；仅在空闲时投给 TTS，绝不从头重读。
      */
-    private int getCurrentPlaybackProgress() {
-        // 基于时间估算播报进度
-        if (lastPlayedContentLength == 0) return 0;
-        
-        // 假设播报速度约为每分钟200个字符
-        long estimatedPlaybackTime = (lastPlayedContentLength * 60) / 200; // 秒
-        long elapsedTime = System.currentTimeMillis() - lastPlaybackStartTime;
-        
-        if (estimatedPlaybackTime <= 0) return 0;
-        
-        int progress = (int) ((elapsedTime / 1000.0 / estimatedPlaybackTime) * 100);
-        return Math.min(progress, 100);
-    }
-    
-    /**
-     * 开始智能播报
-     */
-    private void startSmartPlayback() {
-        // 检查Fragment状态
-        if (!isAdded() || getContext() == null) {
-            Log.w(TAG, "Fragment状态异常，跳过智能播报");
+    private void pumpSpeakQueue() {
+        if (ttsQueueBusy || ttsManager == null) return;
+        String next = speakQueue.pollFirst();
+        if (next == null) return;
+        if (isReturningToHome) { // 返回主页流程中：丢弃剩余播报
+            speakQueue.clear();
             return;
         }
-        
-        if (currentStreamingState == StreamingState.PLAYING) return;
-        
-        currentStreamingState = StreamingState.PLAYING;
-        String contentToPlay = streamingContentBuffer.toString();
-        
-        if (contentToPlay.trim().isEmpty()) {
-            currentStreamingState = StreamingState.STREAMING;
-            return;
-        }
-        
-        // 检查TTS管理器状态
-        if (ttsManager == null) {
-            Log.w(TAG, "TTS管理器未初始化，跳过播报");
-            currentStreamingState = StreamingState.STREAMING;
-            return;
-        }
-        
-        // 解析后端响应，决定播报内容
-        String contentToSpeak = parseResponseForTTS(contentToPlay);
-        
+        ttsQueueBusy = true;
         try {
-            // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
-            if (isReturningToHome) {
-                Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
-                currentStreamingState = StreamingState.STREAMING;
-                return;
-            }
-            
-            ttsManager.startSpeaking(contentToSpeak);
-            lastPlayedContentLength = contentToPlay.length();
-            lastPlaybackStartTime = System.currentTimeMillis(); // 记录播报开始时间
-            
-            // 启动流式播报更新定时器
-            startStreamingPlaybackUpdateTimer();
+            ttsManager.startSpeaking(parseResponseForTTS(next));
         } catch (Exception e) {
-            Log.e(TAG, "TTS播报失败", e);
-            currentStreamingState = StreamingState.STREAMING;
+            Log.e(TAG, "TTS 队列播报失败，跳过该句", e);
+            ttsQueueBusy = false;
+            pumpSpeakQueue(); // 失败跳过，继续下一句
         }
+    }
+    
+    /**
+     * 单句合成完成回调（由 TTSManager.OnTTSListener.onTTSComplete 转发）。
+     */
+    private void onStreamingTtsComplete() {
+        if (!ttsQueueBusy) return;
+        ttsQueueBusy = false;
+        if (streamEnded && pendingSpeakBuffer.length() == 0 && speakQueue.isEmpty()) {
+            resetSmartPlaybackState(); // 整轮播报自然结束
+            return;
+        }
+        pumpSpeakQueue();
     }
     
     /**
@@ -1528,72 +1441,61 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 启动流式播报更新定时器
-     */
-    private void startStreamingPlaybackUpdateTimer() {
-        if (streamingPlaybackRunnable != null) {
-            streamingPlaybackHandler.removeCallbacks(streamingPlaybackRunnable);
-        }
-        
-        streamingPlaybackRunnable = () -> {
-            if (currentStreamingState == StreamingState.PLAYING) {
-                // 检查是否有新内容需要播报
-                updatePlaybackContent();
-                
-                // 继续定时器
-                streamingPlaybackHandler.postDelayed(streamingPlaybackRunnable, STREAMING_UPDATE_INTERVAL);
-            }
-        };
-        
-        // 启动定时器
-        streamingPlaybackHandler.postDelayed(streamingPlaybackRunnable, STREAMING_UPDATE_INTERVAL);
-    }
-    
-    /**
-     * 完成智能播报
+     * 流式响应结束：把未成句尾巴排入队列播完；JSON 壳响应回退整段播报。
      */
     private void completeSmartPlayback(String fullResponse) {
-        // 检查是否正在返回主页，如果是则跳过AI对话结果的TTS播报
-        if (isReturningToHome) {
-            Log.d(TAG, "正在返回主页，跳过AI对话结果TTS播报");
+        streamEnded = true;
+        if (isReturningToHome) { // 返回主页流程中：跳过剩余播报
+            speakQueue.clear();
+            pendingSpeakBuffer.setLength(0);
             resetSmartPlaybackState();
             return;
         }
-        
-        // 解析后端响应，决定播报内容
-        String contentToSpeak = parseResponseForTTS(fullResponse);
-        
-        // 如果还在播报，确保播报完整内容
-        if (currentStreamingState == StreamingState.PLAYING) {
-            // 停止当前播报，重新播报完整内容
-            ttsManager.stopSpeaking();
-            ttsManager.startSpeaking(contentToSpeak);
-        } else if (currentStreamingState == StreamingState.STREAMING) {
-            // 如果还没开始播报，直接播报完整内容
-            ttsManager.startSpeaking(contentToSpeak);
+        if (jsonEnvelopeResponse) {
+            if (ttsManager != null && fullResponse != null) {
+                try {
+                    ttsManager.startSpeaking(parseResponseForTTS(fullResponse));
+                } catch (Exception e) {
+                    Log.e(TAG, "TTS播报失败", e);
+                }
+            }
+            resetSmartPlaybackState();
+            return;
         }
-        
-        // 重置状态
-        resetSmartPlaybackState();
+        if (fullResponse != null && fullResponse.length() > processedSpeakLength) {
+            pendingSpeakBuffer.append(fullResponse.substring(processedSpeakLength));
+            processedSpeakLength = fullResponse.length();
+        }
+        String tail = pendingSpeakBuffer.toString();
+        pendingSpeakBuffer.setLength(0);
+        if (!tail.trim().isEmpty()) {
+            speakQueue.addLast(tail.trim());
+        }
+        pumpSpeakQueue();
+        if (!ttsQueueBusy && speakQueue.isEmpty()) {
+            resetSmartPlaybackState(); // 无剩余内容，整轮结束
+        }
     }
     
     /**
-     * 重置智能播报状态
+     * 重置智能播报状态（句子级流式 TTS）。
      */
     private void resetSmartPlaybackState() {
         currentStreamingState = StreamingState.IDLE;
+        streamEnded = false;
+        ttsQueueBusy = false;
+        speakQueue.clear();
+        pendingSpeakBuffer.setLength(0);
+        processedSpeakLength = 0;
+        jsonEnvelopeResponse = false;
         streamingContentBuffer.setLength(0);
         lastTextTime = 0;
         lastPlayedContentLength = 0;
         lastPlaybackStartTime = 0;
-        
-        // 取消智能计时器
         if (smartTimerRunnable != null) {
             smartTimerHandler.removeCallbacks(smartTimerRunnable);
             smartTimerRunnable = null;
         }
-        
-        // 取消流式播报更新定时器
         if (streamingPlaybackRunnable != null) {
             streamingPlaybackHandler.removeCallbacks(streamingPlaybackRunnable);
             streamingPlaybackRunnable = null;
@@ -1629,7 +1531,8 @@ public class AiFragment extends Fragment {
             
             @Override
             public void onTTSComplete() {
-                // 语音播放完成
+                // 语音播放完成：推进句子级流式播报队列
+                onStreamingTtsComplete();
             }
             
             @Override
