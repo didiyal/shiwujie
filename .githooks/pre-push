@@ -1,9 +1,10 @@
 #!/bin/sh
-# pre-push hook: 推 origin 且本次含 master 时，自动镜像 master 到 github / practical-training。
+# pre-push hook: 推 origin 且本次含 master 时，自动镜像 master 到 github。
 #   - origin (Gitee 主): 所有分支 + PR (用户主动 push)
-#   - github / practical-training: 只镜像 master (这两个不做 PR)
+#   - github: 只镜像 master (不做 PR)
 # 镜像失败不阻断 origin 主推; 防递归: 本 hook 只在 remote == origin 时动作,
-# 镜像产生的子 push (remote=github/practical-training) 会被首行的 remote 判断直接放行。
+# 镜像产生的子 push (remote=github) 会被首行的 remote 判断直接放行。
+# (2026-09-12 移除 practical-training 镜像: 该远程已删除。)
 
 remote_name="$1"
 [ "$remote_name" = "origin" ] || exit 0
@@ -16,7 +17,6 @@ done
 
 [ "$has_master" = "1" ] || exit 0
 
-echo "[pre-push] 镜像 master -> github / practical-training ..."
+echo "[pre-push] 镜像 master -> github ..."
 git push github master || echo "[pre-push] 警告: github 镜像失败 (已忽略, 不阻断 origin)"
-git push practical-training master || echo "[pre-push] 警告: practical-training 镜像失败 (已忽略, 不阻断 origin)"
 exit 0
