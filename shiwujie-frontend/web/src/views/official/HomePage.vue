@@ -26,37 +26,24 @@
       </div>
 
       <div class="hero-content">
-        <div class="hero-badge">
-          <span class="badge-dot"></span> v3.0 全新升级
-        </div>
         <h1 class="hero-title">
           开口即所得<br>用 AI <span>看见</span>世界
         </h1>
         <p class="hero-desc">
-          视无界是专为视障人士打造的 AI 智能助手：开口就能用——拍照识物、联网搜索、
-          打开应用、规划路线、一键求助，全部语音完成；退出应用还有 AI 悬浮球，一点即回。
+          视无界是专为视障人士打造的 AI 助手，说话就能用：
+          拍照识别、联网搜索、打开应用、一键求助。
         </p>
         <a href="/api/download/app" class="btn-download">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          下载 Android App
+          下载视无界
         </a>
-        <div class="hero-platforms">
-          <span>Android</span>
-        </div>
-      </div>
-
-      <div class="scroll-hint" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        <span>向下滚动了解更多</span>
       </div>
     </section>
 
     <!-- ==================== FEATURES ==================== -->
     <section class="section" id="features">
       <div class="section-header">
-        <div class="section-label">产品功能</div>
-        <h2 class="section-title">一句话，<br>让 AI 成为你<span v-pre>的</span>眼睛</h2>
-        <p class="section-desc">不用学习复杂操作，说出需求即可：识别、搜索、导航、求助，AI 全程语音响应。</p>
+        <h2 class="section-title">您说话，AI 来做</h2>
+        <p class="section-desc">说出需求就行，AI 全程语音回应。</p>
       </div>
 
       <!-- 场景一：AI 语音对话 -->
@@ -106,11 +93,10 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
           </div>
           <h3>AI 语音对话</h3>
-          <p>像和朋友聊天一样说出需求，AI 语音回答。能联网搜索最新信息，也能操控手机——打开应用、规划路线，说一声就办到。</p>
+          <p>说出需求，AI 语音回答。</p>
           <ul class="feature-points">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 语音提问、语音回答，全程免打字</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 联网搜索：最新资讯、周边信息即时可查</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 语音操控：说“帮我打开微信”即可打开应用，说“我要去哪里”快捷规划导航</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 能联网搜索，问什么都可以</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 能打开应用、规划路线</li>
           </ul>
         </div>
       </div>
@@ -144,11 +130,10 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </div>
           <h3>AI 拍照识别</h3>
-          <p>对 AI 说“帮我识别前面”，自动拍照并告诉你眼前是什么。看不完的信息可以继续追问，让它读药品说明、辨物品、识场景。</p>
+          <p>说“帮我识别前面”，自动拍照，告诉您眼前是什么，还可以继续追问。</p>
           <ul class="feature-points">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 一句“帮我识别前面”，自动拍照语音播报</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 识别后可追问细节，像有个随身讲解员</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 结合联网搜索，识别之外还能补充背景信息</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 识别结果可以继续追问</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 药品说明、物品、路牌都能读</li>
           </ul>
         </div>
       </div>
@@ -184,11 +169,10 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           </div>
           <h3>紧急与志愿者求助</h3>
-          <p>说“帮我紧急求助”，AI 立即向家属发起视频通话求助；需要人帮您“看”时，一键视频连线志愿者——AI 也能自动触发求助。</p>
+          <p>说“帮我紧急求助”，马上通知家属；需要人帮您看，就连线志愿者。</p>
           <ul class="feature-points">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 紧急求助一键通知家属，视频通话即时接通</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 志愿者视频帮扶，远程“成为您的眼睛”</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> AI 识别到紧急场景可主动协助发起求助</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 马上通知您的家人</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 志愿者视频帮您看</li>
           </ul>
         </div>
       </div>
@@ -223,11 +207,10 @@
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
           </div>
           <h3>AI 悬浮球，一点即回</h3>
-          <p>退出视无界去做别的事时，屏幕上会保留一枚 AI 悬浮球；无论当时在用什么应用，点一下悬浮球立刻回到 AI 助手，AI 不离左右。</p>
+          <p>退出软件后，屏幕上会留下 AI 悬浮球，点一下就能回来。</p>
           <ul class="feature-points">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 退出应用后悬浮球常驻屏幕</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 任何界面点击悬浮球，直达 AI 对话</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 退到后台有语音提示，不担心“回不来”</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 在任何界面点一下就回到 AI</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 退出时有语音提醒您</li>
           </ul>
         </div>
       </div>
