@@ -42,10 +42,15 @@ import com.swj.shiwujie.common.network.ImageRecognitionManager;
 import com.swj.shiwujie.common.utils.TTSManager;
 import com.swj.shiwujie.common.utils.CameraPreviewManager;
 import com.swj.shiwujie.common.network.ApiService;
+import com.swj.shiwujie.common.network.RetrofitClient;
 import com.swj.shiwujie.common.network.ObstacleDetectionRetrofitClient;
+import com.swj.shiwujie.common.network.EmergencyHelpManager;
 import com.swj.shiwujie.common.network.WebSocketManager;
+import com.swj.shiwujie.common.ui.EmergencyHelpFloatingWindow;
+import com.swj.shiwujie.data.model.BaseResponse;
 import com.swj.shiwujie.common.utils.ObstacleDetectionTTSManager;
 import com.swj.shiwujie.common.utils.AppListManager;
+import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.common.utils.NavigationManager;
 import com.swj.shiwujie.common.service.AIFloatingBallService;
 import com.swj.shiwujie.data.model.ObstacleDetectionData;
@@ -110,6 +115,13 @@ public class AiFragment extends Fragment {
     
     // 返回主页TTS优先级控制
     private boolean isReturningToHome = false;
+
+    // ===== 视频求助 / 紧急求助流程状态（2026-09-12 自 HomeFragment 迁入：主页概念退场，流程在 AI 页原地执行） =====
+    private boolean isMatching = false;
+    private boolean isVideoCallStarted = false;
+    private boolean isEmergencyHelpMatching = false;
+    private EmergencyHelpManager emergencyHelpManager;
+    private EmergencyHelpFloatingWindow emergencyHelpFloatingWindow;
     
     // 图片相关
     private Uri photoUri;
@@ -467,11 +479,11 @@ public class AiFragment extends Fragment {
                 if (vibrator != null && vibrator.hasVibrator()) {
                     vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
                 }
-                handleEmergencyHelpRequest();
+                startEmergencyHelp();
             });
         }
 
-        // 志愿者求助按钮（2026-09-12 重排新增，第4位）：复用 AI 5002 信令同款流程——切主页并自动连线志愿者
+        // 志愿者求助按钮（2026-09-12 重排新增，第4位）：AI 页原地连线志愿者
         MaterialButton btnVolunteer = view.findViewById(R.id.btn_volunteer);
         if (btnVolunteer != null) {
             btnVolunteer.setOnClickListener(v -> {
@@ -479,7 +491,7 @@ public class AiFragment extends Fragment {
                 if (ttsManager != null) {
                     ttsManager.startSpeaking("正在为您连线志愿者视频帮扶");
                 }
-                handleJumpToBlindhomeRequest();
+                startVideoHelpMatching();
             });
         }
 
@@ -494,6 +506,7 @@ public class AiFragment extends Fragment {
         currentConversation = new ArrayList<>();
         currentConversationId = UUID.randomUUID().toString();
         loadConversationHistory();
+        initEmergencyHelp();
     }
     
     /**
@@ -2896,6 +2909,16 @@ public class AiFragment extends Fragment {
         if (imageRecognitionManager != null) {
             imageRecognitionManager.destroy();
         }
+
+        // 销毁紧急求助悬浮窗并复位状态（流程已迁入 AI 页）
+        if (emergencyHelpFloatingWindow != null) {
+            emergencyHelpFloatingWindow.destroy();
+            emergencyHelpFloatingWindow = null;
+        }
+        if (emergencyHelpManager != null) {
+            emergencyHelpManager.resetEmergencyHelp();
+        }
+        isEmergencyHelpMatching = false;
         
         // 释放TTS资源
         if (ttsManager != null) {
@@ -3800,6 +3823,16 @@ public class AiFragment extends Fragment {
             return;
         }
         
+        // 视频/通话流程信令（2026-09-12 自 HomeFragment 迁入：主页概念退场，流程在 AI 页原地执行）
+        if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_VIDEO_INIT) {
+            handleVideoInit(data);
+            return;
+        }
+        if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_CALL_END) {
+            handleCallEnd();
+            return;
+        }
+
         // 根据requesttype执行对应操作
         switch (data.getRequestType()) {
             case SocketDataV0.REQUEST_TYPE_AI_PHOTO_RECOGNITION:
@@ -3911,108 +3944,238 @@ public class AiFragment extends Fragment {
     }
     
     /**
-     * 处理5002: 切换到主页Fragment并开启连线志愿者按钮和功能
+     * 处理5002（志愿者连线信令）：AI 页原地发起视频求助（2026-09-12 起不再跳转主页）
      */
     private void handleJumpToBlindhomeRequest() {
-        Log.d(TAG, "收到切换到主页并开启连线志愿者请求");
-        
-        try {
-            // 页面切换前预清理资源，避免与新页面启动冲突
-            preCleanupResourcesForNavigation();
-            
-            // 直接切换到底部导航的主页Fragment，不做复杂处理
-            Log.d(TAG, "开始切换到底部导航主页...");
-            
-            // 获取导航控制器，切换到主页Fragment
-            if (getActivity() != null) {
-                NavController navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
-                if (navController != null) {
-                    // 使用Bundle传递参数，然后导航到主页Fragment
-                    Bundle args = new Bundle();
-                    args.putBoolean("from_ai_volunteer_connection", true);
-                    args.putString("businessType", "volunteer_connection");
-                    
-                    // 导航到主页Fragment并传递参数
-                    navController.navigate(R.id.navigation_home, args);
-                    
-                    Log.d(TAG, "切换成功，已切换到主页Fragment，并传递了连线志愿者参数");
-                    
-                    // 显示切换提示
-                    Toast.makeText(requireContext(), "已切换到主页，连线志愿者功能已启动", Toast.LENGTH_SHORT).show();
-                    
-                    // 添加震动反馈，提示用户已切换
-                    if (vibrator != null && isAdded() && getContext() != null) {
-                        try {
-                            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
-                        } catch (Exception e) {
-                            Log.w(TAG, "震动反馈失败", e);
-                        }
-                    }
-                    
-                } else {
-                    Log.e(TAG, "无法获取导航控制器");
-                      }
-            } else {
-                Log.e(TAG, "Fragment未attached到Activity，无法切换");
-                }
-            
-        } catch (Exception e) {
-            Log.e(TAG, "切换主页Fragment失败", e);
-
-        }
+        startVideoHelpMatching();
     }
     
     /**
-     * 处理5003: 紧急求助，切换到主页Fragment并开启紧急求助功能
+     * 处理5003（紧急求助信令）：AI 页原地发起紧急求助（2026-09-12 起不再跳转主页）
      */
     private void handleEmergencyHelpRequest() {
-        Log.d(TAG, "收到紧急求助请求");
-        
-        try {
-            // 页面切换前预清理资源，避免与新页面启动冲突
-            preCleanupResourcesForNavigation();
-            
-            // 直接切换到底部导航的主页Fragment，不做复杂处理
-            Log.d(TAG, "开始切换到底部导航主页...");
-            
-            // 获取导航控制器，切换到主页Fragment
-            if (getActivity() != null) {
-                NavController navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
-                if (navController != null) {
-                    // 使用Bundle传递参数，然后导航到主页Fragment
-                    Bundle args = new Bundle();
-                    args.putBoolean("from_ai_emergency_help", true);
-                    args.putString("businessType", "emergency_help");
-                    
-                    // 导航到主页Fragment并传递参数
-                    navController.navigate(R.id.navigation_home, args);
-                    
-                    Log.d(TAG, "切换成功，已切换到主页Fragment");
-                    
-                    // 显示切换提示
-                    Toast.makeText(requireContext(), "已切换到主页，紧急求助功能已启动", Toast.LENGTH_SHORT).show();
-                    
-                    // 添加震动反馈，提示用户已切换
-                    if (vibrator != null && isAdded() && getContext() != null) {
-                        try {
-                            vibrator.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
-                        } catch (Exception e) {
-                            Log.w(TAG, "震动反馈失败", e);
-                        }
-                    }
-                    
+        startEmergencyHelp();
+    }
+    
+    // ===== 视频求助 / 紧急求助流程（自 HomeFragment 原样迁入，2026-09-12） =====
+
+    /** 发起志愿者视频求助匹配（AI 页原地） */
+    private void startVideoHelpMatching() {
+        Log.d(TAG, "开始连线志愿者（AI 页原地）");
+        if (!isAdded() || getContext() == null) {
+            Log.w(TAG, "Fragment未attached，跳过连线");
+            return;
+        }
+        if (isVideoCallStarted) {
+            Log.w(TAG, "视频通话已建立，忽略重复连线");
+            return;
+        }
+
+        String token = SharedPrefsUtil.getToken();
+        if (token == null || token.isEmpty()) {
+            Log.e(TAG, "Token为空，无法进行连线");
+            Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        webSocketManager.setMatchingStatus(true);
+        checkLoginStatusBeforeMatching(token);
+    }
+    
+    private void checkLoginStatusBeforeMatching(String token) {
+        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        String authToken = "Bearer " + token;
+        apiService.checkLogin(authToken).enqueue(new Callback<BaseResponse<Void>>() {
+            @Override
+            public void onResponse(Call<BaseResponse<Void>> call, Response<BaseResponse<Void>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().getCode() == 1) {
+                    Log.d(TAG, "登录状态有效，开始匹配");
+                    startVideoHelpMatchingRequest(token);
                 } else {
-                    Log.e(TAG, "无法获取导航控制器");
-                  /*  Toast.makeText(requireContext(), "页面切换失败：导航控制器异常", Toast.LENGTH_SHORT).show();*/
+                    Log.e(TAG, "登录状态无效，取消匹配");
+                    isMatching = false;
+                    webSocketManager.setMatchingStatus(false);
                 }
-            } else {
-                Log.e(TAG, "Fragment未attached到Activity，无法切换");
-              /*  Toast.makeText(requireContext(), "页面切换失败：页面状态异常", Toast.LENGTH_SHORT).show();*/
             }
-            
+
+            @Override
+            public void onFailure(Call<BaseResponse<Void>> call, Throwable t) {
+                Log.e(TAG, "登录状态检查网络失败", t);
+                isMatching = false;
+                webSocketManager.setMatchingStatus(false);
+            }
+        });
+    }
+    
+    private void startVideoHelpMatchingRequest(String token) {
+        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        String authToken = "Bearer " + token;
+        apiService.blindJoinVideohelp(authToken).enqueue(new Callback<BaseResponse<Boolean>>() {
+            @Override
+            public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    BaseResponse<Boolean> result = response.body();
+                    if (result.getCode() == 1 && Boolean.TRUE.equals(result.getData())) {
+                        Log.d(TAG, "连线请求成功，等待志愿者接听");
+                        if (isAdded() && getContext() != null) {
+                            Toast.makeText(requireContext(), "正在等待志愿者接听...", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Log.e(TAG, "连线失败 - 业务错误: " + result.getMessage());
+                        if (isAdded() && getContext() != null) {
+                            String msg = "连线失败: " + result.getMessage();
+                            if (result.getCode() == 40000 && "请求参数错误".equals(result.getMessage())) {
+                                msg = "当前还没有志愿者等待，请稍后再试";
+                            }
+                            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+                        }
+                        isMatching = false;
+                        webSocketManager.setMatchingStatus(false);
+                    }
+                } else {
+                    Log.e(TAG, "HTTP请求失败 - 状态码: " + response.code());
+                    isMatching = false;
+                    webSocketManager.setMatchingStatus(false);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
+                Log.e(TAG, "连线网络请求失败", t);
+                isMatching = false;
+                webSocketManager.setMatchingStatus(false);
+            }
+        });
+    }
+    
+    /** 发起紧急求助（家庭域群发通知家属，AI 页原地） */
+    private void startEmergencyHelp() {
+        Log.d(TAG, "开始紧急求助（AI 页原地）");
+        if (!isAdded() || getContext() == null) {
+            Log.w(TAG, "Fragment未attached，跳过紧急求助");
+            return;
+        }
+        if (emergencyHelpManager.isInEmergencyHelp()) {
+            Log.d(TAG, "已在紧急求助中，忽略重复请求");
+            Toast.makeText(requireContext(), "已在紧急求助中，请等待响应", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String token = SharedPrefsUtil.getToken();
+        if (token == null || token.isEmpty()) {
+            Log.e(TAG, "Token为空，无法发起紧急求助");
+            return;
+        }
+        String phone = SharedPrefsUtil.getPhone();
+        if (phone == null || phone.isEmpty()) {
+            Log.e(TAG, "手机号为空，无法发起紧急求助");
+            return;
+        }
+
+        // 重置紧急求助状态，确保可以重新发起
+        emergencyHelpManager.resetEmergencyHelp();
+        isEmergencyHelpMatching = false;
+
+        // 强制销毁并重新创建悬浮窗对象，确保状态干净
+        if (emergencyHelpFloatingWindow != null) {
+            emergencyHelpFloatingWindow.destroy();
+            emergencyHelpFloatingWindow = null;
+        }
+        if (getActivity() != null) {
+            emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
+        }
+
+        Log.d(TAG, "发起紧急求助，手机号: " + phone);
+        emergencyHelpManager.requestEmergencyHelp(phone);
+    }
+    
+    /** 紧急求助管理器初始化（单例，回调挂 AI 页） */
+    private void initEmergencyHelp() {
+        try {
+            emergencyHelpManager = EmergencyHelpManager.getInstance();
+            emergencyHelpManager.setContext(requireContext());
+            if (getActivity() != null) {
+                emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
+            }
+            emergencyHelpManager.setCallback(new EmergencyHelpManager.EmergencyHelpCallback() {
+                @Override
+                public void onHelpRequestSuccess() {
+                    Log.d(TAG, "紧急求助请求成功");
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            isEmergencyHelpMatching = true;
+                            // 强制重新创建悬浮窗，确保状态干净
+                            if (emergencyHelpFloatingWindow != null) {
+                                emergencyHelpFloatingWindow.destroy();
+                            }
+                            if (getActivity() != null) {
+                                emergencyHelpFloatingWindow = new EmergencyHelpFloatingWindow(getActivity());
+                            }
+                            if (emergencyHelpFloatingWindow != null) {
+                                emergencyHelpFloatingWindow.show();
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void onHelpRequestFailed(String error) {
+                    Log.e(TAG, "紧急求助请求失败: " + error);
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), "紧急求助请求失败: " + error, Toast.LENGTH_SHORT).show();
+                            isEmergencyHelpMatching = false;
+                            emergencyHelpManager.resetEmergencyHelp();
+                        });
+                    }
+                }
+
+                @Override
+                public void onHelpCancelled() {
+                    Log.d(TAG, "紧急求助已取消");
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), "紧急求助已取消", Toast.LENGTH_SHORT).show();
+                            if (emergencyHelpFloatingWindow != null) {
+                                emergencyHelpFloatingWindow.hide();
+                            }
+                            isEmergencyHelpMatching = false;
+                            emergencyHelpManager.resetEmergencyHelp();
+                        });
+                    }
+                }
+
+                @Override
+                public void onHelpResponseSuccess() {
+                    // 盲人端不会收到这个回调
+                }
+
+                @Override
+                public void onHelpResponseFailed(String error) {
+                    // 盲人端不会收到这个回调
+                }
+
+                @Override
+                public void onHelpHangupSuccess() {
+                    Log.d(TAG, "紧急求助通话已结束");
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            isEmergencyHelpMatching = false;
+                            emergencyHelpManager.resetEmergencyHelp();
+                            if (emergencyHelpFloatingWindow != null) {
+                                emergencyHelpFloatingWindow.hide();
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void onHelpHangupFailed(String error) {
+                    Log.e(TAG, "紧急求助挂断失败: " + error);
+                }
+            });
         } catch (Exception e) {
-            Log.e(TAG, "切换主页Fragment失败", e);
-          /*  Toast.makeText(requireContext(), "页面切换失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();*/
+            Log.e(TAG, "紧急求助管理器初始化失败", e);
         }
     }
     
@@ -4027,7 +4190,6 @@ public class AiFragment extends Fragment {
             String targetAppName = data.getVolunteerPhone();
             if (targetAppName == null || targetAppName.trim().isEmpty()) {
                 Log.w(TAG, "APP跳转请求中volunteerPhone字段为空");
-               /* Toast.makeText(requireContext(), "APP跳转请求参数错误", Toast.LENGTH_SHORT).show();*/
                 return;
             }
             
@@ -4036,7 +4198,6 @@ public class AiFragment extends Fragment {
             // 检查应用列表管理器是否已初始化
             if (appListManager == null || !appListManager.isInitialized()) {
                 Log.w(TAG, "应用列表管理器未初始化，无法检查应用");
-              /*  Toast.makeText(requireContext(), "应用列表未准备好，请稍后重试", Toast.LENGTH_SHORT).show();*/
                 return;
             }
             
@@ -4067,7 +4228,6 @@ public class AiFragment extends Fragment {
                     Toast.makeText(requireContext(), "已打开" + targetAppName, Toast.LENGTH_SHORT).show();
                 } else {
                     Log.e(TAG, "应用跳转失败: " + targetAppName);
-                 /*   Toast.makeText(requireContext(), "打开" + targetAppName + "失败", Toast.LENGTH_SHORT).show();*/
                 }
                 
             } else {
@@ -4085,8 +4245,48 @@ public class AiFragment extends Fragment {
             
         } catch (Exception e) {
             Log.e(TAG, "APP跳转失败", e);
-           /* Toast.makeText(requireContext(), "APP跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();*/
         }
+    }
+    
+    /** 匹配成功/视频初始化（type=2）：进入视频通话页（自 HomeFragment 迁入） */
+    private void handleVideoInit(SocketDataV0 data) {
+        Log.d(TAG, "收到视频初始化成功通知，准备进入视频通话页面");
+        if (isVideoCallStarted) {
+            Log.w(TAG, "视频通话已启动，忽略重复的type=2消息");
+            return;
+        }
+        isMatching = false;
+        webSocketManager.setMatchingStatus(false);
+        isVideoCallStarted = true;
+
+        // 如果是紧急求助，隐藏悬浮窗
+        if (emergencyHelpFloatingWindow != null) {
+            emergencyHelpFloatingWindow.hide();
+        }
+
+        try {
+            Intent videoIntent = new Intent(requireContext(), com.swj.shiwujie.blind.VideoCallActivity.class);
+            videoIntent.putExtra("channelId", data.getChannelId());
+            videoIntent.putExtra("volunteerPhone", data.getVolunteerPhone());
+            if (isEmergencyHelpMatching) {
+                videoIntent.putExtra("isEmergencyHelp", true);
+                isEmergencyHelpMatching = false;
+            }
+            videoIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            videoIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(videoIntent);
+            Log.d(TAG, "已启动视频通话Activity");
+        } catch (Exception e) {
+            Log.e(TAG, "启动视频通话Activity失败", e);
+            isVideoCallStarted = false;
+        }
+    }
+    
+    /** 通话结束（type=5）：复位流程状态（自 HomeFragment 迁入） */
+    private void handleCallEnd() {
+        Log.d(TAG, "收到通话结束(type=5)消息，重置流程状态");
+        isVideoCallStarted = false;
+        isEmergencyHelpMatching = false;
     }
     
     /**

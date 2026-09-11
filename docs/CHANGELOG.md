@@ -134,6 +134,15 @@
 - **显隐广播改显式带包名**：`MyApplication` 发送时 `intent.setPackage(getPackageName())`——隐式广播 + `RECEIVER_NOT_EXPORTED` 组合在 vivo OriginOS（Android 14+）上不投递（注册成功、广播已发、接收器不触发的静默丢包），显式包名后端到端实测 `HOME → SHOW → showFloatingBall` 全链路打通（~0.5s 内上屏）。
 - 附带发现：release 构建（R8）下 `Log.d` 全部不可见（仅 `Log.e` 落 logcat），排障时以 `Log.e` 为准。
 
+**App 结构调整（第二批）：求助流程迁入 AI 页原地执行，主页概念退场（2026-09-12）**
+
+> 用户需求：紧急求助/志愿者帮扶不再跳转主页，全部在 AI 页原地执行；视频通话退出后也回到 AI 页。为后续整体删除 HomeFragment 铺路。`assembleRelease` 已装机。
+
+**变更**
+- **求助流程迁移**（`AiFragment` 自 `HomeFragment` 原样迁入）：`startVideoHelpMatching`（token 校验 → `checkLogin` → `blindJoinVideohelp` 匹配请求）、`startEmergencyHelp`（EmergencyHelpManager 单例 + `EmergencyHelpFloatingWindow` 匹配中悬浮窗）、`EmergencyHelpManager.EmergencyHelpCallback` 全套回调、WS **type=2**（匹配成功 → 进 `VideoCallActivity`）/**type=5**（通话结束 → 复位）处理器——AiFragment 的 WS 分发入口前置这两个信令。AI 页新增 `isMatching/isVideoCallStarted/isEmergencyHelpMatching` 状态与悬浮窗生命周期管理（onDestroy 销毁）。
+- **触发源收敛**：AI 页两个按钮、WS 5002/5003 信令全部改为原地调用 `startVideoHelpMatching()/startEmergencyHelp()`，**不再 `navigate(navigation_home)`**；`VideoCallActivity` 本身只 `finish()` 不导航，通话退出自然回到 AI 页（发起时所在页）。
+- `HomeFragment` 及 `navigation_home` 目的地暂保留为不可达死代码（原 `from_ai_*` 参数分支休眠），下批整体删除。
+
 **App 结构调整：底栏移除主页 tab，进入软件默认 AI 页（2026-09-12，v1.2 / versionCode 3）**
 
 > 用户规划：最终只保留单一 AI 页，主页逐批下线——本批先摘 tab。`assembleRelease` 已装机并 adb 截屏验证（进软件即 AI 页，底栏 AI/家庭/社区/我的 四项，AI 高亮）。
@@ -143,7 +152,7 @@
 - `res/navigation/mobile_navigation.xml`：`startDestination` `navigation_home` → `navigation_ai`——冷启动直落 AI 页（相机/AI 会话即开）。
 - **`navigation_home` 目的地保留在导航图**：AI 页「紧急求助/志愿者求助」按钮仍经 `navigate(navigation_home, from_ai_* args)` 触发既有流程，HomeFragment 的匹配成功进通话页（type=2）/通话结束（type=5）处理器随之被创建生效。
 - **WebSocket 建立不受影响**：建连在 `BlindHomeActivity.initializeAfterPermissions`（Activity 级），与主页 tab 无关，冷启动即连。
-- **已知残留（下批删主页时迁移）**：HomeFragment 的 WS 监听（type=2/5）仅在该 Fragment 创建后有效——用户不触求助流程时，志愿者侧主动发起的通话/紧急升级信号在 AI 页上暂无法接听；此缺口在现版本「用户切离主页 tab」时同样存在，非本次引入，随「单一 AI 页」改造一并收口。
+- ~~**已知残留**：HomeFragment 的 WS 监听（type=2/5）仅在该 Fragment 创建后有效~~（同日第二批已收口，见下节：流程处理器已迁入 AiFragment）。
 
 **AI 模块重写（设计敲定·实现待 Phase 5）**
 
