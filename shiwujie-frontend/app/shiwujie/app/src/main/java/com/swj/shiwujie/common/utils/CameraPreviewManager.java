@@ -41,6 +41,7 @@ public class CameraPreviewManager {
     private Handler backgroundHandler;
     
     private String cameraId;
+    private android.util.Size previewSize;
     private boolean isPreviewActive = false;
     
     // 拍照相关
@@ -102,6 +103,7 @@ public class CameraPreviewManager {
                 
                 @Override
                 public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
+                    applyPreviewTransform();
                 }
                 
                 @Override
@@ -116,6 +118,96 @@ public class CameraPreviewManager {
         }
     }
     
+    /**
+     * 选与 View 宽高比最接近的预览尺寸（优先不超过 1080p，避免高分辨率徒增功耗）。
+     * 2026-09-12 修复：原固定 480x640 缓冲被拉满全屏 TextureView 导致画面变形。
+     * 多机型适配：尺寸候选来自当前设备相机实际能力（StreamConfigurationMap），
+     * 比例按运行时 View 实测宽高计算——不同分辨率/宽高比/方向（含平板横屏）的设备各自适配。
+     */
+    private android.util.Size chooseOptimalPreviewSize(CameraCharacteristics characteristics, int viewWidth, int viewHeight) {
+        try {
+            if (viewWidth == 0 || viewHeight == 0) {
+                return null;
+            }
+            android.util.Size[] choices = characteristics.get(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+                    .getOutputSizes(android.graphics.SurfaceTexture.class);
+            if (choices == null || choices.length == 0) {
+                return null;
+            }
+            // View 宽高比（放大 10000 倍做整数比较）；横屏设备自动等价处理（w/h 与 h/w 视为同一比例）
+            boolean viewLandscape = viewWidth >= viewHeight;
+            long viewRatio = aspectOf(viewWidth, viewHeight);
+            android.util.Size best = null;
+            long bestDiff = Long.MAX_VALUE;
+            // 兜底记一个最大尺寸，防止极端比例下 diff 全都过大而选了过小的
+            android.util.Size largest = choices[0];
+            long largestArea = 0;
+            for (android.util.Size size : choices) {
+                long w = size.getWidth(), h = size.getHeight();
+                if (w * h > 1920 * 1080) continue; // 限 1080p 内
+                if ((long) w * h > largestArea) {
+                    largestArea = w * h;
+                    largest = size;
+                }
+                // 相机尺寸固定按其原生方向列出的比例；与 View 比较时按设备方向归一
+                long sizeRatio = aspectOf(w, h);
+                if (viewLandscape != (w >= h)) {
+                    sizeRatio = aspectOf(h, w); // 方向不一致时转置比较
+                }
+                long diff = Math.abs(sizeRatio - viewRatio);
+                if (diff < bestDiff) {
+                    bestDiff = diff;
+                    best = size;
+                }
+            }
+            // 比例差异超过 20%（极端屏/奇葩相机）时宁可取最大尺寸靠 transform 裁剪，保清晰度
+            if (best != null && bestDiff > 2000) {
+                Log.w(TAG, "相机无接近 View 比例的尺寸，回退最大支持尺寸交由变换裁剪");
+                return largest;
+            }
+            return best != null ? best : largest;
+        } catch (Exception e) {
+            Log.e(TAG, "选择预览尺寸失败", e);
+            return null;
+        }
+    }
+
+    /** 宽高比（长边*10000/短边），与方向无关 */
+    private static long aspectOf(long w, long h) {
+        return w >= h ? (w * 10000 / h) : (h * 10000 / w);
+    }
+
+    /**
+     * 按预览尺寸与 View 尺寸计算居中裁剪变换（cover）：保证画面不变形，多余部分裁掉。
+     */
+    private void applyPreviewTransform() {
+        if (textureView == null || previewSize == null || textureView.getWidth() == 0) {
+            return;
+        }
+        int viewW = textureView.getWidth(), viewH = textureView.getHeight();
+        int bufW = previewSize.getWidth(), bufH = previewSize.getHeight();
+        // 传感器方向修正：后置相机通常 90°，缓冲需转置后与 View 对齐
+        int rotatedW, rotatedH;
+        int sensorOrientation = 90;
+        try {
+            CameraManager cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            Integer orientation = cm.getCameraCharacteristics(cameraId).get(CameraCharacteristics.SENSOR_ORIENTATION);
+            if (orientation != null) sensorOrientation = orientation;
+        } catch (Exception ignore) { }
+        boolean rotated = (sensorOrientation == 90 || sensorOrientation == 270);
+        rotatedW = rotated ? bufH : bufW;
+        rotatedH = rotated ? bufW : bufH;
+
+        float scaleX = (float) viewW / rotatedW;
+        float scaleY = (float) viewH / rotatedH;
+        float scale = Math.max(scaleX, scaleY); // cover：填满并裁剪
+
+        android.graphics.Matrix matrix = new android.graphics.Matrix();
+        matrix.setScale(scale, scale, viewW / 2f, viewH / 2f);
+        textureView.setTransform(matrix);
+    }
+
     /**
      * 停止预览
      */
@@ -138,6 +230,10 @@ public class CameraPreviewManager {
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
                     cameraId = id;
+                    // 2026-09-12：按预览 View 宽高比选最接近的相机尺寸，替代固定 480x640（修复画面拉伸变形）
+                    previewSize = chooseOptimalPreviewSize(characteristics,
+                            textureView.getWidth(), textureView.getHeight());
+                    Log.d(TAG, "选定预览尺寸: " + (previewSize != null ? previewSize.getWidth() + "x" + previewSize.getHeight() : "null(默认)"));
                     break;
                 }
             }
@@ -152,6 +248,7 @@ public class CameraPreviewManager {
                     @Override
                     public void onOpened(@NonNull CameraDevice camera) {
                         cameraDevice = camera;
+                        applyPreviewTransform();
                         createCameraPreview();
                     }
 
@@ -197,7 +294,11 @@ public class CameraPreviewManager {
                 Log.w(TAG, "SurfaceTexture 尚未就绪，跳过本次预览创建");
                 return;
             }
-            texture.setDefaultBufferSize(480, 640);
+            if (previewSize != null) {
+                texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
+            } else {
+                texture.setDefaultBufferSize(480, 640);
+            }
 
             Surface surface = new Surface(texture);
 
