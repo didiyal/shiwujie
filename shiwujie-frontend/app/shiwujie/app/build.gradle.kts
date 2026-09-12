@@ -11,8 +11,8 @@ android {
         applicationId = "com.swj.shiwujie"
         minSdk = 30
         targetSdk = 35
-        versionCode = 4
-        versionName = "3.0.0"   // 对齐仓库版本线 v3.0.0（versionCode 单调递增，与用户已装版本兼容）
+        versionCode = 5
+        versionName = "3.1.0"   // 3.1.0：小界AI助手命名、拍照播报规范、预览防变形、家庭页改版、无障碍优化
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
