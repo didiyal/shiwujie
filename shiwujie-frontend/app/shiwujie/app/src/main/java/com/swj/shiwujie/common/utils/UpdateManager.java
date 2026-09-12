@@ -41,7 +41,10 @@ import retrofit2.Response;
 public class UpdateManager {
 
     private static final String TAG = "UpdateManager";
-    private static final String APK_NAME = "shiwujie_update.apk";
+    private static final String APK_NAME_PREFIX = "shiwujie_update_";
+    private static final String APK_NAME_LEGACY = "shiwujie_update.apk"; // 历史版本固定名（启动时清理）
+    /** 本次下载的目标文件（时间戳命名，避免 DownloadManager 复用/续传同名旧包——曾致装到历史版本） */
+    private static volatile File sTargetApk;
     private static final String FILE_PROVIDER_AUTHORITY = "com.swj.shiwujie.fileprovider";
 
     private static long sDownloadId = -1;
@@ -128,13 +131,23 @@ public class UpdateManager {
             String downloadUrl = baseUrl + (version.getDownloadUrl() != null ? version.getDownloadUrl() : "/api/download/app");
             Log.d(TAG, "开始下载更新包: " + downloadUrl);
 
+            // 清理历史包（旧固定名 + 上一次下载），杜绝同名旧文件被续传/复用导致装到历史版本
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File legacy = new File(downloadsDir, APK_NAME_LEGACY);
+            if (legacy.exists()) legacy.delete();
+            if (sTargetApk != null && sTargetApk.exists()) sTargetApk.delete();
+            File dir = new File(activity.getExternalFilesDir(null), "update"); // 应用私有目录：无读权限问题
+            if (!dir.exists()) dir.mkdirs();
+            for (File f : dir.listFiles()) f.delete(); // 清空更新目录
+            sTargetApk = new File(dir, APK_NAME_PREFIX + System.currentTimeMillis() + ".apk");
+
             DownloadManager dm = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
             DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl));
             request.setTitle("视无界新版本 v" + version.getVersionName());
             request.setDescription("正在下载更新包");
             request.setMimeType("application/vnd.android.package-archive");
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, APK_NAME);
+            request.setDestinationInExternalFilesDir(activity, Environment.DIRECTORY_DOWNLOADS, sTargetApk.getName());
             sDownloadId = dm.enqueue(request);
 
             Toast.makeText(activity, "开始下载更新包...", Toast.LENGTH_SHORT).show();
@@ -173,12 +186,36 @@ public class UpdateManager {
     /** 校验下载状态并拉起系统安装 */
     private static void installDownloadedApk(Context appContext) {
         try {
-            File apkFile = new File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), APK_NAME);
-            if (!apkFile.exists()) {
-                Log.e(TAG, "更新包文件不存在: " + apkFile.getAbsolutePath());
+            File apkFile = sTargetApk;
+            if (apkFile == null || !apkFile.exists()) {
+                Log.e(TAG, "更新包文件不存在: " + (apkFile != null ? apkFile.getAbsolutePath() : "null"));
                 sDownloadId = -1;
                 return;
+            }
+
+            // 版本校验：拒绝装到比当前更旧的包（防服务器/缓存错位导致循环强更）
+            try {
+                android.content.pm.PackageInfo pkg = appContext.getPackageManager()
+                        .getPackageArchiveInfo(apkFile.getAbsolutePath(), 0);
+                if (pkg == null) {
+                    Log.e(TAG, "更新包解析失败（可能下载不完整）");
+                    Toast.makeText(appContext, "更新包异常，请重试", Toast.LENGTH_LONG).show();
+                    apkFile.delete();
+                    sDownloadId = -1;
+                    return;
+                }
+                long local = appContext.getPackageManager()
+                        .getPackageInfo(appContext.getPackageName(), 0).getLongVersionCode();
+                if (pkg.getLongVersionCode() <= local) {
+                    Log.e(TAG, "更新包版本(" + pkg.getLongVersionCode() + ")不高于当前(" + local + ")，拒绝安装（防循环强更）");
+                    Toast.makeText(appContext, "更新包版本异常，请稍后重试", Toast.LENGTH_LONG).show();
+                    apkFile.delete();
+                    sDownloadId = -1;
+                    return;
+                }
+                Log.d(TAG, "更新包版本校验通过: code=" + pkg.getLongVersionCode());
+            } catch (Exception ve) {
+                Log.e(TAG, "版本校验失败", ve);
             }
 
             // 安装未知应用授权检查（Android 8+）：未授权则跳系统设置，授权后用户重按「立即更新」
