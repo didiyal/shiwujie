@@ -64,6 +64,6 @@ app:
     apk-path: ${APK_PATH:/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk}
   # 线上最新版本信息（强制更新检查用）：发新 APK 时同步升 code/name，App 启动比对本地 versionCode 即弹强制更新
   version:
-    code: ${APP_VERSION_CODE:5}
-    name: ${APP_VERSION_NAME:3.1.0}
-    update-log: ${APP_VERSION_LOG:AI助手更名小界；拍照识别播报更清晰（先整体后细节，可追问）；摄像头画面不再变形；家庭页面简化；无障碍与紧急求助体验优化}
+    code: ${APP_VERSION_CODE:6}
+    name: ${APP_VERSION_NAME:3.1.1}
+    update-log: ${APP_VERSION_LOG:强制更新机制加固：修复可能装到旧版本包的问题}
