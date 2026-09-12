@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 强制更新：DownloadManager 下载的 APK 对外共享路径 -->
+<!-- 强制更新：DownloadManager 下载的 APK 对外共享路径。
+     external-files-path 对应 getExternalFilesDir(DIRECTORY_DOWNLOADS)（应用私有更新目录，2026-09-12 起使用）；
+     external-path 保留兼容历史公共 Download 目录的旧包。 -->
 <paths>
+    <external-files-path
+        name="external_files_download"
+        path="Download/" />
     <external-path
         name="external_download"
         path="Download/" />

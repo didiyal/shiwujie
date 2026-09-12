@@ -186,6 +186,14 @@ public class UpdateManager {
     /** 校验下载状态并拉起系统安装 */
     private static void installDownloadedApk(Context appContext) {
         try {
+            // 下载状态校验：失败/不完整不进入安装（给出可见提示，不静默）
+            if (sDownloadId != -1 && !isDownloadSuccess(appContext)) {
+                Log.e(TAG, "更新包下载未成功，跳过安装");
+                Toast.makeText(appContext, "下载未完成，请重新点击立即更新", Toast.LENGTH_LONG).show();
+                sDownloadId = -1;
+                return;
+            }
+
             File apkFile = sTargetApk;
             if (apkFile == null || !apkFile.exists()) {
                 Log.e(TAG, "更新包文件不存在: " + (apkFile != null ? apkFile.getAbsolutePath() : "null"));
@@ -238,6 +246,24 @@ public class UpdateManager {
             Log.e(TAG, "拉起安装失败", e);
             sDownloadId = -1; // 允许重试
         }
+    }
+
+    private static boolean isDownloadSuccess(Context context) {
+        DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        try (Cursor cursor = dm.query(new DownloadManager.Query().setFilterById(sDownloadId))) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+                if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                    return true;
+                }
+                int reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON));
+                Log.e(TAG, "下载状态=" + status + " 原因=" + reason);
+                return false;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "查询下载结果失败", e);
+        }
+        return false;
     }
 
     private static boolean isDownloading(Context context) {
