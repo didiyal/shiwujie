@@ -58,7 +58,7 @@ public class ImageApp {
         if(StrUtil.isEmptyIfStr(systemPrompt)){
             PromptTemplate promptTemplate = new PromptTemplate(imageResource);
             systemPrompt = promptTemplate.create(Map.of(
-                    "identity", "针对视障人士的图片识别助手")).getContents();
+                    "identity", "视无界AI助手小界，一位针对视障人士的图片识别助手")).getContents();
             log.debug("系统提示词初始化: " + systemPrompt);
         }
     }
@@ -71,7 +71,7 @@ public class ImageApp {
      */
     public Flux<String> doImage(String imageUrl, Long blindId) {
         return client.prompt(systemPrompt)
-                .user(u -> u.text("请描述这张图片，语言简洁明了，适合视障人士语音收听，100字以内")
+                .user(u -> u.text("请按系统提示的首次识别规范描述这张图片：先整体场景，再关键细节，有文字优先读文字")
                         .media(MimeTypeUtils.IMAGE_PNG, new FileSystemResource(imageUrl)))
                 .advisors(advisorSpec -> advisorSpec.param(CONVERSATION_ID, blindId.toString()))
                 .stream()

@@ -85,14 +85,16 @@ public class EmergencyRingerManager {
                     break;
                     
                 case AudioManager.RINGER_MODE_VIBRATE:
-                    // 震动模式：只震动
-                    Log.d(TAG, "震动模式：只震动");
+                    // 震动模式：紧急求助走 ALARM 通道仍响铃 + 震动（2026-09-12，紧急例外）
+                    Log.d(TAG, "震动模式：紧急铃声(ALARM通道) + 震动");
+                    playRingtone(context);
                     startVibrate();
                     break;
                     
                 case AudioManager.RINGER_MODE_SILENT:
-                    // 静音模式：强制震动（紧急情况）
-                    Log.d(TAG, "静音模式：强制震动（紧急情况）");
+                    // 静音模式：紧急求助走 ALARM 通道仍响铃 + 强制震动（紧急例外）
+                    Log.d(TAG, "静音模式：紧急铃声(ALARM通道) + 强制震动");
+                    playRingtone(context);
                     startVibrate();
                     break;
                     
@@ -123,7 +125,11 @@ public class EmergencyRingerManager {
      */
     private void playRingtone(Context context) {
         try {
-            Uri ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            // 2026-09-12：紧急求助走 ALARM 音量通道——锁屏/媒体静音时仍可响起（闹钟音量通常独立且常开）
+            Uri ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            if (ringtoneUri == null) {
+                ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            }
             if (ringtoneUri == null) {
                 ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
             }
@@ -131,7 +137,10 @@ public class EmergencyRingerManager {
             if (ringtoneUri != null) {
                 mediaPlayer = new MediaPlayer();
                 mediaPlayer.setDataSource(context, ringtoneUri);
-                mediaPlayer.setAudioStreamType(AudioManager.STREAM_RING);
+                mediaPlayer.setAudioAttributes(new android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build());
                 mediaPlayer.setLooping(true); // 循环播放
                 mediaPlayer.prepare();
                 mediaPlayer.start();

@@ -10,7 +10,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
-        android:text="@string/choose_identity"
+        android:text=""
+        android:visibility="invisible"
         android:textColor="@color/black"
         android:textSize="24sp"
         android:textStyle="bold" />
@@ -49,26 +50,27 @@
         android:gravity="center"
         android:padding="20dp">
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btn_volunteer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="40dp"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/bg_button_gray"
-            android:text="@string/i_am_volunteer"
-            android:textColor="@color/black"
-            android:textSize="16sp"/>
-
+        <!-- 2026-09-12：盲人按钮移到上方（主要用户群优先）；各自配色不变 -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_blind"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="40dp"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="20dp"
             android:background="@drawable/bg_button_primary"
             android:text="@string/i_am_blind"
             android:textColor="@color/white"
+            android:textSize="16sp"/>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_volunteer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="40dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/bg_button_gray"
+            android:text="@string/i_am_volunteer"
+            android:textColor="@color/black"
             android:textSize="16sp"/>
 
     </LinearLayout>

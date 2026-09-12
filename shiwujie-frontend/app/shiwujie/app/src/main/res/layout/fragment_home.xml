@@ -85,7 +85,8 @@
                     android:text="紧急求助"
                     android:textColor="@android:color/white"
                     android:textSize="32sp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:contentDescription="紧急求助，点击向家属发起视频通话求助"/>
 
             </androidx.cardview.widget.CardView>
 

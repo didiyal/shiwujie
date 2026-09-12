@@ -36,10 +36,7 @@ public class FamilyFragment extends Fragment {
     private CardView cardFamilyInfo;
     private Button btnJoinFamily;
     private Button btnLeaveFamily;
-    private TextView tvFamilyName;
-    private TextView tvFamilyDescription;
-    private RecyclerView rvBlindMembers;
-    private RecyclerView rvVolunteerMembers;
+    private RecyclerView rvFamilyMembers;
     private ApiService apiService;
 
     @Override
@@ -70,10 +67,7 @@ public class FamilyFragment extends Fragment {
         btnJoinFamily = root.findViewById(R.id.btnJoinFamily);
         btnLeaveFamily = root.findViewById(R.id.btnLeaveFamily);
         btnLeaveFamily.setVisibility(View.GONE);
-        tvFamilyName = root.findViewById(R.id.tvFamilyName);
-        tvFamilyDescription = root.findViewById(R.id.tvFamilyDescription);
-        rvBlindMembers = root.findViewById(R.id.rvBlindMembers);
-        rvVolunteerMembers = root.findViewById(R.id.rvVolunteerMembers);
+        rvFamilyMembers = root.findViewById(R.id.rvFamilyMembers);
 
         // 盲人端不需要显示加入申请卡片，始终隐藏
         CardView cardFamilyRequests = root.findViewById(R.id.cardFamilyRequests);
@@ -81,8 +75,7 @@ public class FamilyFragment extends Fragment {
             cardFamilyRequests.setVisibility(View.GONE);
         }
 
-        rvBlindMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvVolunteerMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvFamilyMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
     }
 
     private void initService() {
@@ -214,8 +207,7 @@ public class FamilyFragment extends Fragment {
             cardEmptyState.setVisibility(View.GONE);
             btnJoinFamily.setVisibility(View.GONE);
 
-            tvFamilyName.setText(family.getFamilyName() != null ? family.getFamilyName() : "未命名家庭");
-            tvFamilyDescription.setText(family.getFamilyDescription() != null ? family.getFamilyDescription() : "暂无描述");
+            // 2026-09-12：家庭名称/描述不再展示，聚焦"我的家庭 + 人数 + 统一成员列表"
 
             // 计算总成员数量
             int totalMembers = 0;
@@ -238,15 +230,15 @@ public class FamilyFragment extends Fragment {
                 tvMemberCount.setText(totalMembers + "人");
             }
 
-            // 更新盲人成员列表
+            // 更新统一成员列表（盲人 + 志愿者合并，身份用标签区分）
+            java.util.List<Object> allMembers = new java.util.ArrayList<>();
             if (family.getBlindVOList() != null) {
-                rvBlindMembers.setAdapter(new BlindMemberAdapter(family.getBlindVOList()));
+                allMembers.addAll(family.getBlindVOList());
             }
-
-            // 更新志愿者成员列表
             if (family.getVolunteerVOList() != null) {
-                rvVolunteerMembers.setAdapter(new VolunteerMemberAdapter(family.getVolunteerVOList()));
+                allMembers.addAll(family.getVolunteerVOList());
             }
+            rvFamilyMembers.setAdapter(new FamilyMemberAdapter(allMembers));
 
             // 检查是否显示退出按钮
             Long currentUserId = SharedPrefsUtil.getUserId();
@@ -334,12 +326,23 @@ public class FamilyFragment extends Fragment {
         });
     }
 
-    // 盲人成员适配器
-    private static class BlindMemberAdapter extends RecyclerView.Adapter<BlindMemberAdapter.ViewHolder> {
-        private final List<BlindVO> members;
+    // 统一成员适配器（盲人 + 志愿者，身份标签区分；2026-09-12 起不再展示用户 ID）
+    private static class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapter.ViewHolder> {
+        private final List<Object> members;
 
-        BlindMemberAdapter(List<BlindVO> members) {
+        FamilyMemberAdapter(List<Object> members) {
             this.members = members;
+        }
+
+        /** 名称兜底：无名/null 时显示「用户+手机尾号」 */
+        private String displayName(String name, String phone) {
+            if (name != null && !name.trim().isEmpty()) {
+                return name;
+            }
+            if (phone != null && phone.length() >= 4) {
+                return "用户" + phone.substring(phone.length() - 4);
+            }
+            return "用户";
         }
 
         @NonNull
@@ -352,10 +355,16 @@ public class FamilyFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            BlindVO member = members.get(position);
-            holder.tvName.setText(member.getName());
-            holder.tvRole.setText("盲人");
-            holder.tvId.setText(String.format("ID: %d", member.getBlindId()));
+            Object member = members.get(position);
+            if (member instanceof BlindVO) {
+                BlindVO b = (BlindVO) member;
+                holder.tvName.setText(displayName(b.getName(), b.getPhone()));
+                holder.tvRole.setText("盲人");
+            } else if (member instanceof VolunteerVO) {
+                VolunteerVO v = (VolunteerVO) member;
+                holder.tvName.setText(displayName(v.getName(), v.getPhone()));
+                holder.tvRole.setText("志愿者");
+            }
         }
 
         @Override
@@ -366,57 +375,12 @@ public class FamilyFragment extends Fragment {
         static class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName;
             TextView tvRole;
-            TextView tvId;
 
             ViewHolder(View view) {
                 super(view);
                 tvName = view.findViewById(R.id.tvMemberName);
                 tvRole = view.findViewById(R.id.tvMemberRole);
-                tvId = view.findViewById(R.id.tvMemberId);
             }
         }
     }
-
-    // 志愿者成员适配器
-    private static class VolunteerMemberAdapter extends RecyclerView.Adapter<VolunteerMemberAdapter.ViewHolder> {
-        private final List<VolunteerVO> members;
-
-        VolunteerMemberAdapter(List<VolunteerVO> members) {
-            this.members = members;
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_family_member, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            VolunteerVO member = members.get(position);
-            holder.tvName.setText(member.getName());
-            holder.tvRole.setText("志愿者");
-            holder.tvId.setText(String.format("ID: %d", member.getVolunteerId()));
-        }
-
-        @Override
-        public int getItemCount() {
-            return members != null ? members.size() : 0;
-        }
-
-        static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName;
-            TextView tvRole;
-            TextView tvId;
-
-            ViewHolder(View view) {
-                super(view);
-                tvName = view.findViewById(R.id.tvMemberName);
-                tvRole = view.findViewById(R.id.tvMemberRole);
-                tvId = view.findViewById(R.id.tvMemberId);
-            }
-        }
-    }
-} 
+}

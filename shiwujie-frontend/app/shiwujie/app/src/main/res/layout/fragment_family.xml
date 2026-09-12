@@ -146,56 +146,6 @@
 
                         </LinearLayout>
 
-                        <!-- 家庭名称 -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="家庭名称："
-                                android:textColor="@android:color/darker_gray"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:id="@+id/tvFamilyName"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="我的家庭"
-                                android:textColor="@android:color/black"
-                                android:textSize="14sp" />
-
-                        </LinearLayout>
-
-                        <!-- 家庭描述 -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="家庭描述："
-                                android:textColor="@android:color/darker_gray"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:id="@+id/tvFamilyDescription"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="这是一个温馨的家庭"
-                                android:textColor="@android:color/black"
-                                android:textSize="14sp" />
-
-                        </LinearLayout>
-
                         <!-- 家庭成员数量 -->
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -221,52 +171,46 @@
 
                         </LinearLayout>
 
-                        <!-- 盲人成员列表 -->
+                        <!-- 成员列表（盲人/志愿者合并为统一成员栏，身份用标签区分） -->
+
                         <LinearLayout
+
                             android:layout_width="match_parent"
+
                             android:layout_height="wrap_content"
+
                             android:layout_marginBottom="16dp"
+
                             android:orientation="vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="8dp"
-                                android:text="盲人成员"
-                                android:textColor="#163AAC"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <androidx.recyclerview.widget.RecyclerView
-                                android:id="@+id/rvBlindMembers"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_member_list"
-                                android:nestedScrollingEnabled="false" />
-
-                        </LinearLayout>
-
-                        <!-- 志愿者成员列表 -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            android:orientation="vertical">
 
                             <TextView
+
                                 android:layout_width="wrap_content"
+
                                 android:layout_height="wrap_content"
+
                                 android:layout_marginBottom="8dp"
-                                android:text="志愿者成员"
+
+                                android:text="成员"
+
                                 android:textColor="#163AAC"
+
                                 android:textSize="16sp"
+
                                 android:textStyle="bold" />
 
+
                             <androidx.recyclerview.widget.RecyclerView
-                                android:id="@+id/rvVolunteerMembers"
+
+                                android:id="@+id/rvFamilyMembers"
+
                                 android:layout_width="match_parent"
+
                                 android:layout_height="wrap_content"
+
                                 android:background="@drawable/bg_member_list"
+
                                 android:nestedScrollingEnabled="false" />
 
                         </LinearLayout>
