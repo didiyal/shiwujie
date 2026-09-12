@@ -36,6 +36,7 @@ public class QuickLoginActivity extends AppCompatActivity {
     private Button btnQuickLogin;
     private Button btnPasswordLogin;
     private CheckBox cbAgreement;
+    private ImageButton btnBack;
     private String phoneNumber;
     private ApiService apiService;
     
@@ -67,6 +68,7 @@ public class QuickLoginActivity extends AppCompatActivity {
             btnQuickLogin = findViewById(R.id.btn_quick_login);
             btnPasswordLogin = findViewById(R.id.btn_password_login);
             cbAgreement = findViewById(R.id.cb_agreement);
+        btnBack = findViewById(R.id.btn_back);
             Log.d(TAG, "初始化视图完成");
         } catch (Exception e) {
             Log.e(TAG, "初始化视图失败", e);
@@ -87,6 +89,11 @@ public class QuickLoginActivity extends AppCompatActivity {
     }
 
     private void initListeners() {
+        // 返回身份选择页（2026-09-12：原布局有返回按钮但从未绑定，点击无反应）
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> NavigationHelper.backToChooseIdentity(this));
+        }
+
         try {
             btnQuickLogin.setOnClickListener(v -> {
                 Log.d(TAG, "点击一键登录按钮");
