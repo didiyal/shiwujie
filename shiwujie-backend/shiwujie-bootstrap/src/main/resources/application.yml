@@ -61,7 +61,8 @@ search-api:
 # APK 下载配置
 app:
   download:
-    apk-path: ${APK_PATH:/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk}
+    apk-path: ${APK_PATH:/www/wwwroot/shiwujie/shiwujie-frontend/app-download.apk}   # 兼容回退
+    apk-dir: ${APK_DIR:/www/wwwroot/shiwujie/shiwujie-frontend/}   # APK 目录：上传任意名的 .apk 即生效（自动提供最新修改的一个）
   # 线上最新版本信息（强制更新检查用）：发新 APK 时同步升 code/name，App 启动比对本地 versionCode 即弹强制更新
   version:
     code: ${APP_VERSION_CODE:6}
