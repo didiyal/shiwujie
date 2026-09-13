@@ -11,8 +11,8 @@ android {
         applicationId = "com.swj.shiwujie"
         minSdk = 30
         targetSdk = 35
-        versionCode = 6
-        versionName = "3.1.1"   // 3.1.1：强更防旧缓存/循环（时间戳文件名+安装前版本校验）
+        versionCode = 7
+        versionName = "3.1.2"   // 3.1.2：强更历史包清理覆盖 -N 变体   // 3.1.1：强更防旧缓存/循环（时间戳文件名+安装前版本校验）
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

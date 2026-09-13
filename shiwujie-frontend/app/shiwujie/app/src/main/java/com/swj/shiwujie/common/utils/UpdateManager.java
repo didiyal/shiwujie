@@ -42,7 +42,7 @@ public class UpdateManager {
 
     private static final String TAG = "UpdateManager";
     private static final String APK_NAME_PREFIX = "shiwujie_update_";
-    private static final String APK_NAME_LEGACY = "shiwujie_update.apk"; // 历史版本固定名（启动时清理）
+    private static final String APK_NAME_LEGACY_PREFIX = "shiwujie_update"; // 历史版本文件名前缀（含 -N 变体，下载时清理）
     /** 本次下载的目标文件（时间戳命名，避免 DownloadManager 复用/续传同名旧包——曾致装到历史版本） */
     private static volatile File sTargetApk;
     private static final String FILE_PROVIDER_AUTHORITY = "com.swj.shiwujie.fileprovider";
@@ -131,10 +131,15 @@ public class UpdateManager {
             String downloadUrl = baseUrl + (version.getDownloadUrl() != null ? version.getDownloadUrl() : "/api/download/app");
             Log.d(TAG, "开始下载更新包: " + downloadUrl);
 
-            // 清理历史包（旧固定名 + 上一次下载），杜绝同名旧文件被续传/复用导致装到历史版本
+            // 清理历史包：公共 Download 目录的 shiwujie_update*.apk（含 -1/-2 等重名变体）+ 上一次私有目录下载
             File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            File legacy = new File(downloadsDir, APK_NAME_LEGACY);
-            if (legacy.exists()) legacy.delete();
+            File[] legacyFiles = downloadsDir.listFiles(
+                    (d, name) -> name.startsWith(APK_NAME_LEGACY_PREFIX) && name.toLowerCase().endsWith(".apk"));
+            if (legacyFiles != null) {
+                for (File f : legacyFiles) {
+                    if (f.delete()) Log.d(TAG, "清理历史安装包: " + f.getName());
+                }
+            }
             if (sTargetApk != null && sTargetApk.exists()) sTargetApk.delete();
             File dir = new File(activity.getExternalFilesDir(null), "update"); // 应用私有目录：无读权限问题
             if (!dir.exists()) dir.mkdirs();
