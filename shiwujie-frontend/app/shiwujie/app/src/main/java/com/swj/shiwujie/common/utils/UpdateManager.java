@@ -152,7 +152,8 @@ public class UpdateManager {
             request.setDescription("正在下载更新包");
             request.setMimeType("application/vnd.android.package-archive");
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            request.setDestinationInExternalFilesDir(activity, Environment.DIRECTORY_DOWNLOADS, sTargetApk.getName());
+            // 2026-09-13：不指定目的地（用系统默认存储）——完成后经 getUriForDownloadedFile 取文件，
+            // 彻底避免"下载目录与安装目录错位"（3.1.1 曾因此装不上）
             sDownloadId = dm.enqueue(request);
 
             Toast.makeText(activity, "开始下载更新包...", Toast.LENGTH_SHORT).show();
@@ -199,9 +200,30 @@ public class UpdateManager {
                 return;
             }
 
-            File apkFile = sTargetApk;
-            if (apkFile == null || !apkFile.exists()) {
-                Log.e(TAG, "更新包文件不存在: " + (apkFile != null ? apkFile.getAbsolutePath() : "null"));
+            // 从 DownloadManager 取下载文件的 URI（系统权威来源，不猜路径）
+            DownloadManager dm = (DownloadManager) appContext.getSystemService(Context.DOWNLOAD_SERVICE);
+            android.net.Uri dlUri = dm.getUriForDownloadedFile(sDownloadId);
+            if (dlUri == null) {
+                Log.e(TAG, "DownloadManager 未返回下载文件 URI");
+                Toast.makeText(appContext, "更新包异常，请重试", Toast.LENGTH_LONG).show();
+                sDownloadId = -1;
+                return;
+            }
+
+            // 复制到内部缓存目录再校验+安装（稳定，不受外部存储差异影响）
+            File updateDir = new File(appContext.getCacheDir(), "update");
+            if (!updateDir.exists()) updateDir.mkdirs();
+            for (File f : updateDir.listFiles()) f.delete();
+            File apkFile = new File(updateDir, "update.apk");
+            try (java.io.InputStream in = appContext.getContentResolver().openInputStream(dlUri);
+                 java.io.FileOutputStream out = new java.io.FileOutputStream(apkFile)) {
+                byte[] buf = new byte[64 * 1024];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            } catch (Exception ce) {
+                Log.e(TAG, "更新包复制失败", ce);
+                Toast.makeText(appContext, "更新包异常，请重试", Toast.LENGTH_LONG).show();
+                apkFile.delete();
                 sDownloadId = -1;
                 return;
             }

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 强制更新：DownloadManager 下载的 APK 对外共享路径。
-     external-files-path 对应 getExternalFilesDir(DIRECTORY_DOWNLOADS)（应用私有更新目录，2026-09-12 起使用）；
-     external-path 保留兼容历史公共 Download 目录的旧包。 -->
+<!-- 强制更新：安装包经 FileProvider 共享。
+     cache-path 对应 getCacheDir()/update/（2026-09-13 起安装包从 DownloadManager 复制到内部缓存后安装）；
+     external 两条保留兼容历史版本残留包的清理场景。 -->
 <paths>
+    <cache-path
+        name="cache_update"
+        path="update/" />
     <external-files-path
         name="external_files_download"
         path="Download/" />
