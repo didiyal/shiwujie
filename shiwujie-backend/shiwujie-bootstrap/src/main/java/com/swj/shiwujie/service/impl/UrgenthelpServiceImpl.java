@@ -62,11 +62,32 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
     public boolean createUrgenthelp(Long loginBlindId, String loginUserPhone) {
 
         synchronized (loginUserPhone.intern()) {
-            //1. 检查是否在求助中
+            //1. 检查是否在求助中（残留记录自动过期，2026-09-14：退出竞态/杀进程会让记录无法归位，
+            //   此前会永久卡死"您已经在求助中了"）
             Urgenthelp urgenthelp = this.getWaitingByBlindId(loginBlindId);
-            ThrowUtils.throwIf(ObjUtil.isNotNull(urgenthelp), ErrorCode.PARAMS_ERROR, "您已经在求助中了");
+            if (ObjUtil.isNotNull(urgenthelp)) {
+                // 等待响应超 2 分钟（App 侧家属响应超时 60s）→ 视为已过期，自动取消后放行
+                if (System.currentTimeMillis() - urgenthelp.getStartTime().getTime() > 120_000L) {
+                    urgenthelp.setHelpStatus(CallHelpStatusEnum.FALL.getHelpStatus());
+                    this.updateById(urgenthelp);
+                    urgenthelp = null;
+                }
+            }
+            if (ObjUtil.isNotNull(urgenthelp)) {
+                ThrowUtils.throwIf(true, ErrorCode.PARAMS_ERROR, "您已经在求助中了");
+            }
             urgenthelp = this.getHelpingByBlindId(loginBlindId);
-            ThrowUtils.throwIf(ObjUtil.isNotNull(urgenthelp), ErrorCode.PARAMS_ERROR, "您已经在求助中了");
+            if (ObjUtil.isNotNull(urgenthelp)) {
+                // 通话中超 30 分钟 → 视为遗留通话（双方均已退出但挂断未送达），自动结束
+                if (System.currentTimeMillis() - urgenthelp.getStartTime().getTime() > 1_800_000L) {
+                    urgenthelp.setHelpStatus(CallHelpStatusEnum.END_HELP.getHelpStatus());
+                    this.updateById(urgenthelp);
+                    urgenthelp = null;
+                }
+            }
+            if (ObjUtil.isNotNull(urgenthelp)) {
+                ThrowUtils.throwIf(true, ErrorCode.PARAMS_ERROR, "您已经在求助中了");
+            }
             //2. 查询是否存在家庭
             Blind blind = innerBlindService.getById(loginBlindId);
             Long familyId = blind.getFamilyId();

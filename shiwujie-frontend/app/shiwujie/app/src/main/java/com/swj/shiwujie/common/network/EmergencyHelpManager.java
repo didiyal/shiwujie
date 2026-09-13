@@ -294,7 +294,13 @@ public class EmergencyHelpManager {
                             } else {
                                 Log.e(TAG, "挂断紧急求助失败: " + baseResponse.getMessage());
                                 showToast("挂断失败: " + baseResponse.getMessage());
-                                
+
+                                // 2026-09-14：挂断被拒多为"通话已被对方结束"的竞态，同样复位状态，
+                                // 否则 isInEmergencyHelp 卡死、下次求助被"已在紧急求助中"拦住
+                                cancelEmergencyTimeout();
+                                currentHelpData = null;
+                                isInEmergencyHelp = false;
+
                                 if (callback != null) {
                                     callback.onHelpHangupFailed(baseResponse.getMessage());
                                 }

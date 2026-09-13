@@ -155,8 +155,11 @@ public class UrgenthelpController {
         } else if (ObjUtil.isNotNull(loginBlindId)) {
             urgenthelp = urgenthelpService.getHelpingByBlindId(loginBlindId);
         }
-        // 只有通话中才可以挂断通话
-        ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp),ErrorCode.PARAMS_ERROR,"只有通话中才可以挂断通话");
+        // 挂断幂等（2026-09-14）：双方同时退出时后挂方找不到通话中记录属正常竞态，
+        // 直接返回成功——否则后挂方 App 状态无法复位，下次求助被"已在求助中"卡死
+        if (ObjUtil.isNull(urgenthelp)) {
+            return ResultUtils.success(true);
+        }
 
         urgenthelp.setEndTime(DateUtil.date());
         urgenthelp.setHelpStatus(CallHelpStatusEnum.END_HELP.getHelpStatus());

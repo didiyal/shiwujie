@@ -4054,9 +4054,10 @@ public class AiFragment extends Fragment {
             return;
         }
         if (emergencyHelpManager.isInEmergencyHelp()) {
-            Log.d(TAG, "已在紧急求助中，忽略重复请求");
-            Toast.makeText(requireContext(), "已在紧急求助中，请等待响应", Toast.LENGTH_SHORT).show();
-            return;
+            // 2026-09-14：状态残留（退出竞态/杀进程）不再永久拦截——本地复位后照常发起，
+            // 由服务端裁决：仍有进行中的求助会被拒绝并通过失败回调语音告知
+            Log.w(TAG, "检测到紧急求助状态残留，本地复位后重新发起");
+            emergencyHelpManager.resetEmergencyHelp();
         }
 
         String token = SharedPrefsUtil.getToken();
@@ -4121,7 +4122,16 @@ public class AiFragment extends Fragment {
                     Log.e(TAG, "紧急求助请求失败: " + error);
                     if (isAdded()) {
                         requireActivity().runOnUiThread(() -> {
-                            Toast.makeText(requireContext(), "紧急求助请求失败: " + error, Toast.LENGTH_SHORT).show();
+                            String speak;
+                            if (error != null && error.contains("已经在求助中")) {
+                                speak = "您已有一个求助正在进行，请先结束后再发起";
+                            } else {
+                                speak = "紧急求助请求失败，请稍后再试";
+                            }
+                            Toast.makeText(requireContext(), speak, Toast.LENGTH_SHORT).show();
+                            if (ttsManager != null) {
+                                ttsManager.startSpeaking(speak);
+                            }
                             isEmergencyHelpMatching = false;
                             emergencyHelpManager.resetEmergencyHelp();
                         });
@@ -4170,6 +4180,14 @@ public class AiFragment extends Fragment {
                 @Override
                 public void onHelpHangupFailed(String error) {
                     Log.e(TAG, "紧急求助挂断失败: " + error);
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            if (emergencyHelpFloatingWindow != null) {
+                                emergencyHelpFloatingWindow.hide();
+                            }
+                            isEmergencyHelpMatching = false;
+                        });
+                    }
                 }
             });
         } catch (Exception e) {
