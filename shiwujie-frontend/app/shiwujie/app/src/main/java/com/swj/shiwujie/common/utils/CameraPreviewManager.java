@@ -466,8 +466,20 @@ public class CameraPreviewManager {
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                            @NonNull CaptureRequest request,
                                            @NonNull TotalCaptureResult result) {
-                    // 从ImageReader中获取照片数据
-                    Image image = imageReader.acquireLatestImage();
+                    // 从ImageReader中获取照片数据。
+                    // 2026-09-14：捕获回调与图像入队是异步的，立即取可能为 null——
+                    // 带短重试（最多 5 次 × 100ms），修复新预览尺寸下偶发"无法获取图片数据"
+                    Image image = null;
+                    for (int retry = 0; retry < 5; retry++) {
+                        image = imageReader.acquireLatestImage();
+                        if (image != null) break;
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
                     if (image != null) {
                         try {
                             android.media.Image.Plane[] planes = image.getPlanes();

@@ -1909,11 +1909,12 @@ public class AiFragment extends Fragment {
             public void onError(String error) {
                 Log.e(TAG, "拍照失败: " + error);
 
-                // 在主线程中播报错误（盲人用户无视觉反馈）
+                // 在主线程中播报错误（盲人用户无视觉反馈），并解禁忙碌状态
                 requireActivity().runOnUiThread(() -> {
                     if (ttsManager != null && isAdded()) {
                         ttsManager.startSpeaking("拍照失败，请重试");
                     }
+                    isPhotoRecognitionBusy = false;
                 });
             }
         });
