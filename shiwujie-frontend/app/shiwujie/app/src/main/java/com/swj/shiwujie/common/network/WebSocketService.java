@@ -27,6 +27,9 @@ import java.util.concurrent.TimeUnit;
  * 负责维护WebSocket长连接和心跳包
  */
 public class WebSocketService extends Service {
+    // 息屏保活（2026-09-14）：部分 ROM 息屏后冻结定时器并断网，WakeLock 保 CPU 运行心跳
+    private static final String WAKELOCK_TAG = "shiwujie:ws_heartbeat";
+    private android.os.PowerManager.WakeLock wakeLock;
     private static final String TAG = "WebSocketService";
     private static final String CHANNEL_ID = "WebSocketServiceChannel";
     private static final int NOTIFICATION_ID = 1001;
@@ -71,6 +74,8 @@ public class WebSocketService extends Service {
             webSocketManager.setContext(this);
             
             // 初始化心跳包
+            acquireWakeLock();
+
             initHeartbeat();
             
             // 建立WebSocket连接
@@ -100,6 +105,12 @@ public class WebSocketService extends Service {
         
         // 停止心跳包
         stopHeartbeat();
+
+        // 释放 WakeLock
+        if (wakeLock != null && wakeLock.isHeld()) {
+            try { wakeLock.release(); } catch (Exception ignore) { }
+            wakeLock = null;
+        }
         
         // 清理WebSocket连接
         if (webSocketManager != null) {
@@ -184,6 +195,20 @@ public class WebSocketService extends Service {
     /**
      * 初始化心跳包
      */
+    private void acquireWakeLock() {
+        try {
+            android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null && wakeLock == null) {
+                wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG);
+                wakeLock.setReferenceCounted(false);
+                wakeLock.acquire(24 * 60 * 60 * 1000L); // 24h 上限，服务存续期内持续续保由前台服务特性保证
+                Log.d(TAG, "WakeLock 已获取（息屏保活心跳）");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "获取 WakeLock 失败", e);
+        }
+    }
+
     private void initHeartbeat() {
         if (isHeartbeatStarted) {
             return;
@@ -228,6 +253,7 @@ public class WebSocketService extends Service {
                 // （曾致志愿者视频匹配后盲人端收不到 type=2、无法进入通话）。
                 Log.w(TAG, "WebSocket未连接，本次心跳触发重连");
                 connectWebSocket();
+                acquireWakeLock(); // 续保 WakeLock
                 return;
             }
             
