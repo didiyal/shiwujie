@@ -77,7 +77,7 @@ public class DownloadController {
         if (dir.isDirectory()) {
             File[] apks = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".apk"));
             if (apks != null && apks.length > 0) {
-                return Arrays.stream(apks)
+                return Arrays.stream(apks).filter(File::isFile)
                         .max(Comparator.comparingLong(File::lastModified))
                         .orElse(null);
             }
