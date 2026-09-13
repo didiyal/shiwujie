@@ -158,33 +158,50 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
         //1. 检查是否有志愿者
         Object fromRedis = redisUtils.getFromRedis(CallConstant.VOLUNTEER_QUEUE_REDIS);
         ThrowUtils.throwIf(ObjUtil.isNull(fromRedis), ErrorCode.PARAMS_ERROR, "没有空闲的志愿者");
-        //2. 获取志愿者信息
+        //2. 获取队列
         Queue<Long> queue = ConverterUtils.ObjToQueueLong(fromRedis);
-        Long volunteerId = queue.poll();
         synchronized (loginUserPhone.intern()) {
-            //4. 更新求助表内容
-            Videohelp videohelp = this.getWaitingByVolunteerId(volunteerId);
-            ThrowUtils.throwIf(ObjUtil.isNull(videohelp), ErrorCode.PARAMS_ERROR);
-            videohelp.setBlindId(loginBlindId);
-            videohelp.setResponseTime(DateUtil.date());
-            videohelp.setHelpStatus(CallHelpStatusEnum.HELPING.getHelpStatus());
-            videohelp.setChannelId(volunteerId);
-            this.updateById(videohelp);
+            // 2026-09-14：原子化匹配——逐个候选尝试，志愿者 WS 不在线时跳过并标记其记录已取消，
+            // 继续尝试下一位。此前"先改状态后通知、失败不回滚"会让记录卡在处理中、
+            // 队列状态与 DB 脱节，后续匹配全部失败（线上已复现）。
+            while (!queue.isEmpty()) {
+                Long volunteerId = queue.poll();
+                Videohelp videohelp = this.getWaitingByVolunteerId(volunteerId);
+                if (ObjUtil.isNull(videohelp)) {
+                    continue; // 候选无等待记录（残留/已消费），跳过
+                }
+                videohelp.setBlindId(loginBlindId);
+                videohelp.setResponseTime(DateUtil.date());
+                videohelp.setHelpStatus(CallHelpStatusEnum.HELPING.getHelpStatus());
+                videohelp.setChannelId(volunteerId);
+                this.updateById(videohelp);
 
+                // 向志愿者发送socket消息（type=2 视频初始化通知）
+                SocketData socketData = new SocketData();
+                socketData.setRequestType(2);
+                socketData.setBlindPhone(loginUserPhone);
+                socketData.setVolunteerPhone(innerVolunteerService.getById(volunteerId).getPhone());
+                socketData.setChannelId(volunteerId);
+                try {
+                    coordinationSocketHandler.matchSuccess(socketData);
+                } catch (Exception e) {
+                    // 志愿者不在线：本候选匹配失败——标记记录已取消，尝试队列中的下一位
+                    log.warn("志愿者不在线，跳过并尝试下一位: " + e.getMessage());
+                    videohelp.setBlindId(null);
+                    videohelp.setResponseTime(null);
+                    videohelp.setHelpStatus(CallHelpStatusEnum.FALL.getHelpStatus());
+                    this.updateById(videohelp);
+                    continue;
+                }
 
-            //5. 向志愿者发送socket消息
-            SocketData socketData = new SocketData();
-            socketData.setRequestType(2);
-            socketData.setBlindPhone(loginUserPhone);
-            socketData.setVolunteerPhone(innerVolunteerService.getById(volunteerId).getPhone());
-            socketData.setChannelId(volunteerId);
-            coordinationSocketHandler.matchSuccess(socketData);
+                // 匹配成功：保存剩余队列
+                redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, CallConstant.VOLUNTEER_QUEUE_TTL_SECONDS, TimeUnit.SECONDS);
+                return true;
+            }
 
-
-            //3. 更新redis
+            // 队列耗尽（全部不在线或为空）：保存剩余队列并如实告知
             redisUtils.setToRedis(CallConstant.VOLUNTEER_QUEUE_REDIS, queue, CallConstant.VOLUNTEER_QUEUE_TTL_SECONDS, TimeUnit.SECONDS);
-
-
+            ThrowUtils.throwIf(true, ErrorCode.PARAMS_ERROR, "没有空闲的志愿者");
         }
 
         return true;
