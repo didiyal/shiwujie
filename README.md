@@ -1,95 +1,57 @@
 # 视无界（shiwujie）
 
-> 面向**视障人士**的无障碍服务平台——以「AI 助手 + 远程人工协助 + 社区互助」三条路径，弥补纯技术手段在真实出行、求助场景中的能力边界。
+> 一款专为视障人士打造的 AI 助手应用——开口就能用：对话问答、拍照识物、打开应用、规划路线、一键求助。
 
-## 这是什么
+## 视无界能做什么
 
-**视无界** 是一个为视障人士（盲人及低视力者）打造的无障碍服务平台。视障者在出行、识别、求助等日常场景中，常常撞上纯软件 / 硬件能力的天花板——红绿灯看不到、路牌读不出、突发状况无人帮。本平台不奢望靠单一技术解决全部问题，而是把 **AI、远程真人、社区邻里** 三种能力编排成一张兜底网：
+视障朋友在使用手机时常常遇到障碍：屏幕上的字看不见、界面找不到、想做的事情不知道怎么操作。视无界把这一切变成**说话就能解决**：
 
-- **AI 兜底日常**：拍照识物、文字朗读、避障引导、工具调用——能机器解决的交给机器。
-- **人工补位边界**：AI 搞不定的复杂场景，一键接通志愿者视频帮扶，或呼叫家属紧急救援。
-- **社区织成网络**：把分散的视障者按省 / 市 / 街道组织进社区，形成可持续的互助与求助关系。
+- **和 AI 助手"小界"聊天**：想查什么问什么，小界联网搜索后语音告诉你；
+- **拍照识别**：说"帮我识别前面"，小界自动拍照，告诉你眼前是什么，看不清的可以继续追问；
+- **语音操控**：说"帮我打开微信"就能打开应用，说"我要去哪里"就能规划路线；
+- **一键求助**：紧急情况说一声就联系家人视频；需要人帮您"看"时，连线志愿者；
+- **AI 悬浮球**：退出软件后屏幕上留着一颗小界悬浮球，任何时候点一下就回来。
 
-平台围绕三类身份组织业务：
+视无界同时提供家庭与社区功能：与家人绑定后可随时视频求助，也能在社区里参与活动、发布互助。
 
-| 身份 | 代号 | 角色 |
-|---|---|---|
-| 视障人士 | `Blind` | 平台核心用户，消费 AI 能力、发起求助、隶属社区 |
-| 志愿者 | `Volunteer` | 协助者，可被匹配进行视频帮扶，可创建 / 管理家庭与社区 |
-| 家属 | `Family` | 家庭关系中的协助者，接收视障者的紧急求助通知 |
+## 三类用户
 
-## 核心功能
+| 身份 | 说明 |
+|---|---|
+| 视障人士 | 平台的核心用户，使用 AI 助手、发起求助、加入家庭与社区 |
+| 志愿者 | 通过视频连线远程协助视障人士，可参与社区服务 |
+| 家属 | 与视障家人绑定，第一时间接收紧急求助并视频接入 |
 
-> 用户可见的完整功能需求与验收标准（契约）见 [docs/product/current.md](docs/product/current.md) → `v3.0.0/`。下列为能力域概览。
+## 下载使用
 
-### 🤖 AI 助手
+- 官网下载页直接安装 Android 应用，应用内支持自动更新
+- 软件内置无障碍支持（TalkBack 全流程可用），首次进入有语音友好的功能引导
 
-- **多模型多轮对话**：文本 + 图像双通道，支持流式 TTS 语音播报。
-- **工作流式工具路由**：AI 不止「能说」，更要「能做」——识别意图后触发拍照、导航、跳转应用、视频 / 紧急求助、家庭 / 社区操作等真实设备动作。
-- **拍照识别与避障**：图片瘦身上下文工程，单次交互控制 token 成本。
-- *演进方向*：整体改智能体（Agent）驱动重写——polyglot 双进程（Java 业务单体 + Python LangGraph 智能体），**设计已敲定·实现待 Phase 5**，见 [docs/architecture/ai-rewrite.md](docs/architecture/ai-rewrite.md)。
-
-### 📹 远程视频帮扶
-
-- 视障者一键发起求助，系统从志愿者队列 **FIFO 匹配**最近可用志愿者。
-- 双向音视频通话，志愿者远程「成为视障者的眼睛」。
-- 全程 WebSocket 信令驱动（`/api/ws/call`，12 信令码覆盖匹配 / 就绪 / 紧急通知 / AI 联动）。
-
-### 🚨 紧急求助
-
-- 家庭域内一键紧急呼叫，**群发通知所有家属**。
-- 与 AI 联动：AI 识别到危险场景可主动触发紧急求助（信令 `5003`）。
-
-### 🏘️ 社区治理
-
-- **省 / 市 / 街道三级**社区组织，成员加入审核。
-- **求助帖**：社区内发布求助、互助响应。
-- **活动与报名签到**：社区活动发布、报名、签到签退。
-
-### 👥 用户与家庭
-
-- 三类用户账号（视障者 / 志愿者 / 家属），家庭创建 / 加入 / 审核。
-- 家庭关系绑定紧急求助通知网络。
-
-### 📱 客户端
-
-- **Android 原生 App**（视障者 + 志愿者双端）：集成音视频 / 语音 / 相机（Camera2）/ 导航（高德），悬浮窗 + 无障碍语音服务。
-- **Vue3 管理后台**（Web）：社区管理员使用的 Ant Design Vue 后台。
-
-## 仓库布局
+## 仓库组成
 
 ```text
 Phase2/
-├── docs/                  ← 文档中心（规则 + 产品契约 + 跨切面概览 + 方向/明细）
-├── shiwujie-backend/      ← 单体后端（v3.0.0：model 契约层 + bootstrap 唯一 app，含原 user/call/community/ai/common-web）
-├── shiwujie-ai/           ← Python AI 服务（LangGraph 智能体，AI 回退后休眠保留、不默认启动）
-├── scripts/               ← 启停脚本（start/stop/logs/export/import/clear.sh；默认仅 Java，--with-ai 启用 Python）
-├── docker/                ← Docker 编排（docker-compose.yml：java 默认 + python 挂 profiles:["ai"] 按需启用）
-├── config/                ← 环境配置（.env / .env.example）
-└── shiwujie-frontend/
-    ├── app/shiwujie/      ← 原生 Android 客户端（视障者 + 志愿者双端）
-    └── web/               ← Vue3 社区管理后台
+├── docs/                  ← 文档中心（规范 + 产品契约 + 架构 + 更新日志）
+├── shiwujie-backend/      ← 后端服务（Spring Boot 单体）
+├── shiwujie-frontend/
+│   ├── app/shiwujie/      ← Android 应用（视障者 + 志愿者双端）
+│   └── web/               ← 官网与管理后台
+├── shiwujie-ai/           ← AI 智能体服务（LangGraph，持续演进中）
+└── scripts/ docker/ config/  ← 部署脚本与配置
 ```
 
-## 文档从哪开始
+## 文档入口
 
 | 想了解 | 进入 |
 |---|---|
-| 文档怎么写、内容边界在哪 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
-| 项目是什么、做什么、不做什么 | [docs/product/current.md](docs/product/current.md) → product-overview |
-| 全部功能需求 / 验收标准（契约） | [docs/product/v3.0.0/functional-requirements.md](docs/product/v3.0.0/functional-requirements.md) |
-| 跨切面架构（路由/调用图/鉴权/分库/选型） | [docs/architecture/](docs/architecture/) |
-| 迭代历程（新增/变更/修复/移除） | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
-| 已完成 / 待实现 | [docs/ROADMAP.md](docs/ROADMAP.md) |
-| 单服务技术实现（核心类/数据流/部署坑） | [shiwujie-backend/docs/](shiwujie-backend/docs/) · [shiwujie-ai/docs/](shiwujie-ai/docs/) · [shiwujie-frontend/app/docs/](shiwujie-frontend/app/docs/) · [shiwujie-frontend/web/docs/](shiwujie-frontend/web/docs/) |
+| 文档怎么写、分层规范 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) |
+| 项目是什么、做什么 | [docs/product/current.md](docs/product/current.md) |
+| 全部功能需求 | [docs/product/v3.0.0/functional-requirements.md](docs/product/v3.0.0/functional-requirements.md) |
+| 架构概览 | [docs/architecture/overview.md](docs/architecture/overview.md) |
+| 更新日志 | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
+| 各端技术细节 | [shiwujie-backend/docs/](shiwujie-backend/docs/) · [shiwujie-frontend/app/docs/](shiwujie-frontend/app/docs/) · [shiwujie-frontend/web/docs/](shiwujie-frontend/web/docs/) |
 
-> 文档分层：`docs/`（平台层·外部可见：概览 + 用户契约 + 规范 + 方向/明细）；各子项目 `docs/`（development 细化·内部详细）。详见 [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)。
+## 版本
 
-## 技术栈速览
-
-- **后端**：v3.0.0 单体（model 契约层 + bootstrap 唯一 app）；统一 Spring Boot 3.4.5 / Java 21（Spring AI Alibaba 强制）；MyBatis-Plus + MySQL 单库（shiwujie）+ Redis（db=2）；无 gateway/Nacos/Dubbo。
-- **前端 App**：原生 Android（Java + ViewBinding，compileSdk 35），anyRTC / 讯飞 TTS+ASR / Camera2 / 高德。
-- **前端 Web**：Vue 3.3 + Ant Design Vue 4 + Pinia + Vite 4。
-- **AI 重写（设计敲定·待实现）**：polyglot 双进程——Java 单体（业务真相源 + WS 网关 + MCP server）+ Python LangGraph 智能体（agent loop + 14 工具 + 两层记忆 + BM25 KB），Docker 编排两进程。总图见 [docs/architecture/ai-rewrite.md](docs/architecture/ai-rewrite.md)。
-
-> 详见 [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md)。
+- 当前版本 **v3.0.0**（2026-09-12 发布）：AI 优先的全新体验、句子级语音播报、强制更新机制
+- 版本沿革：`v1.0`（项目起点）→ `v2.0.0` → `v2.1.0` → `v3.0.0`，详见 [docs/CHANGELOG.md](docs/CHANGELOG.md)
