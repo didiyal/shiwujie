@@ -359,6 +359,12 @@ public class AiFragment extends Fragment {
             startStatusCheck();
         }
 
+        // 2026-09-14：回到 AI 页 = 视频通话已结束（挂断/对方结束），复位通话标志——
+        // 此前主动挂断时无人发送 type=5，isVideoCallStarted 卡死导致后续视频信令全部被忽略
+        isVideoCallStarted = false;
+        isEmergencyHelpMatching = false;
+        webSocketManager.setMatchingStatus(false);
+
         // 功能介绍弹窗：每次进软件首次进入 AI 页时弹出（「不再显示」本地持久化）
         maybeShowIntroDialog();
     }
@@ -4267,12 +4273,13 @@ public class AiFragment extends Fragment {
     /** 匹配成功/视频初始化（type=2）：进入视频通话页（自 HomeFragment 迁入） */
     private void handleVideoInit(SocketDataV0 data) {
         Log.d(TAG, "收到视频初始化成功通知，准备进入视频通话页面");
+        // 复位先行（2026-09-14）：即使被"已在通话中"守卫拦截，匹配/重连闸门也不得卡死
+        isMatching = false;
+        webSocketManager.setMatchingStatus(false);
         if (isVideoCallStarted) {
             Log.w(TAG, "视频通话已启动，忽略重复的type=2消息");
             return;
         }
-        isMatching = false;
-        webSocketManager.setMatchingStatus(false);
         isVideoCallStarted = true;
 
         // 如果是紧急求助，隐藏悬浮窗

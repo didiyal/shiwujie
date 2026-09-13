@@ -34,6 +34,16 @@ import java.util.List;
 @Tag(name = "视频求助接口")
 public class VideohelpController {
 
+    @Resource
+    private com.swj.shiwujie.service.user.InnerBlindService innerBlindService;
+
+    @Resource
+    private com.swj.shiwujie.service.user.InnerVolunteerService innerVolunteerService;
+
+    @Resource
+    private com.swj.shiwujie.socket.CoordinationSocketHandler coordinationSocketHandler;
+
+
 
     @Resource
     VideohelpService videohelpService;
@@ -168,6 +178,35 @@ public class VideohelpController {
             videohelp.setDuration(between);
         }
         videohelpService.updateBatchById(videohelps);
+
+        // 2026-09-14：挂断后通知对方通话已结束（type=5），对方客户端复位通话状态
+        for (Videohelp videohelp : videohelps) {
+            com.swj.shiwujie.model.request.call.SocketData socketData = new com.swj.shiwujie.model.request.call.SocketData();
+            socketData.setRequestType(5);
+            String peerPhone = null;
+            if (ObjUtil.isNotNull(loginVolunteerId)) {
+                // 志愿者挂断 → 通知盲人
+                com.swj.shiwujie.model.domain.user.Blind blind = innerBlindService.getById(videohelp.getBlindId());
+                if (blind != null) {
+                    socketData.setBlindPhone(blind.getPhone());
+                    socketData.setVolunteerPhone(loginUserPhone);
+                    socketData.setChannelId(videohelp.getChannelId());
+                    peerPhone = blind.getPhone();
+                }
+            } else if (ObjUtil.isNotNull(loginBlindId)) {
+                // 盲人挂断 → 通知志愿者
+                com.swj.shiwujie.model.domain.user.Volunteer volunteer = innerVolunteerService.getById(videohelp.getVolunteerId());
+                if (volunteer != null) {
+                    socketData.setBlindPhone(loginUserPhone);
+                    socketData.setVolunteerPhone(volunteer.getPhone());
+                    socketData.setChannelId(videohelp.getChannelId());
+                    peerPhone = volunteer.getPhone();
+                }
+            }
+            if (peerPhone != null) {
+                coordinationSocketHandler.callEndToPhone(peerPhone, socketData);
+            }
+        }
 
         return ResultUtils.success(true);
     }

@@ -178,6 +178,26 @@ public class CoordinationSocketHandler {
     }
 
     /**
+     * 通话结束,通知指定方 5（2026-09-14：此前服务端从不发送 type=5，
+     * 主动挂断一方的通话标志无法复位，后续视频信令全部被忽略）
+     * @param phone 接收方手机号
+     * @param socketData 信令数据
+     */
+    public void callEndToPhone(String phone, SocketData socketData) {
+        if (phone == null) {
+            return;
+        }
+        Session session = sessionMap.get(phone);
+        if (session != null && session.isOpen()) {
+            String response = this.getResponse(0, "通话结束", 5, socketData);
+            sendMessage(session, response);
+            log.info("通话结束通知已发送 - 5 -> " + phone);
+        } else {
+            log.info("通话结束通知未发送（对方不在线）- 5 -> " + phone);
+        }
+    }
+
+    /**
      * 志愿者初始化成功,向盲人转发 2
      * @param socketData socketData
      */
