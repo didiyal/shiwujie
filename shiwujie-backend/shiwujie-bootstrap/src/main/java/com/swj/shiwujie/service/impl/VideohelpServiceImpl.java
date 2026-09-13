@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.constants.CallConstant;
+import com.swj.shiwujie.exception.BusinessException;
 import com.swj.shiwujie.exception.ThrowUtils;
 import com.swj.shiwujie.model.domain.call.Videohelp;
 import com.swj.shiwujie.model.domain.user.Volunteer;
@@ -69,9 +70,19 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
         }
         //2. 检查是否在匹配中:检查redis中是否有用用户信息
         ThrowUtils.throwIf(queue.contains(loginVolunteerId), ErrorCode.PARAMS_ERROR, "您已经在匹配中了");
-        //3. 检查是否在通话
+        //3. 检查是否在匹配/通话
         Videohelp videohelp = this.getWaitingByVolunteerId(loginVolunteerId);
-        ThrowUtils.throwIf(ObjUtil.isNotNull(videohelp), ErrorCode.PARAMS_ERROR);
+        if (ObjUtil.isNotNull(videohelp)) {
+            // 2026-09-14：志愿者队列 Redis TTL 仅 30s，DB 的 WAITING 记录不会自动失效——
+            // 盲人未接入的残留记录会让志愿者永远无法重新入队（线上已复现）。等待超 60s 的
+            // 残留记录视为已过期，自动置为「已取消」后放行重新入队。
+            long ageMs = System.currentTimeMillis() - videohelp.getStartTime().getTime();
+            if (ageMs <= 60_000L) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "您已在匹配中，请稍候");
+            }
+            videohelp.setHelpStatus(CallHelpStatusEnum.FALL.getHelpStatus());
+            this.updateById(videohelp);
+        }
         synchronized (loginUserPhone.intern()) {
             //4. 将志愿者信息加入到队列中
             queue.offer(loginVolunteerId);

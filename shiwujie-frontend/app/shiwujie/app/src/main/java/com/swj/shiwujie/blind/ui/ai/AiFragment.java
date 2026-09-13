@@ -4009,11 +4009,23 @@ public class AiFragment extends Fragment {
                     } else {
                         Log.e(TAG, "连线失败 - 业务错误: " + result.getMessage());
                         if (isAdded() && getContext() != null) {
-                            String msg = "连线失败: " + result.getMessage();
-                            if (result.getCode() == 40000 && "请求参数错误".equals(result.getMessage())) {
-                                msg = "当前还没有志愿者等待，请稍后再试";
+                            String msg;
+                            String speak;
+                            if (result.getMessage() != null && result.getMessage().contains("没有空闲的志愿者")) {
+                                msg = "当前没有志愿者在线等待，请稍后再试";
+                                speak = "当前没有志愿者在线等待，请稍后再试";
+                            } else if (result.getMessage() != null && result.getMessage().contains("已在匹配中")) {
+                                msg = "您已在匹配中，请稍候";
+                                speak = "您已在匹配中，请稍候";
+                            } else {
+                                msg = "连线失败: " + result.getMessage();
+                                speak = "连线失败，请稍后再试";
                             }
                             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+                            // 2026-09-14：失败原因对盲人用户必须可听（此前仅 Toast 视觉提示，用户感知为"没反应"）
+                            if (ttsManager != null) {
+                                ttsManager.startSpeaking(speak);
+                            }
                         }
                         isMatching = false;
                         webSocketManager.setMatchingStatus(false);
