@@ -136,6 +136,19 @@ public class CoordinationSocketHandler {
         if (StrUtil.isBlankIfStr(phone)) {
             phone = socketData.getBlindPhone();
         }
+        // 2026-09-14：同号重复登录（换设备/断线重连竞态）时踢掉旧会话——
+        // 此前旧会话残留在 sessionMap，信令被发往已死的连接，接收端永远收不到
+        Session oldSession = sessionMap.get(phone);
+        if (oldSession != null && oldSession != session && oldSession.isOpen()) {
+            try {
+                oldSession.close(new jakarta.websocket.CloseReason(
+                        jakarta.websocket.CloseReason.CloseCodes.VIOLATED_POLICY, "账号在其他设备登录"));
+                log.warn(phone + " 重复登录，已关闭旧会话（最后登录者获胜）");
+            } catch (Exception e) {
+                log.warn(phone + " 关闭旧会话失败（忽略）: " + e.getMessage());
+            }
+            sessionPhoneMap.remove(oldSession);
+        }
         sessionMap.put(phone, session);
         sessionPhoneMap.put(session, phone);
         log.info(phone + "登录");
@@ -171,14 +184,17 @@ public class CoordinationSocketHandler {
     private void toBlindJoin(SocketData socketData) {
         if (sessionMap.containsKey(socketData.getBlindPhone())) {
             Session session = sessionMap.get(socketData.getBlindPhone());
-            String response = this.getResponse(0, "志愿者视频初始化成功", 2, socketData);
+            String response = this.getResponse(0, "家属/志愿者视频初始化成功", 2, socketData);
             sendMessage(session, response);
+            log.info("视频初始化成功,已转发盲人 - 2");
         } else {
+            log.error("视频初始化转发失败: 盲人 " + socketData.getBlindPhone() + " 不在线（会话不存在），已向发起方回错误 - 2");
             Session session = sessionMap.get(socketData.getVolunteerPhone());
-            String response = this.getResponse(1, "系统错误", 2, socketData);
-            sendMessage(session, response);
+            if (session != null) {
+                String response = this.getResponse(1, "系统错误", 2, socketData);
+                sendMessage(session, response);
+            }
         }
-        log.info("志愿者初始化成功,向盲人转发 - 2");
     }
 
     /**
