@@ -53,7 +53,10 @@ public class MyApplication extends Application {
                     // 1 → 0：应用退到后台（退出软件）
                     Log.d(TAG, "应用退到后台，显示AI悬浮球");
                     sendBallVisibilityBroadcast(true);
-                    speakBackgroundHint();
+                    // 视频通话中退后台是正常操作（对方还在线上），不播"已退到后台"避免误解
+                    if (!com.swj.shiwujie.common.network.WebSocketManager.getInstance().isInVideoCall()) {
+                        speakBackgroundHint();
+                    }
                 }
             }
 

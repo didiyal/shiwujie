@@ -123,6 +123,8 @@ public class AiFragment extends Fragment {
     // ===== 视频求助 / 紧急求助流程状态（2026-09-12 自 HomeFragment 迁入：主页概念退场，流程在 AI 页原地执行） =====
     private boolean isMatching = false;
     private boolean isVideoCallStarted = false;
+    /** 拍照识别流程进行中（拍照→上传→播报完），期间禁点语音/拍照 */
+    private boolean isPhotoRecognitionBusy = false;
     private boolean isEmergencyHelpMatching = false;
     private EmergencyHelpManager emergencyHelpManager;
     private EmergencyHelpFloatingWindow emergencyHelpFloatingWindow;
@@ -459,6 +461,12 @@ public class AiFragment extends Fragment {
         vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
         
         btnVoice.setOnClickListener(v -> {
+            if (isAiTaskBusy()) {
+                if (ttsManager != null) {
+                    ttsManager.startSpeaking("当前任务还未完成，请稍后再试");
+                }
+                return;
+            }
             if (isAIAvoidRunning) {
                 stopAIAvoidance(); // 停止AI避障
             }
@@ -472,6 +480,12 @@ public class AiFragment extends Fragment {
         });
         
         btnCamera.setOnClickListener(v -> {
+            if (isAiTaskBusy()) {
+                if (ttsManager != null) {
+                    ttsManager.startSpeaking("当前任务还未完成，请稍后再试");
+                }
+                return;
+            }
             if (isAIAvoidRunning) {
                 stopAIAvoidance(); // 停止AI避障
             }
@@ -518,6 +532,16 @@ public class AiFragment extends Fragment {
 
     }
     
+    /**
+     * 是否有 AI 任务进行中（流式播报未结束 / TTS 队列在播 / 拍照识别中）：
+     * 进行中时语音/拍照按钮不可重复触发，避免 TTS 混乱。
+     */
+    private boolean isAiTaskBusy() {
+        return currentStreamingState != StreamingState.IDLE
+                || ttsQueueBusy || !speakQueue.isEmpty()
+                || isPhotoRecognitionBusy;
+    }
+
     /**
      * AI 页功能介绍弹窗（视障用户进入 AI 页时展示）。
      * 「关闭」：本次软件会话内不再弹，下次进软件再弹；「不再显示」：本地持久化，永不再弹。
@@ -1382,7 +1406,11 @@ public class AiFragment extends Fragment {
         if (!ttsQueueBusy) return;
         ttsQueueBusy = false;
         if (streamEnded && pendingSpeakBuffer.length() == 0 && speakQueue.isEmpty()) {
+            boolean wasPhoto = isPhotoRecognitionBusy;
             resetSmartPlaybackState(); // 整轮播报自然结束
+            if (wasPhoto) {
+                isPhotoRecognitionBusy = false; // 拍照识别播报完毕，解禁按钮
+            }
             return;
         }
         pumpSpeakQueue();

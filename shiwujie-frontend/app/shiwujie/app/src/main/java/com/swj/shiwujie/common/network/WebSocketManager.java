@@ -719,6 +719,11 @@ public class WebSocketManager {
     /**
      * 设置视频通话状态
      */
+    /** 是否正在进行视频通话（供退后台提示等场景判断豁免） */
+    public boolean isInVideoCall() {
+        return isInVideoCall;
+    }
+
     public void setVideoCallStatus(boolean inVideoCall) {
         this.isInVideoCall = inVideoCall;
         if (inVideoCall) {
