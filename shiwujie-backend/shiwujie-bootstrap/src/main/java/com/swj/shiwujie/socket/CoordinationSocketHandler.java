@@ -231,7 +231,8 @@ public class CoordinationSocketHandler {
      * @param volunteerList 家属列表
      * @param socketData 返回类型
      */
-    public void urgenthelpToFamily(List<Volunteer> volunteerList, SocketData socketData) {
+    public int urgenthelpToFamily(List<Volunteer> volunteerList, SocketData socketData) {
+        int delivered = 0;
         for (Volunteer volunteer : volunteerList) {
             String phone = volunteer.getPhone();
             if (ObjUtil.isNotNull(phone)) {
@@ -241,9 +242,11 @@ public class CoordinationSocketHandler {
                     socketData.setChannelId(volunteer.getVolunteerId());
                     String response = this.getResponse(0, "紧急求助", 3, socketData);
                     sendMessage(session, response);
+                    delivered++;
                 }
             }
         }
+        return delivered;
         log.info("盲人向家属紧急求助,向家属转发 - 3");
     }
 

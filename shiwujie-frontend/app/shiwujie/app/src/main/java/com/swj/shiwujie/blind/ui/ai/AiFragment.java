@@ -125,6 +125,9 @@ public class AiFragment extends Fragment {
     private boolean isVideoCallStarted = false;
     /** 拍照识别流程进行中（拍照→上传→播报完），期间禁点语音/拍照 */
     private boolean isPhotoRecognitionBusy = false;
+    private long photoBusySince = 0;
+    /** 忙碌超时兜底：超过该时长强制解禁（防任何路径漏复位导致永久卡死） */
+    private static final long PHOTO_BUSY_TIMEOUT_MS = 30_000;
     private boolean isEmergencyHelpMatching = false;
     private EmergencyHelpManager emergencyHelpManager;
     private EmergencyHelpFloatingWindow emergencyHelpFloatingWindow;
@@ -537,6 +540,12 @@ public class AiFragment extends Fragment {
      * 进行中时语音/拍照按钮不可重复触发，避免 TTS 混乱。
      */
     private boolean isAiTaskBusy() {
+        // 拍照识别超时自愈：任何路径漏复位，30 秒后强制解禁
+        if (isPhotoRecognitionBusy
+                && System.currentTimeMillis() - photoBusySince > PHOTO_BUSY_TIMEOUT_MS) {
+            Log.w(TAG, "拍照识别忙碌超时，强制解禁");
+            isPhotoRecognitionBusy = false;
+        }
         return currentStreamingState != StreamingState.IDLE
                 || ttsQueueBusy || !speakQueue.isEmpty()
                 || isPhotoRecognitionBusy;
@@ -1679,6 +1688,8 @@ public class AiFragment extends Fragment {
         
         // 检查相机权限
         if (checkCameraPermission()) {
+            isPhotoRecognitionBusy = true;
+            photoBusySince = System.currentTimeMillis();
             takePhotoDirectly();
         }
     }
