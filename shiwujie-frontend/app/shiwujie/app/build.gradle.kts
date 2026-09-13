@@ -11,8 +11,8 @@ android {
         applicationId = "com.swj.shiwujie"
         minSdk = 30
         targetSdk = 35
-        versionCode = 8
-        versionName = "3.1.3"   // 3.1.3：强更链路根修（DownloadManager URI + 缓存中转安装）   // 3.1.1：强更防旧缓存/循环（时间戳文件名+安装前版本校验）
+        versionCode = 9
+        versionName = "3.1.4"   // 3.1.4：WS 心跳安全网重连 + 重连后业务闸门复位   // 3.1.3：强更链路根修（DownloadManager URI + 缓存中转安装）   // 3.1.1：强更防旧缓存/循环（时间戳文件名+安装前版本校验）
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -223,7 +223,11 @@ public class WebSocketService extends Service {
             }
             
             if (!webSocketManager.isConnected()) {
-                Log.d(TAG, "WebSocket未连接，跳过心跳包发送");
+                // 2026-09-14：心跳发现未连接 → 主动重连（每 30s 一次的安全网）。
+                // 此前只跳过：WS 静默掉线后永不恢复，强更/求助等所有 WS 信令全部失效
+                // （曾致志愿者视频匹配后盲人端收不到 type=2、无法进入通话）。
+                Log.w(TAG, "WebSocket未连接，本次心跳触发重连");
+                connectWebSocket();
                 return;
             }
             

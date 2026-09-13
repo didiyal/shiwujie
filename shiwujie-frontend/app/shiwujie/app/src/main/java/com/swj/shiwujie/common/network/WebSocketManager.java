@@ -148,6 +148,10 @@ public class WebSocketManager {
                     isConnecting = false;
                     isConnected = true;
                     reconnectAttempts = 0;
+                    // 2026-09-14：新连接建立 = 全新会话，复位可能卡死的业务闸门
+                    // （isInMatching 等若残留 true 会永久封锁 onClose 自动重连，见 canReconnect()）
+                    isInMatching = false;
+                    lastBusinessActivityTime = 0;
                     
                     // 更新连接状态
                     socketData.updateConnectionStatus(true);
