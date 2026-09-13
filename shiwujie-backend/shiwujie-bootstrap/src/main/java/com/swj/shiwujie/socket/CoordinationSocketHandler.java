@@ -28,6 +28,8 @@ import java.util.Map;
 @Slf4j
 public class CoordinationSocketHandler {
 
+
+
     /**
      * 保存所有在线连接
      */
@@ -152,6 +154,13 @@ public class CoordinationSocketHandler {
         sessionMap.put(phone, session);
         sessionPhoneMap.put(session, phone);
         log.info(phone + "登录");
+
+
+
+
+
+
+
 
         String response = this.getResponse(0, "初始化成功", 0, socketData);
         sendMessage(session, response);

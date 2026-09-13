@@ -3962,6 +3962,16 @@ public class AiFragment extends Fragment {
             Log.w(TAG, "视频通话已建立，忽略重复连线");
             return;
         }
+        // 2026-09-14：WS 未连接时禁止发起——此时匹配即使成功，type=2 也收不到，
+        // 志愿者会在视频页干等。心跳安全网每 30s 自动重连，重试即可。
+        if (webSocketManager == null || !webSocketManager.isConnected()) {
+            Log.w(TAG, "WebSocket未连接，暂缓连线");
+            if (ttsManager != null) {
+                ttsManager.startSpeaking("网络连接已断开，正在重新连接，请稍等几秒后再试");
+            }
+            Toast.makeText(requireContext(), "网络连接已断开，正在重新连接，请稍等几秒后再试", Toast.LENGTH_LONG).show();
+            return;
+        }
 
         String token = SharedPrefsUtil.getToken();
         if (token == null || token.isEmpty()) {
@@ -4069,6 +4079,15 @@ public class AiFragment extends Fragment {
         String token = SharedPrefsUtil.getToken();
         if (token == null || token.isEmpty()) {
             Log.e(TAG, "Token为空，无法发起紧急求助");
+            return;
+        }
+        // 2026-09-14：WS 未连接时禁止发起——家属端收不到求助信令
+        if (webSocketManager == null || !webSocketManager.isConnected()) {
+            Log.w(TAG, "WebSocket未连接，暂缓紧急求助");
+            if (ttsManager != null) {
+                ttsManager.startSpeaking("网络连接已断开，正在重新连接，请稍等几秒后再试");
+            }
+            Toast.makeText(requireContext(), "网络连接已断开，正在重新连接，请稍等几秒后再试", Toast.LENGTH_LONG).show();
             return;
         }
         String phone = SharedPrefsUtil.getPhone();

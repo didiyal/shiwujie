@@ -11,8 +11,8 @@ android {
         applicationId = "com.swj.shiwujie"
         minSdk = 30
         targetSdk = 35
-        versionCode = 12
-        versionName = "3.1.7"   // 3.1.7：挂断后通话标志复位（onResume）+ 服务端 type=5 对端通知   // 3.1.6：紧急求助状态残留自愈（退出竞态/杀进程不再卡死）   // 3.1.5：匹配失败 TTS 播报 + 服务端残留等待记录自动过期   // 3.1.4：WS 心跳安全网重连 + 重连后业务闸门复位   // 3.1.3：强更链路根修（DownloadManager URI + 缓存中转安装）   // 3.1.1：强更防旧缓存/循环（时间戳文件名+安装前版本校验）
+        versionCode = 13
+        versionName = "3.1.8"   // 3.1.8：WS 未连接时禁止发起求助（防志愿者单侧干等）   // 3.1.7：挂断后通话标志复位（onResume）+ 服务端 type=5 对端通知   // 3.1.6：紧急求助状态残留自愈（退出竞态/杀进程不再卡死）   // 3.1.5：匹配失败 TTS 播报 + 服务端残留等待记录自动过期   // 3.1.4：WS 心跳安全网重连 + 重连后业务闸门复位   // 3.1.3：强更链路根修（DownloadManager URI + 缓存中转安装）   // 3.1.1：强更防旧缓存/循环（时间戳文件名+安装前版本校验）
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
