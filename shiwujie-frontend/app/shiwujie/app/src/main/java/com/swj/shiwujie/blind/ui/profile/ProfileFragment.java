@@ -45,6 +45,7 @@ public class ProfileFragment extends Fragment {
     private TextView tvAuthStatus;
     private TextView tvCommunityStatus;
     private TextView btnFamily;
+    private TextView btnCommunity;
     private TextView btnEditInfo;
     private TextView btnChangePassword;
     private TextView btnLogout;
@@ -95,6 +96,7 @@ public class ProfileFragment extends Fragment {
         tvAuthStatus = root.findViewById(R.id.tvAuthStatus);
         tvCommunityStatus = root.findViewById(R.id.tvCommunityStatus);
         btnFamily = root.findViewById(R.id.btnFamily);
+        btnCommunity = root.findViewById(R.id.btnCommunity);
         btnEditInfo = root.findViewById(R.id.btnEditInfo);
         btnChangePassword = root.findViewById(R.id.btnChangePassword);
         btnLogout = root.findViewById(R.id.btnLogout);
@@ -118,6 +120,8 @@ public class ProfileFragment extends Fragment {
         btnLogout.setOnClickListener(v -> handleLogoutClick());
         btnDeleteAccount.setOnClickListener(v -> handleDeleteAccountClick());
         tvCommunityStatus.setOnClickListener(v -> handleCommunityClick()); // 修改为新的控件
+        // 社区入口按钮（2026-09-15 二期重构：tabBar 删除后经我的进入社区）
+        btnCommunity.setOnClickListener(v -> handleCommunityClick());
         android.util.Log.d("ProfileFragment", "所有监听器设置完成");
     }
 
@@ -421,9 +425,15 @@ public class ProfileFragment extends Fragment {
     private void handleCommunityClick() {
         BlindVO userInfo = UserInfoManager.getCurrentUserInfo();
         if (userInfo != null) {
-            // 无论是否已加入社区，都可以点击跳转
-            // TODO: 跳转到社区页面
-            Toast.makeText(requireContext(), "即将跳转到社区页面", Toast.LENGTH_SHORT).show();
+            // 2026-09-15 二期重构：跳转社区页面（tabBar 删除前的 TODO 已落地）
+            if (getActivity() != null) {
+                try {
+                    androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                    navController.navigate(R.id.navigation_community);
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
         }
     }
 

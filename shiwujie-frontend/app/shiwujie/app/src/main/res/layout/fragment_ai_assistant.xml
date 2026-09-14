@@ -24,15 +24,15 @@
         android:contentDescription="摄像头预览画面"
         android:importantForAccessibility="no" />
 
-    <!-- 消息面板区域 - 悬浮在摄像头画面上方 -->
+    <!-- 消息面板区域 - 悬浮在摄像头画面上方（右侧，宽度收窄为左侧按钮列让位，2026-09-15） -->
     <LinearLayout
         android:id="@+id/message_panel"
-        android:layout_width="311dp"
-        android:layout_height="654dp"
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="90dp"
+        android:layout_marginBottom="24dp"
         android:alpha="0.9"
         android:background="@drawable/bg_message_panel_transparent"
         android:elevation="16dp"
@@ -40,7 +40,7 @@
         android:visibility="visible"
         android:contentDescription="消息面板，包含对话内容和功能选项"
         android:accessibilityHeading="true"
-        tools:layout_width="320dp">
+        tools:layout_width="240dp">
 
         <!-- 消息面板头部 -->
         <LinearLayout
@@ -155,8 +155,8 @@
                         app:strokeWidth="0dp">
 
                         <LinearLayout
-                            android:layout_width="272dp"
-                            android:layout_height="236dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:padding="12dp"
                             android:importantForAccessibility="no">
@@ -342,7 +342,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:maxWidth="280dp"
+                            android:maxWidth="180dp"
                             android:padding="12dp"
                             android:text="介绍一下AI功能的使用。"
                             android:textColor="@color/white"
@@ -403,96 +403,248 @@
         tools:visibility="visible" />
 
 
-    <!-- 底部功能按钮区域 - 悬浮按钮，去掉卡片样式。
-         2026-09-12 重排：1对话 2拍照识别 3紧急求助 4志愿者求助 5返回（AI避障按钮下架，逻辑保留） -->
+    <!-- 左侧功能按钮列（2026-09-15 二期重构）：屏幕左侧竖排六个圆形按钮
+         1语音 2拍照识别 3紧急求助 4志愿者求助 5我的 6帮助（产品介绍弹窗）。
+         底部 tabBar 已删除，家庭/社区收进"我的"。 -->
     <LinearLayout
         android:id="@+id/action_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="24dp"
-        android:orientation="horizontal"
-        android:gravity="center"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="8dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
         android:elevation="12dp"
-        android:alpha="0.95"
-        android:contentDescription="底部功能按钮区域，包含对话、拍照识别、紧急求助和志愿者求助功能"
+        android:contentDescription="左侧功能按钮列，包含语音、拍照识别、紧急求助、志愿者求助、我的和帮助"
         android:accessibilityHeading="true">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_voice"
-            style="@style/Widget.Material3.Button.Icon"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginEnd="12dp"
-            android:contentDescription="对话按钮，点击开始语音对话"
-            app:backgroundTint="@color/primary_blue"
-            app:cornerRadius="20dp"
-            app:icon="@drawable/ic_mic_24"
-            app:iconGravity="textTop"
-            app:iconPadding="0dp"
-            app:iconSize="28dp"
-            app:iconTint="@color/white"
-            app:rippleColor="@color/blue_700"
-            app:strokeWidth="2dp"
-            app:strokeColor="@color/white"
-            tools:ignore="PrivateResource" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_camera"
-            style="@style/Widget.Material3.Button.Icon"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginEnd="12dp"
-            android:contentDescription="拍照识别按钮，点击进行拍照识别"
-            app:backgroundTint="@color/primary_blue"
-            app:cornerRadius="20dp"
-            app:icon="@drawable/icon_camera_switch"
-            app:iconGravity="textTop"
-            app:iconPadding="0dp"
-            app:iconSize="28dp"
-            app:iconTint="@color/white"
-            app:rippleColor="@color/blue_700"
-            app:strokeWidth="2dp"
-            app:strokeColor="@color/white"
-            tools:ignore="PrivateResource" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_voice"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:contentDescription="语音按钮，点击开始语音对话"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:backgroundTint="@color/primary_blue"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/ic_mic_24"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/blue_700"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/white"
+                tools:ignore="PrivateResource" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_emergency"
-            style="@style/Widget.Material3.Button.Icon"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginEnd="12dp"
-            android:contentDescription="紧急求助按钮，点击向家属发起视频通话求助"
-            app:backgroundTint="@color/red"
-            app:cornerRadius="20dp"
-            app:icon="@drawable/ic_help"
-            app:iconGravity="textTop"
-            app:iconPadding="0dp"
-            app:iconSize="28dp"
-            app:iconTint="@color/white"
-            app:rippleColor="@color/blue_700"
-            app:strokeWidth="2dp"
-            app:strokeColor="@color/white"
-            tools:ignore="PrivateResource" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:shadowColor="@android:color/black"
+                android:shadowRadius="4"
+                android:text="语音"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+        </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_volunteer"
-            style="@style/Widget.Material3.Button.Icon"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:contentDescription="志愿者求助按钮，点击连线志愿者视频帮扶"
-            app:backgroundTint="@color/primary_blue"
-            app:cornerRadius="20dp"
-            app:icon="@drawable/icon_call_incoming"
-            app:iconGravity="textTop"
-            app:iconPadding="0dp"
-            app:iconSize="28dp"
-            app:iconTint="@color/white"
-            app:rippleColor="@color/blue_700"
-            app:strokeWidth="2dp"
-            app:strokeColor="@color/white"
-            tools:ignore="PrivateResource" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_camera"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:contentDescription="拍照识别按钮，点击进行拍照识别"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:backgroundTint="@color/primary_blue"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/icon_camera_switch"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/blue_700"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/white"
+                tools:ignore="PrivateResource" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:shadowColor="@android:color/black"
+                android:shadowRadius="4"
+                android:text="拍照识别"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_emergency"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:contentDescription="紧急求助按钮，点击向家属发起视频通话求助"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:backgroundTint="@color/red"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/ic_help"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/blue_700"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/white"
+                tools:ignore="PrivateResource" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:shadowColor="@android:color/black"
+                android:shadowRadius="4"
+                android:text="紧急求助"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_volunteer"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:contentDescription="志愿者求助按钮，点击连线志愿者视频帮扶"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:backgroundTint="@color/primary_blue"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/icon_call_incoming"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/blue_700"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/white"
+                tools:ignore="PrivateResource" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:shadowColor="@android:color/black"
+                android:shadowRadius="4"
+                android:text="志愿者求助"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_profile"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:contentDescription="我的按钮，点击进入个人中心，可打开家庭和社区"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:backgroundTint="@color/primary_blue"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/ic_person_24"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/blue_700"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/white"
+                tools:ignore="PrivateResource" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:shadowColor="@android:color/black"
+                android:shadowRadius="4"
+                android:text="我的"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_help"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:contentDescription="帮助按钮，点击收听产品介绍"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:backgroundTint="@color/primary_blue"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/ic_info_24"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/blue_700"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/white"
+                tools:ignore="PrivateResource" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:shadowColor="@android:color/black"
+                android:shadowRadius="4"
+                android:text="帮助"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+        </LinearLayout>
 
     </LinearLayout>
 

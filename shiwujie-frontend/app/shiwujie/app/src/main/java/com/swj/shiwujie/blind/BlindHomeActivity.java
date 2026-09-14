@@ -7,7 +7,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.annotation.NonNull;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
-import androidx.navigation.ui.NavigationUI;
 import com.swj.shiwujie.R;
 import com.swj.shiwujie.databinding.ActivityBlindHomeBinding;
 import com.swj.shiwujie.common.network.WebSocketManager;
@@ -60,7 +59,7 @@ public class BlindHomeActivity extends AppCompatActivity {
         com.swj.shiwujie.common.utils.UpdateManager.checkUpdate(this);
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
-        NavigationUI.setupWithNavController(binding.navView, navController);
+        // 2026-09-15 二期重构：底部 tabBar 已删除，导航全部由页面内按钮 + 返回按钮完成
         
         // 检查是否需要直接跳转到AI页面，如果是则延迟导航到AI页面
         Intent intent = getIntent();
@@ -88,11 +87,7 @@ public class BlindHomeActivity extends AppCompatActivity {
                     // 执行导航
                     navController.navigate(R.id.navigation_ai);
                     Log.d(TAG, "导航命令已执行，目标页面: navigation_ai");
-                    
-                    // 同步更新底部导航栏状态
-                    binding.navView.setSelectedItemId(R.id.navigation_ai);
-                    Log.d(TAG, "底部导航栏状态已更新为AI页面");
-                    
+
                     Log.d(TAG, "=== AI悬浮球跳转完成 ===");
                 } catch (Exception e) {
                     Log.e(TAG, "导航到AI页面失败", e);
@@ -132,37 +127,8 @@ public class BlindHomeActivity extends AppCompatActivity {
             }, 300); // 延迟300毫秒
         });
         
-        // 添加底部导航栏点击监听器，记录用户点击行为
-        binding.navView.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            String itemTitle = item.getTitle() != null ? item.getTitle().toString() : "未知";
-            
-            Log.d(TAG, "=== 底部导航栏点击事件 ===");
-            Log.d(TAG, "用户点击了: " + itemTitle + " (ID: " + itemId + ")");
-            
-            // 获取当前选中的页面
-            int currentSelectedId = binding.navView.getSelectedItemId();
-            String currentSelectedTitle = "";
-            for (int i = 0; i < binding.navView.getMenu().size(); i++) {
-                if (binding.navView.getMenu().getItem(i).getItemId() == currentSelectedId) {
-                    currentSelectedTitle = binding.navView.getMenu().getItem(i).getTitle().toString();
-                    break;
-                }
-            }
-            Log.d(TAG, "点击前当前页面: " + currentSelectedTitle + " (ID: " + currentSelectedId + ")");
-            
-            // 直接使用navController.navigate确保页面跳转
-            try {
-                Log.d(TAG, "开始执行页面跳转: " + itemTitle + " (ID: " + itemId + ")");
-                navController.navigate(itemId);
-                Log.d(TAG, "页面跳转命令已执行");
-            } catch (Exception e) {
-                Log.e(TAG, "页面跳转失败: " + e.getMessage(), e);
-            }
-            
-            return true; // 返回true表示已处理点击事件
-        });
-        
+        // 2026-09-15 二期重构：底部导航栏点击监听随 tabBar 删除，页面切换日志由上面的目的地监听器承担
+
         // 检查权限，如果权限不足则延迟初始化
         if (checkPermissions()) {
             // 权限充足，延迟初始化确保页面完全加载完成
@@ -211,11 +177,7 @@ public class BlindHomeActivity extends AppCompatActivity {
                     // 执行导航
                     navController.navigate(R.id.navigation_ai);
                     Log.d(TAG, "onNewIntent导航命令已执行，目标页面: navigation_ai");
-                    
-                    // 同步更新底部导航栏状态
-                    binding.navView.setSelectedItemId(R.id.navigation_ai);
-                    Log.d(TAG, "onNewIntent底部导航栏状态已更新为AI页面");
-                    
+
                     // 清除跳转标记
                     intent.removeExtra("navigate_to_ai");
                     intent.removeExtra("direct_to_ai");

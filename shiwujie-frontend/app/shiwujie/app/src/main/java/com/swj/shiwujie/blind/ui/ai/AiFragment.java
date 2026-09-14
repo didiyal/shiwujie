@@ -534,9 +534,48 @@ public class AiFragment extends Fragment {
             });
         }
 
+        // 我的按钮（2026-09-15 二期重构，第5位）：tabBar 已删，家庭/社区收进"我的"
+        MaterialButton btnProfile = view.findViewById(R.id.btn_profile);
+        if (btnProfile != null) {
+            btnProfile.setOnClickListener(v -> {
+                try {
+                    androidx.navigation.NavController navController =
+                            androidx.navigation.Navigation.findNavController(view);
+                    navController.navigate(R.id.navigation_profile);
+                } catch (Exception e) {
+                    Log.e(TAG, "跳转我的页面失败", e);
+                }
+            });
+        }
+
+        // 帮助按钮（2026-09-15 二期重构，第6位）：产品介绍弹窗
+        MaterialButton btnHelp = view.findViewById(R.id.btn_help);
+        if (btnHelp != null) {
+            btnHelp.setOnClickListener(v -> showHelpDialog());
+        }
 
     }
-    
+
+    /** 产品介绍弹窗（2026-09-15 二期重构）：文案单控件保 TalkBack 一次读完 + TTS 全文播报 */
+    private void showHelpDialog() {
+        String message = "视无界是一款面向视障人士的无障碍助手，开口就能用。\n"
+                + "一，语音对话：有问题直接问小界，联网搜索后语音回答。\n"
+                + "二，拍照识别：拍一张照片，小界告诉您眼前是什么，看不清可以继续追问。\n"
+                + "三，紧急求助：一键视频呼叫家属。\n"
+                + "四，志愿者求助：连线志愿者远程帮您看。\n"
+                + "五，家庭与社区：在我的页面加入家庭，参与社区互助。\n"
+                + "当前版本 3.2.0。";
+        if (ttsManager != null) {
+            ttsManager.startSpeaking("视无界产品介绍。" + message);
+        }
+        new android.app.AlertDialog.Builder(requireContext())
+                .setTitle("帮助 · 产品介绍")
+                .setMessage(message)
+                .setCancelable(false)
+                .setPositiveButton("确定", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
     /**
      * 是否有 AI 任务进行中（流式播报未结束 / TTS 队列在播 / 拍照识别中）：
      * 进行中时语音/拍照按钮不可重复触发，避免 TTS 混乱。

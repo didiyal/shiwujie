@@ -142,6 +142,20 @@
                     android:textColor="@android:color/white"
                     android:textSize="14sp" />
 
+                <!-- 社区入口（2026-09-15 二期重构：tabBar 删除后经我的进入社区） -->
+                <TextView
+                    android:id="@+id/btnCommunity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="16dp"
+                    android:background="#163AAC"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="进入社区"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+
                 <!-- 身份认证状态 -->
                 <TextView
                     android:id="@+id/tvAuthStatus"

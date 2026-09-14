@@ -42,7 +42,7 @@ mvn -f shiwujie-backend/pom.xml test                  # 纯 Mockito 单测（不
 - **SSH**：`ssh -p 2222 root@47.112.114.139`（本机网络封出站 22，**必须用 2222**；宝塔面板已关防火墙）。部署目录 `/www/wwwroot/shiwujie/`。
 - **后端发版**：`mvn install` → 上传 `shiwujie-bootstrap/target/shiwujieBootstrap-0.0.1-SNAPSHOT.jar` → 服务器重启（端口 8100）。
 - **APK 发版（顺序敏感）**：**先上传签名 APK 到 `/www/wwwroot/shiwujie/shiwujie-frontend/`（任意文件名，服务端自动选最新），再更新版本配置并重启后端**——`/api/download/version` 依赖「目录里有包 + 版本配置」两者，顺序反了用户会拉到旧包。
-- **强更版本链（三处必须同步）**：`app/build.gradle.kts` 的 versionCode/versionName ↔ `shiwujie-backend/.../application.yml` 的 `APP_VERSION_CODE/NAME`（env 可覆盖，当前 21 / 3.1.16）。客户端强更判定：本地 code < 服务端 code 即弹不可取消更新。测强更时客户端本地版本必须低于服务端，否则静默不弹（这是设计行为）。
+- **强更版本链（三处必须同步）**：`app/build.gradle.kts` 的 versionCode/versionName ↔ `shiwujie-backend/.../application.yml` 的 `APP_VERSION_CODE/NAME`（env 可覆盖，当前 22 / 3.2.0）。客户端强更判定：本地 code < 服务端 code 即弹不可取消更新。测强更时客户端本地版本必须低于服务端，否则静默不弹（这是设计行为）。
 - **Android 签名**：`../apk/release.jks`，alias `shiwujie`；发版必须走签名 release 包。
 
 ## 平台坑位（易踩，先看再改）
@@ -61,5 +61,5 @@ mvn -f shiwujie-backend/pom.xml test                  # 纯 Mockito 单测（不
 | 任何文档/提交前 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md)（四层文档规范，**必读**） |
 | 鉴权/拦截器/WS | [`docs/architecture/auth.md`](docs/architecture/auth.md) + [`shiwujie-backend/docs/known-issues.md`](shiwujie-backend/docs/known-issues.md)（未修安全债清单） |
 | 匹配/求助链路 | [`shiwujie-backend/docs/modules/`](shiwujie-backend/docs/modules/)（joinVideohelp 原子匹配、WAITING/HELPING 自动过期、挂断 type=5 对端通知） |
-| App 结构与 AI 页 | [`shiwujie-frontend/app/docs/`](shiwujie-frontend/app/docs/)（AiFragment 四按钮、悬浮球后台才显示、句子级 TTS 队列） |
+| App 结构与 AI 页 | [`shiwujie-frontend/app/docs/`](shiwujie-frontend/app/docs/)（AiFragment 六按钮：语音/拍照/紧急/志愿者/我的/帮助，单页无 tabBar；悬浮球后台才显示、句子级 TTS 队列） |
 | Web/官网 | [`shiwujie-frontend/web/docs/`](shiwujie-frontend/web/docs/) |

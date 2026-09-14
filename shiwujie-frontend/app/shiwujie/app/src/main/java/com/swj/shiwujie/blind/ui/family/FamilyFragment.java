@@ -86,6 +86,18 @@ public class FamilyFragment extends Fragment {
     private void setupClickListeners() {
         btnJoinFamily.setOnClickListener(v -> showJoinFamilyDialog());
         btnLeaveFamily.setOnClickListener(v -> showLeaveFamilyDialog());
+
+        // 返回按钮（2026-09-15 二期重构：tabBar 删除后由返回按钮回 AI 页）
+        View backButton = root.findViewById(R.id.btn_back);
+        if (backButton != null) {
+            backButton.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    androidx.navigation.NavController navController =
+                            androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                    navController.navigateUp();
+                }
+            });
+        }
     }
 
     private void showJoinFamilyDialog() {

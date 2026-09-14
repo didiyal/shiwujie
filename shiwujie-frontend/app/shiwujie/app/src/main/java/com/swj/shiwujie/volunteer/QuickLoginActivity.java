@@ -187,20 +187,15 @@ public class QuickLoginActivity extends AppCompatActivity {
                 VolunteerUserInfoManager.fetchUserInfo(QuickLoginActivity.this, new VolunteerUserInfoManager.UserInfoCallback() {
                     @Override
                     public void onSuccess(VolunteerVO userInfo) {
-                        // 检查是否需要设置密码
-                        if (userInfo.getPassword() == null) {
-                            // 密码为空，跳转到设置密码页面
-                            com.swj.shiwujie.common.navigation.NavigationHelper.toSetPassword(QuickLoginActivity.this, false);
+                        // 2026-09-15：一键登录后不再强制设置密码，新号直接进入主页；
+                        // 密码可随时在"我的-修改密码"补设（无密码用户免验原密码）
+                        isWaitingForPermissions = true;
+                        java.util.List<String> missing = com.swj.shiwujie.common.utils.PermissionManager.getMissingPermissions(QuickLoginActivity.this);
+                        if (missing.isEmpty() && com.swj.shiwujie.common.utils.PermissionManager.hasOverlayPermission(QuickLoginActivity.this)) {
+                            isWaitingForPermissions = false;
+                            com.swj.shiwujie.common.navigation.NavigationHelper.toVolunteerHome(QuickLoginActivity.this);
                         } else {
-                            // 登录成功后请求权限
-                            isWaitingForPermissions = true;
-                            java.util.List<String> missing = com.swj.shiwujie.common.utils.PermissionManager.getMissingPermissions(QuickLoginActivity.this);
-                            if (missing.isEmpty() && com.swj.shiwujie.common.utils.PermissionManager.hasOverlayPermission(QuickLoginActivity.this)) {
-                                isWaitingForPermissions = false;
-                                com.swj.shiwujie.common.navigation.NavigationHelper.toVolunteerHome(QuickLoginActivity.this);
-                            } else {
-                                com.swj.shiwujie.common.utils.PermissionManager.checkAndRequestLoginPermissions(QuickLoginActivity.this);
-                            }
+                            com.swj.shiwujie.common.utils.PermissionManager.checkAndRequestLoginPermissions(QuickLoginActivity.this);
                         }
                     }
 

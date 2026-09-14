@@ -125,7 +125,19 @@ public class CommunityFragment extends Fragment {
             
             // 创建主视图
             mainView = inflater.inflate(R.layout.fragment_blind_community_main, container, false);
-            
+
+            // 返回按钮（2026-09-15 二期重构：tabBar 删除后由返回按钮回 AI 页）
+            View backButton = mainView.findViewById(R.id.btn_back);
+            if (backButton != null) {
+                backButton.setOnClickListener(v -> {
+                    if (getActivity() != null) {
+                        androidx.navigation.NavController navController =
+                                androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                        navController.navigateUp();
+                    }
+                });
+            }
+
             // 初始化组件
             initComponents(mainView);
             
