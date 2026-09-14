@@ -430,35 +430,14 @@ public class BlindHomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        
+
         // 检查是否有未销毁的身份校验弹窗，如果有则先清理
         cleanupAbnormalDialogState();
-        
-        // 全局身份校验监听 - 每次都从服务器获取最新状态
-        String token = SharedPrefsUtil.getToken();
-        Long userId = SharedPrefsUtil.getUserId();
-        if (token == null || userId == null) return;
 
-        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
-        apiService.getBlindById("Bearer " + token, userId).enqueue(new ApiCallback<BlindVO>(this) {
-            @Override
-            public void onSuccess(BlindVO data) {
-                boolean isVerified = data.getIsDisabilityCard() != null && data.getIsDisabilityCard();
-                SharedPrefsUtil.setBoolean("isDisabilityCard", isVerified);
-                if (!isVerified && currentDialogType == DialogType.NONE) {
-                    showIdentityVerificationReminder();
-                }
-            }
-            
-            @Override
-            public void onError(String message) {
-                // 如果获取失败，默认显示校验提醒，但要检查是否已有弹窗
-                if (currentDialogType == DialogType.NONE) {
-                    showIdentityVerificationReminder();
-                }
-            }
-        });
-        
+        // 2026-09-14：残疾证身份校验已按产品要求关闭——进入软件不再弹校验提醒，
+        // 校验入口保留在个人资料页。如需恢复首页强提醒，在此处查 getBlindById 后
+        // 按 isDisabilityCard 调 showIdentityVerificationReminder() 即可（弹窗逻辑未删）。
+
         // 测试应用列表管理器功能（延迟执行，确保初始化完成）
         new android.os.Handler().postDelayed(() -> {
             if (appListManager != null && appListManager.isInitialized()) {
