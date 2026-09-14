@@ -3,6 +3,7 @@ package com.swj.shiwujie.service.impl;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.swj.shiwujie.common.ErrorCode;
 import com.swj.shiwujie.constants.CallConstant;
@@ -66,8 +67,10 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
             //   此前会永久卡死"您已经在求助中了"）
             Urgenthelp urgenthelp = this.getWaitingByBlindId(loginBlindId);
             if (ObjUtil.isNotNull(urgenthelp)) {
-                // 等待响应超 2 分钟（App 侧家属响应超时 60s）→ 视为已过期，自动取消后放行
-                if (System.currentTimeMillis() - urgenthelp.getStartTime().getTime() > 120_000L) {
+                // 等待响应超 60 秒（与 App 侧自动取消时长对齐，2026-09-14 由 120s 收紧）→ 视为已过期，
+                // 自动取消后放行。App 在 60s 时会调取消接口（家属端收 type=4 收回弹窗），此处兜底
+                // 取消请求丢失的场景，保证取消/超时后随时可重新发起，不再撞「您已经在求助中了」
+                if (System.currentTimeMillis() - urgenthelp.getStartTime().getTime() > 60_000L) {
                     urgenthelp.setHelpStatus(CallHelpStatusEnum.FALL.getHelpStatus());
                     this.updateById(urgenthelp);
                     urgenthelp = null;
@@ -137,9 +140,10 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
         boolean b = this.updateById(urgenthelp);
         ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
 
-        //4. 向家庭成员发起求助
+        //4. 向家庭成员发起求助（message 随信令下发，家属端收回弹窗并 TTS 播报）
         SocketData socketData = new SocketData();
         socketData.setBlindPhone(blind.getPhone());
+        socketData.setMessage("视障人士已取消紧急求助");
         coordinationSocketHandler.cancelUrgenthelp(volunteerList, socketData);
 
 
@@ -162,11 +166,33 @@ public class UrgenthelpServiceImpl extends ServiceImpl<UrgenthelpMapper, Urgenth
         Urgenthelp urgenthelp = this.getWaitingByBlindId(blind.getBlindId());
         ThrowUtils.throwIf(ObjUtil.isNull(urgenthelp), ErrorCode.PARAMS_ERROR, "对方没有在求助");
 
-        urgenthelp.setVolunteerId(loginVolunteerId);
-        urgenthelp.setResponseTime(DateUtil.date());
-        urgenthelp.setHelpStatus(CallHelpStatusEnum.HELPING.getHelpStatus());
-        urgenthelp.setChannelId(loginVolunteerId);
-        this.updateById(urgenthelp);
+        // 原子抢单（2026-09-14）：两个家属同时点接听时，仅当记录仍为 WAITING 才置 HELPING，
+        // 数据库行级条件更新保证只有一人成功，其余收到「已有家属接通」后收窗播报
+        boolean claimed = this.update(new UpdateWrapper<Urgenthelp>()
+                .eq("help_id", urgenthelp.getHelpId())
+                .eq("help_status", CallHelpStatusEnum.WAITING.getHelpStatus())
+                .set("volunteer_id", loginVolunteerId)
+                .set("response_time", DateUtil.date())
+                .set("channel_id", loginVolunteerId)
+                .set("help_status", CallHelpStatusEnum.HELPING.getHelpStatus()));
+        ThrowUtils.throwIf(!claimed, ErrorCode.PARAMS_ERROR, "已有家属接通，无需重复响应");
+
+        // 已有家属接通：通知其余在线家属收回弹窗并播报（排除接听人本人）
+        List<Volunteer> volunteerList = innerVolunteerService.getListByFamilyId(blind.getFamilyId());
+        if (ObjUtil.isNotNull(volunteerList) && !volunteerList.isEmpty()) {
+            List<Volunteer> others = new LinkedList<>();
+            for (Volunteer member : volunteerList) {
+                if (ObjUtil.notEqual(member.getVolunteerId(), loginVolunteerId)) {
+                    others.add(member);
+                }
+            }
+            if (!others.isEmpty()) {
+                SocketData socketData = new SocketData();
+                socketData.setBlindPhone(blind.getPhone());
+                socketData.setMessage("已有其他家属接通，本次求助已响应");
+                coordinationSocketHandler.cancelUrgenthelp(others, socketData);
+            }
+        }
 
         return true;
     }

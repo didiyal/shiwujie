@@ -4229,6 +4229,25 @@ public class AiFragment extends Fragment {
                 }
 
                 @Override
+                public void onHelpTimeout() {
+                    // 2026-09-14：60 秒无家属接通 → 自动取消（服务端置 FALL 并给家属推 type=4 收回
+                    // 弹窗）+ 播报，用户可随时再次发起。此前为静默复位，用户无感知。
+                    Log.d(TAG, "紧急求助 60 秒无家属接通，已自动取消");
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            isEmergencyHelpMatching = false;
+                            emergencyHelpManager.resetEmergencyHelp();
+                            if (emergencyHelpFloatingWindow != null) {
+                                emergencyHelpFloatingWindow.hide();
+                            }
+                            if (ttsManager != null) {
+                                ttsManager.startSpeaking("暂无家属接通，已为您取消紧急求助，您可随时再次发起");
+                            }
+                        });
+                    }
+                }
+
+                @Override
                 public void onHelpHangupSuccess() {
                     Log.d(TAG, "紧急求助通话已结束");
                     if (isAdded()) {

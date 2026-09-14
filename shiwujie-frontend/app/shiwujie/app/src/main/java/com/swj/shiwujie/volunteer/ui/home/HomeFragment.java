@@ -24,6 +24,7 @@ import com.swj.shiwujie.common.ui.EmergencyHelpFloatingWindow;
 import com.swj.shiwujie.common.ui.EmergencyHelpIncomingWindow;
 import com.swj.shiwujie.common.utils.EmergencyRingerManager;
 import com.swj.shiwujie.common.utils.PermissionManager;
+import com.swj.shiwujie.common.utils.TTSManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -38,6 +39,7 @@ public class HomeFragment extends Fragment {
     private EmergencyHelpFloatingWindow emergencyHelpFloatingWindow;
     private EmergencyHelpIncomingWindow emergencyHelpIncomingWindow;
     private String currentBlindIdForHelp = null;
+    private TTSManager ttsManager;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -45,7 +47,24 @@ public class HomeFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_volunteer_home, container, false);
         initViews(root);
         initWebSocket();
+        initTts();
         return root;
+    }
+
+    /** 语音播报（家属端：求助取消/他人接通/接听失败时播报，2026-09-14） */
+    private void initTts() {
+        try {
+            ttsManager = new TTSManager(requireContext());
+        } catch (Exception e) {
+            Log.e(TAG, "TTS初始化失败，播报将不可用", e);
+        }
+    }
+
+    /** 播报辅助：TTS 不可用时静默降级（Toast 已有兜底） */
+    private void speak(String text) {
+        if (ttsManager != null && text != null && !text.isEmpty()) {
+            ttsManager.startSpeaking(text);
+        }
     }
     
     private void initViews(View root) {
@@ -194,13 +213,14 @@ public class HomeFragment extends Fragment {
             emergencyHelpIncomingWindow.show();
             currentBlindIdForHelp = data.getBlindPhone();
         } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_EMERGENCY_CANCELLED) {
-            // 盲人取消紧急求助，家属端关闭弹窗
-            Log.d(TAG, "收到紧急求助取消通知，关闭弹窗");
+            // type=4 收回弹窗：盲人取消 / 已有其他家属接通，播报文案随信令 message 下发（2026-09-14）
+            Log.d(TAG, "收到紧急求助收回通知，关闭弹窗，文案: " + data.getMessage());
             // 停止响铃
             EmergencyRingerManager.getInstance().stopEmergencyRinger();
             if (emergencyHelpIncomingWindow != null) {
                 emergencyHelpIncomingWindow.hide();
             }
+            speak(data.getMessage() != null ? data.getMessage() : "紧急求助已取消");
         } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_MATCH_SUCCESS) {
             // 志愿者匹配成功通知
             Log.d(TAG, "收到匹配成功通知，准备进入视频通话页面");
@@ -296,6 +316,15 @@ public class HomeFragment extends Fragment {
                         startActivity(videoIntent);
                     } else {
                         Toast.makeText(requireContext(), "响应失败: " + result.getMessage(), Toast.LENGTH_SHORT).show();
+                        // 2026-09-14：接听失败（多为"已有家属接通"抢单落败）→ 收回弹窗 + 播报
+                        if (emergencyHelpIncomingWindow != null) {
+                            emergencyHelpIncomingWindow.hide();
+                        }
+                        if (result.getMessage() != null && result.getMessage().contains("已有家属接通")) {
+                            speak("已有其他家属接通本次求助");
+                        } else {
+                            speak("接听失败，请稍后再试");
+                        }
                     }
                 } else {
                     Toast.makeText(requireContext(), "网络请求失败", Toast.LENGTH_SHORT).show();
@@ -343,6 +372,11 @@ public class HomeFragment extends Fragment {
         if (emergencyHelpFloatingWindow != null) {
             emergencyHelpFloatingWindow.destroy();
             emergencyHelpFloatingWindow = null;
+        }
+        // 释放 TTS 资源
+        if (ttsManager != null) {
+            ttsManager.destroy();
+            ttsManager = null;
         }
     }
 } 

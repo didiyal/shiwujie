@@ -246,12 +246,12 @@ public class CoordinationSocketHandler {
                 }
             }
         }
+        log.info("盲人向家属紧急求助,向家属转发 - 3, 实际送达 {}/{} 人", delivered, volunteerList.size());
         return delivered;
-        log.info("盲人向家属紧急求助,向家属转发 - 3");
     }
 
     /**
-     * 盲人取消求助通知 4
+     * type=4 收回紧急求助弹窗通知（盲人取消 / 已有其他家属接通，播报文案随 socketData.message 下发）
      * @param volunteerList 家属列表
      * @param socketData 返回类型
      */
@@ -268,7 +268,7 @@ public class CoordinationSocketHandler {
                 }
             }
         }
-        log.info("盲人取消求助通知 - 4");
+        log.info("type=4 收回紧急求助弹窗通知已下发, 携带文案: {}", socketData.getMessage());
     }
 
     // endregion

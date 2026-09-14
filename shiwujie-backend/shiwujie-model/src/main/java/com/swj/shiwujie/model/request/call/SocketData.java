@@ -36,6 +36,14 @@ public class SocketData implements Serializable {
     private Long channelId;
 
 
+    /**
+     * 随信令下发的提示文案（服务端 → 客户端 TTS 播报用）。
+     *
+     * <p>2026-09-14 新增：外层 SocketVO.message 在客户端解析 envelope 时会被丢弃，
+     * 需要客户端播报的文字必须放进 SocketData 本体（客户端 SocketDataV0.message 同名自动映射）。</p>
+     */
+    private String message;
+
 
     private final static long serialVersionUID = 1L;
 }

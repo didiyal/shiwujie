@@ -23,7 +23,7 @@ import retrofit2.Response;
 public class EmergencyHelpManager {
     private static final String TAG = "EmergencyHelpManager";
 
-    /** 家属无响应超时：超过该时长未接听则自动复位状态，避免 isInEmergencyHelp 永真导致用户无法再次求助 */
+    /** 家属无响应超时：超时自动取消求助（服务端置 FALL，家属端收 type=4 收回弹窗）并回调 onHelpTimeout 供播报 */
     private static final long EMERGENCY_HELP_TIMEOUT_MS = 60_000L; // 60秒
 
     private static EmergencyHelpManager instance;
@@ -229,7 +229,16 @@ public class EmergencyHelpManager {
                                 }
                             } else {
                                 Log.e(TAG, "取消紧急求助失败: " + baseResponse.getMessage());
-                               /* showToast("取消紧急求助失败: " + baseResponse.getMessage());*/
+                                // 2026-09-14：「您并未求助」= 记录已被服务端过期/对方已处理，等效取消成功——
+                                // 复位本地状态放行再次发起，不再卡在"取消失败"分支
+                                if (baseResponse.getMessage() != null && baseResponse.getMessage().contains("并未求助")) {
+                                    cancelEmergencyTimeout();
+                                    currentHelpData = null;
+                                    isInEmergencyHelp = false;
+                                    if (callback != null) {
+                                        callback.onHelpCancelled();
+                                    }
+                                }
                             }
                         } else {
                             Log.e(TAG, "取消紧急求助失败，响应码: " + response.code());
@@ -355,11 +364,16 @@ public class EmergencyHelpManager {
     
     /**
      * 调度"家属无响应"超时任务。仅在求助成功发出后启用；任何终态（取消/挂断/响应/通话建立）都应取消。
+     * 2026-09-14：超时不再静默复位——先走服务端取消（家属端收回弹窗），再本地复位并回调播报。
      */
     private void scheduleEmergencyTimeout() {
         cancelEmergencyTimeout();
         emergencyTimeoutRunnable = () -> {
-            Log.w(TAG, "=== 紧急求助超时，未收到家属响应，自动复位状态 ===");
+            Log.w(TAG, "=== 紧急求助 60 秒无家属接通，自动取消 ===");
+            // 先发起服务端取消（置 FALL + 家属端 type=4 收窗），不阻塞本地复位
+            if (isInEmergencyHelp && currentHelpData != null) {
+                cancelEmergencyHelp();
+            }
             currentHelpData = null;
             isInEmergencyHelp = false;
             if (callback != null) {
