@@ -216,13 +216,15 @@ public class WebSocketService extends Service {
         
         heartbeatExecutor = Executors.newScheduledThreadPool(1);
 
-        // 间隔必须短于 NAT/代理的空闲断开阈值（通常 60-120s），否则长连接会被网络设备静默掐断
+        // 间隔必须短于 NAT/代理的空闲断开阈值（通常 60-120s），否则长连接会被网络设备静默掐断。
+        // 2026-09-15：30s → 15s——断线感知/重连延迟减半，弱网下求助链路恢复更快；
+        // 有前台服务 + WakeLock 保活，电量代价可忽略。10s 为实际下限，不再往下调。
         heartbeatExecutor.scheduleAtFixedRate(() -> {
             sendHeartbeat();
-        }, 30, 30, TimeUnit.SECONDS); // 每30秒发送一次心跳包
-        
+        }, 15, 15, TimeUnit.SECONDS); // 每15秒发送一次心跳包
+
         isHeartbeatStarted = true;
-        Log.d(TAG, "心跳包已启动，间隔30秒");
+        Log.d(TAG, "心跳包已启动，间隔15秒");
     }
     
     /**
@@ -248,7 +250,7 @@ public class WebSocketService extends Service {
             }
             
             if (!webSocketManager.isConnected()) {
-                // 2026-09-14：心跳发现未连接 → 主动重连（每 30s 一次的安全网）。
+                // 2026-09-14：心跳发现未连接 → 主动重连（15s 一次的安全网，2026-09-15 由 30s 收紧）。
                 // 此前只跳过：WS 静默掉线后永不恢复，强更/求助等所有 WS 信令全部失效
                 // （曾致志愿者视频匹配后盲人端收不到 type=2、无法进入通话）。
                 Log.w(TAG, "WebSocket未连接，本次心跳触发重连");
@@ -275,8 +277,14 @@ public class WebSocketService extends Service {
             }
             
             Log.d(TAG, "发送心跳包: " + heartbeatData.toString());
-            webSocketManager.sendMessage(heartbeatData);
-            
+            boolean sent = webSocketManager.sendMessage(heartbeatData);
+            if (!sent) {
+                // 2026-09-15：发送失败当场触发重连——此前只吞异常，要干等下一个心跳周期
+                // 才能发现断线；配合 15s 间隔，弱网断线感知最快缩到秒级
+                Log.w(TAG, "心跳发送失败（连接已断），立即触发重连");
+                connectWebSocket();
+                acquireWakeLock();
+            }
         } catch (Exception e) {
             Log.e(TAG, "发送心跳包失败", e);
             // 不抛出异常，避免服务崩溃

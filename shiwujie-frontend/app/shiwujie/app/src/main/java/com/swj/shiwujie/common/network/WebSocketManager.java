@@ -258,22 +258,23 @@ public class WebSocketManager {
     
     /**
      * 发送消息
+     * @return 是否发送成功（false = 未连接/连接已断/发送异常；调用方可据此触发重连）
      */
-    public void sendMessage(SocketDataV0 data) {
+    public boolean sendMessage(SocketDataV0 data) {
         Log.d(TAG, "=== sendMessage方法被调用 ===");
-        
+
         if (data == null) {
             Log.e(TAG, "消息数据为null，无法发送");
-            return;
+            return false;
         }
-        
+
         Log.d(TAG, "连接状态检查: isConnected=" + isConnected + ", webSocketClient=" + (webSocketClient != null));
         Log.d(TAG, "准备发送消息 - 连接状态: " + isConnected + ", WebSocket客户端: " + (webSocketClient != null));
         
         if (!isConnected || webSocketClient == null) {
             Log.w(TAG, "WebSocket not connected, cannot send message");
             Log.w(TAG, "isConnected: " + isConnected + ", webSocketClient: " + (webSocketClient != null));
-            return;
+            return false;
         }
         
         try {
@@ -287,11 +288,15 @@ public class WebSocketManager {
                   ", 志愿者手机号: " + data.getVolunteerPhone() + 
                   ", 频道ID: " + data.getChannelId());
             
+            // Java-WebSocket 的 send() 无返回值：未连接/已关闭时抛 WebsocketNotConnectedException，
+            // 由 catch 统一转为 false（2026-09-15 起发送结果如实上报给调用方）
             webSocketClient.send(jsonMessage);
             Log.d(TAG, "=== 消息发送成功 ===");
+            return true;
         } catch (Exception e) {
             Log.e(TAG, "发送消息失败: " + e.getMessage(), e);
-            // 不抛出异常，避免调用方崩溃
+            // 不抛出异常，避免调用方崩溃；返回 false 供调用方决定重连等降级策略
+            return false;
         }
     }
     
