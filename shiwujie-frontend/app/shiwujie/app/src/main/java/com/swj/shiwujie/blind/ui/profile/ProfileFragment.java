@@ -133,11 +133,8 @@ public class ProfileFragment extends Fragment {
         apiService.getBlindById("Bearer " + token, userId).enqueue(new ApiCallback<BlindVO>(requireContext()) {
             @Override
             public void onSuccess(BlindVO data) {
+                // 2026-09-14：身份校验已按产品要求关闭——"我的"页不再弹身份验证提醒
                 updateUI(data);
-                // 如果未进行身份验证，显示提示弹窗
-                if (!data.getIsDisabilityCard()) {
-                    showDisabilityVerificationDialog();
-                }
             }
 
             @Override
@@ -187,19 +184,8 @@ public class ProfileFragment extends Fragment {
             btnFamily.setText("已加入家庭");
         }
 
-        // 更新身份认证状态
-        StringBuilder authStatus = new StringBuilder();
-        if (data.getIsDisabilityCard()) {
-            authStatus.append("已完成身份验证");
-        } else {
-            authStatus.append("未完成身份验证");
-        }
-        if (data.getIsIdCard()) {
-            authStatus.append(" | 已实名");
-        } else {
-            authStatus.append(" | 未实名");
-        }
-        tvAuthStatus.setText(authStatus.toString());
+        // 2026-09-14：身份校验/实名已下线，不再展示"已验证/未实名"状态
+        tvAuthStatus.setVisibility(android.view.View.GONE);
 
         // 如果用户有家庭ID，获取家庭信息并检查是否是家主
         if (data.getFamilyId() != null) {

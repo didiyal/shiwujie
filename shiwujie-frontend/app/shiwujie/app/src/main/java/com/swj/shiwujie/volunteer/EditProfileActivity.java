@@ -36,6 +36,7 @@ public class EditProfileActivity extends AppCompatActivity {
     private Button btnChangePhone;
     private Button btnConfirm;
     private EditText etIdCard;
+    private android.view.View layoutIdCard;
     private ApiService apiService;
 
     @Override
@@ -68,6 +69,7 @@ public class EditProfileActivity extends AppCompatActivity {
         btnChangePhone = findViewById(R.id.btnChangePhone);
         btnConfirm = findViewById(R.id.btnConfirm);
         etIdCard = findViewById(R.id.etIdCard);
+        layoutIdCard = findViewById(R.id.layoutIdCard);
     }
 
     private void initListeners() {
@@ -244,19 +246,8 @@ public class EditProfileActivity extends AppCompatActivity {
                         tvFamilyId.setText("暂未加入家庭");
                     }
 
-                    // 身份证编辑框逻辑
-                    if (data.getIsIdCard() != null && data.getIsIdCard()) {
-                        // 已实名，显示“已实名”且不可编辑
-                        etIdCard.setText("已实名");
-                        etIdCard.setEnabled(false);
-                        etIdCard.setFocusable(false);
-                    } else {
-                        // 未实名，可编辑
-                        etIdCard.setText(data.getIdCard() != null ? data.getIdCard() : "");
-                        etIdCard.setEnabled(true);
-                        etIdCard.setFocusable(true);
-                        etIdCard.setFocusableInTouchMode(true);
-                    }
+                    // 2026-09-14：实名认证已按产品要求关闭，编辑页不再展示/收集身份证号
+                    layoutIdCard.setVisibility(android.view.View.GONE);
                 }
             }
 
@@ -285,24 +276,12 @@ public class EditProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // 只有未实名时才校验身份证号
-        if (etIdCard.isEnabled()) {
-            String idCard = etIdCard.getText().toString().trim();
-            if (TextUtils.isEmpty(idCard)) {
-                Toast.makeText(this, "身份证号不能为空", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
-        // 创建请求体
+        // 创建请求体（2026-09-14：实名认证已关闭，不再校验/提交身份证号）
         VolunteerVO volunteer = new VolunteerVO();
         volunteer.setVolunteerId(userId);
         volunteer.setName(username);
         volunteer.setGender(gender);
         volunteer.setEmail(email);
-        if (etIdCard.isEnabled()) {
-            volunteer.setIdCard(etIdCard.getText().toString().trim());
-        }
 
         // 调用更新用户信息的API
         apiService.updateVolunteerInfo(

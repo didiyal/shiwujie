@@ -129,11 +129,9 @@ public class EditProfileActivity extends AppCompatActivity {
                         }
                     }
                     
-                    // 设置身份证号
-                    if (data.getIdCard() != null) {
-                        etIdCard.setText(data.getIdCard());
-                    }
-                    
+                    // 2026-09-14：实名认证已按产品要求关闭，编辑页不再展示/收集身份证号
+                    findViewById(R.id.layoutIdCard).setVisibility(View.GONE);
+
                     // 设置其他信息
                     if (data.getOtherInfo() != null) {
                         etOtherInfo.setText(data.getOtherInfo());
@@ -146,19 +144,8 @@ public class EditProfileActivity extends AppCompatActivity {
                         tvFamilyId.setText("暂未加入家庭");
                     }
 
-                    // 残疾证号动态显示与可编辑控制
-                    layoutDisabilityCard.setVisibility(View.VISIBLE);
-                    SharedPrefsUtil.setBoolean("isDisabilityCard", data.getIsDisabilityCard() != null && data.getIsDisabilityCard());
-                    if (data.getIsDisabilityCard() == null || !data.getIsDisabilityCard()) {
-                        etDisabilityCard.setEnabled(true);
-                        etDisabilityCard.setFocusable(true);
-                        etDisabilityCard.setFocusableInTouchMode(true);
-                        etDisabilityCard.setText(data.getDisabilityCard() != null ? data.getDisabilityCard() : "");
-                    } else {
-                        etDisabilityCard.setText("已完成身份校验");
-                        etDisabilityCard.setEnabled(false);
-                        etDisabilityCard.setFocusable(false);
-                    }
+                    // 2026-09-14：残疾证身份校验已按产品要求关闭，编辑页不再展示/收集残疾证号
+                    layoutDisabilityCard.setVisibility(View.GONE);
                 }
             }
         });
@@ -174,7 +161,6 @@ public class EditProfileActivity extends AppCompatActivity {
         }
 
         String username = etUsername.getText().toString().trim();
-        String idCard = etIdCard.getText().toString().trim();
         String otherInfo = etOtherInfo.getText().toString().trim();
         int gender = rbMale.isChecked() ? 0 : 1;
 
@@ -183,32 +169,16 @@ public class EditProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // 验证残疾证号长度
-        // 删除：if (!TextUtils.isEmpty(disabilityCard) && disabilityCard.length() != 20) {
-        // 删除：Toast.makeText(this, "残疾证号必须为20位", Toast.LENGTH_SHORT).show();
-        // 删除：return;
-        // }
-
-        // 创建请求体
+        // 创建请求体（2026-09-14：实名认证已关闭，不再收集/提交身份证号与残疾证号，
+        // 两者置 null 由后端忽略更新，保留库中存量值）
         BlindVO blind = new BlindVO();
         blind.setBlindId(userId);
         blind.setName(username);
         blind.setGender(gender);
-        blind.setIdCard(idCard);
         blind.setOtherInfo(otherInfo);
 
-        // 只有未完成身份校验时才校验和提交残疾证号
-        String disabilityCard = null; // 默认为null
-        if (etDisabilityCard.isEnabled()) {
-            // 用户可以编辑残疾证，说明还未验证，需要传递新的残疾证号
-            disabilityCard = etDisabilityCard.getText().toString().trim();
-            if (TextUtils.isEmpty(disabilityCard)) {
-                Toast.makeText(this, "残疾证号不能为空", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-        // 如果已验证，disabilityCard保持为null，后端就不会进行验证
-        blind.setDisabilityCard(disabilityCard);
+        // 2026-09-14：身份校验已关闭，不再提交残疾证号（null = 后端不做校验处理）
+        blind.setDisabilityCard(null);
 
         // 调用更新用户信息的API
         apiService.updateBlindInfo(

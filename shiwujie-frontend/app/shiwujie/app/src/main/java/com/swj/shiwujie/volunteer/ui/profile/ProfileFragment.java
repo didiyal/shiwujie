@@ -141,29 +141,8 @@ public class ProfileFragment extends Fragment {
             btnFamily.setText("已加入家庭");
         }
 
-        // 只要身份证字段不为空就显示已实名，并脱敏显示身份证号
-        String idCard = data.getIdCard();
-        if (idCard != null && !idCard.isEmpty()) {
-            tvAuthStatus.setText("已实名认证");
-            // 脱敏身份证号（前3后4，中间*）
-            String masked = idCard;
-            if (idCard.length() > 7) {
-                masked = idCard.substring(0, 3) + "***********" + idCard.substring(idCard.length() - 4);
-            }
-            // 假设有一个TextView用于显示身份证号，如tvIdCard
-            TextView tvIdCard = getView().findViewById(R.id.tvIdCard);
-            if (tvIdCard != null) {
-                tvIdCard.setText(masked);
-                tvIdCard.setVisibility(View.VISIBLE);
-            }
-        } else {
-            tvAuthStatus.setText("未实名认证");
-            // 隐藏身份证号显示
-            TextView tvIdCard = getView().findViewById(R.id.tvIdCard);
-            if (tvIdCard != null) {
-                tvIdCard.setVisibility(View.GONE);
-            }
-        }
+        // 2026-09-14：实名认证已按产品要求关闭，不再展示实名状态与证件号
+        tvAuthStatus.setVisibility(View.GONE);
     }
 
     private void showIdCardVerificationDialog() {

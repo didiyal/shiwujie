@@ -184,8 +184,9 @@
                 </RadioGroup>
             </LinearLayout>
 
-            <!-- 身份证号 -->
+            <!-- 身份证号（2026-09-14 实名认证下线：志愿者端整行动态隐藏；盲人端保留为可选资料项） -->
             <LinearLayout
+                android:id="@+id/layoutIdCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"

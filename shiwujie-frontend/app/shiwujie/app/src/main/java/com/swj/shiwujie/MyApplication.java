@@ -20,6 +20,9 @@ public class MyApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
+        // 尽早初始化本地存储（前后台监听要读 isBlind 区分身份）
+        com.swj.shiwujie.common.utils.SharedPrefsUtil.init(this);
+
         // 初始化讯飞语音识别SDK（按照官方文档要求）
         try {
             SpeechUtility.createUtility(this, "appid=26fe4713");
@@ -53,8 +56,11 @@ public class MyApplication extends Application {
                     // 1 → 0：应用退到后台（退出软件）
                     Log.d(TAG, "应用退到后台，显示AI悬浮球");
                     sendBallVisibilityBroadcast(true);
-                    // 视频通话中退后台是正常操作（对方还在线上），不播"已退到后台"避免误解
-                    if (!com.swj.shiwujie.common.network.WebSocketManager.getInstance().isInVideoCall()) {
+                    // 退后台播报仅面向视障用户（引导点悬浮球回主界面）；志愿者端没有悬浮球，
+                    // 退后台不播报（2026-09-14 按产品要求去掉）。视频通话中退后台是正常操作
+                    // （对方还在线上），同样不播。
+                    if (com.swj.shiwujie.common.utils.SharedPrefsUtil.isBlind()
+                            && !com.swj.shiwujie.common.network.WebSocketManager.getInstance().isInVideoCall()) {
                         speakBackgroundHint();
                     }
                 }

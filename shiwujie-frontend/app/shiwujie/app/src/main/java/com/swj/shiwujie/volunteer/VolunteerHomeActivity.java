@@ -69,25 +69,13 @@ public class VolunteerHomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        
+
         // 检查是否有未销毁的实名认证弹窗，如果有则先清理
         cleanupAbnormalDialogState();
-        
-        String token = SharedPrefsUtil.getToken();
-        Long userId = SharedPrefsUtil.getUserId();
-        if (token == null || userId == null) return;
 
-        com.swj.shiwujie.common.network.ApiService apiService = com.swj.shiwujie.common.network.RetrofitClient.getInstance().createService(com.swj.shiwujie.common.network.ApiService.class);
-        apiService.getVolunteerVOById("Bearer " + token, userId).enqueue(new com.swj.shiwujie.common.network.ApiCallback<com.swj.shiwujie.data.model.VolunteerVO>(this) {
-            @Override
-            public void onSuccess(com.swj.shiwujie.data.model.VolunteerVO data) {
-                boolean isIdCard = data.getIsIdCard() != null && data.getIsIdCard();
-                com.swj.shiwujie.common.utils.SharedPrefsUtil.setBoolean("isIdCard", isIdCard);
-                if (!isIdCard && currentDialogType == DialogType.NONE) {
-                    showIdentityVerificationReminder();
-                }
-            }
-        });
+        // 2026-09-14：实名认证已按产品要求关闭——志愿者端进入软件不再弹实名提醒。
+        // 如需恢复，在此处查 getVolunteerVOById 后按 isIdCard 调 showIdentityVerificationReminder()
+        // （弹窗逻辑未删）。
     }
     
     private void checkPermissions() {
