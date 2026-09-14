@@ -4002,6 +4002,15 @@ public class AiFragment extends Fragment {
             Log.w(TAG, "视频通话已建立，忽略重复连线");
             return;
         }
+        // 2026-09-15：匹配进行中忽略重复发起——isMatching 此前从未被置 true，防抖形同虚设，
+        // 连点两次会匹配到第二个志愿者（各自进视频页）
+        if (isMatching) {
+            Log.w(TAG, "匹配进行中，忽略重复连线");
+            if (ttsManager != null) {
+                ttsManager.startSpeaking("正在为您匹配志愿者，请稍候");
+            }
+            return;
+        }
         // 2026-09-14：WS 未连接时禁止发起——此时匹配即使成功，type=2 也收不到，
         // 志愿者会在视频页干等。心跳安全网每 30s 自动重连，重试即可。
         if (webSocketManager == null || !webSocketManager.isConnected()) {
@@ -4020,6 +4029,7 @@ public class AiFragment extends Fragment {
             return;
         }
 
+        isMatching = true;
         webSocketManager.setMatchingStatus(true);
         checkLoginStatusBeforeMatching(token);
     }
@@ -4073,6 +4083,9 @@ public class AiFragment extends Fragment {
                             } else if (result.getMessage() != null && result.getMessage().contains("已在匹配中")) {
                                 msg = "您已在匹配中，请稍候";
                                 speak = "您已在匹配中，请稍候";
+                            } else if (result.getMessage() != null && result.getMessage().contains("已在通话中")) {
+                                msg = "您已在通话中，请先结束后再发起";
+                                speak = "您已在通话中，请先结束后再发起";
                             } else {
                                 msg = "连线失败: " + result.getMessage();
                                 speak = "连线失败，请稍后再试";

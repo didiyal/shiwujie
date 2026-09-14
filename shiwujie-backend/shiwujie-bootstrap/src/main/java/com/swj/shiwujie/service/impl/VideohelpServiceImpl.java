@@ -161,6 +161,22 @@ public class VideohelpServiceImpl extends ServiceImpl<VideohelpMapper, Videohelp
         //2. 获取队列
         Queue<Long> queue = ConverterUtils.ObjToQueueLong(fromRedis);
         synchronized (loginUserPhone.intern()) {
+            // 重复发起防护（2026-09-15）：已有进行中的通话 → 拒绝重复匹配，防盲人连点
+            // 造成两个志愿者同时进视频（各占一个频道，只对首呼者可见）。遗留 HELPING
+            // （双方异常退出未挂断）超 30 分钟自动结束放行，与紧急求助侧同策略。
+            List<Videohelp> helpingList = this.getHelpingByBlindId(loginBlindId);
+            if (helpingList != null && !helpingList.isEmpty()) {
+                for (Videohelp helping : helpingList) {
+                    java.util.Date effective = helping.getResponseTime() != null
+                            ? helping.getResponseTime() : helping.getStartTime();
+                    if (effective != null && System.currentTimeMillis() - effective.getTime() <= 1_800_000L) {
+                        ThrowUtils.throwIf(true, ErrorCode.PARAMS_ERROR, "您已在通话中，请勿重复发起");
+                    }
+                    helping.setEndTime(DateUtil.date());
+                    helping.setHelpStatus(CallHelpStatusEnum.END_HELP.getHelpStatus());
+                    this.updateById(helping);
+                }
+            }
             // 2026-09-14：原子化匹配——逐个候选尝试，志愿者 WS 不在线时跳过并标记其记录已取消，
             // 继续尝试下一位。此前"先改状态后通知、失败不回滚"会让记录卡在处理中、
             // 队列状态与 DB 脱节，后续匹配全部失败（线上已复现）。

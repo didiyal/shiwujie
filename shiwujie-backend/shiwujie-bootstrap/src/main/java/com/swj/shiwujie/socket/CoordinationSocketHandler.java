@@ -176,14 +176,17 @@ public class CoordinationSocketHandler {
      * @param socketData socketData
      */
     public void matchSuccess(SocketData socketData) {
-        if (sessionMap.containsKey(socketData.getVolunteerPhone())) {
-            Session session = sessionMap.get(socketData.getVolunteerPhone());
-            String response = this.getResponse(0, "匹配成功", 1, socketData);
-            sendMessage(session, response);
-            log.info("匹配成功,向志愿者发送信息 - 1");
-        } else {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"该用户未连接服务器");
+        Session session = getLiveSession(socketData.getVolunteerPhone());
+        if (session == null) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "该用户未连接服务器");
         }
+        String response = this.getResponse(0, "匹配成功", 1, socketData);
+        if (!sendMessage(session, response)) {
+            // 2026-09-15：发送失败视同不在线——由调用方标记该候选已取消并尝试下一位，
+            // 杜绝"匹配成功发给死会话、双方互相干等"
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "匹配通知发送失败（对方会话已失效）");
+        }
+        log.info("匹配成功,向志愿者发送信息 - 1");
     }
 
     /**
@@ -196,8 +199,8 @@ public class CoordinationSocketHandler {
         if (phone == null) {
             return;
         }
-        Session session = sessionMap.get(phone);
-        if (session != null && session.isOpen()) {
+        Session session = getLiveSession(phone);
+        if (session != null) {
             String response = this.getResponse(0, "通话结束", 5, socketData);
             sendMessage(session, response);
             log.info("通话结束通知已发送 - 5 -> " + phone);
@@ -211,17 +214,17 @@ public class CoordinationSocketHandler {
      * @param socketData socketData
      */
     private void toBlindJoin(SocketData socketData) {
-        if (sessionMap.containsKey(socketData.getBlindPhone())) {
-            Session session = sessionMap.get(socketData.getBlindPhone());
+        Session blindSession = getLiveSession(socketData.getBlindPhone());
+        if (blindSession != null) {
             String response = this.getResponse(0, "家属/志愿者视频初始化成功", 2, socketData);
-            sendMessage(session, response);
+            sendMessage(blindSession, response);
             log.info("视频初始化成功,已转发盲人 - 2");
         } else {
-            log.error("视频初始化转发失败: 盲人 " + socketData.getBlindPhone() + " 不在线（会话不存在），已向发起方回错误 - 2");
-            Session session = sessionMap.get(socketData.getVolunteerPhone());
-            if (session != null) {
+            log.error("视频初始化转发失败: 盲人 " + socketData.getBlindPhone() + " 不在线，已向发起方回错误 - 2");
+            Session volunteerSession = getLiveSession(socketData.getVolunteerPhone());
+            if (volunteerSession != null) {
                 String response = this.getResponse(1, "系统错误", 2, socketData);
-                sendMessage(session, response);
+                sendMessage(volunteerSession, response);
             }
         }
     }
@@ -236,13 +239,14 @@ public class CoordinationSocketHandler {
         for (Volunteer volunteer : volunteerList) {
             String phone = volunteer.getPhone();
             if (ObjUtil.isNotNull(phone)) {
-                if (sessionMap.containsKey(phone)) {
-                    Session session = sessionMap.get(phone);
+                Session session = getLiveSession(phone);
+                if (session != null) {
                     socketData.setVolunteerPhone(phone);
                     socketData.setChannelId(volunteer.getVolunteerId());
                     String response = this.getResponse(0, "紧急求助", 3, socketData);
-                    sendMessage(session, response);
-                    delivered++;
+                    if (sendMessage(session, response)) {
+                        delivered++;
+                    }
                 }
             }
         }
@@ -372,11 +376,33 @@ public class CoordinationSocketHandler {
      * @param session WebSocket会话
      * @param message 消息内容
      */
-    private void sendMessage(Session session, String message) {
+    /**
+     * 取活跃会话；死会话（进程被杀/断网未触发 onClose 的残留连接）即时清除。
+     * 2026-09-15：此前各信令只查 containsKey，残留死会话让匹配/转发"成功"发给死人，
+     * 接收端永远收不到、双方互相干等。
+     */
+    private Session getLiveSession(String phone) {
+        if (phone == null) {
+            return null;
+        }
+        Session session = sessionMap.get(phone);
+        if (session != null && !session.isOpen()) {
+            sessionMap.remove(phone);
+            sessionPhoneMap.remove(session);
+            log.info(phone + " 死会话已清除（连接已关闭未触发 onClose）");
+            return null;
+        }
+        return session;
+    }
+
+    /** 发送信令；返回是否成功（失败由调用方决定降级策略，不再静默吞掉） */
+    private boolean sendMessage(Session session, String message) {
         try {
             session.getBasicRemote().sendText(message);
+            return true;
         } catch (IOException e) {
             log.error("发送消息失败：", e);
+            return false;
         }
     }
 

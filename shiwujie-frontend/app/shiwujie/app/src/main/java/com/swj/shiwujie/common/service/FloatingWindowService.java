@@ -54,6 +54,13 @@ public class FloatingWindowService extends Service {
         initFloatingWindow();
         startTimer();
     }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // 2026-09-15：不用默认的 START_STICKY——志愿者杀进程后系统自动重启服务，
+        // 会让"等待匹配"悬浮窗凭空复活（人已不在队列，窗口却从 0 计时，误导志愿者）
+        return START_NOT_STICKY;
+    }
     
     private void initFloatingWindow() {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
