@@ -23,6 +23,7 @@
 | 分库设计 + 表字典（数据契约） | [architecture/data-model.md](architecture/data-model.md) |
 | AI 重写总图（polyglot 两进程：Java 单体 + Python LangGraph） | [architecture/ai-rewrite.md](architecture/ai-rewrite.md) |
 | 按版本的开发交付（任务 / 测试 / 发布清单） | [development/current.md](development/current.md) |
+| 视频/求助功能真机测试手册（志愿者求助 / 紧急求助） | [testing/志愿者求助测试手册.md](testing/志愿者求助测试手册.md) · [testing/紧急求助测试手册.md](testing/紧急求助测试手册.md) |
 | 后端各微服务实现 + 缺陷 + 部署 | [../shiwujie-backend/docs/](../shiwujie-backend/docs/) |
 | Android / Web 前端实现 + 缺陷 | [../shiwujie-frontend/app/docs/](../shiwujie-frontend/app/docs/) · [../shiwujie-frontend/web/docs/](../shiwujie-frontend/web/docs/) |
 
