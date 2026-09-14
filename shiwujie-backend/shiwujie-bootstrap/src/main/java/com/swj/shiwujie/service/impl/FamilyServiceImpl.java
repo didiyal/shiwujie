@@ -146,51 +146,53 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
     }
 
     /**
-     * 申请加入家庭
+     * 加入家庭（2026-09-15 取消家主审核：校验通过后直连写入 familyId）
      *
-     * @param familyVolunteerPhone 家庭志愿者手机号
+     * @param familyVolunteerPhone 家庭创建人（家主）手机号
      * @param loginBlindId     加入盲人信息
      * @param loginVolunteerId 加入志愿者信息
      * @param loginUserPhone   登录手机号
-     * @return 是否申请成功
+     * @return 是否加入成功
      */
     @Override
     public boolean joinFamily(String familyVolunteerPhone, Long loginBlindId, Long loginVolunteerId, String loginUserPhone) {
         ThrowUtils.throwIf(ObjUtil.isEmpty(familyVolunteerPhone),ErrorCode.PARAMS_ERROR,"家庭信息不能为空");
 
+        // 家主手机号必须对应志愿者账号（此前查不到直接 NPE 500），且必须已创建家庭
+        Volunteer owner = volunteerService.getByPhone(familyVolunteerPhone);
+        ThrowUtils.throwIf(ObjUtil.isNull(owner), ErrorCode.PARAMS_ERROR,
+                "该手机号没有对应的志愿者账号，请让家属先注册志愿者账号");
+        Long familyId = owner.getFamilyId();
+        ThrowUtils.throwIf(ObjUtil.isNull(familyId), ErrorCode.PARAMS_ERROR, "该家属还未创建家庭");
 
-        Volunteer volunteer = volunteerService.getByPhone(familyVolunteerPhone);
-        Long familyId = volunteer.getFamilyId();
-
-        // 校验用户
         if(ObjUtil.isNotNull(loginBlindId)){
-
-            FamilyJoinReview familyJoinReview = new FamilyJoinReview();
-            familyJoinReview.setFamilyId(familyId);
-            familyJoinReview.setBlindId(loginBlindId);
-            familyJoinReview.setApplyTime(DateUtil.date());
-
-            boolean save = familyJoinReviewService.save(familyJoinReview);
-            ThrowUtils.throwIf(!save,ErrorCode.SYSTEM_ERROR);
+            // 盲人直连加入
+            Blind blind = blindService.getById(loginBlindId);
+            ThrowUtils.throwIf(ObjUtil.isNull(blind), ErrorCode.PARAMS_ERROR, "用户不存在");
+            if (familyId.equals(blind.getFamilyId())) {
+                return true; // 已在该家庭，幂等成功
+            }
+            ThrowUtils.throwIf(ObjUtil.isNotNull(blind.getFamilyId()), ErrorCode.PARAMS_ERROR, "您已加入其他家庭，请先退出后再加入");
+            blind.setFamilyId(familyId);
+            boolean b = blindService.updateById(blind);
+            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
         } else if (ObjUtil.isNotNull(loginVolunteerId)) {
-            // 家主不能申请加入自己的家庭
+            // 志愿者受邀加入，家主不能加入自己的家庭
             Family family = this.getById(familyId);
             ThrowUtils.throwIf(loginVolunteerId.equals(family.getCreatorVolunteerId()),
                     ErrorCode.PARAMS_ERROR,"家主不能加入自己的家庭");
-
-            // 创建申请信息
-            FamilyJoinReview familyJoinReview = new FamilyJoinReview();
-            familyJoinReview.setFamilyId(familyId);
-            familyJoinReview.setVolunteerId(loginVolunteerId);
-            familyJoinReview.setApplyTime(DateUtil.date());
-
-            boolean save = familyJoinReviewService.save(familyJoinReview);
-            ThrowUtils.throwIf(!save,ErrorCode.SYSTEM_ERROR);
+            Volunteer joiner = volunteerService.getById(loginVolunteerId);
+            ThrowUtils.throwIf(ObjUtil.isNull(joiner), ErrorCode.PARAMS_ERROR, "用户不存在");
+            if (familyId.equals(joiner.getFamilyId())) {
+                return true; // 已在该家庭，幂等成功
+            }
+            ThrowUtils.throwIf(ObjUtil.isNotNull(joiner.getFamilyId()), ErrorCode.PARAMS_ERROR, "您已加入其他家庭，请先退出后再加入");
+            joiner.setFamilyId(familyId);
+            boolean b = volunteerService.updateById(joiner);
+            ThrowUtils.throwIf(!b, ErrorCode.SYSTEM_ERROR);
         }
 
         return true;
-
-
     }
 
 

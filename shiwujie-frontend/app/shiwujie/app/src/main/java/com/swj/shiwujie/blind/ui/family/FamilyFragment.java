@@ -269,6 +269,8 @@ public class FamilyFragment extends Fragment {
             @Override
             public void onSuccess(Boolean response) {
                 if (response) {
+                    // 家庭关系变化，重启 WS 刷新会话状态（2026-09-15）
+                    com.swj.shiwujie.common.network.WebSocketService.restart(requireContext());
                     checkFamilyStatus();
                 }
             }

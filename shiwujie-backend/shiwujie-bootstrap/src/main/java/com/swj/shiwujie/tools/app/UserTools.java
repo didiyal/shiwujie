@@ -53,11 +53,17 @@ public class UserTools {
             }
             ThrowUtils.throwIf(StrUtil.isBlankIfStr(familyVolunteerPhone), ErrorCode.PARAMS_ERROR, "请输入家庭创建人手机号");
             boolean b = innerFamilyService.joinFamily(familyVolunteerPhone, loginBlind.getBlindId(), null, LoginUtils.getLoginUserPhone());
-            if (b) return "正在为您申请加入家庭，申请成功,需要等待家庭创始人审核。";
-            else return "申请加入家庭失败";
+            // 2026-09-15：加入家庭已取消家主审核，直连生效，不再播报"等待审核"
+            if (b) return "已成功加入家庭。您可以对我说查看家庭信息来确认。";
+            else return "加入家庭失败，请稍后再试";
+        } catch (com.swj.shiwujie.exception.BusinessException e) {
+            // 业务校验拒绝（查无志愿者账号/家属未创建家庭/已在其他家庭等）：
+            // 把友好话术原文交给 AI 转述，不再拼接异常堆栈信息
+            log.warn("AI加入家庭被拒绝: {}", e.getMessage());
+            return e.getMessage();
         } catch (Exception e) {
             log.error("申请加入家庭失败", e);
-            return "申请加入家庭失败" + e.getMessage();
+            return "加入家庭失败，请稍后再试";
         }
     }
 

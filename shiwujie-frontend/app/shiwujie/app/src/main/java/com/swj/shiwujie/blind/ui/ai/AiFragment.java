@@ -131,6 +131,8 @@ public class AiFragment extends Fragment {
     private boolean isEmergencyHelpMatching = false;
     private EmergencyHelpManager emergencyHelpManager;
     private EmergencyHelpFloatingWindow emergencyHelpFloatingWindow;
+    /** 未加入家庭发起紧急求助的引导弹窗（防重复弹） */
+    private android.app.AlertDialog noFamilyDialog;
     
     // 图片相关
     private Uri photoUri;
@@ -4200,6 +4202,13 @@ public class AiFragment extends Fragment {
                     Log.e(TAG, "紧急求助请求失败: " + error);
                     if (isAdded()) {
                         requireActivity().runOnUiThread(() -> {
+                            isEmergencyHelpMatching = false;
+                            emergencyHelpManager.resetEmergencyHelp();
+                            // 2026-09-15：未加入家庭 → 引导弹窗 + TTS 全文播报（弹窗对盲人不可见，必须可听）
+                            if (error != null && error.contains("没有加入家庭")) {
+                                showNoFamilyGuideDialog();
+                                return;
+                            }
                             String speak;
                             if (error != null && error.contains("已经在求助中")) {
                                 speak = "您已有一个求助正在进行，请先结束后再发起";
@@ -4210,8 +4219,6 @@ public class AiFragment extends Fragment {
                             if (ttsManager != null) {
                                 ttsManager.startSpeaking(speak);
                             }
-                            isEmergencyHelpMatching = false;
-                            emergencyHelpManager.resetEmergencyHelp();
                         });
                     }
                 }
@@ -4290,6 +4297,28 @@ public class AiFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "紧急求助管理器初始化失败", e);
         }
+    }
+
+    /**
+     * 未加入家庭发起紧急求助的引导弹窗（2026-09-15）：
+     * 文案单个 setMessage 控件保证 TalkBack 一次读完，同时 TTS 播报全文；点确定关闭
+     */
+    private void showNoFamilyGuideDialog() {
+        if (noFamilyDialog != null && noFamilyDialog.isShowing()) {
+            return;
+        }
+        String message = "紧急求助要加入家庭才可以使用。"
+                + "请让家属下载视无界，注册志愿者端账号并创建家庭。"
+                + "然后您可以和小界AI说，帮我加入家庭，并告知我家属手机号，我会帮您加入家庭。";
+        if (ttsManager != null) {
+            ttsManager.startSpeaking(message);
+        }
+        noFamilyDialog = new android.app.AlertDialog.Builder(requireContext())
+                .setTitle("需要加入家庭")
+                .setMessage(message)
+                .setCancelable(false)
+                .setPositiveButton("确定", (dialog, which) -> dialog.dismiss())
+                .show();
     }
     
     /**

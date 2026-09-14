@@ -372,4 +372,15 @@ public class WebSocketService extends Service {
         Intent intent = new Intent(context, WebSocketService.class);
         context.stopService(intent);
     }
+
+    /**
+     * 重启WebSocket服务（2026-09-15）：加入/创建家庭等账号关系变化后刷新会话，
+     * 确保服务端与客户端状态一致。延迟 500ms 让当前请求先落地。
+     */
+    public static void restart(Context context) {
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            stopService(context);
+            startService(context);
+        }, 500);
+    }
 }

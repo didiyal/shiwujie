@@ -377,7 +377,10 @@ public class FamilyFragment extends Fragment {
             @Override
             public void onSuccess(Boolean data) {
                 if (data != null && data) {
-                    Toast.makeText(requireContext(), "加入家庭申请已发送，等待家主审核", Toast.LENGTH_SHORT).show();
+                    // 2026-09-15：加入家庭已取消审核，直连生效
+                    Toast.makeText(requireContext(), "已成功加入家庭", Toast.LENGTH_SHORT).show();
+                    // 家庭关系变化，重启 WS 刷新会话状态
+                    com.swj.shiwujie.common.network.WebSocketService.restart(requireContext());
                     checkFamilyStatus();
                 }
             }
@@ -409,6 +412,8 @@ public class FamilyFragment extends Fragment {
                 if (data != null && data.getFamilyId() != null) {
                     android.util.Log.d("FamilyFragment", "创建家庭成功,familyId: " + data.getFamilyId());
                     showSuccessDialog("创建家庭成功！");
+                    // 家庭关系变化，重启 WS 刷新会话状态（2026-09-15）
+                    com.swj.shiwujie.common.network.WebSocketService.restart(requireContext());
                     // 使用返回的familyId重新获取完整的家庭信息
                     getFamilyInfo(data.getFamilyId());
                 } else {
