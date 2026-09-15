@@ -28,7 +28,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="返回按钮，点击回到AI主页"
+            android:contentDescription="返回按钮，点击回到我的页面"
             android:src="@drawable/ic_back_arrow" />
 
         <TextView

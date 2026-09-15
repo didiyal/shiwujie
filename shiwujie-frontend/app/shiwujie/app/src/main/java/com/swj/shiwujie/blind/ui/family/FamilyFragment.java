@@ -235,6 +235,10 @@ public class FamilyFragment extends Fragment {
                 volunteerCount = family.getVolunteerVOList().size();
                 totalMembers += volunteerCount;
             }
+            // 2026-09-16：家主在 VO 装配时被移出志愿者列表，计数需补回
+            if (family.getCreatorVolunteer() != null) {
+                totalMembers += 1;
+            }
             
             // 更新成员数量显示
             TextView tvMemberCount = root.findViewById(R.id.tvMemberCount);

@@ -257,12 +257,8 @@ public class ProfileFragment extends Fragment {
         if (getActivity() != null) {
             try {
                 androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
-                // 替换式导航：家庭页替换“我的”，返回钮/返回键即回 AI 主页（2026-09-16）
-                androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
-                        .setPopUpTo(R.id.navigation_profile, true)
-                        .setLaunchSingleTop(true)
-                        .build();
-                navController.navigate(R.id.navigation_family, null, navOptions);
+                // 2026-09-16：压栈式导航——返回按钮回到“我的”页面
+                navController.navigate(R.id.navigation_family);
             } catch (Exception e) {
                 android.util.Log.e("ProfileFragment", "导航失败", e);
                 Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -438,12 +434,8 @@ public class ProfileFragment extends Fragment {
         if (getActivity() != null) {
             try {
                 androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
-                // 社区页同样替换式导航（2026-09-16）
-                androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
-                        .setPopUpTo(R.id.navigation_profile, true)
-                        .setLaunchSingleTop(true)
-                        .build();
-                navController.navigate(R.id.navigation_community, null, navOptions);
+                // 2026-09-16：压栈式导航——返回按钮回到“我的”页面
+                navController.navigate(R.id.navigation_community);
             } catch (Exception e) {
                 Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
