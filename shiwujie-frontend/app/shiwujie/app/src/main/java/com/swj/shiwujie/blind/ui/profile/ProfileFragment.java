@@ -56,7 +56,7 @@ public class ProfileFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_profile, container, false);
         initViews(root);
         initServices();
-        initListeners();
+        initListeners(root);
         fetchUserInfo(); // 改为主动获取用户信息
         return root;
     }
@@ -108,7 +108,7 @@ public class ProfileFragment extends Fragment {
         UserInfoManager.init();
     }
 
-    private void initListeners() {
+    private void initListeners(View root) {
         btnFamily.setOnClickListener(v -> {
             android.util.Log.d("ProfileFragment", "家庭按钮被点击");
             handleFamilyClick();
@@ -119,8 +119,9 @@ public class ProfileFragment extends Fragment {
         btnDeleteAccount.setOnClickListener(v -> handleDeleteAccountClick());
         tvCommunityStatus.setOnClickListener(v -> handleCommunityClick()); // 修改为新的控件
         // 2026-09-15：社区入口 = tvCommunityStatus 状态行；家庭入口 = btnFamily 状态行
-        // 返回按钮：回 AI 主页
-        View backButton = requireView().findViewById(R.id.btn_back);
+        // 返回按钮：回 AI 主页（2026-09-16 修复：initListeners 在 onCreateView 内执行，
+        // 此前用 requireView() 会因视图未挂载直接抛异常，导致点"我的"进页面即闪退）
+        View backButton = root.findViewById(R.id.btn_back);
         if (backButton != null) {
             backButton.setOnClickListener(v -> {
                 if (getActivity() != null) {
