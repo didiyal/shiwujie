@@ -45,7 +45,10 @@ public class ProfileFragment extends Fragment {
     private TextView tvAuthStatus;
     private TextView tvCommunityStatus;
     private TextView btnFamily;
-    private TextView btnEditInfo;
+    private TextView btnChangePhone;
+    private TextView btnChangeUsername;
+    /** 当前展示名（默认用户+手机尾号），修改用户名对话框预填用 */
+    protected String currentDisplayName;
     private TextView btnChangePassword;
     private TextView btnLogout;
     private TextView btnDeleteAccount;
@@ -95,7 +98,8 @@ public class ProfileFragment extends Fragment {
         tvAuthStatus = root.findViewById(R.id.tvAuthStatus);
         tvCommunityStatus = root.findViewById(R.id.tvCommunityStatus);
         btnFamily = root.findViewById(R.id.btnFamily);
-        btnEditInfo = root.findViewById(R.id.btnEditInfo);
+        btnChangePhone = root.findViewById(R.id.btnChangePhone);
+        btnChangeUsername = root.findViewById(R.id.btnChangeUsername);
         btnChangePassword = root.findViewById(R.id.btnChangePassword);
         btnLogout = root.findViewById(R.id.btnLogout);
         btnDeleteAccount = root.findViewById(R.id.btnDeleteAccount);
@@ -113,7 +117,8 @@ public class ProfileFragment extends Fragment {
             android.util.Log.d("ProfileFragment", "家庭按钮被点击");
             handleFamilyClick();
         });
-        btnEditInfo.setOnClickListener(v -> handleEditInfoClick());
+        btnChangePhone.setOnClickListener(v -> showChangePhoneDialog());
+        btnChangeUsername.setOnClickListener(v -> showChangeUsernameDialog());
         btnChangePassword.setOnClickListener(v -> handleChangePasswordClick());
         btnLogout.setOnClickListener(v -> handleLogoutClick());
         btnDeleteAccount.setOnClickListener(v -> handleDeleteAccountClick());
@@ -187,6 +192,7 @@ public class ProfileFragment extends Fragment {
         } else {
             displayName = defaultNameByPhone(data.getPhone());
         }
+        currentDisplayName = displayName;
         tvUsername.setText("用户名：" + displayName);
 
         // 更新社区状态（点按进入社区页）
@@ -270,10 +276,6 @@ public class ProfileFragment extends Fragment {
             return "用户" + phone.substring(phone.length() - 4);
         }
         return "用户";
-    }
-
-    private void handleEditInfoClick() {
-        NavigationHelper.toBlindEditProfile(requireContext());
     }
 
     private void handleChangePasswordClick() {
@@ -486,4 +488,122 @@ public class ProfileFragment extends Fragment {
             }
         });
     }
-} 
+
+    /** 修改绑定手机号（2026-09-16）：换绑后刷新本地手机号并重启 WS（WS 按手机号绑定） */
+    private void showChangePhoneDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(requireContext());
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_change_phone, null);
+        builder.setView(dialogView);
+
+        EditText etNewPhone = dialogView.findViewById(R.id.etNewPhone);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+
+        android.app.AlertDialog dialog = builder.create();
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnConfirm.setOnClickListener(v -> {
+            String newPhone = etNewPhone.getText().toString().trim();
+            if (TextUtils.isEmpty(newPhone)) {
+                Toast.makeText(requireContext(), "手机号不能为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (newPhone.length() != 11) {
+                Toast.makeText(requireContext(), "请输入11位手机号", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String oldPhone = SharedPrefsUtil.getPhone();
+            if (newPhone.equals(oldPhone)) {
+                Toast.makeText(requireContext(), "新手机号与当前一致", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String token = SharedPrefsUtil.getToken();
+            Long userId = SharedPrefsUtil.getUserId();
+            if (token == null || userId == null) {
+                Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            apiService.updateBlindPhone("Bearer " + token, userId, newPhone).enqueue(
+                    new ApiCallback<Boolean>(requireContext()) {
+                @Override
+                public void onSuccess(Boolean response) {
+                    Toast.makeText(requireContext(), "手机号修改成功", Toast.LENGTH_SHORT).show();
+                    // 本地手机号同步 + 重启 WS（WS 按手机号绑定会话）
+                    SharedPrefsUtil.setPhone(newPhone);
+                    com.swj.shiwujie.common.network.WebSocketService.restart(requireContext());
+                    fetchUserInfo();
+                }
+
+                @Override
+                public void onError(String message) {
+                    Toast.makeText(requireContext(), "修改失败：" + message, Toast.LENGTH_SHORT).show();
+                }
+            });
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    /** 修改用户名（2026-09-16）：预填当前展示名，空值兜底「用户+手机尾号」 */
+    private void showChangeUsernameDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(requireContext());
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_change_username, null);
+        builder.setView(dialogView);
+
+        EditText etUsername = dialogView.findViewById(R.id.etUsername);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+
+        String currentName = currentDisplayName != null ? currentDisplayName : "用户";
+        etUsername.setText(currentName);
+        etUsername.setSelection(currentName.length());
+
+        android.app.AlertDialog dialog = builder.create();
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnConfirm.setOnClickListener(v -> {
+            String newName = etUsername.getText().toString().trim();
+            if (TextUtils.isEmpty(newName)) {
+                Toast.makeText(requireContext(), "用户名不能为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (newName.equals(currentDisplayName)) {
+                Toast.makeText(requireContext(), "用户名未变化", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String token = SharedPrefsUtil.getToken();
+            Long userId = SharedPrefsUtil.getUserId();
+            if (token == null || userId == null) {
+                Toast.makeText(requireContext(), "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            apiService.updateBlindInfo("Bearer " + token, buildUpdateNameRequest(userId, newName)).enqueue(
+                    new ApiCallback<Boolean>(requireContext()) {
+                @Override
+                public void onSuccess(Boolean response) {
+                    Toast.makeText(requireContext(), "用户名修改成功", Toast.LENGTH_SHORT).show();
+                    currentDisplayName = newName;
+                    tvUsername.setText("用户名：" + newName);
+                    fetchUserInfo();
+                }
+
+                @Override
+                public void onError(String message) {
+                    Toast.makeText(requireContext(), "修改失败：" + message, Toast.LENGTH_SHORT).show();
+                }
+            });
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    /** 构造仅改用户名的更新请求（其余字段置 null，后端忽略） */
+    private BlindVO buildUpdateNameRequest(Long userId, String newName) {
+        BlindVO vo = new BlindVO();
+        vo.setBlindId(userId);
+        vo.setName(newName);
+        return vo;
+    }
+}

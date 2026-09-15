@@ -183,19 +183,6 @@
                     android:textSize="16sp"
                     android:visibility="gone" />
 
-                <!-- 修改个人信息按钮 -->
-                <TextView
-                    android:id="@+id/btnEditInfo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:background="#F5F5F5"
-                    android:gravity="center"
-                    android:padding="12dp"
-                    android:text="修改个人信息"
-                    android:textColor="#163AAC"
-                    android:textSize="16sp" />
-
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
@@ -216,14 +203,48 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- 修改密码按钮 -->
+                <!-- 修改绑定手机号（2026-09-16） -->
+                <TextView
+                    android:id="@+id/btnChangePhone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:contentDescription="修改绑定手机号，点按修改"
+                    android:padding="16dp"
+                    android:text="修改绑定手机号"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE" />
+
+                <!-- 修改用户名 -->
+                <TextView
+                    android:id="@+id/btnChangeUsername"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:contentDescription="修改用户名，点按修改"
+                    android:padding="16dp"
+                    android:text="修改用户名"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE" />
+
+                <!-- 设置或修改密码按钮 -->
                 <TextView
                     android:id="@+id/btnChangePassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?android:attr/selectableItemBackground"
                     android:padding="16dp"
-                    android:text="修改密码"
+                    android:text="设置或修改密码"
                     android:textColor="@android:color/black"
                     android:textSize="16sp" />
 
@@ -255,7 +276,7 @@
                     android:layout_height="wrap_content"
                     android:background="?android:attr/selectableItemBackground"
                     android:padding="16dp"
-                    android:text="注销账户"
+                    android:text="注销账号"
                     android:textColor="@android:color/black"
                     android:textSize="16sp" />
 
