@@ -145,7 +145,8 @@ public class UserTools {
 
     /** 成员显示名兜底：姓名为空时默认「用户+手机尾号」（2026-09-15） */
     private String memberDisplayName(String name, String phone) {
-        if (name != null && !name.trim().isEmpty()) {
+        // "无名"（历史默认名）与空值一并兜底为「用户+手机尾号」（2026-09-16）
+        if (name != null && !name.trim().isEmpty() && !"无名".equals(name.trim())) {
             return name;
         }
         if (phone != null && phone.length() >= 4) {

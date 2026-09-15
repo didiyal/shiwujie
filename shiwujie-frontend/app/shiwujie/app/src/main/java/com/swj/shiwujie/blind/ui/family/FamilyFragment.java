@@ -244,13 +244,19 @@ public class FamilyFragment extends Fragment {
 
             // 更新统一成员列表（盲人 + 志愿者合并，身份用标签区分）
             java.util.List<Object> allMembers = new java.util.ArrayList<>();
+            // 2026-09-16：家主在 VO 装配时被移出志愿者列表，这里补回置顶展示
+            if (family.getCreatorVolunteer() != null) {
+                allMembers.add(family.getCreatorVolunteer());
+            }
             if (family.getBlindVOList() != null) {
                 allMembers.addAll(family.getBlindVOList());
             }
             if (family.getVolunteerVOList() != null) {
                 allMembers.addAll(family.getVolunteerVOList());
             }
-            rvFamilyMembers.setAdapter(new FamilyMemberAdapter(allMembers));
+            Long creatorId = family.getCreatorVolunteer() != null
+                    ? family.getCreatorVolunteer().getVolunteerId() : null;
+            rvFamilyMembers.setAdapter(new FamilyMemberAdapter(allMembers, creatorId));
 
             // 检查是否显示退出按钮
             Long currentUserId = SharedPrefsUtil.getUserId();
@@ -344,13 +350,16 @@ public class FamilyFragment extends Fragment {
     private static class FamilyMemberAdapter extends RecyclerView.Adapter<FamilyMemberAdapter.ViewHolder> {
         private final List<Object> members;
 
-        FamilyMemberAdapter(List<Object> members) {
+        private final Long creatorId;
+
+        FamilyMemberAdapter(List<Object> members, Long creatorId) {
             this.members = members;
+            this.creatorId = creatorId;
         }
 
-        /** 名称兜底：无名/null 时显示「用户+手机尾号」 */
+        /** 名称兜底：无名/null 时显示「用户+手机尾号」（2026-09-16） */
         private String displayName(String name, String phone) {
-            if (name != null && !name.trim().isEmpty()) {
+            if (name != null && !name.trim().isEmpty() && !"无名".equals(name.trim())) {
                 return name;
             }
             if (phone != null && phone.length() >= 4) {
@@ -377,7 +386,9 @@ public class FamilyFragment extends Fragment {
             } else if (member instanceof VolunteerVO) {
                 VolunteerVO v = (VolunteerVO) member;
                 holder.tvName.setText(displayName(v.getName(), v.getPhone()));
-                holder.tvRole.setText("志愿者");
+                boolean isCreator = creatorId != null && v.getVolunteerId() != null
+                        && v.getVolunteerId().equals(creatorId);
+                holder.tvRole.setText(isCreator ? "家主" : "志愿者");
             }
         }
 

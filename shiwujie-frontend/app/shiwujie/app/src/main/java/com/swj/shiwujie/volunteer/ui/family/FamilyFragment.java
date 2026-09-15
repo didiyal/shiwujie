@@ -329,6 +329,10 @@ public class FamilyFragment extends Fragment {
     private void updateMemberLists(FamilyVO family) {
         // 2026-09-15：成员统一列表（不分盲人/志愿者），名称兜底"用户+手机尾号"，身份标签区分
         List<Object> allMembers = new ArrayList<>();
+        // 2026-09-16：家主在 VO 装配时被移出志愿者列表，这里补回置顶展示
+        if (family.getCreatorVolunteer() != null) {
+            allMembers.add(family.getCreatorVolunteer());
+        }
         if (family.getBlindVOList() != null) {
             allMembers.addAll(family.getBlindVOList());
         }
@@ -367,7 +371,8 @@ public class FamilyFragment extends Fragment {
 
         /** 名称兜底：无名/null 时显示「用户+手机尾号」 */
         private String displayName(String name, String phone) {
-            if (name != null && !name.trim().isEmpty()) {
+            // "无名"（历史默认名）与空值一并兜底为「用户+手机尾号」（2026-09-16）
+            if (name != null && !name.trim().isEmpty() && !"无名".equals(name.trim())) {
                 return name;
             }
             if (phone != null && phone.length() >= 4) {

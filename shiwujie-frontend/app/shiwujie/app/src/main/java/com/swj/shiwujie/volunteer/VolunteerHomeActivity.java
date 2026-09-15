@@ -23,6 +23,20 @@ import com.swj.shiwujie.databinding.ActivityVolunteerHomeBinding;
 import com.swj.shiwujie.common.network.WebSocketManager;
 import com.swj.shiwujie.common.utils.SharedPrefsUtil;
 import com.swj.shiwujie.common.utils.PermissionManager;
+import com.swj.shiwujie.common.utils.EmergencyRingerManager;
+import com.swj.shiwujie.common.utils.TTSManager;
+import com.swj.shiwujie.common.ui.EmergencyHelpIncomingWindow;
+import com.swj.shiwujie.common.network.RetrofitClient;
+import com.swj.shiwujie.common.network.ApiService;
+import com.swj.shiwujie.common.service.FloatingWindowService;
+import com.swj.shiwujie.data.model.BaseResponse;
+import com.swj.shiwujie.data.model.SocketDataV0;
+
+import androidx.annotation.NonNull;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class VolunteerHomeActivity extends AppCompatActivity {
     private static final String TAG = "VolunteerHomeActivity";
@@ -41,6 +55,13 @@ public class VolunteerHomeActivity extends AppCompatActivity {
     }
     private DialogType currentDialogType = DialogType.NONE;
 
+    // 2026-09-16：紧急求助/匹配信令监听提升到 Activity 级——此前绑在 HomeFragment 生命周期，
+    // tab 切到家庭/社区/我的后监听器被移除，紧急求助弹窗永远收不到
+    private WebSocketManager webSocketManager;
+    private WebSocketManager.MessageListener globalSignalListener;
+    private EmergencyHelpIncomingWindow emergencyHelpIncomingWindow;
+    private TTSManager ttsManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,13 +79,180 @@ public class VolunteerHomeActivity extends AppCompatActivity {
         }
 
         setupViews();
-        
+
         // 检查权限
         checkPermissions();
-        
+        checkRingerPermissions();
+
         // 检查登录状态并建立WebSocket连接
         initWebSocketConnection();
+
+        // 全局信令监听（Activity 级，全 tab/后台可用）
+        initGlobalSignalListener();
+        initTts();
     }
+
+    /** 首次申请响铃/震动权限（紧急求助来电提醒用） */
+    private void checkRingerPermissions() {
+        if (!PermissionManager.hasRingerPermissions(this)) {
+            PermissionManager.requestRingerPermissions(this);
+        }
+    }
+
+    private void initTts() {
+        try {
+            ttsManager = new TTSManager(this);
+        } catch (Exception e) {
+            Log.e(TAG, "TTS初始化失败", e);
+        }
+    }
+
+    /** 播报辅助：TTS 不可用时静默降级 */
+    private void speak(String text) {
+        if (ttsManager != null && text != null && !text.isEmpty()) {
+            ttsManager.startSpeaking(text);
+        }
+    }
+
+    /** Activity 级全局信令监听：紧急求助来电(3)/取消(4)/志愿者匹配成功(1) */
+    private void initGlobalSignalListener() {
+        webSocketManager = WebSocketManager.getInstance();
+        globalSignalListener = new WebSocketManager.MessageListener() {
+            @Override
+            public void onMessageReceived(@NonNull SocketDataV0 data) {
+                runOnUiThread(() -> handleGlobalSocketMessage(data));
+            }
+        };
+        webSocketManager.addMessageListener(globalSignalListener);
+    }
+
+    private void handleGlobalSocketMessage(SocketDataV0 data) {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+        Log.d(TAG, "全局信令: type=" + data.getRequestType()
+                + ", 盲人手机号=" + data.getBlindPhone());
+
+        if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_EMERGENCY_INCOMING) {
+            // 紧急求助来电：响铃 + 全屏弹窗（任意 tab/后台均可，依赖悬浮窗权限）
+            if (PermissionManager.hasRingerPermissions(this)) {
+                EmergencyRingerManager.getInstance().startEmergencyRinger(this);
+            } else {
+                Log.w(TAG, "缺少响铃权限，请求权限");
+                PermissionManager.requestRingerPermissions(this);
+            }
+            if (emergencyHelpIncomingWindow == null) {
+                emergencyHelpIncomingWindow = new EmergencyHelpIncomingWindow(this);
+            }
+            emergencyHelpIncomingWindow.setBlindPhone(data.getBlindPhone());
+            emergencyHelpIncomingWindow.setOnAcceptListener(v -> {
+                EmergencyRingerManager.getInstance().stopEmergencyRinger();
+                respondToEmergencyHelp(data);
+                emergencyHelpIncomingWindow.hide();
+            });
+            emergencyHelpIncomingWindow.setOnRejectListener(v -> {
+                EmergencyRingerManager.getInstance().stopEmergencyRinger();
+                emergencyHelpIncomingWindow.hide();
+            });
+            emergencyHelpIncomingWindow.show();
+        } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_EMERGENCY_CANCELLED) {
+            // 求助取消/已被其他家属接通：停铃 + 收回弹窗 + 播报
+            Log.d(TAG, "收到紧急求助收回通知，文案: " + data.getMessage());
+            EmergencyRingerManager.getInstance().stopEmergencyRinger();
+            if (emergencyHelpIncomingWindow != null) {
+                emergencyHelpIncomingWindow.hide();
+            }
+            speak(data.getMessage() != null ? data.getMessage() : "紧急求助已取消");
+        } else if (data.getRequestType() == SocketDataV0.REQUEST_TYPE_MATCH_SUCCESS) {
+            // 志愿者匹配成功：停等待悬浮窗 → 回发视频初始化 → 跳视频页
+            webSocketManager.setMatchingStatus(false);
+            sendVideoInitMessage(data);
+            try {
+                stopService(new Intent(this, FloatingWindowService.class));
+                Intent videoIntent = new Intent(this, com.swj.shiwujie.volunteer.VideoCallActivity.class);
+                videoIntent.putExtra("channelId", data.getChannelId());
+                videoIntent.putExtra("blindPhone", data.getBlindPhone());
+                videoIntent.putExtra("volunteerPhone", data.getVolunteerPhone());
+                startActivity(videoIntent);
+            } catch (Exception e) {
+                Log.e(TAG, "启动视频通话Activity失败", e);
+            }
+        }
+    }
+
+    /** 回发视频初始化成功（type=2），盲人端据此进入视频页 */
+    private void sendVideoInitMessage(SocketDataV0 matchData) {
+        try {
+            SocketDataV0 initData = new SocketDataV0();
+            initData.setRequestType(2);
+            initData.setBlindPhone(matchData.getBlindPhone());
+            initData.setVolunteerPhone(matchData.getVolunteerPhone());
+            initData.setChannelId(matchData.getChannelId());
+            webSocketManager.sendMessage(initData);
+            Log.d(TAG, "视频初始化成功消息已发送");
+        } catch (Exception e) {
+            Log.e(TAG, "发送视频初始化消息失败: " + e.getMessage(), e);
+        }
+    }
+
+    /** 家属接听紧急求助：登记响应后进入视频页 */
+    private void respondToEmergencyHelp(SocketDataV0 data) {
+        String blindPhone = data.getBlindPhone();
+        if (blindPhone == null) {
+            Toast.makeText(this, "盲人手机号为空，无法响应紧急求助", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String token = SharedPrefsUtil.getToken();
+        if (token == null || token.isEmpty()) {
+            Toast.makeText(this, "登录状态异常，请重新登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ApiService apiService = RetrofitClient.getInstance().createService(ApiService.class);
+        apiService.familyJoinUrgenthelp("Bearer " + token, blindPhone).enqueue(new Callback<BaseResponse<Boolean>>() {
+            @Override
+            public void onResponse(Call<BaseResponse<Boolean>> call, Response<BaseResponse<Boolean>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    BaseResponse<Boolean> result = response.body();
+                    if (result.getCode() == 1 && Boolean.TRUE.equals(result.getData())) {
+                        Toast.makeText(VolunteerHomeActivity.this, "响应成功，进入视频通话", Toast.LENGTH_SHORT).show();
+                        if (emergencyHelpIncomingWindow != null) emergencyHelpIncomingWindow.hide();
+                        Intent videoIntent = new Intent(VolunteerHomeActivity.this, com.swj.shiwujie.volunteer.VideoCallActivity.class);
+                        videoIntent.putExtra("channelId", data.getChannelId());
+                        videoIntent.putExtra("blindPhone", data.getBlindPhone());
+                        videoIntent.putExtra("volunteerPhone", data.getVolunteerPhone());
+                        videoIntent.putExtra("isEmergencyHelp", true);
+                        startActivity(videoIntent);
+                    } else {
+                        Toast.makeText(VolunteerHomeActivity.this, "响应失败: " + result.getMessage(), Toast.LENGTH_SHORT).show();
+                        if (emergencyHelpIncomingWindow != null) emergencyHelpIncomingWindow.hide();
+                        if (result.getMessage() != null && result.getMessage().contains("已有家属接通")) {
+                            speak("已有其他家属接通本次求助");
+                        } else {
+                            speak("接听失败，请稍后再试");
+                        }
+                    }
+                } else {
+                    Toast.makeText(VolunteerHomeActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<BaseResponse<Boolean>> call, Throwable t) {
+                Toast.makeText(VolunteerHomeActivity.this, "网络异常: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (PermissionManager.handlePermissionResult(requestCode, permissions, grantResults)) {
+            Toast.makeText(this, "权限申请成功，紧急求助时会有响铃提醒", Toast.LENGTH_SHORT).show();
+        } else {
+            Log.w(TAG, "响铃权限申请失败");
+        }
+    }
+
     
     @Override
     protected void onResume() {
@@ -257,12 +445,26 @@ public class VolunteerHomeActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        
+
         // 销毁所有实名认证弹窗
         destroyAllIdentityDialogs();
-        
+
+        // 全局信令监听与紧急来电资源清理（2026-09-16）
+        if (webSocketManager != null && globalSignalListener != null) {
+            webSocketManager.removeMessageListener(globalSignalListener);
+        }
+        EmergencyRingerManager.getInstance().stopEmergencyRinger();
+        if (emergencyHelpIncomingWindow != null) {
+            emergencyHelpIncomingWindow.destroy();
+            emergencyHelpIncomingWindow = null;
+        }
+        if (ttsManager != null) {
+            ttsManager.destroy();
+            ttsManager = null;
+        }
+
         binding = null;
-        
+
         // 停止WebSocket前台服务
         com.swj.shiwujie.common.network.WebSocketService.stopService(this);
     }

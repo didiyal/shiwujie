@@ -70,6 +70,6 @@ app:
     apk-dir: ${APK_DIR:/www/wwwroot/shiwujie/shiwujie-frontend/}   # APK 目录：上传任意名的 .apk 即生效（自动提供最新修改的一个）
   # 线上最新版本信息（强制更新检查用）：发新 APK 时同步升 code/name，App 启动比对本地 versionCode 即弹强制更新
   version:
-    code: ${APP_VERSION_CODE:26}
-    name: ${APP_VERSION_NAME:3.2.4}
-    update-log: ${APP_VERSION_LOG:修复切换页面停留异常；语音助手介绍更完整}
+    code: ${APP_VERSION_CODE:27}
+    name: ${APP_VERSION_NAME:3.2.5}
+    update-log: ${APP_VERSION_LOG:紧急求助提醒更可靠，任意页面都能收到；家庭页显示全部成员}
