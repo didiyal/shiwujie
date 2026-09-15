@@ -282,7 +282,12 @@ public class ProfileFragment extends Fragment {
         if (getActivity() != null) {
             try {
                 androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
-                navController.navigate(R.id.navigation_family);
+                // 替换式导航：家庭页替换“我的”，tabBar 切换不再停留在家庭页（2026-09-16 修复）
+                androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+                        .setPopUpTo(R.id.navigation_profile, true)
+                        .setLaunchSingleTop(true)
+                        .build();
+                navController.navigate(R.id.navigation_family, null, navOptions);
             } catch (Exception e) {
                 android.util.Log.e("ProfileFragment", "导航失败", e);
                 Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -461,7 +466,12 @@ public class ProfileFragment extends Fragment {
         if (getActivity() != null) {
             try {
                 androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
-                navController.navigate(R.id.navigation_community);
+                // 社区页同样替换式导航（2026-09-16）
+                androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+                        .setPopUpTo(R.id.navigation_profile, true)
+                        .setLaunchSingleTop(true)
+                        .build();
+                navController.navigate(R.id.navigation_community, null, navOptions);
             } catch (Exception e) {
                 Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
