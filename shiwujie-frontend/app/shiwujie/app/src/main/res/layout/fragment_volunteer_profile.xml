@@ -57,7 +57,7 @@
                 app:layout_constraintTop_toBottomOf="@id/tvTitle"
                 app:layout_constraintWidth_percent="0.2" />
 
-            <!-- 用户信息容器 -->
+            <!-- 用户信息容器：用户名 + 手机号（2026-09-15 与视障端样式对齐） -->
             <LinearLayout
                 android:id="@+id/userInfoContainer"
                 android:layout_width="0dp"
@@ -69,7 +69,7 @@
                 app:layout_constraintRight_toLeftOf="@id/ivBrainIcon"
                 app:layout_constraintTop_toTopOf="@id/ivAvatar">
 
-                <!-- 用户名 -->
+                <!-- 用户名（未设置时默认"用户+手机尾号"） -->
                 <TextView
                     android:id="@+id/tvUsername"
                     android:layout_width="match_parent"
@@ -78,13 +78,13 @@
                     android:textColor="@android:color/white"
                     android:textSize="18sp" />
 
-                <!-- 社区状态 -->
+                <!-- 手机号 -->
                 <TextView
-                    android:id="@+id/tvCommunityStatus"
+                    android:id="@+id/tvAccount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="未加入社区"
+                    android:text="手机号："
                     android:textColor="@android:color/white"
                     android:textSize="14sp" />
 
@@ -120,44 +120,55 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- 账号 -->
+                <!-- 家庭状态行：点击进入家庭页面（2026-09-15 与视障端样式对齐） -->
                 <TextView
-                    android:id="@+id/tvAccount"
+                    android:id="@+id/btnFamily"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="账号：19979638"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:contentDescription="家庭状态，点按进入家庭页面"
+                    android:padding="14dp"
+                    android:text="未加入家庭"
                     android:textColor="@android:color/black"
                     android:textSize="16sp" />
 
-                <!-- 创建/加入家庭按钮 -->
-                <TextView
-                    android:id="@+id/btnFamily"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:background="#163AAC"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:text="创建/加入家庭"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE" />
 
-                <!-- 身份认证状态 -->
+                <!-- 社区状态行：点击进入社区页面 -->
+                <TextView
+                    android:id="@+id/tvCommunityStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:contentDescription="社区状态，点按进入社区页面"
+                    android:padding="14dp"
+                    android:text="未加入社区"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE" />
+
+                <!-- 实名状态（实名已下线，恒隐藏，保留控件兼容代码） -->
                 <TextView
                     android:id="@+id/tvAuthStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
                     android:text="身份已认证"
                     android:textColor="@android:color/black"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    android:visibility="gone" />
 
-                <!-- 身份证号显示（脱敏） -->
+                <!-- 身份证号显示（实名已下线，恒隐藏，保留控件兼容代码） -->
                 <TextView
                     android:id="@+id/tvIdCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:text=""
                     android:textColor="@android:color/black"
                     android:textSize="14sp"

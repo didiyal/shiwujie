@@ -27,18 +27,37 @@
             app:layout_constraintHeight_percent="0.25"
             app:layout_constraintTop_toBottomOf="@id/statusBarSpacer">
 
-            <!-- 标题 -->
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="wrap_content"
+            <!-- 标题行：返回按钮 + 标题（2026-09-15：tabBar 删除后由返回按钮回 AI 页） -->
+            <LinearLayout
+                android:id="@+id/titleRow"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="个人中心"
-                android:textColor="@android:color/white"
-                android:textSize="20sp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageButton
+                    android:id="@+id/btn_back"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="返回按钮，点击回到AI主页"
+                    android:src="@drawable/ic_back_arrow" />
+
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingEnd="56dp"
+                    android:text="个人中心"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp" />
+            </LinearLayout>
 
             <!-- 用户头像 -->
             <ImageView
@@ -54,10 +73,10 @@
                 app:layout_constraintDimensionRatio="1:1"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toLeftOf="@id/userInfoContainer"
-                app:layout_constraintTop_toBottomOf="@id/tvTitle"
+                app:layout_constraintTop_toBottomOf="@id/titleRow"
                 app:layout_constraintWidth_percent="0.2" />
 
-            <!-- 用户信息容器 -->
+            <!-- 用户信息容器：用户名 + 手机号（2026-09-15 重排，社区状态行移到下方卡片） -->
             <LinearLayout
                 android:id="@+id/userInfoContainer"
                 android:layout_width="0dp"
@@ -69,7 +88,7 @@
                 app:layout_constraintRight_toLeftOf="@id/ivBrainIcon"
                 app:layout_constraintTop_toTopOf="@id/ivAvatar">
 
-                <!-- 用户名 -->
+                <!-- 用户名（未设置时默认"用户+手机尾号"） -->
                 <TextView
                     android:id="@+id/tvUsername"
                     android:layout_width="match_parent"
@@ -78,13 +97,13 @@
                     android:textColor="@android:color/white"
                     android:textSize="18sp" />
 
-                <!-- 社区状态 -->
+                <!-- 手机号 -->
                 <TextView
-                    android:id="@+id/tvCommunityStatus"
+                    android:id="@+id/tvAccount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="未加入社区"
+                    android:text="手机号："
                     android:textColor="@android:color/white"
                     android:textSize="14sp" />
 
@@ -120,51 +139,49 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- 账号 -->
+                <!-- 家庭状态行：点击进入家庭页面（2026-09-15 重排） -->
                 <TextView
-                    android:id="@+id/tvAccount"
+                    android:id="@+id/btnFamily"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="账号：19979638"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:contentDescription="家庭状态，点按进入家庭页面"
+                    android:padding="14dp"
+                    android:text="未加入家庭"
                     android:textColor="@android:color/black"
                     android:textSize="16sp" />
 
-                <!-- 创建/加入家庭按钮 -->
-                <TextView
-                    android:id="@+id/btnFamily"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:background="#163AAC"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:text="创建/加入家庭"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE" />
 
-                <!-- 社区入口（2026-09-15 二期重构：tabBar 删除后经我的进入社区） -->
+                <!-- 社区状态行：点击进入社区页面（2026-09-15 重排） -->
                 <TextView
-                    android:id="@+id/btnCommunity"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tvCommunityStatus"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginTop="16dp"
-                    android:background="#163AAC"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:text="进入社区"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp" />
+                    android:background="?android:attr/selectableItemBackground"
+                    android:contentDescription="社区状态，点按进入社区页面"
+                    android:padding="14dp"
+                    android:text="未加入社区"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
 
-                <!-- 身份认证状态 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE" />
+
+                <!-- 身份认证状态（认证已下线，恒隐藏，保留控件兼容代码） -->
                 <TextView
                     android:id="@+id/tvAuthStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
                     android:text="身份已认证"
                     android:textColor="@android:color/black"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    android:visibility="gone" />
 
                 <!-- 修改个人信息按钮 -->
                 <TextView

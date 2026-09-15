@@ -36,16 +36,16 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
-                <!-- 地球图标 -->
+                <!-- 地球图标（2026-09-15：上下加宽到 140dp） -->
                 <ImageView
                     android:id="@+id/img_globe"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_globe"
                     android:contentDescription="@string/globe_icon" />
 
-                <!-- 统计数据 -->
+                <!-- 统计数据（2026-09-15：去掉图标下方的中文标签，仅保留数量） -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -68,13 +68,6 @@
                             android:textColor="@color/white"
                             android:textSize="24sp"
                             android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="盲人"
-                            android:textColor="@color/white"
-                            android:textSize="14sp" />
                     </LinearLayout>
 
                     <!-- 分隔线 -->
@@ -99,13 +92,6 @@
                             android:textColor="@color/white"
                             android:textSize="24sp"
                             android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="志愿者"
-                            android:textColor="@color/white"
-                            android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

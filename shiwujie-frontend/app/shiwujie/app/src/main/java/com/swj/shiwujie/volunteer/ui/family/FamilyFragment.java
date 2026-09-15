@@ -46,28 +46,17 @@ import retrofit2.Response;
 public class FamilyFragment extends Fragment {
     private CardView cardFamilyInfo;
     private CardView cardEmptyState;
-    private CardView cardFamilyRequests;
-    private TextView tvFamilyName;
-    private TextView tvFamilyDescription;
-    private TextView tvCreator;
-    private TextView tvFamilyId;
-    private RecyclerView rvBlindMembers;
-    private RecyclerView rvVolunteerMembers;
-    private RecyclerView rvFamilyRequests;
+    private RecyclerView rvFamilyMembers;
     private Button btnJoinFamily;
     private Button btnCreateFamily;
-    private Button btnEditFamily;
     private Button btnDeleteFamily;
     private Button btnRemoveMembers;
     private Button btnLeaveFamily;
     private ApiService apiService;
     private FamilyVO currentFamily;
-    private List<FamilyJoinReviewVO> currentRequests;
 
-    // 成员适配器
-    private MemberAdapter blindMemberAdapter;
-    private MemberAdapter volunteerMemberAdapter;
-    private FamilyRequestAdapter familyRequestAdapter;
+    // 成员适配器（2026-09-15：统一列表，不分盲人/志愿者；加入申请卡随审核取消下线）
+    private UnifiedMemberAdapter familyMemberAdapter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -82,30 +71,19 @@ public class FamilyFragment extends Fragment {
     private void initViews(View root) {
         cardFamilyInfo = root.findViewById(R.id.cardFamilyInfo);
         cardEmptyState = root.findViewById(R.id.cardEmptyState);
-        cardFamilyRequests = root.findViewById(R.id.cardFamilyRequests);
-        tvFamilyName = root.findViewById(R.id.tvFamilyName);
-        tvFamilyDescription = root.findViewById(R.id.tvFamilyDescription);
-        tvCreator = root.findViewById(R.id.tvCreator);
-        tvFamilyId = root.findViewById(R.id.tvFamilyId);
-        rvBlindMembers = root.findViewById(R.id.rvBlindMembers);
-        rvVolunteerMembers = root.findViewById(R.id.rvVolunteerMembers);
-        rvFamilyRequests = root.findViewById(R.id.rvFamilyRequests);
+        rvFamilyMembers = root.findViewById(R.id.rvFamilyMembers);
         btnJoinFamily = root.findViewById(R.id.btnJoinFamily);
         btnCreateFamily = root.findViewById(R.id.btnCreateFamily);
-        btnEditFamily = root.findViewById(R.id.btnEditFamily);
         btnDeleteFamily = root.findViewById(R.id.btnDeleteFamily);
         btnRemoveMembers = root.findViewById(R.id.btnRemoveMembers);
         btnLeaveFamily = root.findViewById(R.id.btnLeaveFamily);
 
         // 设置RecyclerView的布局管理器
-        rvBlindMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvVolunteerMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvFamilyRequests.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvFamilyMembers.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         // 设置按钮点击事件
         btnJoinFamily.setOnClickListener(v -> showJoinFamilyDialog());
         btnCreateFamily.setOnClickListener(v -> showCreateFamilyDialog());
-        btnEditFamily.setOnClickListener(v -> showEditFamilyDialog());
         btnDeleteFamily.setVisibility(View.GONE); // 默认隐藏
         btnDeleteFamily.setOnClickListener(v -> showDeleteFamilyDialog());
         btnRemoveMembers.setVisibility(View.GONE); // 默认隐藏，只有家主才显示
@@ -119,13 +97,8 @@ public class FamilyFragment extends Fragment {
     }
 
     private void initAdapters() {
-        blindMemberAdapter = new MemberAdapter("盲人");
-        volunteerMemberAdapter = new MemberAdapter("志愿者");
-        familyRequestAdapter = new FamilyRequestAdapter();
-        
-        rvBlindMembers.setAdapter(blindMemberAdapter);
-        rvVolunteerMembers.setAdapter(volunteerMemberAdapter);
-        rvFamilyRequests.setAdapter(familyRequestAdapter);
+        familyMemberAdapter = new UnifiedMemberAdapter();
+        rvFamilyMembers.setAdapter(familyMemberAdapter);
     }
 
     private void checkFamilyStatus() {
@@ -170,16 +143,6 @@ public class FamilyFragment extends Fragment {
                 if (response != null) {
                     currentFamily = response;
                     updateFamilyInfo(response);
-                    
-                    // 检查是否是家主
-                    Long currentUserId = SharedPrefsUtil.getUserId();
-                    if (currentUserId != null && response.getCreatorVolunteer() != null && 
-                        currentUserId.equals(response.getCreatorVolunteer().getVolunteerId())) {
-                        // 是家主，获取申请列表
-                            getFamilyJoinRequests();
-                    } else {
-                        cardFamilyRequests.setVisibility(View.GONE);
-                    }
                 } else {
                     showEmptyState();
                 }
@@ -212,85 +175,31 @@ public class FamilyFragment extends Fragment {
         }
     }
 
-    private void getFamilyJoinRequests() {
-        String token = SharedPrefsUtil.getToken();
-        if (token == null) {
-            return;
-        }
-
-        apiService.getFamilyJoinReviewVOList("Bearer " + token).enqueue(new ApiCallback<List<FamilyJoinReviewVO>>(requireContext()) {
-            @Override
-            public void onSuccess(List<FamilyJoinReviewVO> data) {
-                if (data != null) {
-                    // 只显示待审核的申请
-                    List<FamilyJoinReviewVO> pendingRequests = data.stream()
-                        .filter(request -> "待审核".equals(request.getReviewStatus()))
-                        .collect(Collectors.toList());
-                    
-                    if (!pendingRequests.isEmpty()) {
-                        cardFamilyRequests.setVisibility(View.VISIBLE);
-                        familyRequestAdapter.updateRequests(pendingRequests);
-                    } else {
-                        cardFamilyRequests.setVisibility(View.GONE);
-                    }
-                } else {
-                    cardFamilyRequests.setVisibility(View.GONE);
-                }
-            }
-
-            @Override
-            public void onError(String message) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-                cardFamilyRequests.setVisibility(View.GONE);
-            }
-        });
-    }
-
-    private void updateFamilyRequests() {
-        if (currentRequests != null && !currentRequests.isEmpty()) {
-            cardFamilyRequests.setVisibility(View.VISIBLE);
-            familyRequestAdapter.updateRequests(currentRequests);
-        } else {
-            cardFamilyRequests.setVisibility(View.GONE);
-        }
-    }
-
     private void updateFamilyInfo(FamilyVO family) {
         android.util.Log.d("FamilyFragment", "开始更新UI,家庭ID: " + family.getFamilyId());
         currentFamily = family;
-        
+
         // 确保在主线程中更新UI
         requireActivity().runOnUiThread(() -> {
             cardFamilyInfo.setVisibility(View.VISIBLE);
             cardEmptyState.setVisibility(View.GONE);
 
-            // 更新家庭ID
-            tvFamilyId.setText(String.format("家庭ID: %d", family.getFamilyId()));
-
-            // 更新家庭基本信息
-            tvFamilyName.setText(family.getFamilyName() != null ? family.getFamilyName() : "未命名家庭");
-            tvFamilyDescription.setText(family.getFamilyDescription() != null ? family.getFamilyDescription() : "暂无描述");
-
-            // 更新创建者信息
-            VolunteerVO creator = family.getCreatorVolunteer();
-            if (creator != null) {
-                String creatorInfo = String.format("创建者: %s\nID: %d", 
-                    creator.getName(), 
-                    creator.getVolunteerId());
-                tvCreator.setText(creatorInfo);
-
-                // 检查当前用户是否是创建者
-                Long currentUserId = SharedPrefsUtil.getUserId();
-                btnEditFamily.setVisibility(currentUserId != null && currentUserId.equals(creator.getVolunteerId()) 
-                    ? View.VISIBLE : View.GONE);
-            } else {
-                tvCreator.setText("创建者信息不可用");
-                btnEditFamily.setVisibility(View.GONE);
+            // 成员数量（标题旁小字）
+            int totalMembers = 0;
+            if (family.getBlindVOList() != null) {
+                totalMembers += family.getBlindVOList().size();
+            }
+            if (family.getVolunteerVOList() != null) {
+                totalMembers += family.getVolunteerVOList().size();
+            }
+            TextView tvMemberCount = requireView().findViewById(R.id.tvMemberCount);
+            if (tvMemberCount != null) {
+                tvMemberCount.setText(totalMembers + "人");
             }
 
-            // 检查是否是家主
+            // 检查是否是家主（决定解散/移除/退出按钮可见性）
             Long currentUserId = SharedPrefsUtil.getUserId();
-            if (currentUserId != null && family.getCreatorVolunteer() != null 
+            if (currentUserId != null && family.getCreatorVolunteer() != null
                     && currentUserId.equals(family.getCreatorVolunteer().getVolunteerId())) {
                 btnDeleteFamily.setVisibility(View.VISIBLE);
                 btnRemoveMembers.setVisibility(View.VISIBLE);
@@ -302,28 +211,7 @@ public class FamilyFragment extends Fragment {
                 btnLeaveFamily.setOnClickListener(v -> showLeaveFamilyDialog());
             }
 
-            // 计算并显示成员数量
-            int totalMembers = 0;
-            int blindCount = 0;
-            int volunteerCount = 0;
-            
-            if (family.getBlindVOList() != null) {
-                blindCount = family.getBlindVOList().size();
-                totalMembers += blindCount;
-            }
-            
-            if (family.getVolunteerVOList() != null) {
-                volunteerCount = family.getVolunteerVOList().size();
-                totalMembers += volunteerCount;
-            }
-            
-            // 更新成员数量显示
-            TextView tvMemberCount = requireView().findViewById(R.id.tvMemberCount);
-            if (tvMemberCount != null) {
-                tvMemberCount.setText(totalMembers + "人");
-            }
-
-            // 更新成员列表
+            // 统一成员列表
             updateMemberLists(family);
         });
     }
@@ -438,147 +326,54 @@ public class FamilyFragment extends Fragment {
                 .show();
     }
 
-    private void showEditFamilyDialog() {
-        if (currentFamily == null) {
-            Toast.makeText(requireContext(), "家庭信息不可用", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 创建对话框布局
-        LinearLayout layout = new LinearLayout(requireContext());
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 20);
-
-        // 创建家庭名称输入框
-        EditText etFamilyName = new EditText(requireContext());
-        etFamilyName.setInputType(InputType.TYPE_CLASS_TEXT);
-        etFamilyName.setHint("请输入家庭名称");
-        etFamilyName.setText(currentFamily.getFamilyName());
-        etFamilyName.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-        etFamilyName.setPadding(0, 0, 0, 20);
-
-        // 创建家庭描述输入框
-        EditText etFamilyDescription = new EditText(requireContext());
-        etFamilyDescription.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        etFamilyDescription.setHint("请输入家庭描述");
-        etFamilyDescription.setText(currentFamily.getFamilyDescription());
-        etFamilyDescription.setMinLines(3);
-        etFamilyDescription.setMaxLines(5);
-        etFamilyDescription.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-
-        // 添加输入框到布局
-        layout.addView(etFamilyName);
-        layout.addView(etFamilyDescription);
-
-        // 创建对话框
-        new AlertDialog.Builder(requireContext())
-                .setTitle("修改家庭信息")
-                .setView(layout)
-                .setPositiveButton("确定", (dialog, which) -> {
-                    String familyName = etFamilyName.getText().toString().trim();
-                    String familyDescription = etFamilyDescription.getText().toString().trim();
-                    
-                    if (familyName.isEmpty()) {
-                        Toast.makeText(requireContext(), "请输入家庭名称", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    if (familyDescription.isEmpty()) {
-                        Toast.makeText(requireContext(), "请输入家庭描述", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    updateFamilyInfo(familyName, familyDescription);
-                })
-                .setNegativeButton("取消", null)
-                .show();
-    }
-
-    private void updateFamilyInfo(String familyName, String familyDescription) {
-        String token = SharedPrefsUtil.getToken();
-        if (token == null || currentFamily == null) {
-            Toast.makeText(requireContext(), "用户信息无效，请重新登录", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        android.util.Log.d("FamilyFragment", "开始更新家庭信息");
-        apiService.updateFamily(
-            "Bearer " + token, 
-            currentFamily.getFamilyId(),
-            familyName,
-            familyDescription
-        ).enqueue(new ApiCallback<Boolean>(requireContext()) {
-            @Override
-            public void onSuccess(Boolean data) {
-                if (data) {
-                    android.util.Log.d("FamilyFragment", "更新家庭信息成功");
-                    Toast.makeText(requireContext(), "更新成功", Toast.LENGTH_SHORT).show();
-                    // 重新获取家庭信息以更新UI
-                    getFamilyInfo(currentFamily.getFamilyId());
-                } else {
-                    android.util.Log.e("FamilyFragment", "更新家庭信息失败");
-                    Toast.makeText(requireContext(), "更新失败", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onError(String message) {
-                android.util.Log.e("FamilyFragment", "更新家庭信息失败: " + message);
-                Toast.makeText(requireContext(), "更新失败: " + message, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
     private void updateMemberLists(FamilyVO family) {
-        List<MemberInfo> blindMembers = new ArrayList<>();
+        // 2026-09-15：成员统一列表（不分盲人/志愿者），名称兜底"用户+手机尾号"，身份标签区分
+        List<Object> allMembers = new ArrayList<>();
         if (family.getBlindVOList() != null) {
-            for (BlindVO blind : family.getBlindVOList()) {
-                if (blind != null && blind.getBlindId() != null && blind.getName() != null) {
-                    blindMembers.add(new MemberInfo(blind.getBlindId(), blind.getName()));
-                }
-            }
+            allMembers.addAll(family.getBlindVOList());
         }
-        blindMemberAdapter.updateMembers(blindMembers);
-
-        List<MemberInfo> volunteerMembers = new ArrayList<>();
         if (family.getVolunteerVOList() != null) {
-            VolunteerVO creator = family.getCreatorVolunteer();
-            for (VolunteerVO volunteer : family.getVolunteerVOList()) {
-                if (volunteer != null && volunteer.getVolunteerId() != null && 
-                    volunteer.getName() != null && 
-                    (creator == null || !volunteer.getVolunteerId().equals(creator.getVolunteerId()))) {
-                    volunteerMembers.add(new MemberInfo(volunteer.getVolunteerId(), volunteer.getName()));
-                }
-            }
+            allMembers.addAll(family.getVolunteerVOList());
         }
-        volunteerMemberAdapter.updateMembers(volunteerMembers);
-        
-        android.util.Log.d("FamilyFragment", "成员列表更新完成，盲人: " + blindMembers.size() + "人，志愿者: " + volunteerMembers.size() + "人");
+        familyMemberAdapter.updateMembers(allMembers, family.getCreatorVolunteer());
+        android.util.Log.d("FamilyFragment", "成员列表更新完成，共 " + allMembers.size() + " 人");
     }
 
+    /** 统一成员：id + 展示名 + 身份标签 */
     private static class MemberInfo {
         Long id;
         String name;
+        String role;
+        boolean creator;
 
-        MemberInfo(Long id, String name) {
+        MemberInfo(Long id, String name, String role, boolean creator) {
             this.id = id;
             this.name = name;
+            this.role = role;
+            this.creator = creator;
         }
     }
 
-    private class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.ViewHolder> {
-        private List<MemberInfo> members = new ArrayList<>();
-        private final String memberType; // "盲人" 或 "志愿者"
+    /** 统一成员适配器（2026-09-15）：不分盲人/志愿者，名称兜底"用户+手机尾号"，身份标签区分 */
+    private class UnifiedMemberAdapter extends RecyclerView.Adapter<UnifiedMemberAdapter.ViewHolder> {
+        private List<Object> members = new ArrayList<>();
+        private VolunteerVO creator;
 
-        MemberAdapter(String memberType) {
-            this.memberType = memberType;
+        void updateMembers(List<Object> newMembers, VolunteerVO creatorInfo) {
+            this.members = new ArrayList<>(newMembers);
+            this.creator = creatorInfo;
+            notifyDataSetChanged();
         }
 
-        void updateMembers(List<MemberInfo> newMembers) {
-            this.members = newMembers;
-            notifyDataSetChanged();
+        /** 名称兜底：无名/null 时显示「用户+手机尾号」 */
+        private String displayName(String name, String phone) {
+            if (name != null && !name.trim().isEmpty()) {
+                return name;
+            }
+            if (phone != null && phone.length() >= 4) {
+                return "用户" + phone.substring(phone.length() - 4);
+            }
+            return "用户";
         }
 
         @NonNull
@@ -591,10 +386,26 @@ public class FamilyFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            MemberInfo member = members.get(position);
-            holder.tvMemberName.setText(member.name);
-            holder.tvMemberId.setText("ID: " + member.id);
-            holder.tvMemberRole.setText(memberType);
+            Object member = members.get(position);
+            String name;
+            String role;
+            if (member instanceof BlindVO) {
+                BlindVO b = (BlindVO) member;
+                name = displayName(b.getName(), b.getPhone());
+                role = "盲人";
+            } else if (member instanceof VolunteerVO) {
+                VolunteerVO v = (VolunteerVO) member;
+                name = displayName(v.getName(), v.getPhone());
+                boolean isCreator = creator != null && v.getVolunteerId() != null
+                        && v.getVolunteerId().equals(creator.getVolunteerId());
+                role = isCreator ? "家主" : "家属";
+            } else {
+                name = "用户";
+                role = "";
+            }
+            holder.tvMemberName.setText(name);
+            holder.tvMemberRole.setText(role);
+            holder.tvMemberId.setVisibility(View.GONE);
         }
 
         @Override
@@ -613,111 +424,6 @@ public class FamilyFragment extends Fragment {
                 tvMemberId = view.findViewById(R.id.tvMemberId);
                 tvMemberRole = view.findViewById(R.id.tvMemberRole);
             }
-        }
-    }
-
-    // 家庭申请适配器
-    private class FamilyRequestAdapter extends RecyclerView.Adapter<FamilyRequestAdapter.ViewHolder> {
-        private List<FamilyJoinReviewVO> requests = new ArrayList<>();
-
-        void updateRequests(List<FamilyJoinReviewVO> newRequests) {
-            this.requests = new ArrayList<>(newRequests);
-            notifyDataSetChanged();
-        }
-
-        void removeRequest(FamilyJoinReviewVO request) {
-            int position = requests.indexOf(request);
-            if (position != -1) {
-                requests.remove(position);
-                notifyItemRemoved(position);
-                if (requests.isEmpty()) {
-                    cardFamilyRequests.setVisibility(View.GONE);
-                }
-            }
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_family_request, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            FamilyJoinReviewVO request = requests.get(position);
-            
-            // 设置申请者信息
-            holder.tvApplicantName.setText("申请者ID: " + request.getBlindId());
-            holder.tvApplicantId.setText("申请者类型: 盲人");
-            holder.tvApplyTime.setText(request.getApplyTime());
-
-            // 设置按钮点击事件
-            holder.btnApprove.setOnClickListener(v -> handleApprove(request));
-            holder.btnReject.setOnClickListener(v -> handleReject(request));
-        }
-
-        @Override
-        public int getItemCount() {
-            return requests.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvApplicantName;
-            TextView tvApplicantId;
-            TextView tvApplyTime;
-            Button btnApprove;
-            Button btnReject;
-
-            ViewHolder(View view) {
-                super(view);
-                tvApplicantName = view.findViewById(R.id.tvApplicantName);
-                tvApplicantId = view.findViewById(R.id.tvApplicantId);
-                tvApplyTime = view.findViewById(R.id.tvApplyTime);
-                btnApprove = view.findViewById(R.id.btnApprove);
-                btnReject = view.findViewById(R.id.btnReject);
-            }
-        }
-
-        private void handleApprove(FamilyJoinReviewVO request) {
-            String token = "Bearer " + SharedPrefsUtil.getToken();
-                        Long currentUserId = SharedPrefsUtil.getUserId();
-                        
-            apiService.updateFamilyJoinReview(token, request.getReviewId(), true, currentUserId)
-                    .enqueue(new ApiCallback<Boolean>(requireContext()) {
-                            @Override
-                            public void onSuccess(Boolean data) {
-                            if (data) {
-                                Toast.makeText(requireContext(), "已同意申请", Toast.LENGTH_SHORT).show();
-                                // 立即从UI移除
-                                familyRequestAdapter.removeRequest(request);
-                                // 刷新家庭信息
-                                getFamilyInfo(currentFamily.getFamilyId());
-                            } else {
-                                Toast.makeText(requireContext(), "操作失败", Toast.LENGTH_SHORT).show();
-                            }
-                            }
-                        });
-        }
-
-        private void handleReject(FamilyJoinReviewVO request) {
-            String token = "Bearer " + SharedPrefsUtil.getToken();
-                        Long currentUserId = SharedPrefsUtil.getUserId();
-                        
-            apiService.updateFamilyJoinReview(token, request.getReviewId(), false, currentUserId)
-                    .enqueue(new ApiCallback<Boolean>(requireContext()) {
-                            @Override
-                            public void onSuccess(Boolean data) {
-                            if (data) {
-                                Toast.makeText(requireContext(), "已拒绝申请", Toast.LENGTH_SHORT).show();
-                                // 立即从UI移除
-                                familyRequestAdapter.removeRequest(request);
-                            } else {
-                                Toast.makeText(requireContext(), "操作失败", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
         }
     }
 

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-09-15：tabBar 调整为主页/家庭/社区/我的，消息页下线 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/volunteer_navigation"
@@ -10,22 +11,17 @@
         android:label="主页" />
 
     <fragment
-        android:id="@+id/navigation_community"
-        android:name="com.swj.shiwujie.volunteer.ui.community.CommunityFragment"
-        android:label="社区" />
-
-    <fragment
-        android:id="@+id/navigation_message"
-        android:name="com.swj.shiwujie.volunteer.ui.message.MessageFragment"
-        android:label="消息" />
-
-    <fragment
         android:id="@+id/navigation_family"
         android:name="com.swj.shiwujie.volunteer.ui.family.FamilyFragment"
         android:label="家庭" />
 
     <fragment
+        android:id="@+id/navigation_community"
+        android:name="com.swj.shiwujie.volunteer.ui.community.CommunityFragment"
+        android:label="社区" />
+
+    <fragment
         android:id="@+id/navigation_profile"
         android:name="com.swj.shiwujie.volunteer.ui.profile.ProfileFragment"
         android:label="我的" />
-</navigation> 
+</navigation>

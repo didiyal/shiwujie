@@ -100,33 +100,51 @@ public class UserTools {
             log.info("获取用户的家庭信息");
             Long blindId = LoginUtils.getLoginBlindId();
             ThrowUtils.throwIf(blindId == null, ErrorCode.NO_AUTH, "志愿者身份无法使用AI助手");
-            FamilyVO familyVO = innerFamilyService.getFamilyVOById(innerBlindService.getById(blindId).getFamilyId(), LoginUtils.getLoginUserPhone());
-            VolunteerVO creatorVolunteer = familyVO.getCreatorVolunteer();
-            List<BlindVO> blindVOList = familyVO.getBlindVOList();
-            List<VolunteerVO> volunteerVOList = familyVO.getVolunteerVOList();
-            StringBuilder sb = new StringBuilder();
+            Blind loginBlind = innerBlindService.getById(blindId);
+            ThrowUtils.throwIf(loginBlind.getFamilyId() == null, ErrorCode.PARAMS_ERROR,
+                    "您还没有加入家庭。可以对我说帮我加入家庭，并告知家属手机号，我会帮您加入");
+            FamilyVO familyVO = innerFamilyService.getFamilyVOById(loginBlind.getFamilyId(), LoginUtils.getLoginUserPhone());
 
-            sb.append("获取家庭信息成功！")
-                    .append("您加入的家庭信息为")
-                    .append("家庭名称：").append(familyVO.getFamilyName()).append("\n")
-                    .append("家庭描述：").append(familyVO.getFamilyDescription()).append("\n")
-                    .append("家庭创建人：").append(creatorVolunteer.getName()).append("\n")
-                    .append("家庭成员列表：").append("\n");
-            for (BlindVO blindVO : blindVOList) {
-                if (blindVO.getBlindId().equals(blindId)) {
-                    sb.append("（本人）").append("姓名：").append(blindVO.getName()).append("\n");
-                } else {
-                    sb.append("姓名：").append(blindVO.getName()).append("\n");
+            // 2026-09-15：回执精简为「我的家庭 + 成员（名称用户+手机尾号）+ 身份」，便于语音播报
+            StringBuilder sb = new StringBuilder();
+            sb.append("已为您查到家庭信息。我的家庭共有")
+                    .append((familyVO.getBlindVOList() == null ? 0 : familyVO.getBlindVOList().size())
+                            + (familyVO.getVolunteerVOList() == null ? 0 : familyVO.getVolunteerVOList().size()))
+                    .append("名成员：\n");
+            if (familyVO.getBlindVOList() != null) {
+                for (BlindVO blindVO : familyVO.getBlindVOList()) {
+                    boolean self = blindVO.getBlindId().equals(blindId);
+                    sb.append("成员").append(memberDisplayName(blindVO.getName(), blindVO.getPhone()))
+                            .append("，身份视障人士").append(self ? "，就是您本人" : "").append("。\n");
                 }
             }
-            for (VolunteerVO volunteerVO : volunteerVOList) {
-                sb.append("姓名：").append(volunteerVO.getName()).append("\n");
+            if (familyVO.getVolunteerVOList() != null) {
+                for (VolunteerVO volunteerVO : familyVO.getVolunteerVOList()) {
+                    boolean isCreator = familyVO.getCreatorVolunteer() != null
+                            && volunteerVO.getVolunteerId().equals(familyVO.getCreatorVolunteer().getVolunteerId());
+                    sb.append("成员").append(memberDisplayName(volunteerVO.getName(), volunteerVO.getPhone()))
+                            .append("，身份").append(isCreator ? "家主" : "家属").append("。\n");
+                }
             }
             return sb.toString();
+        } catch (com.swj.shiwujie.exception.BusinessException e) {
+            log.warn("AI查询家庭信息被拒绝: {}", e.getMessage());
+            return e.getMessage();
         } catch (Exception e) {
             log.error("获取家庭信息失败", e);
-            return "获取家庭信息失败" + e.getMessage();
+            return "获取家庭信息失败，请稍后再试";
         }
+    }
+
+    /** 成员显示名兜底：姓名为空时默认「用户+手机尾号」（2026-09-15） */
+    private String memberDisplayName(String name, String phone) {
+        if (name != null && !name.trim().isEmpty()) {
+            return name;
+        }
+        if (phone != null && phone.length() >= 4) {
+            return "用户" + phone.substring(phone.length() - 4);
+        }
+        return "用户";
     }
 
 }

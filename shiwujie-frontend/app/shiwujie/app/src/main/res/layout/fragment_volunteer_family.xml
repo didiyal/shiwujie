@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 2026-09-15 家庭页改造：页名"我的家庭"；去掉家庭ID/名称/描述/创建者/修改信息；
+     成员数量为标题旁小字；成员统一列表（不分盲人/志愿者）；加入申请卡随审核取消下线 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -21,7 +23,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="家庭"
+        android:text="我的家庭"
         android:textColor="@android:color/white"
         android:textSize="24sp"
         android:textStyle="bold"
@@ -113,188 +115,68 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <!-- 家庭基本信息区域 -->
+                    <!-- 标题行：我的家庭 + 成员数量小字 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="#F5F5F5"
-                        android:orientation="vertical"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
                         android:padding="16dp">
 
-                        <!-- 家庭ID -->
                         <TextView
-                            android:id="@+id/tvFamilyId"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:text="家庭ID: "
+                            android:layout_weight="1"
+                            android:text="我的家庭"
                             android:textColor="#163AAC"
-                            android:textSize="14sp" />
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
 
-                        <!-- 家庭名称和修改按钮的容器 -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <!-- 家庭名称 -->
-                            <TextView
-                                android:id="@+id/tvFamilyName"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="家庭名称"
-                                android:textColor="#163AAC"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-
-                            <!-- 修改信息按钮 -->
-                            <Button
-                                android:id="@+id/btnEditFamily"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:background="@drawable/bg_button_primary"
-                                android:padding="8dp"
-                                android:text="修改信息"
-                                android:textColor="@android:color/white" />
-                        </LinearLayout>
-
-                        <!-- 家庭描述 -->
                         <TextView
-                            android:id="@+id/tvFamilyDescription"
+                            android:id="@+id/tvMemberCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="家庭描述"
+                            android:text="0人"
                             android:textColor="#757575"
-                            android:textSize="16sp" />
-
-                        <!-- 成员数量信息 -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:background="@drawable/bg_creator_info"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="成员数量"
-                                android:textColor="#163AAC"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tvMemberCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="0人"
-                                android:textColor="#757575"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <!-- 创建者信息 -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:background="@drawable/bg_creator_info"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="创建者"
-                                android:textColor="#163AAC"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tvCreator"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:textColor="#757575"
-                                android:textSize="14sp" />
-                        </LinearLayout>
+                            android:textSize="13sp" />
                     </LinearLayout>
 
-                    <!-- 成员列表区域 -->
-                    <LinearLayout
+                    <!-- 成员统一列表（不分盲人/志愿者） -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvFamilyMembers"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="24dp"
-                        android:orientation="vertical">
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_member_list"
+                        android:nestedScrollingEnabled="false" />
 
-                        <!-- 盲人成员标题 -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="盲人成员"
-                            android:textColor="#163AAC"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-
-                        <!-- 盲人成员列表 -->
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/rvBlindMembers"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:background="@drawable/bg_member_list"
-                            android:nestedScrollingEnabled="false" />
-
-                        <!-- 志愿者成员标题 -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="24dp"
-                            android:text="志愿者成员"
-                            android:textColor="#163AAC"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-
-                        <!-- 志愿者成员列表 -->
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/rvVolunteerMembers"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:background="@drawable/bg_member_list"
-                            android:nestedScrollingEnabled="false" />
-
-                    </LinearLayout>
                     <!-- 删除家庭按钮 -->
                     <Button
                         android:id="@+id/btnDeleteFamily"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@color/red"
                         android:text="解散家庭"
                         android:textColor="@android:color/white"
-                        android:background="@color/red"
-                        android:layout_marginTop="16dp"
                         android:visibility="gone" />
 
                     <Button
                         android:id="@+id/btnRemoveMembers"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_button_primary"
                         android:text="移除成员"
                         android:textColor="@android:color/white"
-                        android:background="@drawable/bg_button_primary"
-                        android:layout_marginTop="8dp"
                         android:visibility="gone" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnLeaveFamily"
                         android:layout_width="205dp"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
                         android:gravity="center"
                         android:paddingHorizontal="30dp"
                         android:paddingVertical="12dp"
@@ -307,45 +189,8 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- 家庭申请卡片 -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardFamilyRequests"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="16dp"
-                android:visibility="gone"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="8dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:text="加入申请"
-                        android:textColor="#2196F3"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvFamilyRequests"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="#F5F5F5"
-                        android:nestedScrollingEnabled="false" />
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
         </LinearLayout>
 
     </ScrollView>
 
-</androidx.constraintlayout.widget.ConstraintLayout> 
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -116,11 +116,10 @@ public class VolunteerHomeActivity extends AppCompatActivity {
     }
 
     private void setupViews() {
-        // 配置底部导航栏
+        // 配置底部导航栏（2026-09-15：tabBar 主页/家庭/社区/我的，消息页下线）
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.navigation_home, R.id.navigation_community,
-                R.id.navigation_message, R.id.navigation_family,
-                R.id.navigation_profile)
+                R.id.navigation_home, R.id.navigation_family,
+                R.id.navigation_community, R.id.navigation_profile)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupWithNavController(binding.navView, navController);

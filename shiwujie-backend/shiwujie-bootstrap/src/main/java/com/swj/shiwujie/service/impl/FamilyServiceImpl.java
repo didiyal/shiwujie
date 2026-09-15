@@ -68,9 +68,10 @@ public class FamilyServiceImpl extends ServiceImpl<FamilyMapper, Family>
             // 家主
             Volunteer volunteer = volunteerService.getById(loginVolunteerId);
 
-            // 创建家庭
+            // 创建家庭（2026-09-15：家庭名称统一默认「我的家庭」，页面不再展示/编辑名称）
             Family family = new Family();
             family.setCreatorVolunteerId(loginVolunteerId);
+            family.setFamilyName("我的家庭");
             boolean save = this.save(family);
             ThrowUtils.throwIf(!save, ErrorCode.SYSTEM_ERROR);
 

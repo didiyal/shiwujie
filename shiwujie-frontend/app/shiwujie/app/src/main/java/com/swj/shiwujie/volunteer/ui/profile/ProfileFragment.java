@@ -123,22 +123,28 @@ public class ProfileFragment extends Fragment {
        
         tvAccount.setText("手机号：" + data.getPhone());
 
-        // 更新用户名
+        // 更新用户名：未设置时默认"用户+手机尾号"（2026-09-15，与视障端一致）
         String name = data.getName();
-        tvUsername.setText("用户名：" + (name != null && !name.isEmpty() ? name : "未设置"));
-
-        // 更新社区状态
-        if (data.getCommunityId() == null) {
-            tvCommunityStatus.setText("未加入社区");
+        String displayName;
+        if (name != null && !name.trim().isEmpty()) {
+            displayName = name;
         } else {
-            tvCommunityStatus.setText("已加入社区");
+            displayName = defaultNameByPhone(data.getPhone());
+        }
+        tvUsername.setText("用户名：" + displayName);
+
+        // 更新社区状态（点按进入社区页）
+        if (data.getCommunityId() == null) {
+            tvCommunityStatus.setText("未加入社区 ›");
+        } else {
+            tvCommunityStatus.setText("已加入社区 ›");
         }
 
-        // 更新家庭状态
+        // 更新家庭状态（点按进入家庭页）
         if (data.getFamilyId() == null) {
-            btnFamily.setText("未加入家庭");
+            btnFamily.setText("未加入家庭 ›");
         } else {
-            btnFamily.setText("已加入家庭");
+            btnFamily.setText("已加入家庭 ›");
         }
 
         // 2026-09-14：实名认证已按产品要求关闭，不再展示实名状态与证件号
@@ -272,35 +278,24 @@ public class ProfileFragment extends Fragment {
 
     private void handleFamilyClick() {
         android.util.Log.d("ProfileFragment", "handleFamilyClick被调用");
-        VolunteerVO userInfo = VolunteerUserInfoManager.getCurrentUserInfo();
-        if (userInfo != null) {
-            android.util.Log.d("ProfileFragment", "用户信息获取成功，准备跳转到家庭页面");
-            // 跳转到志愿者家庭页面
-            if (getActivity() != null) {
-                android.util.Log.d("ProfileFragment", "Activity存在，开始导航");
-                try {
-                    // 使用NavController导航到家庭页面
-                    androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
-                    android.util.Log.d("ProfileFragment", "NavController获取成功，开始导航到家庭页面");
-                    
-                    // 尝试使用popBackStack先清除当前页面，然后导航
-                    navController.popBackStack();
-                    navController.navigate(R.id.navigation_family);
-                    
-                    android.util.Log.d("ProfileFragment", "导航命令已发送");
-                    Toast.makeText(requireContext(), "正在跳转到家庭页面", Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    android.util.Log.e("ProfileFragment", "导航失败", e);
-                    Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                android.util.Log.e("ProfileFragment", "Activity为null");
-                Toast.makeText(requireContext(), "页面跳转失败", Toast.LENGTH_SHORT).show();
+        // 2026-09-15：去掉用户信息门禁（此前缓存未就绪时点击无响应），家庭页自行加载数据
+        if (getActivity() != null) {
+            try {
+                androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                navController.navigate(R.id.navigation_family);
+            } catch (Exception e) {
+                android.util.Log.e("ProfileFragment", "导航失败", e);
+                Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
-        } else {
-            android.util.Log.e("ProfileFragment", "用户信息为null");
-            Toast.makeText(requireContext(), "用户信息无效", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /** 未设置姓名时的默认展示名：用户 + 手机尾号（2026-09-15） */
+    private String defaultNameByPhone(String phone) {
+        if (phone != null && phone.length() >= 4) {
+            return "用户" + phone.substring(phone.length() - 4);
+        }
+        return "用户";
     }
 
     private void handleEditInfoClick() {
@@ -462,7 +457,14 @@ public class ProfileFragment extends Fragment {
     }
     
     private void handleCommunityClick() {
-        // TODO: 跳转到社区页面
-        Toast.makeText(requireContext(), "即将跳转到社区页面", Toast.LENGTH_SHORT).show();
+        // 2026-09-15：跳转社区页面落地
+        if (getActivity() != null) {
+            try {
+                androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                navController.navigate(R.id.navigation_community);
+            } catch (Exception e) {
+                Toast.makeText(requireContext(), "跳转失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 } 

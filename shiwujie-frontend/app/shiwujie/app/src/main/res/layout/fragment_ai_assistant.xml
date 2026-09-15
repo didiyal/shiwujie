@@ -419,7 +419,44 @@
         android:contentDescription="左侧功能按钮列，包含语音、拍照识别、紧急求助、志愿者求助、我的和帮助"
         android:accessibilityHeading="true">
 
-        <LinearLayout
+                <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_help"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:contentDescription="帮助按钮，点击收听产品介绍"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:backgroundTint="@color/primary_blue"
+                app:cornerRadius="26dp"
+                app:icon="@drawable/ic_info_24"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/blue_700"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/white"
+                tools:ignore="PrivateResource" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:shadowColor="@android:color/black"
+                android:shadowRadius="4"
+                android:text="帮助"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+        </LinearLayout>
+<LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
@@ -455,7 +492,6 @@
                 android:textColor="@color/white"
                 android:textSize="12sp" />
         </LinearLayout>
-
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -493,7 +529,6 @@
                 android:textColor="@color/white"
                 android:textSize="12sp" />
         </LinearLayout>
-
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -531,7 +566,6 @@
                 android:textColor="@color/white"
                 android:textSize="12sp" />
         </LinearLayout>
-
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -569,7 +603,6 @@
                 android:textColor="@color/white"
                 android:textSize="12sp" />
         </LinearLayout>
-
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -607,45 +640,6 @@
                 android:textColor="@color/white"
                 android:textSize="12sp" />
         </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_help"
-                style="@style/Widget.Material3.Button.Icon"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:contentDescription="帮助按钮，点击收听产品介绍"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                app:backgroundTint="@color/primary_blue"
-                app:cornerRadius="26dp"
-                app:icon="@drawable/ic_info_24"
-                app:iconGravity="textTop"
-                app:iconPadding="0dp"
-                app:iconSize="24dp"
-                app:iconTint="@color/white"
-                app:rippleColor="@color/blue_700"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/white"
-                tools:ignore="PrivateResource" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:shadowColor="@android:color/black"
-                android:shadowRadius="4"
-                android:text="帮助"
-                android:textColor="@color/white"
-                android:textSize="12sp" />
-        </LinearLayout>
-
     </LinearLayout>
 
 </RelativeLayout>
