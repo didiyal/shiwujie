@@ -65,6 +65,6 @@ app:
     apk-dir: ${APK_DIR:/www/wwwroot/shiwujie/shiwujie-frontend/}   # APK 目录：上传任意名的 .apk 即生效（自动提供最新修改的一个）
   # 线上最新版本信息（强制更新检查用）：发新 APK 时同步升 code/name，App 启动比对本地 versionCode 即弹强制更新
   version:
-    code: ${APP_VERSION_CODE:22}
-    name: ${APP_VERSION_NAME:3.2.0}
-    update-log: ${APP_VERSION_LOG:全新单页体验：AI页六个功能按钮，家庭社区收进我的；一键登录免设密码}
+    code: ${APP_VERSION_CODE:23}
+    name: ${APP_VERSION_NAME:3.2.1}
+    update-log: ${APP_VERSION_LOG:拍照识别出错不再播英文提示；产品介绍补充语音操控能力}

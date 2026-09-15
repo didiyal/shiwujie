@@ -558,13 +558,12 @@ public class AiFragment extends Fragment {
 
     /** 产品介绍弹窗（2026-09-15 二期重构）：文案单控件保 TalkBack 一次读完 + TTS 全文播报 */
     private void showHelpDialog() {
-        String message = "视无界是一款面向视障人士的无障碍助手，开口就能用。\n"
-                + "一，语音对话：有问题直接问小界，联网搜索后语音回答。\n"
+        String message = "视无界是一款面向视障人士的无障碍助手，动口不动手。\n"
+                + "一，语音对话：有问题直接问小界，联网搜索后语音回答；还能帮您打开手机里的软件，打电话，发短信，查路线，操控手机里的各种功能。\n"
                 + "二，拍照识别：拍一张照片，小界告诉您眼前是什么，看不清可以继续追问。\n"
-                + "三，紧急求助：一键视频呼叫家属。\n"
+                + "三，紧急求助：一键视频呼叫家属，需要先加入家庭。您可以对小界说，帮我加入家庭，并告知家属手机号，小界会帮您加入。\n"
                 + "四，志愿者求助：连线志愿者远程帮您看。\n"
-                + "五，家庭与社区：在我的页面加入家庭，参与社区互助。\n"
-                + "当前版本 3.2.0。";
+                + "当前版本 3.2.1。";
         if (ttsManager != null) {
             ttsManager.startSpeaking("视无界产品介绍。" + message);
         }
@@ -1512,14 +1511,33 @@ public class AiFragment extends Fragment {
                     }
                 }
             }
-            
-            // 如果不是JSON格式或解析失败，直接播报原始内容
-            return response;
-            
+
+            // 2026-09-15：解析不出可播内容（如模型网关英文报错、Spring 默认错误体）时，
+            // 一律播中文固定提示——绝不把原始 JSON/英文报错读给用户（线上曾播报含 outputs 的英文错误）
+            return sanitizeTTSText(response);
+
         } catch (Exception e) {
-            Log.e(TAG, "解析响应失败，播报原始内容", e);
-            return response;
+            Log.e(TAG, "解析响应失败，播报兜底提示", e);
+            return sanitizeTTSText(response);
         }
+    }
+
+    /**
+     * TTS 兜底清洗：JSON 报错壳/英文报错（含 error、exception、outputs 等字样）一律换成中文固定提示，
+     * 保证盲人用户永远不会听到英文报错或原始 JSON。
+     */
+    private String sanitizeTTSText(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return "操作没有成功，请稍后再试";
+        }
+        String trimmed = raw.trim();
+        String lower = trimmed.toLowerCase();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")
+                || trimmed.contains("\"error\"") || lower.contains("error")
+                || lower.contains("exception") || lower.contains("outputs")) {
+            return "这条请求没有成功，请稍后再试";
+        }
+        return raw;
     }
     
     /**
@@ -2338,7 +2356,9 @@ public class AiFragment extends Fragment {
         try {
             // 直接使用现有的AI回复卡片，显示错误信息
             if (currentAiResponseTextView != null && isAiResponseStreaming) {
-                String errorMessage = "抱歉，图片识别出现错误：" + error;
+                // 2026-09-15：卡片只显示友好中文提示，原始报错（可能是英文 JSON）只进日志
+                Log.e(TAG, "图片识别原始错误: " + error);
+                String errorMessage = "抱歉，图片识别没有成功，请稍后再试";
                 currentAiResponseTextView.setText(errorMessage);
                 
                 // 更新文字颜色为错误状态
