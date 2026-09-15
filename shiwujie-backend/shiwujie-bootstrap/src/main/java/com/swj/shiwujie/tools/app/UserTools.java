@@ -106,10 +106,14 @@ public class UserTools {
             FamilyVO familyVO = innerFamilyService.getFamilyVOById(loginBlind.getFamilyId(), LoginUtils.getLoginUserPhone());
 
             // 2026-09-15：回执精简为「我的家庭 + 成员（名称用户+手机尾号）+ 身份」，便于语音播报
+            // 2026-09-16 修正：家主在 VO 装配时被移出志愿者列表单独存放（creatorVolunteer），必须单独补播
             StringBuilder sb = new StringBuilder();
+            int volunteerCount = familyVO.getVolunteerVOList() == null ? 0 : familyVO.getVolunteerVOList().size();
+            int blindCount = familyVO.getBlindVOList() == null ? 0 : familyVO.getBlindVOList().size();
+            boolean hasCreator = familyVO.getCreatorVolunteer() != null
+                    && familyVO.getCreatorVolunteer().getVolunteerId() != null;
             sb.append("已为您查到家庭信息。我的家庭共有")
-                    .append((familyVO.getBlindVOList() == null ? 0 : familyVO.getBlindVOList().size())
-                            + (familyVO.getVolunteerVOList() == null ? 0 : familyVO.getVolunteerVOList().size()))
+                    .append(blindCount + volunteerCount + (hasCreator ? 1 : 0))
                     .append("名成员：\n");
             if (familyVO.getBlindVOList() != null) {
                 for (BlindVO blindVO : familyVO.getBlindVOList()) {
@@ -118,12 +122,15 @@ public class UserTools {
                             .append("，身份视障人士").append(self ? "，就是您本人" : "").append("。\n");
                 }
             }
+            if (hasCreator) {
+                VolunteerVO creator = familyVO.getCreatorVolunteer();
+                sb.append("成员").append(memberDisplayName(creator.getName(), creator.getPhone()))
+                        .append("，身份家主。\n");
+            }
             if (familyVO.getVolunteerVOList() != null) {
                 for (VolunteerVO volunteerVO : familyVO.getVolunteerVOList()) {
-                    boolean isCreator = familyVO.getCreatorVolunteer() != null
-                            && volunteerVO.getVolunteerId().equals(familyVO.getCreatorVolunteer().getVolunteerId());
                     sb.append("成员").append(memberDisplayName(volunteerVO.getName(), volunteerVO.getPhone()))
-                            .append("，身份").append(isCreator ? "家主" : "家属").append("。\n");
+                            .append("，身份家属。\n");
                 }
             }
             return sb.toString();
